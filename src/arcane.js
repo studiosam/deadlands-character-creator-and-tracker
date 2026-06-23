@@ -278,7 +278,7 @@ function normalizePowerRecord(power, index = 0, fallbackSource = "") {
     active: Boolean(power.active),
     source: power.source || fallbackSource,
     trapping: power.trapping || power.trappings || power.deviceName || "",
-    notes: power.notes || power.summary || "",
+    notes: power.notes || power.summary || power.description || "",
     modifiers: Array.isArray(power.modifiers)
       ? power.modifiers
       : Array.isArray(power.powerModifiers)

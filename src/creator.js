@@ -455,16 +455,33 @@ function catalogOptions(items) {
   return `<option value="">Choose…</option>${items.map((item) => `<option value="${esc(item.id)}">${esc(item.name)} — ${money(item.costCents)}</option>`).join("")}`;
 }
 
+function setAppTab(tabName) {
+  const panelMap = {
+    play: "#playPanel",
+    character: "#characterPanel",
+    inventory: "#inventoryPanel",
+    arcane: "#arcanePanel",
+    notes: "#notesPanel",
+    creation: "#creationPanel",
+  };
+  const nextTab = panelMap[tabName] ? tabName : "play";
+
+  document.querySelectorAll("[data-app-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.appTab === nextTab);
+  });
+  document.querySelectorAll(".tab-panel").forEach((panel) => {
+    panel.classList.add("hidden");
+    panel.classList.remove("active");
+  });
+
+  const panel = $(panelMap[nextTab]);
+  panel.classList.remove("hidden");
+  panel.classList.add("active");
+  if (nextTab === "creation") renderCreator();
+}
+
 function setCreatorMode(on) {
-  const dashboard = $("#trackerDashboard");
-  const panel = $("#creationPanel");
-  const trackerButton = $("#trackerModeBtn");
-  const creatorButton = $("#creatorModeBtn");
-  dashboard.classList.toggle("hidden", on);
-  panel.classList.toggle("hidden", !on);
-  trackerButton.classList.toggle("active", !on);
-  creatorButton.classList.toggle("active", on);
-  if (on) renderCreator();
+  setAppTab(on ? "creation" : "play");
 }
 
 function statusPill(ok, warn = false) {
@@ -1283,8 +1300,9 @@ document.addEventListener("click", (event) => {
   if (actionName) creatorAction(actionName, event.target);
 });
 
-$("#trackerModeBtn").onclick = () => setCreatorMode(false);
-$("#creatorModeBtn").onclick = () => setCreatorMode(true);
+document.querySelectorAll("[data-app-tab]").forEach((button) => {
+  button.onclick = () => setAppTab(button.dataset.appTab);
+});
 $("#loadSampleBtn").onclick = () => {
   if (confirm("Load Dusty McCaw sample into the tracker?")) {
     character = normalize(clone(defaultCharacter));

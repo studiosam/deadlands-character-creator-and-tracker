@@ -286,7 +286,7 @@ function savagedPowers(data, config) {
             background.name ||
             "Savaged.us Arcane Background",
           trapping: power.trappings || "",
-          notes: power.summary || "",
+          notes: power.summary || power.description || "",
           modifiers: power.powerModifiers || [],
         },
         index,
@@ -509,6 +509,30 @@ function fromSavagedUs(data) {
     rank: data.rankName || data.rank || "Novice",
     ancestry: data.race || "—",
     archetype: data.professionOrTitle || "",
+    attributes: Object.fromEntries(
+      arr(data.attributes)
+        .filter((attribute) => attribute.name && attribute.value)
+        .map((attribute) => [attribute.name, attribute.value]),
+    ),
+    skills: arr(data.skills)
+      .filter((skill) => skill.name && skill.name !== "(Unskilled)")
+      .map((skill) => ({
+        name: skill.name,
+        die: skill.value,
+        linkedAttribute: skill.attribute || skill.linkedAttribute || "",
+        notes: skill.mod ? `Modifier ${skill.mod}` : "",
+      })),
+    hindrances: arr(data.hindrances).map((hindrance) => ({
+      name: hindrance.name || "Hindrance",
+      severity: hindrance.severity || "",
+      notes:
+        hindrance.description || hindrance.summary || hindrance.notes || "",
+    })),
+    edges: arr(data.edges).map((edge) => ({
+      name: edge.name || "Edge",
+      source: savagedBook(edge),
+      notes: edge.description || edge.summary || edge.notes || "",
+    })),
     bennies: {
       current: Number(data.bennies) || Number(data.benniesMax) || 3,
       starting: Number(data.benniesMax) || Number(data.bennies) || 3,

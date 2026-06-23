@@ -25,156 +25,530 @@
         </div>
       </header>
 
-      <nav class="creator-tabs" aria-label="Primary mode">
-        <button id="trackerModeBtn" class="active" type="button">
-          Tracker
+      <nav class="creator-tabs app-tabs" aria-label="Primary mode">
+        <button
+          id="trackerModeBtn"
+          class="active"
+          type="button"
+          data-app-tab="play"
+        >
+          Combat
         </button>
-        <button id="creatorModeBtn" type="button">Character Creation</button>
+        <button type="button" data-app-tab="character">Character</button>
+        <button type="button" data-app-tab="inventory">Inventory</button>
+        <button type="button" data-app-tab="arcane">Arcane</button>
+        <button type="button" data-app-tab="notes">Notes</button>
+        <button id="creatorModeBtn" type="button" data-app-tab="creation">
+          Creation
+        </button>
         <button id="loadSampleBtn" class="ghost" type="button">
           Load Sample: Dusty McCaw
         </button>
       </nav>
 
-      <main id="trackerDashboard" class="dashboard">
-        <section class="card wide">
-          <div class="section-title">
-            <div>
-              <h2>Core State</h2>
-              <p>
-                Fast controls for values that change during combat and travel.
-              </p>
-            </div>
-            <span id="saveState" class="save-state">Saved</span>
-          </div>
-
-          <div class="grid stats">
-            <div class="block">
-              <div class="topline">
-                <h3>Wounds</h3>
-                <span id="woundPenalty" class="pill"></span>
+      <main id="trackerDashboard">
+        <section id="playPanel" class="dashboard tab-panel active">
+          <section class="card wide play-state combat-command">
+            <div class="section-title">
+              <div>
+                <h2>Health and Resolve</h2>
               </div>
-              <span id="woundsValue" class="value"></span>
-              <div class="step">
-                <button data-action="decWounds" type="button">−</button
-                ><strong>Wounds</strong
-                ><button data-action="incWounds" type="button">+</button>
-              </div>
-              <p id="woundsNote" class="muted"></p>
+              <span id="saveState" class="save-state">Saved</span>
             </div>
 
-            <div class="block">
-              <div class="topline">
-                <h3>Fatigue</h3>
-                <span id="fatiguePenalty" class="pill"></span>
-              </div>
-              <span id="fatigueValue" class="value"></span>
-              <div class="step">
-                <button data-action="decFatigue" type="button">−</button
-                ><strong>Fatigue</strong
-                ><button data-action="incFatigue" type="button">+</button>
-              </div>
-              <p id="fatigueNote" class="muted"></p>
-            </div>
+            <div class="combat-command-grid">
+              <div class="combat-status-grid">
+                <div class="block">
+                  <div class="topline">
+                    <h3>Wounds</h3>
+                    <span id="woundPenalty" class="pill"></span>
+                  </div>
+                  <div class="step stat-step">
+                    <button data-action="decWounds" type="button">
+                      &minus;
+                    </button>
+                    <span id="woundsValue" class="value"></span>
+                    <button data-action="incWounds" type="button">+</button>
+                  </div>
+                  <p id="woundsNote" class="muted"></p>
+                </div>
 
-            <div class="block">
-              <div class="topline">
-                <h3>Bennies</h3>
-                <span id="bennyStart" class="pill"></span>
-              </div>
-              <span id="benniesValue" class="value"></span>
-              <div class="step">
-                <button data-action="decBennies" type="button">−</button
-                ><strong>Bennies</strong
-                ><button data-action="incBennies" type="button">+</button>
-              </div>
-              <p class="muted">Starting value includes Edges and Hindrances.</p>
-            </div>
+                <div class="block">
+                  <div class="topline">
+                    <h3>Fatigue</h3>
+                    <span id="fatiguePenalty" class="pill"></span>
+                  </div>
+                  <div class="step stat-step">
+                    <button data-action="decFatigue" type="button">
+                      &minus;
+                    </button>
+                    <span id="fatigueValue" class="value"></span>
+                    <button data-action="incFatigue" type="button">+</button>
+                  </div>
+                  <p id="fatigueNote" class="muted"></p>
+                </div>
 
-            <div class="block">
-              <div class="topline">
-                <h3>Conviction</h3>
-                <span class="pill">Optional</span>
+                <div class="block">
+                  <div class="topline">
+                    <h3>Bennies</h3>
+                  </div>
+                  <span id="bennyStart" class="pill hidden"></span>
+                  <div class="step stat-step">
+                    <button data-action="decBennies" type="button">
+                      &minus;
+                    </button>
+                    <span id="benniesValue" class="value"></span>
+                    <button data-action="incBennies" type="button">+</button>
+                  </div>
+                </div>
+
+                <div class="block">
+                  <div class="topline">
+                    <h3>Conviction</h3>
+                  </div>
+                  <div class="step stat-step">
+                    <button data-action="decConviction" type="button">
+                      &minus;
+                    </button>
+                    <span id="convictionValue" class="value"></span>
+                    <button data-action="incConviction" type="button">+</button>
+                  </div>
+                </div>
               </div>
-              <span id="convictionValue" class="value"></span>
-              <div class="step">
-                <button data-action="decConviction" type="button">−</button
-                ><strong>Conviction</strong
-                ><button data-action="incConviction" type="button">+</button>
+
+              <div class="combat-defense-panel">
+                <h3>Defenses</h3>
+                <div class="grid derived compact-derived">
+                  <div><span>Pace</span><strong id="paceValue"></strong></div>
+                  <div><span>Parry</span><strong id="parryValue"></strong></div>
+                  <div>
+                    <span>Toughness</span><strong id="toughnessValue"></strong>
+                  </div>
+                </div>
+                <select
+                  id="armorSelect"
+                  class="hidden"
+                  aria-hidden="true"
+                ></select>
+                <p id="armorNote" class="muted"></p>
+                <div
+                  id="combatArmorLocations"
+                  class="combat-armor-locations"
+                ></div>
+                <div
+                  id="combatStatusResources"
+                  class="grid combat-inline"
+                ></div>
               </div>
-              <p class="muted">Use only if your table tracks it.</p>
             </div>
-          </div>
+          </section>
+
+          <section id="playPowerPointsCard" class="card wide hidden">
+            <h2>Power Points</h2>
+            <div id="playPowerPointsList" class="list"></div>
+          </section>
+
+          <section class="card wide combat-conditions-card">
+            <div class="section-title">
+              <div>
+                <h2>Key Conditions</h2>
+              </div>
+              <button class="ghost" id="clearTempConditionsBtn" type="button">
+                Clear Temporary
+              </button>
+            </div>
+            <div id="keyConditionsList" class="grid conditions"></div>
+            <div id="conditionsList" class="grid conditions hidden"></div>
+          </section>
+
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Current Weapons</h2>
+              </div>
+              <span id="weaponStrengthPill" class="pill"></span>
+            </div>
+            <div id="playWeaponList" class="grid weapons"></div>
+            <div id="playAmmoReserves" class="grid ammo hidden"></div>
+          </section>
+
+          <section id="playResourcesCard" class="card">
+            <h2>Combat Resources</h2>
+            <div id="playResourcesList" class="list"></div>
+          </section>
+
+          <section id="playActivePowersCard" class="card wide">
+            <h2>Combat Powers</h2>
+            <div id="playActivePowersList" class="grid powers"></div>
+          </section>
+
+          <section id="combatHucksterCard" class="card wide hidden">
+            <h2>Huckster: Deal in Combat</h2>
+            <div id="combatHucksterHelper" class="creator-grid"></div>
+          </section>
+
+          <section id="combatConsumablesCard" class="card wide">
+            <h2>Quick Consumables</h2>
+            <div id="combatConsumablesList" class="list"></div>
+          </section>
+
+          <section id="combatRemindersCard" class="card wide">
+            <h2>Combat Reminders</h2>
+            <div id="combatRemindersList" class="list"></div>
+          </section>
         </section>
 
-        <section class="card">
-          <h2>Derived Stats</h2>
-          <div class="grid derived">
-            <div><span>Pace</span><strong id="paceValue"></strong></div>
-            <div><span>Parry</span><strong id="parryValue"></strong></div>
-            <div>
-              <span>Toughness</span><strong id="toughnessValue"></strong>
+        <section id="characterPanel" class="dashboard tab-panel hidden">
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <p class="eyebrow">Character</p>
+                <h2 id="characterSummaryName"></h2>
+              </div>
+              <button id="addManualPowerPointsBtn" class="ghost" type="button">
+                Enable Manual Power Points
+              </button>
             </div>
-          </div>
-          <label class="field-label" for="armorSelect"
-            >Toughness location</label
-          >
-          <select id="armorSelect"></select>
-          <p id="armorNote" class="muted"></p>
-        </section>
+            <div id="characterBasicsList" class="grid derived"></div>
+          </section>
 
-        <section class="card">
-          <h2>Money</h2>
-          <div id="moneyDisplay" class="money"></div>
-          <div class="inline-form">
-            <input
-              id="moneyInput"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Amount"
-            />
-            <button id="addMoneyBtn" type="button">Add</button>
-            <button id="spendMoneyBtn" type="button">Spend</button>
-          </div>
-          <p class="muted">Money is stored as cents.</p>
-        </section>
+          <section class="card">
+            <h2>Attributes</h2>
+            <div id="attributesList" class="list"></div>
+          </section>
 
-        <section class="card">
-          <h2>Resources</h2>
-          <div id="resourcesList" class="list"></div>
-          <button id="addManualPowerPointsBtn" class="ghost" type="button">
-            Enable Manual Power Points
-          </button>
-          <p class="muted">
-            Tracks Power Points, Sanity, Strain, or setting-specific pools.
-          </p>
-        </section>
+          <section class="card">
+            <h2>Skills</h2>
+            <div id="skillsList" class="list"></div>
+          </section>
 
-        <section class="card wide">
-          <div class="section-title">
-            <div>
-              <p class="eyebrow">Arcane</p>
-              <h2>Powers</h2>
+          <section class="card">
+            <h2>Edges</h2>
+            <div id="edgesList" class="list"></div>
+          </section>
+
+          <section class="card">
+            <h2>Hindrances</h2>
+            <div id="hindrancesList" class="list"></div>
+          </section>
+
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Derived Details</h2>
+                <p>
+                  Character stat summary. Combat armor controls live on the
+                  Combat tab.
+                </p>
+              </div>
+              <span id="armorStrengthPill" class="pill"></span>
             </div>
-            <span id="arcaneSummary" class="pill"></span>
-          </div>
-          <div id="powersList" class="grid powers"></div>
-          <div class="add-panel">
-            <h3>Add or Update Power</h3>
+            <div id="characterDerivedDetails" class="grid derived"></div>
+          </section>
+
+          <section class="card wide">
+            <h2>Arcane Background</h2>
+            <div id="characterArcaneSummary" class="list"></div>
+          </section>
+        </section>
+
+        <section id="inventoryPanel" class="dashboard tab-panel hidden">
+          <section class="card">
+            <h2>Money</h2>
+            <div id="moneyDisplay" class="money"></div>
             <div class="inline-form">
-              <input id="powerNameInput" placeholder="Power name" />
-              <input id="powerCostInput" class="tiny" placeholder="Cost" />
-              <input id="powerDurationInput" placeholder="Duration" />
               <input
-                id="powerTrappingInput"
-                placeholder="Trapping, device, or manifestation"
+                id="moneyInput"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Amount"
               />
-              <input id="powerNotesInput" placeholder="Notes" />
-              <button id="addPowerBtn" type="button">Add Power</button>
+              <button id="addMoneyBtn" type="button">Add</button>
+              <button id="spendMoneyBtn" type="button">Spend</button>
             </div>
-          </div>
-          <div id="hucksterDealPanel" class="add-panel hidden">
-            <h3>Huckster: Dealing with the Devil</h3>
+            <p class="muted">Money is stored as cents.</p>
+          </section>
+
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Gear</h2>
+                <p>Purchased gear, loot, clues, and carried items.</p>
+              </div>
+              <button
+                class="ghost"
+                type="button"
+                data-toggle-form="gearAddForm"
+              >
+                Add Gear
+              </button>
+            </div>
+            <div id="inventoryList" class="list"></div>
+            <div id="gearAddForm" class="add-panel collapsed-form hidden">
+              <h3>Add Gear</h3>
+              <div class="form">
+                <select class="full" id="gearSelect"></select>
+                <input
+                  id="inventoryNameInput"
+                  placeholder="Custom item name or override"
+                />
+                <input
+                  id="inventoryCountInput"
+                  class="tiny"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Qty"
+                />
+                <input id="inventoryNoteInput" placeholder="Optional note" />
+                <button id="addInventoryBtn" type="button">Add Gear</button>
+                <p id="gearPreview" class="preview"></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>Consumables</h2>
+            <div id="consumablesList" class="list"></div>
+          </section>
+
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Armor Inventory</h2>
+                <p>Purchased armor by hit location.</p>
+              </div>
+              <button
+                class="ghost"
+                type="button"
+                data-toggle-form="armorAddForm"
+              >
+                Add Armor
+              </button>
+            </div>
+            <div id="armorLocationList" class="grid armor-locs"></div>
+            <div id="armorInventoryList" class="list"></div>
+            <div id="armorAddForm" class="add-panel collapsed-form hidden">
+              <h3>Add Armor</h3>
+              <div class="form">
+                <select class="full" id="armorCatalogSelect"></select>
+                <input
+                  id="armorNameInput"
+                  placeholder="Custom armor name or override"
+                />
+                <input
+                  id="armorCountInput"
+                  class="tiny"
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="Qty"
+                />
+                <input
+                  id="armorValueInput"
+                  class="tiny"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="+"
+                />
+                <select id="armorLocationSelect"></select>
+                <button id="addArmorBtn" type="button">Add Armor</button>
+                <p id="armorCatalogPreview" class="preview"></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Weapon Inventory</h2>
+                <p>Loaded rounds are tracked separately from reserve ammo.</p>
+              </div>
+              <button
+                class="ghost"
+                type="button"
+                data-toggle-form="weaponAddForm"
+              >
+                Add Weapon
+              </button>
+            </div>
+            <div id="weaponList" class="grid weapons"></div>
+            <div id="weaponAddForm" class="add-panel collapsed-form hidden">
+              <h3>Add Weapon</h3>
+              <div class="form">
+                <select class="full" id="weaponCatalogSelect"></select>
+                <input
+                  id="weaponNameInput"
+                  placeholder="Custom weapon name or override"
+                />
+                <input
+                  id="weaponQtyInput"
+                  class="tiny"
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="Qty"
+                />
+                <input id="weaponDamageInput" placeholder="Damage" />
+                <input id="weaponRangeInput" placeholder="Range" />
+                <input
+                  id="weaponApInput"
+                  class="tiny"
+                  type="number"
+                  step="1"
+                  placeholder="AP"
+                />
+                <input id="weaponRofInput" class="tiny" placeholder="ROF" />
+                <input
+                  id="weaponCapacityInput"
+                  class="tiny"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Cap"
+                />
+                <select id="weaponAmmoTypeSelect"></select>
+                <button id="addWeaponBtn" type="button">Add Weapon</button>
+                <p id="weaponCatalogPreview" class="preview"></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Ammo Inventory</h2>
+                <p>Reserve ammunition by type.</p>
+              </div>
+              <button
+                class="ghost"
+                type="button"
+                data-toggle-form="ammoAddForm"
+              >
+                Add Ammo
+              </button>
+            </div>
+            <div id="ammoReserves" class="grid ammo"></div>
+            <div id="ammoAddForm" class="add-panel collapsed-form hidden">
+              <h3>Add Ammunition</h3>
+              <div class="form">
+                <select class="full" id="ammoGearSelect"></select>
+                <input
+                  id="ammoLabelInput"
+                  placeholder="Custom ammo name or override"
+                />
+                <input
+                  id="ammoCountInput"
+                  class="tiny"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Qty"
+                />
+                <input
+                  id="ammoNoteInput"
+                  placeholder="Optional caliber or note"
+                />
+                <button id="addAmmoBtn" type="button">Add Ammo</button>
+                <p id="ammoGearPreview" class="preview"></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Vehicles</h2>
+                <p>Mounts, wagons, transport, and big-ticket equipment.</p>
+              </div>
+              <button
+                class="ghost"
+                type="button"
+                data-toggle-form="vehicleAddForm"
+              >
+                Add Vehicle
+              </button>
+            </div>
+            <div id="vehicleList" class="list"></div>
+            <div id="vehicleAddForm" class="add-panel collapsed-form hidden">
+              <h3>Add Vehicle</h3>
+              <div class="form">
+                <select class="full" id="vehicleCatalogSelect"></select>
+                <input
+                  id="vehicleNameInput"
+                  placeholder="Custom vehicle name or override"
+                />
+                <input
+                  id="vehicleQtyInput"
+                  class="tiny"
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="Qty"
+                />
+                <input id="vehicleNoteInput" placeholder="Optional note" />
+                <button id="addVehicleBtn" type="button">Add Vehicle</button>
+                <p id="vehicleCatalogPreview" class="preview"></p>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section id="arcanePanel" class="dashboard tab-panel hidden">
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <p class="eyebrow">Arcane</p>
+                <h2>Arcane Tools</h2>
+              </div>
+              <span id="arcaneSummary" class="pill"></span>
+            </div>
+            <div id="arcaneDetailSummary" class="list"></div>
+          </section>
+
+          <section class="card">
+            <h2>Power Points and Resources</h2>
+            <div id="resourcesList" class="list"></div>
+            <p class="muted">Power Points are stored as tracker resources.</p>
+          </section>
+
+          <section class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Known Powers</h2>
+                <p>
+                  Track active powers, costs, duration, trappings, and notes.
+                </p>
+              </div>
+              <button
+                class="ghost"
+                type="button"
+                data-toggle-form="powerAddForm"
+              >
+                Add Power
+              </button>
+            </div>
+            <div id="powersList" class="grid powers"></div>
+            <div id="powerAddForm" class="add-panel collapsed-form hidden">
+              <h3>Add or Update Power</h3>
+              <div class="inline-form">
+                <input id="powerNameInput" placeholder="Power name" />
+                <input id="powerCostInput" class="tiny" placeholder="Cost" />
+                <input id="powerDurationInput" placeholder="Duration" />
+                <input
+                  id="powerTrappingInput"
+                  placeholder="Trapping, device, or manifestation"
+                />
+                <input id="powerNotesInput" placeholder="Notes" />
+                <button id="addPowerBtn" type="button">Add Power</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="hucksterDealPanel" class="card wide hidden">
+            <h2>Huckster: Dealing with the Devil</h2>
             <p class="muted">
               Temporary deal points stay separate from normal Power Points.
             </p>
@@ -232,221 +606,41 @@
                 <textarea id="hucksterNotes"></textarea>
               </label>
             </div>
-          </div>
+          </section>
+
+          <section class="card wide">
+            <h2>Arcane Reminders</h2>
+            <div id="arcaneRemindersList" class="list"></div>
+          </section>
         </section>
 
-        <section class="card wide">
-          <div class="section-title">
-            <div>
-              <h2>Armor</h2>
-              <p>Track purchased armor by location.</p>
-            </div>
-            <span id="armorStrengthPill" class="pill"></span>
-          </div>
-          <div id="armorLocationList" class="grid armor-locs"></div>
-          <div id="armorInventoryList" class="list"></div>
-          <div class="add-panel">
-            <h3>Add Armor</h3>
-            <div class="form">
-              <select class="full" id="armorCatalogSelect"></select>
-              <input
-                id="armorNameInput"
-                placeholder="Custom armor name or override"
-              />
-              <input
-                id="armorCountInput"
-                class="tiny"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Qty"
-              />
-              <input
-                id="armorValueInput"
-                class="tiny"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="+"
-              />
-              <select id="armorLocationSelect"></select>
-              <button id="addArmorBtn" type="button">Add Armor</button>
-              <p id="armorCatalogPreview" class="preview"></p>
-            </div>
-          </div>
-        </section>
+        <section id="notesPanel" class="dashboard tab-panel hidden">
+          <section class="card wide">
+            <h2>Session Notes</h2>
+            <textarea
+              id="notesArea"
+              placeholder="NPCs, clues, promises, debts, poker hands, curses, weird sightings..."
+            ></textarea>
+          </section>
 
-        <section class="card wide">
-          <div class="section-title">
-            <div>
-              <h2>Weapons and Ammo</h2>
-              <p>
-                Loaded rounds are tracked separately from reserve ammunition.
-              </p>
-            </div>
-            <span id="weaponStrengthPill" class="pill"></span>
-          </div>
+          <section class="card wide">
+            <h2>Import Warnings</h2>
+            <div id="importWarningsList" class="list"></div>
+          </section>
 
-          <div class="add-panel">
-            <h3>Add Weapon</h3>
-            <div class="form">
-              <select class="full" id="weaponCatalogSelect"></select>
-              <input
-                id="weaponNameInput"
-                placeholder="Custom weapon name or override"
-              />
-              <input
-                id="weaponQtyInput"
-                class="tiny"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Qty"
-              />
-              <input id="weaponDamageInput" placeholder="Damage" />
-              <input id="weaponRangeInput" placeholder="Range" />
-              <input
-                id="weaponApInput"
-                class="tiny"
-                type="number"
-                step="1"
-                placeholder="AP"
-              />
-              <input id="weaponRofInput" class="tiny" placeholder="ROF" />
-              <input
-                id="weaponCapacityInput"
-                class="tiny"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="Cap"
-              />
-              <select id="weaponAmmoTypeSelect"></select>
-              <button id="addWeaponBtn" type="button">Add Weapon</button>
-              <p id="weaponCatalogPreview" class="preview"></p>
-            </div>
-          </div>
+          <section class="card wide">
+            <h2>Reminders</h2>
+            <div id="remindersList" class="list"></div>
+          </section>
 
-          <div id="weaponList" class="grid weapons"></div>
-          <div id="ammoReserves" class="grid ammo"></div>
-
-          <div class="add-panel">
-            <h3>Add Ammunition</h3>
-            <div class="form">
-              <select class="full" id="ammoGearSelect"></select>
-              <input
-                id="ammoLabelInput"
-                placeholder="Custom ammo name or override"
-              />
-              <input
-                id="ammoCountInput"
-                class="tiny"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="Qty"
-              />
-              <input
-                id="ammoNoteInput"
-                placeholder="Optional caliber or note"
-              />
-              <button id="addAmmoBtn" type="button">Add Ammo</button>
-              <p id="ammoGearPreview" class="preview"></p>
-            </div>
-          </div>
-        </section>
-
-        <section class="card wide">
-          <div class="section-title">
-            <div>
-              <h2>Conditions</h2>
-              <p>Toggle common SWADE table states.</p>
-            </div>
-            <button class="ghost" id="clearTempConditionsBtn" type="button">
-              Clear Temporary
-            </button>
-          </div>
-          <div id="conditionsList" class="grid conditions"></div>
-        </section>
-
-        <section class="card wide">
-          <h2>Inventory</h2>
-          <p class="muted">
-            Add purchased gear, loot, trade goods, clues, or anything else that
-            needs quantity tracking.
-          </p>
-          <div class="add-panel">
-            <h3>Add Gear</h3>
-            <div class="form">
-              <select class="full" id="gearSelect"></select>
-              <input
-                id="inventoryNameInput"
-                placeholder="Custom item name or override"
-              />
-              <input
-                id="inventoryCountInput"
-                class="tiny"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="Qty"
-              />
-              <input id="inventoryNoteInput" placeholder="Optional note" />
-              <button id="addInventoryBtn" type="button">Add Gear</button>
-              <p id="gearPreview" class="preview"></p>
-            </div>
-          </div>
-          <div id="inventoryList" class="list"></div>
-        </section>
-
-        <section class="card wide">
-          <h2>Vehicles</h2>
-          <p class="muted">
-            Track purchased vehicles, mounts, transportation, and big-ticket
-            equipment separately from normal inventory.
-          </p>
-          <div class="add-panel">
-            <h3>Add Vehicle</h3>
-            <div class="form">
-              <select class="full" id="vehicleCatalogSelect"></select>
-              <input
-                id="vehicleNameInput"
-                placeholder="Custom vehicle name or override"
-              />
-              <input
-                id="vehicleQtyInput"
-                class="tiny"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Qty"
-              />
-              <input id="vehicleNoteInput" placeholder="Optional note" />
-              <button id="addVehicleBtn" type="button">Add Vehicle</button>
-              <p id="vehicleCatalogPreview" class="preview"></p>
-            </div>
-          </div>
-          <div id="vehicleList" class="list"></div>
-        </section>
-
-        <section class="card">
-          <h2>Consumables</h2>
-          <div id="consumablesList" class="list"></div>
-        </section>
-        <section class="card">
-          <h2>Edges and Hindrances</h2>
-          <div id="remindersList" class="list"></div>
-        </section>
-        <section class="card wide">
-          <h2>Session Notes</h2>
-          <textarea
-            id="notesArea"
-            placeholder="NPCs, clues, promises, debts, poker hands, curses, weird sightings..."
-          ></textarea>
+          <section class="card wide">
+            <h2>Background and Long-Form Text</h2>
+            <div id="longFormNotesList" class="list"></div>
+          </section>
         </section>
       </main>
 
-      <section id="creationPanel" class="creator hidden"></section>
+      <section id="creationPanel" class="creator tab-panel hidden"></section>
     </div>
 
     <template id="weaponTemplate">
@@ -459,9 +653,9 @@
           <span class="loaded"></span>
         </div>
         <div class="weapon-actions">
-          <button class="fire-btn" type="button">Fire 1</button>
+          <button class="fire-btn" type="button">Fire</button>
           <button class="load-btn" type="button">Load +1</button>
-          <button class="reload-btn" type="button">Reload/Fill</button>
+          <button class="reload-btn" type="button">Fill</button>
           <button class="unload-btn" type="button">Unload</button>
           <button class="remove-btn danger" type="button">Remove</button>
         </div>

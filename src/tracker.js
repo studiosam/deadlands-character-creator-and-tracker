@@ -29,6 +29,35 @@ const els = {
   spendMoneyBtn: $("#spendMoneyBtn"),
   resourcesList: $("#resourcesList"),
   addManualPowerPointsBtn: $("#addManualPowerPointsBtn"),
+  combatStatusResources: $("#combatStatusResources"),
+  combatArmorLocations: $("#combatArmorLocations"),
+  playPowerPointsCard: $("#playPowerPointsCard"),
+  playPowerPointsList: $("#playPowerPointsList"),
+  playResourcesCard: $("#playResourcesCard"),
+  playResourcesList: $("#playResourcesList"),
+  playActivePowersCard: $("#playActivePowersCard"),
+  playActivePowersList: $("#playActivePowersList"),
+  combatHucksterCard: $("#combatHucksterCard"),
+  combatHucksterHelper: $("#combatHucksterHelper"),
+  combatConsumablesCard: $("#combatConsumablesCard"),
+  combatConsumablesList: $("#combatConsumablesList"),
+  combatRemindersCard: $("#combatRemindersCard"),
+  combatRemindersList: $("#combatRemindersList"),
+  keyConditionsList: $("#keyConditionsList"),
+  playWeaponList: $("#playWeaponList"),
+  playAmmoReserves: $("#playAmmoReserves"),
+  characterSummaryName: $("#characterSummaryName"),
+  characterBasicsList: $("#characterBasicsList"),
+  attributesList: $("#attributesList"),
+  skillsList: $("#skillsList"),
+  edgesList: $("#edgesList"),
+  hindrancesList: $("#hindrancesList"),
+  characterDerivedDetails: $("#characterDerivedDetails"),
+  characterArcaneSummary: $("#characterArcaneSummary"),
+  arcaneDetailSummary: $("#arcaneDetailSummary"),
+  arcaneRemindersList: $("#arcaneRemindersList"),
+  importWarningsList: $("#importWarningsList"),
+  longFormNotesList: $("#longFormNotesList"),
   arcaneSummary: $("#arcaneSummary"),
   powersList: $("#powersList"),
   powerNameInput: $("#powerNameInput"),
@@ -161,15 +190,36 @@ function isAmmo(item) {
 }
 
 function isTrackedWeapon(weapon) {
-  return (
+  return Boolean(
     Number.isFinite(Number(weapon?.shotsMax)) &&
     Number(weapon.shotsMax) > 0 &&
-    weapon.ammoType
+    weapon.ammoType,
   );
 }
 
 function emptyState(text) {
   return `<p class="empty-state">${esc(text)}</p>`;
+}
+
+function displayNameFromKey(key) {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+function reminderMarkup(reminder) {
+  return `<article class="reminder"><div class="topline"><h3>${esc(reminder.name)}</h3><small>${esc(reminder.type)}</small></div><p>${esc(reminder.text)}</p></article>`;
+}
+
+function traitListMarkup(items, emptyText) {
+  return items.length
+    ? items
+        .map(
+          (item) =>
+            `<div class="row"><div><strong>${esc(item.name)}</strong>${item.meta ? `<span>${esc(item.meta)}</span>` : ""}${item.note ? `<span>${esc(item.note)}</span>` : ""}</div></div>`,
+        )
+        .join("")
+    : emptyState(emptyText);
 }
 
 function normalize(data) {
@@ -447,12 +497,16 @@ function render() {
     .filter(Boolean)
     .join(" ");
   els.woundsValue.textContent = character.damage.wounds;
-  els.woundPenalty.textContent = `Penalty ${-Math.min(character.damage.wounds, character.damage.maxWounds)}`;
+  const woundPenalty = Math.min(character.damage.wounds, character.damage.maxWounds);
+  els.woundPenalty.textContent = woundPenalty ? `Penalty -${woundPenalty}` : "";
+  els.woundPenalty.classList.toggle("hidden", !woundPenalty);
   els.woundsNote.textContent = character.damage.wounds
     ? "Apply wound penalty to affected trait rolls."
     : "Healthy";
   els.fatigueValue.textContent = character.damage.fatigue;
-  els.fatiguePenalty.textContent = `Penalty ${-Math.min(character.damage.fatigue, character.damage.maxFatigue)}`;
+  const fatiguePenalty = Math.min(character.damage.fatigue, character.damage.maxFatigue);
+  els.fatiguePenalty.textContent = fatiguePenalty ? `Penalty -${fatiguePenalty}` : "";
+  els.fatiguePenalty.classList.toggle("hidden", !fatiguePenalty);
   els.fatigueNote.textContent = character.damage.fatigue
     ? "Apply fatigue penalty to affected trait rolls."
     : "Fresh";
@@ -460,38 +514,668 @@ function render() {
   els.bennyStart.textContent = `Start ${character.bennies.starting}`;
   els.convictionValue.textContent = character.conviction;
 
-  const location = character.selectedArmorLocation || "best";
+  const location = "best";
+  character.selectedArmorLocation = "best";
   const armor = armorValue(location);
   character.derived.armor = armor;
   character.derived.toughness =
     (Number(character.derived.baseToughness) || 0) + armor;
   els.paceValue.textContent = character.derived.pace;
   els.parryValue.textContent = character.derived.parry;
-  els.toughnessValue.textContent = `${character.derived.toughness} (${armor})`;
-  els.armorSelect.innerHTML = `<option value="best">Best equipped armor</option>${ARMOR_LOCATIONS.map((item) => `<option value="${esc(item.id)}">${esc(item.label)}</option>`).join("")}`;
+  els.toughnessValue.textContent = `${character.derived.toughness} (+${armor})`;
+  els.armorSelect.innerHTML = `<option value="best">All equipped armor</option>`;
   els.armorSelect.value = location;
-  els.armorNote.textContent =
-    location === "best"
-      ? "Showing best equipped armor anywhere. Choose a location for hit-location checks."
-      : `${armorLabel(location)} armor bonus: +${armor}`;
+  els.armorNote.textContent = `Armor bonus: +${armor}`;
+  els.combatArmorLocations.innerHTML = ARMOR_LOCATIONS.filter(
+    (item) => !["best", "shield"].includes(item.id),
+  )
+    .map(
+      (item) =>
+        `<span><strong>${esc(item.label)}:</strong> +${armorValue(item.id)}</span>`,
+    )
+    .join("");
   els.armorStrengthPill.textContent = `Strength ${character.armorStrength}`;
   els.weaponStrengthPill.textContent = `Strength ${character.weaponStrength}`;
   els.moneyDisplay.textContent = money(character.moneyCents);
 
+  renderCharacterSummary();
   renderArmor();
   renderWeapons();
   renderAmmo();
   renderResources();
   renderPowers();
   renderHucksterDeal();
+  renderKeyConditions();
   renderConditions();
   renderConsumables();
   renderInventory();
   renderVehicles();
   renderReminders();
+  renderPlaySummary();
+  renderArcaneSummary();
+  renderNotesSummary();
 
   if (document.activeElement !== els.notesArea)
     els.notesArea.value = character.notes || "";
+}
+
+function renderCharacterSummary() {
+  els.characterSummaryName.textContent = character.name;
+  els.characterBasicsList.innerHTML = [
+    ["Rank", character.rank],
+    ["Ancestry", character.ancestry],
+    ["Concept", character.archetype],
+    ["Source", character.source || "Tracker"],
+  ]
+    .map(
+      ([label, value]) =>
+        `<div><span>${label}</span><strong>${esc(value || "—")}</strong></div>`,
+    )
+    .join("");
+
+  const attributes = Object.entries(character.attributes || {}).map(
+    ([name, die]) => ({
+      name: displayNameFromKey(name),
+      meta: die,
+    }),
+  );
+  els.attributesList.innerHTML = traitListMarkup(
+    attributes,
+    "No attributes recorded.",
+  );
+
+  const skills = (character.skills || []).map((skill) => ({
+    name: skill.name,
+    meta: skill.die || skill.value || "",
+    note: skill.notes || skill.linkedAttribute || "",
+  }));
+  els.skillsList.innerHTML = traitListMarkup(skills, "No skills recorded.");
+
+  const edges = (character.edges || [])
+    .filter((edge) => edge.name)
+    .map((edge) => ({
+      name: edge.name,
+      meta: edge.source || edge.requirements || "",
+      note: edge.notes || edge.text || "",
+    }));
+  els.edgesList.innerHTML = traitListMarkup(edges, "No Edges recorded.");
+
+  const hindrances = (character.hindrances || [])
+    .filter((hindrance) => hindrance.name)
+    .map((hindrance) => ({
+      name: hindrance.name,
+      meta: hindrance.severity || hindrance.points || "",
+      note: hindrance.notes || hindrance.text || "",
+    }));
+  els.hindrancesList.innerHTML = traitListMarkup(
+    hindrances,
+    "No Hindrances recorded.",
+  );
+
+  els.characterDerivedDetails.innerHTML = [
+    ["Pace", character.derived.pace],
+    ["Parry", character.derived.parry],
+    ["Base Toughness", character.derived.baseToughness],
+    ["Armor", character.derived.armor],
+    ["Total Toughness", character.derived.toughness],
+  ]
+    .map(
+      ([label, value]) =>
+        `<div><span>${label}</span><strong>${esc(value ?? "—")}</strong></div>`,
+    )
+    .join("");
+
+  const background = character.arcaneBackground;
+  const powerPoints = powerPointResource();
+  els.characterArcaneSummary.innerHTML = background
+    ? `<div class="row"><div><strong>${esc(background.name)}</strong><span>${esc(background.edgeName)} • ${esc(background.arcaneSkill)} (${esc(background.linkedAttribute)})</span>${powerPoints ? `<span>Power Points ${powerPoints.current} / ${powerPoints.max}</span>` : ""}</div></div>`
+    : powerPoints
+      ? `<div class="row"><div><strong>Manual Power Points</strong><span>${powerPoints.current} / ${powerPoints.max}</span><span>${esc(powerPoints.note || "")}</span></div></div>`
+      : emptyState("No Arcane Background or Power Points configured.");
+}
+
+function renderKeyConditions() {
+  const keys = [
+    "shaken",
+    "distracted",
+    "vulnerable",
+    "stunned",
+    "prone",
+    "bound",
+    "entangled",
+    "aiming",
+    "defending",
+    "theDrop",
+    "onHold",
+    "wildAttack",
+  ].filter((key) => key in character.conditions);
+  els.keyConditionsList.innerHTML = "";
+  keys.forEach((key) => {
+    const label = document.createElement("label");
+    label.className = `condition${character.conditions[key] ? " active" : ""}`;
+    label.innerHTML = `<input type="checkbox" ${character.conditions[key] ? "checked" : ""}><span>${esc(displayNameFromKey(key))}</span>`;
+    label.querySelector("input").onchange = (event) => {
+      character.conditions[key] = event.target.checked;
+      render();
+      save();
+    };
+    els.keyConditionsList.appendChild(label);
+  });
+}
+
+function renderPlaySummary() {
+  renderCombatWeapons();
+  renderCombatStatusResources();
+  renderCombatPowerPoints();
+
+  const activeResources = character.resources.filter(
+    (resource) =>
+      resource.id !== "power-points" &&
+      (resource.max > 0 || resource.current > 0),
+  );
+  els.playResourcesCard.classList.toggle("hidden", !activeResources.length);
+  renderResourceControls(els.playResourcesList, activeResources);
+
+  const showPowers = character.powers.length > 0;
+  els.playActivePowersCard.classList.toggle("hidden", !showPowers);
+  if (showPowers) renderCombatPowers();
+
+  renderCombatHuckster();
+  renderCombatConsumables();
+  renderCombatReminders();
+}
+
+function renderResourceControls(container, resources) {
+  container.innerHTML = "";
+  if (!resources.length) {
+    container.innerHTML = emptyState("No active combat resources.");
+    return;
+  }
+
+  resources.forEach((resource) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<div><strong>${esc(resource.name)}</strong><span>${resource.current} / ${resource.max || "—"}</span>${resource.source ? `<span>${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls"><button>&minus;</button><button>+</button><button>Reset</button></div>`;
+    const buttons = row.querySelectorAll("button");
+    buttons[0].onclick = () => {
+      resource.current = Math.max(0, resource.current - 1);
+      render();
+      save();
+    };
+    buttons[1].onclick = () => {
+      resource.current = resource.max
+        ? Math.min(resource.max, resource.current + 1)
+        : resource.current + 1;
+      render();
+      save();
+    };
+    buttons[2].onclick = () => {
+      resource.current = resource.max;
+      render();
+      save();
+    };
+    container.appendChild(row);
+  });
+}
+
+function recoverResource(resource, amount) {
+  resource.current = resource.max
+    ? Math.min(resource.max, resource.current + amount)
+    : resource.current + amount;
+  render();
+  save();
+}
+
+function appendPowerPointControls(
+  container,
+  resource,
+  { showName = false } = {},
+) {
+  const row = document.createElement("div");
+  row.className = "row";
+  const max = resource.max || "—";
+  const value = `${resource.current} / ${max}`;
+  row.innerHTML = `<div><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<span>${value}</span>` : "<span>Current / Max</span>"}${resource.source ? `<span>${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls resource-recovery-actions"><button data-recover="5" type="button">Rest +5</button><button data-recover="10" type="button">Rest +10</button><button data-recover="15" type="button">Rest +15</button><button data-recover="max" type="button">Max</button></div>`;
+  row.querySelectorAll("[data-recover]").forEach((button) => {
+    const atMax = Boolean(resource.max && resource.current >= resource.max);
+    button.disabled = atMax || (button.dataset.recover === "max" && !resource.max);
+    button.onclick = () => {
+      if (button.dataset.recover === "max") {
+        if (resource.max) {
+          resource.current = resource.max;
+          render();
+          save();
+        }
+        return;
+      }
+      recoverResource(resource, Number(button.dataset.recover));
+    };
+  });
+  container.appendChild(row);
+}
+
+function renderCombatStatusResources() {
+  const statuses = [
+    {
+      name: "Bleeding Out",
+      text: character.conditions.bleedingOut ? "Active" : "Clear",
+      active: character.conditions.bleedingOut,
+    },
+  ].filter((status) => status.active);
+
+  els.combatStatusResources.classList.toggle("hidden", !statuses.length);
+  els.combatStatusResources.innerHTML = [
+    ...statuses.map(
+      (status) =>
+        `<div class="row"><div><strong>${esc(status.name)}</strong><span>${esc(status.text)}</span></div></div>`,
+    ),
+  ].join("");
+}
+
+function renderCombatPowerPoints() {
+  const resources = character.resources.filter(
+    (resource) => resource.id === "power-points",
+  );
+  els.playPowerPointsCard.classList.toggle("hidden", !resources.length);
+  if (!resources.length) {
+    els.playPowerPointsList.innerHTML = "";
+    return;
+  }
+  els.playPowerPointsList.innerHTML = "";
+  resources.forEach((resource) =>
+    appendPowerPointControls(els.playPowerPointsList, resource),
+  );
+}
+
+function renderCombatWeapons() {
+  els.playWeaponList.innerHTML = "";
+  if (!character.weapons.length) {
+    els.playWeaponList.innerHTML = emptyState("No weapons tracked.");
+    return;
+  }
+
+  [...character.weapons]
+    .sort(
+      (left, right) =>
+        Number(isTrackedWeapon(right)) - Number(isTrackedWeapon(left)),
+    )
+    .forEach((weapon) => {
+      const reserve = weapon.ammoType ? character.ammo[weapon.ammoType] : null;
+      const tracked = isTrackedWeapon(weapon);
+      const article = document.createElement("article");
+      article.className = "weapon-card";
+      article.innerHTML = `<div class="topline"><div><h3>${esc(weapon.name)}</h3><p class="meta">Damage ${esc(weapon.damage || "—")} • Range ${esc(weapon.range || "—")} • AP ${esc(weapon.ap ?? "—")} • ROF ${esc(weapon.rof ?? "—")}</p></div><span class="loaded">${tracked ? `${weapon.shotsLoaded} / ${weapon.shotsMax}` : "No ammo"}</span></div>${tracked ? `<p class="muted">${esc(reserve?.label || "Ammo")} reserve: ${reserve?.count || 0}</p>` : '<p class="muted">Melee / no ammo tracking.</p>'}${weapon.notes ? `<p class="muted">${esc(weapon.notes)}</p>` : ""}${tracked ? '<div class="weapon-actions"><button class="fire-btn" type="button">Fire</button><button class="load-btn" type="button">Load +1</button><button class="reload-btn" type="button">Fill</button><button class="unload-btn" type="button">Unload</button></div>' : ""}`;
+
+      if (tracked) {
+        const [fire, load, reload, unload] = article.querySelectorAll("button");
+        const reserveCount = reserve?.count || 0;
+        fire.disabled = weapon.shotsLoaded <= 0;
+        load.disabled =
+          weapon.shotsLoaded >= weapon.shotsMax || reserveCount <= 0;
+        reload.disabled = load.disabled;
+        unload.disabled = weapon.shotsLoaded <= 0;
+        fire.onclick = () => {
+          weapon.shotsLoaded -= 1;
+          render();
+          save();
+        };
+        load.onclick = () => {
+          weapon.shotsLoaded += 1;
+          reserve.count -= 1;
+          render();
+          save();
+        };
+        reload.onclick = () => {
+          const amount = Math.min(
+            weapon.shotsMax - weapon.shotsLoaded,
+            reserve.count,
+          );
+          weapon.shotsLoaded += amount;
+          reserve.count -= amount;
+          render();
+          save();
+        };
+        unload.onclick = () => {
+          reserve.count += weapon.shotsLoaded;
+          weapon.shotsLoaded = 0;
+          render();
+          save();
+        };
+      }
+
+      els.playWeaponList.appendChild(article);
+    });
+}
+
+function powerCost(power) {
+  const match = String(power.baseCost || "").match(/\d+/);
+  const cost = match ? Math.floor(Number(match[0]) || 0) : 0;
+  return Math.max(0, cost);
+}
+
+function parsePowerModifier(modifier) {
+  if (typeof modifier === "string") {
+    const match = modifier.match(/^\s*(.+?)\s*\(\s*([^)]+)\s*\)\s*:?\s*(.*)$/);
+    const costs = match
+      ? (match[2].match(/[+-]?\d+/g) || []).map((cost) =>
+          Math.max(0, Math.floor(Number(cost) || 0)),
+        )
+      : [];
+    return {
+      name: match ? match[1].trim() : modifier.trim(),
+      cost: costs[0] || 0,
+      costs,
+      description: match ? match[3].trim() : "",
+    };
+  }
+  const cost = Math.max(
+    0,
+    Math.floor(Number(modifier.cost ?? modifier.powerPoints ?? 0) || 0),
+  );
+  return {
+    name: modifier.name || "Modifier",
+    cost,
+    costs: [cost],
+    description: modifier.description || modifier.notes || "",
+  };
+}
+
+function comparePowerCosts(left, right) {
+  return (
+    left.cost - right.cost ||
+    Number(!left.base) - Number(!right.base) ||
+    String(left.name || "").localeCompare(String(right.name || ""))
+  );
+}
+
+function comparePowers(left, right) {
+  return (
+    powerCost(left) - powerCost(right) ||
+    String(left.name || "").localeCompare(String(right.name || ""))
+  );
+}
+
+function powerCastOptions(power) {
+  const baseCost = powerCost(power);
+  const baseName = power.modifiers?.length ? "Basic" : "Cast";
+  const options = [
+    {
+      name: baseName,
+      cost: baseCost,
+      description: power.notes || "",
+      base: true,
+    },
+  ];
+  (power.modifiers || []).forEach((modifier) => {
+    const parsed = parsePowerModifier(modifier);
+    const costs = parsed.costs.length ? parsed.costs : [parsed.cost];
+    costs.forEach((cost) => {
+      options.push({
+        ...parsed,
+        name: parsed.name,
+        cost: baseCost + cost,
+        modifierCost: cost,
+      });
+    });
+  });
+  return options.sort(comparePowerCosts);
+}
+
+function powerOptionButtonMarkup(option, index, powerPoints) {
+  return `<button class="cast-option-btn" type="button" data-power-option="${index}">${esc(option.name)}${powerPoints || option.cost ? ` (${option.cost} PP)` : ""}</button>`;
+}
+
+function powerDescriptionMarkup(power, castOptions, powerPoints) {
+  const parts = [];
+  if (power.notes) {
+    parts.push(`<p>${esc(power.notes)}</p>`);
+  } else {
+    parts.push(
+      '<p class="muted">No description imported yet. Add what this power does in the Arcane tab notes.</p>',
+    );
+  }
+  if (power.trapping) {
+    parts.push(
+      `<p class="muted"><strong>Trapping:</strong> ${esc(power.trapping)}</p>`,
+    );
+  }
+  const baseOption = castOptions[0];
+  const modifierOptions = castOptions.slice(1);
+  if (baseOption) {
+    parts.push(
+      `<div class="power-primary-option${modifierOptions.length ? " has-following-options" : ""}">${powerOptionButtonMarkup(baseOption, 0, powerPoints)}</div>`,
+    );
+  }
+  if (modifierOptions.length) {
+    const modifiers = modifierOptions
+      .map(
+        (option, index) =>
+          `<li>${powerOptionButtonMarkup(option, index + 1, powerPoints)}${option.description ? `<span>${esc(option.description)}</span>` : ""}</li>`,
+      )
+      .join("");
+    parts.push(`<ul class="power-modifiers">${modifiers}</ul>`);
+  }
+  return `<div class="power-description">${parts.join("")}</div>`;
+}
+
+function renderPowerCard(power, { includeDelete = false } = {}) {
+  const powerPoints = powerPointResource();
+  const castOptions = powerCastOptions(power);
+  const article = document.createElement("article");
+  article.className = `weapon-card power-card${power.active ? " active" : ""}`;
+  const rankMeta = power.rank ? ` | Rank ${esc(power.rank)}` : "";
+  const deleteButtonMarkup = includeDelete
+    ? '<button class="delete-small delete-power-btn" type="button">×</button>'
+    : "";
+  const managementButtonsMarkup = deleteButtonMarkup;
+  const managementMarkup = deleteButtonMarkup
+    ? `<div class="weapon-actions power-actions">${managementButtonsMarkup}</div>`
+    : "";
+  article.innerHTML = `<div class="topline"><div><h3>${esc(power.name || "Unnamed power")}</h3><p class="meta">Cost ${esc(power.baseCost || "—")} | Duration ${esc(power.duration || "—")}${rankMeta}</p></div><span class="loaded">${power.active ? "Active" : "Ready"}</span></div>${powerDescriptionMarkup(power, castOptions, powerPoints)}${managementMarkup}`;
+
+  const optionButtons = article.querySelectorAll(".cast-option-btn");
+  const deleteButton = article.querySelector(".delete-power-btn");
+
+  optionButtons.forEach((button) => {
+    const option = castOptions[Number(button.dataset.powerOption)];
+    button.disabled = Boolean(powerPoints && option.cost > powerPoints.current);
+    button.title =
+      powerPoints && option.cost > powerPoints.current
+        ? "Not enough Power Points"
+        : option.description || `Spend ${option.cost} Power Points`;
+    button.onclick = () => {
+      if (powerPoints && option.cost) {
+        powerPoints.current = Math.max(0, powerPoints.current - option.cost);
+      }
+      render();
+      save();
+    };
+  });
+
+  if (deleteButton) {
+    deleteButton.onclick = () => {
+      character.powers = character.powers.filter(
+        (item) => item.id !== power.id,
+      );
+      render();
+      save();
+    };
+  }
+
+  return article;
+}
+
+function renderCombatPowers() {
+  els.playActivePowersList.innerHTML = "";
+  if (!character.powers.length) {
+    els.playActivePowersList.innerHTML = emptyState("No known powers.");
+    return;
+  }
+
+  [...character.powers].sort(comparePowers).forEach((power) => {
+    els.playActivePowersList.appendChild(renderPowerCard(power));
+  });
+}
+
+function renderCombatHuckster() {
+  const deal = character.hucksterDeal;
+  els.combatHucksterCard.classList.toggle("hidden", !deal?.enabled);
+  if (!deal?.enabled) return;
+
+  const fields = [
+    ["selectedPower", "Selected power", "text"],
+    ["requiredPowerPoints", "Required PP", "number"],
+    ["anteBennySpent", "Ante Benny spent", "checkbox"],
+    ["gamblingRollResult", "Gambling result", "text"],
+    ["cardsDrawn", "Cards drawn", "number"],
+    ["pokerHand", "Poker hand", "text"],
+    ["temporaryPowerPoints", "Temporary PP", "number"],
+    ["shortagePenalty", "Shortage penalty", "number"],
+    ["leftoverPowerPoints", "Leftover PP", "number"],
+    ["backfireTriggered", "Backfire", "checkbox"],
+    ["notes", "Notes", "text"],
+  ];
+  els.combatHucksterHelper.innerHTML = fields
+    .map(([field, label, type]) => {
+      if (type === "checkbox") {
+        return `<label class="checkline"><input type="checkbox" data-combat-huckster="${field}" ${deal[field] ? "checked" : ""}> ${label}</label>`;
+      }
+      return `<label>${label}<input data-combat-huckster="${field}" type="${type}" min="0" value="${esc(deal[field] ?? "")}"></label>`;
+    })
+    .join("");
+  els.combatHucksterHelper
+    .querySelectorAll("[data-combat-huckster]")
+    .forEach((input) => {
+      input.oninput = input.onchange = () => {
+        const field = input.dataset.combatHuckster;
+        updateHucksterDealField(
+          field,
+          input.type === "checkbox"
+            ? input.checked
+            : input.type === "number"
+              ? Math.max(0, Math.floor(Number(input.value) || 0))
+              : input.value,
+        );
+      };
+    });
+}
+
+function isCombatConsumable(item) {
+  if (/backpack|pack|bag|sack|pouch|container/i.test(item.name || ""))
+    return false;
+  if (item.combatUsable || item.pinToCombat) return true;
+  return /healing|unguent|elixir|restoration|dynamite|explosive|grenade|bomb|oil|tonic|potion/i.test(
+    `${item.name || ""} ${item.unit || ""}`,
+  );
+}
+
+function renderCombatConsumables() {
+  const consumables = character.consumables
+    .filter((item) => item.count > 0 && isCombatConsumable(item))
+    .map((item) => ({ item, source: character.consumables }));
+  const inventory = character.inventory
+    .filter((item) => item.count > 0 && isCombatConsumable(item))
+    .map((item) => ({ item, source: character.inventory }));
+  const entries = [...consumables, ...inventory];
+
+  els.combatConsumablesCard.classList.toggle("hidden", !entries.length);
+  els.combatConsumablesList.innerHTML = "";
+  if (!entries.length) return;
+
+  entries.forEach(({ item }) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<div><strong>${esc(item.name)}</strong><span>${item.count} ${esc(item.unit || "available")}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls"><button>Use</button></div>`;
+    row.querySelector("button").onclick = () => {
+      item.count = Math.max(0, item.count - 1);
+      render();
+      save();
+    };
+    els.combatConsumablesList.appendChild(row);
+  });
+}
+
+function renderCombatReminders() {
+  const reminders = [];
+  character.powers
+    .filter((power) => power.active && power.notes)
+    .forEach((power) =>
+      reminders.push({
+        type: "Active Power",
+        name: power.name || "Power",
+        text: power.notes,
+      }),
+    );
+  Object.entries(character.conditions)
+    .filter(([, active]) => active)
+    .forEach(([key]) =>
+      reminders.push({
+        type: "Condition",
+        name: displayNameFromKey(key),
+        text: "Remember current condition effects.",
+      }),
+    );
+  character.reminders
+    .filter((reminder) =>
+      /arcane|backlash|malfunction|huckster|backfire|combat|weapon|power/i.test(
+        `${reminder.type} ${reminder.name} ${reminder.text}`,
+      ),
+    )
+    .forEach((reminder) => reminders.push(reminder));
+  if (character.hucksterDeal?.backfireTriggered) {
+    reminders.push({
+      type: "Huckster",
+      name: "Backfire",
+      text: "Backfire is marked on the current deal.",
+    });
+  }
+
+  els.combatRemindersCard.classList.toggle("hidden", !reminders.length);
+  els.combatRemindersList.innerHTML = reminders.length
+    ? reminders.map(reminderMarkup).join("")
+    : "";
+}
+
+function renderArcaneSummary() {
+  const background = character.arcaneBackground;
+  const powerPoints = powerPointResource();
+  els.arcaneDetailSummary.innerHTML = background
+    ? `<div class="row"><div><strong>${esc(background.name)}</strong><span>${esc(background.edgeName)} • ${esc(background.arcaneSkill)} (${esc(background.linkedAttribute)})</span><span>${esc(background.edgeFamily || "")}</span></div></div>`
+    : powerPoints
+      ? `<div class="row"><div><strong>Manual Power Points</strong><span>${powerPoints.current} / ${powerPoints.max}</span><span>${esc(powerPoints.note || "")}</span></div></div>`
+      : emptyState("No arcane tools configured for this character.");
+
+  const reminders = character.reminders.filter((reminder) =>
+    /arcane|backlash|malfunction|huckster|power/i.test(
+      `${reminder.type} ${reminder.name} ${reminder.text}`,
+    ),
+  );
+  els.arcaneRemindersList.innerHTML = reminders.length
+    ? reminders.map(reminderMarkup).join("")
+    : emptyState("No arcane reminders.");
+}
+
+function renderNotesSummary() {
+  const importWarnings = character.reminders.filter(
+    (reminder) => reminder.type === "Import Warning",
+  );
+  els.importWarningsList.innerHTML = importWarnings.length
+    ? importWarnings.map(reminderMarkup).join("")
+    : emptyState("No import warnings.");
+
+  const longForm = [
+    ["Description", character.description],
+    ["Background", character.background],
+    ["Worst Nightmare", character.worstNightmare],
+  ].filter(([, value]) => value);
+  els.longFormNotesList.innerHTML = longForm.length
+    ? longForm
+        .map(
+          ([label, value]) =>
+            `<article class="reminder"><div class="topline"><h3>${esc(label)}</h3></div><p>${esc(value)}</p></article>`,
+        )
+        .join("")
+    : emptyState("No long-form character text recorded.");
 }
 
 function renderArmor() {
@@ -516,7 +1200,7 @@ function renderArmor() {
   character.armorInventory.forEach((armor) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${esc(armor.name)}</strong><span>+${armor.armor} • ${armorLabel(armor.location)} • Min Str ${esc(armor.minStr)} • Weight ${wt(armor.weight)} • Cost ${armor.costCents !== undefined ? money(armor.costCents) : "—"} each</span>${armor.note ? `<span>${esc(armor.note)}</span>` : ""}</div><div class="controls"><button>${armor.equipped ? "Equipped" : "Equip"}</button><button>−</button><strong>${armor.count}</strong><button>+</button><button class="delete-small">×</button></div>`;
+    row.innerHTML = `<div><strong>${esc(armor.name)}</strong><span>+${armor.armor} • ${armorLabel(armor.location)} • Min Str ${esc(armor.minStr)} • Weight ${wt(armor.weight)} • Cost ${armor.costCents !== undefined ? money(armor.costCents) : "—"} each</span>${armor.note ? `<span>${esc(armor.note)}</span>` : ""}</div><div class="controls"><button>${armor.equipped ? "Equipped" : "Equip"}</button><button>&minus;</button><strong>${armor.count}</strong><button>+</button><button class="delete-small">×</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
       armor.equipped = !armor.equipped;
@@ -629,7 +1313,7 @@ function renderAmmo() {
   Object.entries(character.ammo).forEach(([key, ammo]) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${ammo.count}</strong><span>${esc(ammo.label)}</span></div><div class="controls"><button>−</button><button>+</button></div>`;
+    row.innerHTML = `<div><strong>${ammo.count}</strong><span>${esc(ammo.label)}</span></div><div class="controls"><button>&minus;</button><button>+</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
       ammo.count = Math.max(0, ammo.count - 1);
@@ -656,9 +1340,14 @@ function renderResources() {
   }
 
   character.resources.forEach((resource) => {
+    if (resource.id === "power-points") {
+      appendPowerPointControls(els.resourcesList, resource, { showName: true });
+      return;
+    }
+
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${esc(resource.name)}</strong><span>${resource.current} / ${resource.max || "—"}</span>${resource.source ? `<span>Source: ${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls"><button>−</button><button>+</button><button>Reset</button></div>`;
+    row.innerHTML = `<div><strong>${esc(resource.name)}</strong><span>${resource.current} / ${resource.max || "—"}</span>${resource.source ? `<span>Source: ${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls"><button>&minus;</button><button>+</button><button>Reset</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
       resource.current = Math.max(0, resource.current - 1);
@@ -699,41 +1388,8 @@ function renderPowers() {
     return;
   }
 
-  character.powers.forEach((power) => {
-    const article = document.createElement("article");
-    article.className = `weapon-card power-card${power.active ? " active" : ""}`;
-    article.innerHTML = `<div class="topline"><h3>${esc(power.name || "Unnamed power")}</h3><small>${power.active ? "Active" : "Inactive"}</small></div><p class="muted">Cost ${esc(power.baseCost || "—")} • Duration ${esc(power.duration || "—")}</p>${power.trapping ? `<p>${esc(power.trapping)}</p>` : ""}${power.notes ? `<p class="muted">${esc(power.notes)}</p>` : ""}<div class="controls"><button>${power.active ? "Mark Inactive" : "Mark Active"}</button><button>Spend</button><button>Refund</button><button class="delete-small">×</button></div>`;
-    const buttons = article.querySelectorAll("button");
-    buttons[0].onclick = () => {
-      power.active = !power.active;
-      render();
-      save();
-    };
-    buttons[1].onclick = () => {
-      const cost = Math.max(0, Math.floor(Number(power.baseCost) || 0));
-      if (cost && powerPoints)
-        powerPoints.current = Math.max(0, powerPoints.current - cost);
-      render();
-      save();
-    };
-    buttons[2].onclick = () => {
-      const cost = Math.max(0, Math.floor(Number(power.baseCost) || 0));
-      if (cost && powerPoints) {
-        powerPoints.current = powerPoints.max
-          ? Math.min(powerPoints.max, powerPoints.current + cost)
-          : powerPoints.current + cost;
-      }
-      render();
-      save();
-    };
-    buttons[3].onclick = () => {
-      character.powers = character.powers.filter(
-        (item) => item.id !== power.id,
-      );
-      render();
-      save();
-    };
-    els.powersList.appendChild(article);
+  [...character.powers].sort(comparePowers).forEach((power) => {
+    els.powersList.appendChild(renderPowerCard(power, { includeDelete: true }));
   });
 }
 
@@ -762,6 +1418,7 @@ function renderHucksterDeal() {
 }
 
 function renderConditions() {
+  if (!els.conditionsList) return;
   els.conditionsList.innerHTML = "";
   Object.entries(character.conditions).forEach(([key, value]) => {
     const label = document.createElement("label");
@@ -785,7 +1442,7 @@ function counterList(container, items, unitFn, emptyText) {
   items.forEach((item) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${esc(item.name)}</strong>${unitFn(item)}</div><div class="controls"><button>−</button><strong>${item.count}</strong><button>+</button><button class="delete-small">×</button></div>`;
+    row.innerHTML = `<div><strong>${esc(item.name)}</strong>${unitFn(item)}</div><div class="controls"><button>&minus;</button><strong>${item.count}</strong><button>+</button><button class="delete-small">×</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
       item.count = Math.max(0, item.count - 1);
@@ -836,14 +1493,12 @@ function renderVehicles() {
 }
 
 function renderReminders() {
-  els.remindersList.innerHTML = character.reminders.length
-    ? character.reminders
-        .map(
-          (reminder) =>
-            `<article class="reminder"><div class="topline"><h3>${esc(reminder.name)}</h3><small>${esc(reminder.type)}</small></div><p>${esc(reminder.text)}</p></article>`,
-        )
-        .join("")
-    : emptyState("No Edges or Hindrances recorded.");
+  const reminders = character.reminders.filter(
+    (reminder) => reminder.type !== "Import Warning",
+  );
+  els.remindersList.innerHTML = reminders.length
+    ? reminders.map(reminderMarkup).join("")
+    : emptyState("No reminders recorded.");
 }
 
 function addInventory() {
@@ -1154,6 +1809,10 @@ function exportJson(name, data) {
 
 document.addEventListener("click", (event) => {
   if (event.target?.dataset?.action) action(event.target.dataset.action);
+  if (event.target?.dataset?.toggleForm) {
+    const form = document.getElementById(event.target.dataset.toggleForm);
+    form?.classList.toggle("hidden");
+  }
 });
 
 els.armorSelect.onchange = () => {

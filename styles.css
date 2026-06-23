@@ -282,6 +282,22 @@ h3 {
   margin-top: 1rem;
 }
 
+.tab-panel {
+  animation: fadeIn 140ms ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .hidden {
   display: none !important;
 }
@@ -309,6 +325,104 @@ h3 {
   grid-column: 1 / -1;
 }
 
+.compact-card {
+  grid-column: span 4;
+}
+
+.play-state {
+  grid-column: span 8;
+}
+
+.play-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.combat-command {
+  grid-column: 1 / -1;
+}
+
+.combat-command-grid {
+  align-items: start;
+  display: grid;
+  grid-template-columns: minmax(280px, 5fr) minmax(340px, 6fr);
+  gap: 1rem;
+}
+
+.combat-status-grid {
+  align-items: start;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.combat-defense-panel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  padding: 0.85rem;
+}
+
+.compact-derived {
+  margin: 0.5rem 0;
+}
+
+.compact-derived strong {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.derived > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.derived.compact-derived > div {
+  justify-content: flex-start;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.derived > div span::after {
+  content: ":";
+}
+
+.combat-conditions-card .conditions {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.combat-inline {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 1rem;
+}
+
+.combat-resource-controls {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.combat-armor-locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.65rem 0;
+}
+
+.combat-armor-locations span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.16);
+  padding: 0.25rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.combat-armor-locations strong {
+  color: var(--text);
+}
+
 .section-title,
 .topline,
 .row,
@@ -321,6 +435,32 @@ h3 {
 
 .section-title {
   align-items: flex-start;
+}
+
+.combat-status-grid .topline {
+  align-items: center;
+  flex-direction: column;
+  gap: 0.25rem;
+  justify-content: center;
+  min-height: 0;
+  text-align: center;
+}
+
+.combat-status-grid .topline h3 {
+  margin: 0;
+}
+
+.combat-status-grid .topline .pill {
+  position: static;
+}
+
+.combat-status-grid .block {
+  align-content: start;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  position: relative;
+  text-align: center;
 }
 
 .pill,
@@ -375,6 +515,7 @@ h3 {
 }
 
 .weapons,
+.powers,
 .ammo,
 .conditions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -424,11 +565,12 @@ h3 {
 
 .value {
   display: block;
-  margin: 0.35rem 0;
+  margin: 0;
   color: var(--accent-strong);
-  font-size: 2.35rem;
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
   font-weight: 900;
   letter-spacing: -0.04em;
+  text-align: center;
 }
 
 .controls {
@@ -443,18 +585,47 @@ h3 {
   padding: 0;
 }
 
+.resource-recovery-actions {
+  justify-content: flex-start;
+}
+
+.resource-recovery-actions button {
+  width: auto;
+  min-width: 5rem;
+  height: auto;
+  min-height: 2.2rem;
+  padding: 0.45rem 0.75rem;
+}
+
 .step {
   align-items: center;
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr) 2.2rem;
+  width: 100%;
+}
+
+.stat-step {
+  margin-top: 0;
+}
+
+.stat-step .value {
+  line-height: 1;
+}
+
+.combat-status-grid .muted {
+  margin: 0;
+  text-align: center;
 }
 
 .step strong,
 .controls strong {
-  min-width: 2.25rem;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.2);
   padding: 0.55rem 0.68rem;
   text-align: center;
+  white-space: nowrap;
 }
 
 .money {
@@ -506,6 +677,10 @@ h3 {
   background: rgba(0, 0, 0, 0.18);
 }
 
+.collapsed-form {
+  margin-top: 0.8rem;
+}
+
 .form .full,
 .preview,
 .creator-wide {
@@ -533,7 +708,79 @@ h3 {
 }
 
 .weapon-actions button {
-  flex: 1 1 8rem;
+  flex: 1 1 5.5rem;
+  padding-inline: 0.75rem;
+}
+
+.power-description {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.power-description p {
+  margin: 0;
+}
+
+.power-description strong {
+  color: var(--text);
+}
+
+.power-modifiers {
+  display: grid;
+  gap: 0.55rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.power-modifiers li {
+  align-items: start;
+  display: grid;
+  grid-template-columns: minmax(12.5rem, 12.5rem) minmax(0, 1fr);
+  gap: 0.65rem;
+}
+
+.power-modifiers li + li {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.55rem;
+}
+
+.power-modifiers span {
+  padding-top: 0;
+}
+
+.power-primary-option {
+  display: grid;
+  grid-template-columns: minmax(12.5rem, 12.5rem) minmax(0, 1fr);
+  margin-top: 0.85rem;
+}
+
+.power-primary-option.has-following-options {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.55rem;
+}
+
+.power-primary-option button,
+.power-modifiers button {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 2.45rem;
+  padding-inline: 0.75rem;
+  text-align: center;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+  line-height: 1.15;
+  width: 100%;
+}
+
+.power-actions {
+  align-items: stretch;
 }
 
 .meta,
@@ -641,12 +888,17 @@ h3 {
   }
 
   .card,
-  .creator-section {
+  .creator-section,
+  .compact-card,
+  .play-state {
     grid-column: 1 / -1;
   }
 
   .stats,
+  .play-stats,
+  .combat-status-grid,
   .weapons,
+  .powers,
   .ammo,
   .conditions,
   .armor-locs {
@@ -687,7 +939,10 @@ h3 {
   }
 
   .stats,
+  .play-stats,
+  .combat-status-grid,
   .weapons,
+  .powers,
   .ammo,
   .conditions,
   .derived,
@@ -695,6 +950,22 @@ h3 {
   .form,
   .creator-grid {
     grid-template-columns: 1fr;
+  }
+
+  .combat-command-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .power-modifiers li {
+    grid-template-columns: 1fr;
+  }
+
+  .power-primary-option {
+    grid-template-columns: 1fr;
+  }
+
+  .power-modifiers span {
+    padding-top: 0;
   }
 
   .loaded,
