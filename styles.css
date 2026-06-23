@@ -1087,12 +1087,25 @@ h3 {
 
   .combat-conditions-card .conditions,
   .conditions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .condition {
+    align-items: center;
+    flex-direction: row;
     min-height: 2.75rem;
+    overflow: hidden;
     padding: 0.65rem;
+  }
+
+  .condition input {
+    flex: 0 0 auto;
+  }
+
+  .condition span {
+    min-width: 0;
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   .combat-armor-locations {
