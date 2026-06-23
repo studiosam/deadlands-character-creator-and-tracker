@@ -1,3 +1,74 @@
+const AMMO_CALIBERS_BY_CATALOG_ID = {
+  "pistol-ammunition-small-22-38-caliber": [".22", ".32", ".36", ".38"],
+  "pistol-ammunition-large-40-50-caliber": [".40", ".41", ".44", ".45", ".50"],
+  "rifle-ammunition-small-38-44-caliber": [".38", ".40", ".44", ".45"],
+  "rifle-ammunition-large-50-caliber": [".50", ".56", ".57", ".58"],
+};
+
+const AMMO_KIND_BY_CATALOG_ID = {
+  "pistol-ammunition-small-22-38-caliber": "pistol",
+  "pistol-ammunition-large-40-50-caliber": "pistol",
+  "rifle-ammunition-small-38-44-caliber": "rifle",
+  "rifle-ammunition-large-50-caliber": "rifle",
+};
+
+const LEGACY_AMMO_KEY_DEFAULTS = {
+  pistolLarge: { kind: "pistol", caliber: ".44" },
+  "pistol-ammunition-large-40-50-caliber": { kind: "pistol", caliber: ".44" },
+  "pistol-ammunition-small-22-38-caliber": { kind: "pistol", caliber: ".38" },
+  rifleSmall: { kind: "rifle", caliber: ".44" },
+  "rifle-ammunition-small-38-44-caliber": { kind: "rifle", caliber: ".44" },
+  "rifle-ammunition-large-50-caliber": { kind: "rifle", caliber: ".50" },
+};
+
+const STRENGTH_DIE_STEPS = ["d4", "d6", "d8", "d10", "d12"];
+
+const CONSUMABLE_GEAR_CONVERSIONS = {
+  "matches-box-100": {
+    id: "matches",
+    name: "Matches",
+    unit: "matches",
+    multiplier: 100,
+    unitsLabel: "Matches per box",
+  },
+  "trail-rations-per-day": {
+    id: "trail-rations",
+    name: "Trail rations",
+    unit: "days",
+    multiplier: 1,
+  },
+  "lantern-oil-per-gallon": {
+    id: "lantern-oil",
+    name: "Lantern oil",
+    unit: "uses",
+    multiplier: 1,
+  },
+  "restoration-elixir": {
+    id: "restoration-elixir",
+    name: "Restoration elixir",
+    unit: "dose",
+    multiplier: 1,
+  },
+  "tobacco-smoking-pouch": {
+    id: "tobacco-smoking",
+    name: "Smoking tobacco",
+    unit: "pouches",
+    multiplier: 1,
+  },
+  "tobacco-chewing-tin": {
+    id: "tobacco-chewing",
+    name: "Chewing tobacco",
+    unit: "tins",
+    multiplier: 1,
+  },
+  "liquid-courage": {
+    id: "liquid-courage",
+    name: "Liquid courage",
+    unit: "dose",
+    multiplier: 1,
+  },
+};
+
 let character = loadCharacter();
 let saveTimer = null;
 
@@ -31,6 +102,9 @@ const els = {
   addManualPowerPointsBtn: $("#addManualPowerPointsBtn"),
   combatStatusResources: $("#combatStatusResources"),
   combatArmorLocations: $("#combatArmorLocations"),
+  combatPenaltyTotal: $("#combatPenaltyTotal"),
+  combatPenaltySummary: $("#combatPenaltySummary"),
+  combatPenaltyBreakdown: $("#combatPenaltyBreakdown"),
   playPowerPointsCard: $("#playPowerPointsCard"),
   playPowerPointsList: $("#playPowerPointsList"),
   playResourcesCard: $("#playResourcesCard"),
@@ -89,15 +163,20 @@ const els = {
   weaponRofInput: $("#weaponRofInput"),
   weaponCapacityInput: $("#weaponCapacityInput"),
   weaponAmmoTypeSelect: $("#weaponAmmoTypeSelect"),
+  weaponAddForm: $("#weaponAddForm"),
   addWeaponBtn: $("#addWeaponBtn"),
+  cancelWeaponAddBtn: $("#cancelWeaponAddBtn"),
   weaponCatalogPreview: $("#weaponCatalogPreview"),
   weaponTemplate: $("#weaponTemplate"),
   ammoReserves: $("#ammoReserves"),
   ammoGearSelect: $("#ammoGearSelect"),
   ammoLabelInput: $("#ammoLabelInput"),
   ammoCountInput: $("#ammoCountInput"),
+  ammoCaliberSelect: $("#ammoCaliberSelect"),
   ammoNoteInput: $("#ammoNoteInput"),
+  ammoAddForm: $("#ammoAddForm"),
   addAmmoBtn: $("#addAmmoBtn"),
+  cancelAmmoAddBtn: $("#cancelAmmoAddBtn"),
   ammoGearPreview: $("#ammoGearPreview"),
   armorLocationList: $("#armorLocationList"),
   armorInventoryList: $("#armorInventoryList"),
@@ -106,7 +185,9 @@ const els = {
   armorCountInput: $("#armorCountInput"),
   armorValueInput: $("#armorValueInput"),
   armorLocationSelect: $("#armorLocationSelect"),
+  armorAddForm: $("#armorAddForm"),
   addArmorBtn: $("#addArmorBtn"),
+  cancelArmorAddBtn: $("#cancelArmorAddBtn"),
   armorCatalogPreview: $("#armorCatalogPreview"),
   conditionsList: $("#conditionsList"),
   clearTempConditionsBtn: $("#clearTempConditionsBtn"),
@@ -115,21 +196,34 @@ const els = {
   gearSelect: $("#gearSelect"),
   inventoryNameInput: $("#inventoryNameInput"),
   inventoryCountInput: $("#inventoryCountInput"),
+  inventoryUnitsField: $("#inventoryUnitsField"),
+  inventoryUnitsLabel: $("#inventoryUnitsLabel"),
+  inventoryUnitsInput: $("#inventoryUnitsInput"),
   inventoryNoteInput: $("#inventoryNoteInput"),
+  gearAddForm: $("#gearAddForm"),
   addInventoryBtn: $("#addInventoryBtn"),
+  cancelInventoryAddBtn: $("#cancelInventoryAddBtn"),
   gearPreview: $("#gearPreview"),
   inventoryList: $("#inventoryList"),
   vehicleCatalogSelect: $("#vehicleCatalogSelect"),
   vehicleNameInput: $("#vehicleNameInput"),
   vehicleQtyInput: $("#vehicleQtyInput"),
   vehicleNoteInput: $("#vehicleNoteInput"),
+  vehicleAddForm: $("#vehicleAddForm"),
   addVehicleBtn: $("#addVehicleBtn"),
+  cancelVehicleAddBtn: $("#cancelVehicleAddBtn"),
   vehicleCatalogPreview: $("#vehicleCatalogPreview"),
   vehicleList: $("#vehicleList"),
   notesArea: $("#notesArea"),
   newSessionBtn: $("#newSessionBtn"),
+  headerToolsMenu: $("#headerToolsMenu"),
   exportBtn: $("#exportBtn"),
   importFile: $("#importFile"),
+  pasteImportBtn: $("#pasteImportBtn"),
+  pasteImportPanel: $("#pasteImportPanel"),
+  importJsonText: $("#importJsonText"),
+  confirmPasteImportBtn: $("#confirmPasteImportBtn"),
+  cancelPasteImportBtn: $("#cancelPasteImportBtn"),
   resetBtn: $("#resetBtn"),
 };
 
@@ -177,6 +271,15 @@ function optionList(items, placeholder, detail) {
   ].join("");
 }
 
+function byName(items) {
+  return [...items].sort((left, right) =>
+    left.name.localeCompare(right.name, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
+  );
+}
+
 function armorLabel(id) {
   return (
     ARMOR_LOCATIONS.find((location) => location.id === id) || { label: id }
@@ -197,6 +300,92 @@ function isTrackedWeapon(weapon) {
   );
 }
 
+function getDieStep(die) {
+  return STRENGTH_DIE_STEPS.indexOf(String(die || "").trim().toLowerCase());
+}
+
+function getStrengthShortfall(characterStrength, minStr) {
+  const characterStep = getDieStep(characterStrength);
+  const requiredStep = getDieStep(minStr);
+
+  if (characterStep < 0 || requiredStep < 0) return 0;
+  return Math.max(0, requiredStep - characterStep);
+}
+
+function classifyWeaponUsageType(weapon) {
+  const category = String(weapon?.category || "").toLowerCase();
+  const name = String(weapon?.name || "").toLowerCase();
+  const notes = String(weapon?.notes || "").toLowerCase();
+  const range = String(weapon?.range || "").trim();
+  const text = `${name} ${notes}`;
+
+  if (category.includes("thrown") || /\bthrown\b|, thrown|throwing/.test(text))
+    return "thrown";
+  if (category.includes("melee")) return "melee";
+  if (
+    /firearm|revolver|derringer|rifle|carbine|musket|shotgun|gatling|bow|explosive|infernal|ranged/.test(
+      category,
+    ) ||
+    /revolver|derringer|rifle|carbine|musket|shotgun|gatling|bow|dynamite|nitro|flamethrower/.test(
+      text,
+    )
+  )
+    return "ranged";
+  if (range) return "ranged";
+  return "unknown";
+}
+
+function getWeaponStrengthUsageInfo(characterStrength, weapon) {
+  const shortfall = getStrengthShortfall(characterStrength, weapon?.minStr);
+
+  if (!shortfall) {
+    return {
+      isUnderStrength: false,
+      shortfall: 0,
+      attackPenalty: 0,
+      damageCap: "",
+      message: "",
+    };
+  }
+
+  const type = classifyWeaponUsageType(weapon);
+
+  if (type === "melee" || type === "thrown") {
+    return {
+      isUnderStrength: true,
+      shortfall,
+      attackPenalty: 0,
+      damageCap: characterStrength,
+      message: `Strength too low: damage die capped at ${characterStrength}. Positive weapon qualities do not apply, but penalties still apply.`,
+    };
+  }
+
+  if (type === "ranged") {
+    return {
+      isUnderStrength: true,
+      shortfall,
+      attackPenalty: -shortfall,
+      damageCap: "",
+      message: `Strength too low: ranged attacks suffer -${shortfall}.`,
+    };
+  }
+
+  return {
+    isUnderStrength: true,
+    shortfall,
+    attackPenalty: 0,
+    damageCap: "",
+    message: "Strength too low for this weapon.",
+  };
+}
+
+function weaponStrengthWarningMarkup(weapon) {
+  const info = getWeaponStrengthUsageInfo(character.weaponStrength, weapon);
+  return info.message
+    ? `<p class="weapon-warning">${esc(info.message)}</p>`
+    : "";
+}
+
 function emptyState(text) {
   return `<p class="empty-state">${esc(text)}</p>`;
 }
@@ -205,6 +394,116 @@ function displayNameFromKey(key) {
   return key
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (char) => char.toUpperCase());
+}
+
+function normalizeCaliber(value) {
+  const match = String(value || "").match(/\.?\d{2}/);
+  if (!match) return "";
+  return `.${match[0].replace(".", "")}`;
+}
+
+function caliberFromText(text) {
+  const matches = String(text || "").match(/\.\d{2}/g) || [];
+  const unique = [...new Set(matches.map(normalizeCaliber))];
+  if (unique.length === 1) return unique[0];
+  if (matches.length > 2) return normalizeCaliber(matches[matches.length - 1]);
+  return matches.length === 1 ? normalizeCaliber(matches[0]) : "";
+}
+
+function ammoKey(kind, caliber) {
+  const normalized = normalizeCaliber(caliber);
+  return kind && normalized ? `${kind}-${normalized.slice(1)}-ammo` : "";
+}
+
+function ammoLabel(kind, caliber) {
+  const label = kind === "rifle" ? "Rifle" : "Pistol";
+  return `${label} ammo (${normalizeCaliber(caliber)})`;
+}
+
+function ammoKindFromWeapon(weapon) {
+  const category = String(weapon?.category || "").toLowerCase();
+  if (/revolver|pistol/.test(category)) return "pistol";
+  if (/rifle|carbine|musket/.test(category)) return "rifle";
+
+  const text = `${weapon?.name || ""} ${weapon?.notes || ""}`.toLowerCase();
+  if (
+    /pistol|revolver|colt|lemat|starr|peacemaker|dragoon|derringer/.test(text)
+  )
+    return "pistol";
+  if (
+    /rifle|winchester|sharps|spencer|ballard|bullard|musket|carbine/.test(
+      text,
+    )
+  )
+    return "rifle";
+  return "";
+}
+
+function exactAmmoTypeForWeapon(weapon) {
+  const type = weapon?.ammoType || "";
+  if (!type || ["shotgun-shells", "arrow", "percussion-caps"].includes(type))
+    return type;
+  if (/^(pistol|rifle)-\d{2}-ammo$/.test(type)) return type;
+
+  const legacy = LEGACY_AMMO_KEY_DEFAULTS[type];
+  const kind = legacy?.kind || ammoKindFromWeapon(weapon);
+  const caliber =
+    caliberFromText(`${weapon?.name || ""} ${weapon?.notes || ""}`) ||
+    legacy?.caliber ||
+    "";
+  return ammoKey(kind, caliber) || type;
+}
+
+function exactAmmoTypeForCatalogAmmo(item, selectedCaliber = "") {
+  if (!item) return "";
+  const kind = AMMO_KIND_BY_CATALOG_ID[item.id];
+  if (!kind) return item.id;
+  const caliber =
+    normalizeCaliber(selectedCaliber) ||
+    caliberFromText(item.name) ||
+    LEGACY_AMMO_KEY_DEFAULTS[item.id]?.caliber;
+  return ammoKey(kind, caliber);
+}
+
+function migrateAmmoEntry(key, ammo) {
+  const legacy = LEGACY_AMMO_KEY_DEFAULTS[key];
+  if (!legacy) return { key, ammo };
+  const caliber = caliberFromText(ammo?.label) || legacy.caliber;
+  const migratedKey = ammoKey(legacy.kind, caliber);
+  return {
+    key: migratedKey,
+    ammo: {
+      ...ammo,
+      label: ammoLabel(legacy.kind, caliber),
+      caliber,
+      kind: legacy.kind,
+    },
+  };
+}
+
+function ammoReserveForKey(key, fallback = {}) {
+  const match = key.match(/^(pistol|rifle)-(\d{2})-ammo$/);
+  return {
+    ...fallback,
+    label: match
+      ? ammoLabel(match[1], `.${match[2]}`)
+      : fallback.label || "Ammo",
+    count: fallback.count ?? 0,
+  };
+}
+
+function ensureAmmoReserve(key, fallback = {}) {
+  if (!key || character.ammo[key]) return;
+  character.ammo[key] = ammoReserveForKey(key, fallback);
+}
+
+function catalogWeaponForRecord(weapon) {
+  return WEAPON_CATALOG.find(
+    (item) =>
+      item.id === weapon?.catalogId ||
+      item.id === weapon?.id ||
+      item.name.toLowerCase() === String(weapon?.name || "").toLowerCase(),
+  );
 }
 
 function reminderMarkup(reminder) {
@@ -267,9 +566,19 @@ function normalize(data) {
     normalized.ammo && typeof normalized.ammo === "object"
       ? normalized.ammo
       : {};
+  normalized.ammo = Object.entries(normalized.ammo).reduce(
+    (ammoMap, [key, ammo]) => {
+      const migrated = migrateAmmoEntry(key, ammo);
+      if (!ammoMap[migrated.key]) ammoMap[migrated.key] = migrated.ammo;
+      else ammoMap[migrated.key].count += Number(migrated.ammo.count) || 0;
+      return ammoMap;
+    },
+    {},
+  );
   Object.entries(defaults.ammo || {}).forEach(([key, ammo]) => {
-    if (!normalized.ammo[key])
-      normalized.ammo[key] = { ...clone(ammo), count: 0 };
+    const migrated = migrateAmmoEntry(key, clone(ammo));
+    if (!normalized.ammo[migrated.key])
+      normalized.ammo[migrated.key] = { ...migrated.ammo, count: 0 };
   });
   Object.values(normalized.ammo).forEach((ammo) => {
     ammo.label ||= "Ammo";
@@ -281,12 +590,17 @@ function normalize(data) {
     : [];
   normalized.weapons = normalized.weapons.map((weapon, index) => {
     const item = { ...weapon };
+    const catalogItem = catalogWeaponForRecord(item);
     item.id ||= `${slugify(item.name || "weapon")}-${index}`;
     item.name ||= "Unnamed weapon";
     item.damage ||= "—";
     item.range ||= "—";
     item.ap = item.ap === "" || item.ap === undefined ? "—" : item.ap;
     item.rof = item.rof === "" || item.rof === undefined ? "—" : item.rof;
+    if ((!item.shotsMax || Number(item.shotsMax) <= 0) && catalogItem?.shotsMax)
+      item.shotsMax = catalogItem.shotsMax;
+    if (!item.ammoType && catalogItem?.ammoType)
+      item.ammoType = catalogItem.ammoType;
 
     if (!item.shotsMax || Number(item.shotsMax) <= 0) {
       item.shotsMax = null;
@@ -299,8 +613,13 @@ function normalize(data) {
         0,
         item.shotsMax,
       );
-      if (!normalized.ammo[item.ammoType])
-        item.ammoType = Object.keys(normalized.ammo)[0] || null;
+      item.ammoType = exactAmmoTypeForWeapon(item);
+      if (!item.ammoType) {
+        item.shotsMax = null;
+        item.shotsLoaded = null;
+      } else if (!normalized.ammo[item.ammoType]) {
+        normalized.ammo[item.ammoType] = ammoReserveForKey(item.ammoType);
+      }
     }
 
     return item;
@@ -390,8 +709,12 @@ function save() {
 }
 
 function ammoOptions(selected = "") {
+  const selectedMissing = selected && !character.ammo[selected];
   return [
     `<option value=""${!selected ? " selected" : ""}>No ammunition tracking</option>`,
+    selectedMissing
+      ? `<option value="${esc(selected)}" selected>${esc(ammoReserveForKey(selected).label)} (no reserve)</option>`
+      : "",
     ...Object.entries(character.ammo).map(
       ([key, ammo]) =>
         `<option value="${esc(key)}"${key === selected ? " selected" : ""}>${esc(ammo.label)}</option>`,
@@ -399,9 +722,27 @@ function ammoOptions(selected = "") {
   ].join("");
 }
 
+function caliberOptionsForAmmo(item, selected = "") {
+  const options = AMMO_CALIBERS_BY_CATALOG_ID[item?.id] || [];
+  if (!options.length) {
+    return '<option value="">No caliber selection</option>';
+  }
+  const selectedCaliber =
+    normalizeCaliber(selected) ||
+    caliberFromText(els.ammoLabelInput.value) ||
+    LEGACY_AMMO_KEY_DEFAULTS[item.id]?.caliber ||
+    options[0];
+  return options
+    .map(
+      (caliber) =>
+        `<option value="${esc(caliber)}"${caliber === selectedCaliber ? " selected" : ""}>${esc(caliber)}</option>`,
+    )
+    .join("");
+}
+
 function catalogs() {
   els.gearSelect.innerHTML = optionList(
-    GEAR_CATALOG,
+    byName(GEAR_CATALOG),
     "Choose gear from catalog…",
     (item) => `${wt(item.weight)} lb • ${money(item.costCents)}`,
   );
@@ -431,6 +772,7 @@ function catalogs() {
       `<option value="${esc(location.id)}">${esc(location.label)}</option>`,
   ).join("");
   els.weaponAmmoTypeSelect.innerHTML = ammoOptions();
+  els.ammoCaliberSelect.innerHTML = caliberOptionsForAmmo();
 }
 
 function chosen(items, id) {
@@ -439,14 +781,46 @@ function chosen(items, id) {
 
 function updatePreviews() {
   const gear = chosen(GEAR_CATALOG, els.gearSelect.value);
+  const consumableConversion = consumableConversionForGear(gear);
+  els.inventoryUnitsField.classList.toggle(
+    "hidden",
+    !consumableConversion?.unitsLabel,
+  );
+  if (consumableConversion?.unitsLabel) {
+    els.inventoryUnitsLabel.textContent = consumableConversion.unitsLabel;
+    els.inventoryUnitsInput.placeholder = String(consumableConversion.multiplier);
+  } else {
+    els.inventoryUnitsInput.value = "";
+  }
+  const packageCount = Math.max(
+    1,
+    Math.floor(Number(els.inventoryCountInput.value) || 1),
+  );
+  const unitsPerPackage = Math.max(
+    1,
+    Math.floor(
+      Number(els.inventoryUnitsInput.value) ||
+        consumableConversion?.multiplier ||
+        1,
+    ),
+  );
   els.gearPreview.textContent = gear
-    ? `${gear.name} • Weight ${wt(gear.weight)} • Cost ${money(gear.costCents)} each`
+    ? consumableConversion
+      ? `${gear.name} • Adds ${packageCount * unitsPerPackage} ${consumableConversion.unit} to Consumables`
+      : `${gear.name} • Weight ${wt(gear.weight)} • Cost ${money(gear.costCents)} each`
     : "Choose gear from the catalog or type custom gear.";
 
   const ammo = chosen(GEAR_CATALOG, els.ammoGearSelect.value);
   els.ammoGearPreview.textContent = ammo
     ? `${ammo.name} • Weight ${wt(ammo.weight)} • Cost ${money(ammo.costCents)} each`
     : "Choose ammunition from the catalog or type custom ammo.";
+  els.ammoCaliberSelect.innerHTML = caliberOptionsForAmmo(
+    ammo,
+    els.ammoCaliberSelect.value,
+  );
+  els.ammoCaliberSelect.disabled = !(
+    ammo && AMMO_CALIBERS_BY_CATALOG_ID[ammo.id]
+  );
 
   const armor = chosen(ARMOR_CATALOG, els.armorCatalogSelect.value);
   els.armorCatalogPreview.textContent = armor
@@ -467,7 +841,9 @@ function updatePreviews() {
     els.weaponApInput.value = weapon.ap !== undefined ? weapon.ap : "";
     els.weaponRofInput.value = weapon.rof || "";
     els.weaponCapacityInput.value = weapon.shotsMax || "";
-    els.weaponAmmoTypeSelect.innerHTML = ammoOptions(weapon.ammoType || "");
+    els.weaponAmmoTypeSelect.innerHTML = ammoOptions(
+      exactAmmoTypeForWeapon(weapon),
+    );
   }
 
   const vehicle = chosen(VEHICLE_CATALOG, els.vehicleCatalogSelect.value);
@@ -547,6 +923,7 @@ function render() {
   renderHucksterDeal();
   renderKeyConditions();
   renderConditions();
+  renderCombatPenalties();
   renderConsumables();
   renderInventory();
   renderVehicles();
@@ -772,6 +1149,74 @@ function renderCombatStatusResources() {
   ].join("");
 }
 
+function combatPenaltyInfo() {
+  const woundPenalty = Math.min(
+    character.damage.wounds,
+    character.damage.maxWounds,
+  );
+  const fatiguePenalty = Math.min(
+    character.damage.fatigue,
+    character.damage.maxFatigue,
+  );
+  const traitPenalties = [];
+  const modifiers = [];
+
+  if (woundPenalty)
+    traitPenalties.push({ label: "Wounds", value: -woundPenalty });
+  if (fatiguePenalty)
+    traitPenalties.push({ label: "Fatigue", value: -fatiguePenalty });
+  if (character.conditions.distracted)
+    traitPenalties.push({ label: "Distracted", value: -2 });
+
+  const conditionNotes = [
+    ["shaken", "Shaken: limited actions"],
+    ["vulnerable", "Vulnerable: +2 attacks vs you"],
+    ["stunned", "Stunned: cannot act; attacks vs you +2"],
+    ["prone", "Prone: -2 attacks; close attacks vs you +2"],
+    ["bound", "Bound: can't move; likely Distracted/Vulnerable"],
+    ["entangled", "Entangled: can't move; likely Distracted"],
+    ["aiming", "Aiming: +2 ranged attack"],
+    ["defending", "Defending: +4 Parry"],
+    ["theDrop", "The Drop: +4 attack/damage"],
+    ["onHold", "On Hold: interrupt ready"],
+    ["wildAttack", "Wild Attack: +2 Fighting/damage; -2 Parry"],
+    ["bleedingOut", "Bleeding Out: incapacitated"],
+    ["diseased", "Diseased: check disease effects"],
+    ["poisoned", "Poisoned: check poison effects"],
+  ];
+
+  conditionNotes.forEach(([key, text]) => {
+    if (character.conditions[key]) modifiers.push(text);
+  });
+
+  const total = traitPenalties.reduce(
+    (sum, penalty) => sum + Math.abs(penalty.value),
+    0,
+  );
+
+  return { total, traitPenalties, modifiers };
+}
+
+function renderCombatPenalties() {
+  const { total, traitPenalties, modifiers } = combatPenaltyInfo();
+  const entries = [
+    ...traitPenalties.map(
+      (penalty) => `${penalty.label} ${penalty.value}`,
+    ),
+    ...modifiers,
+  ];
+
+  els.combatPenaltyTotal.textContent = total ? `-${total}` : "0";
+  els.combatPenaltySummary.textContent = total
+    ? "Trait penalty total"
+    : "No trait penalties";
+  els.combatPenaltyBreakdown.innerHTML = entries.length
+    ? entries
+        .map((entry) => `<span>${esc(entry)}</span>`)
+        .join("")
+    : '<span>No active penalty causes.</span>';
+}
+
 function renderCombatPowerPoints() {
   const resources = character.resources.filter(
     (resource) => resource.id === "power-points",
@@ -802,9 +1247,10 @@ function renderCombatWeapons() {
     .forEach((weapon) => {
       const reserve = weapon.ammoType ? character.ammo[weapon.ammoType] : null;
       const tracked = isTrackedWeapon(weapon);
+      const strengthWarning = weaponStrengthWarningMarkup(weapon);
       const article = document.createElement("article");
       article.className = "weapon-card";
-      article.innerHTML = `<div class="topline"><div><h3>${esc(weapon.name)}</h3><p class="meta">Damage ${esc(weapon.damage || "—")} • Range ${esc(weapon.range || "—")} • AP ${esc(weapon.ap ?? "—")} • ROF ${esc(weapon.rof ?? "—")}</p></div><span class="loaded">${tracked ? `${weapon.shotsLoaded} / ${weapon.shotsMax}` : "No ammo"}</span></div>${tracked ? `<p class="muted">${esc(reserve?.label || "Ammo")} reserve: ${reserve?.count || 0}</p>` : '<p class="muted">Melee / no ammo tracking.</p>'}${weapon.notes ? `<p class="muted">${esc(weapon.notes)}</p>` : ""}${tracked ? '<div class="weapon-actions"><button class="fire-btn" type="button">Fire</button><button class="load-btn" type="button">Load +1</button><button class="reload-btn" type="button">Fill</button><button class="unload-btn" type="button">Unload</button></div>' : ""}`;
+      article.innerHTML = `<div class="topline"><div><h3>${esc(weapon.name)}</h3><p class="meta">Damage ${esc(weapon.damage || "—")} • Range ${esc(weapon.range || "—")} • AP ${esc(weapon.ap ?? "—")} • ROF ${esc(weapon.rof ?? "—")} • Min Str ${esc(weapon.minStr || "—")}</p></div><span class="loaded">${tracked ? `${weapon.shotsLoaded} / ${weapon.shotsMax}` : "No ammo"}</span></div>${tracked ? `<p class="muted">${esc(reserve?.label || "Ammo")} reserve: ${reserve?.count || 0}</p>` : '<p class="muted">Melee / no ammo tracking.</p>'}${strengthWarning}${weapon.notes ? `<p class="muted">${esc(weapon.notes)}</p>` : ""}${tracked ? '<div class="weapon-actions"><button class="fire-btn" type="button">Fire</button><button class="load-btn" type="button">Load +1</button><button class="reload-btn" type="button">Fill</button><button class="unload-btn" type="button">Unload</button></div>' : ""}`;
 
       if (tracked) {
         const [fire, load, reload, unload] = article.querySelectorAll("button");
@@ -820,12 +1266,14 @@ function renderCombatWeapons() {
           save();
         };
         load.onclick = () => {
+          if (!reserve) return;
           weapon.shotsLoaded += 1;
           reserve.count -= 1;
           render();
           save();
         };
         reload.onclick = () => {
+          if (!reserve) return;
           const amount = Math.min(
             weapon.shotsMax - weapon.shotsLoaded,
             reserve.count,
@@ -836,6 +1284,7 @@ function renderCombatWeapons() {
           save();
         };
         unload.onclick = () => {
+          if (!reserve) return;
           reserve.count += weapon.shotsLoaded;
           weapon.shotsLoaded = 0;
           render();
@@ -1069,6 +1518,61 @@ function isCombatConsumable(item) {
   );
 }
 
+function consumableConversionForGear(item) {
+  if (!item) return null;
+  return CONSUMABLE_GEAR_CONVERSIONS[item.id] || null;
+}
+
+function addConsumableFromGear(item, packageCount, unitsPerPackage) {
+  const conversion = consumableConversionForGear(item);
+  if (!conversion) return false;
+  const count =
+    Math.max(1, Math.floor(Number(packageCount) || 1)) *
+    Math.max(
+      1,
+      Math.floor(Number(unitsPerPackage) || conversion.multiplier || 1),
+    );
+  addConsumableCount(
+    conversion.id,
+    conversion.name,
+    conversion.unit,
+    count,
+    `Converted from ${item.name}.`,
+  );
+  return true;
+}
+
+function addConsumableCount(id, name, unit, amount, note = "") {
+  const existing = character.consumables.find(
+    (consumable) =>
+      consumable.id === id ||
+      consumable.name.toLowerCase() === String(name).toLowerCase(),
+  );
+  if (existing) {
+    existing.count =
+      Math.max(0, Math.floor(Number(existing.count) || 0)) +
+      Math.max(1, Math.floor(Number(amount) || 1));
+    existing.unit = unit;
+    if (note && !existing.note) existing.note = note;
+  } else {
+    character.consumables.push({
+      id,
+      name,
+      count: Math.max(1, Math.floor(Number(amount) || 1)),
+      unit,
+      note,
+    });
+  }
+}
+
+function consumeItem(source, item, amount) {
+  item.count = Math.max(0, item.count - amount);
+  if (!item.count) {
+    const index = source.indexOf(item);
+    if (index >= 0) source.splice(index, 1);
+  }
+}
+
 function renderCombatConsumables() {
   const consumables = character.consumables
     .filter((item) => item.count > 0 && isCombatConsumable(item))
@@ -1082,12 +1586,24 @@ function renderCombatConsumables() {
   els.combatConsumablesList.innerHTML = "";
   if (!entries.length) return;
 
-  entries.forEach(({ item }) => {
+  entries.forEach(({ item, source }) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${esc(item.name)}</strong><span>${item.count} ${esc(item.unit || "available")}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls"><button>Use</button></div>`;
-    row.querySelector("button").onclick = () => {
-      item.count = Math.max(0, item.count - 1);
+    row.innerHTML = `<div><strong>${esc(item.name)}</strong><span>${item.count} ${esc(item.unit || "available")}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls consumable-use-actions"><input class="tiny" type="number" min="1" step="1" value="1" aria-label="Number of ${esc(item.name)} to adjust"><button type="button">Use</button><button type="button">Add</button></div>`;
+    const input = row.querySelector("input");
+    const [use, add] = row.querySelectorAll("button");
+    use.onclick = () => {
+      const amount = clamp(
+        Math.floor(Number(input.value) || 1),
+        1,
+        item.count,
+      );
+      consumeItem(source, item, amount);
+      render();
+      save();
+    };
+    add.onclick = () => {
+      item.count += Math.max(1, Math.floor(Number(input.value) || 1));
       render();
       save();
     };
@@ -1248,15 +1764,24 @@ function renderWeapons() {
     const reload = query(".reload-btn");
     const unload = query(".unload-btn");
     const remove = query(".remove-btn");
+    const strengthInfo = getWeaponStrengthUsageInfo(
+      character.weaponStrength,
+      weapon,
+    );
+    const warning = query(".weapon-warning");
+    warning.textContent = strengthInfo.message;
+    warning.classList.toggle("hidden", !strengthInfo.message);
 
     if (isTrackedWeapon(weapon)) {
-      const reserve = character.ammo[weapon.ammoType]?.count || 0;
+      const reserve = character.ammo[weapon.ammoType];
+      const reserveCount = reserve?.count || 0;
       query(".loaded").textContent =
         `Loaded ${weapon.shotsLoaded} / ${weapon.shotsMax}`;
       query(".weapon-notes").textContent =
-        `${character.ammo[weapon.ammoType]?.label || "Ammo"} reserve: ${reserve}.`;
+        `${reserve?.label || "Ammo"} reserve: ${reserveCount}.`;
       fire.disabled = weapon.shotsLoaded <= 0;
-      load.disabled = weapon.shotsLoaded >= weapon.shotsMax || reserve <= 0;
+      load.disabled =
+        weapon.shotsLoaded >= weapon.shotsMax || reserveCount <= 0;
       reload.disabled = load.disabled;
       unload.disabled = weapon.shotsLoaded <= 0;
       fire.onclick = () => {
@@ -1265,23 +1790,26 @@ function renderWeapons() {
         save();
       };
       load.onclick = () => {
+        if (!reserve) return;
         weapon.shotsLoaded += 1;
-        character.ammo[weapon.ammoType].count -= 1;
+        reserve.count -= 1;
         render();
         save();
       };
       reload.onclick = () => {
+        if (!reserve) return;
         const amount = Math.min(
           weapon.shotsMax - weapon.shotsLoaded,
-          character.ammo[weapon.ammoType].count,
+          reserve.count,
         );
         weapon.shotsLoaded += amount;
-        character.ammo[weapon.ammoType].count -= amount;
+        reserve.count -= amount;
         render();
         save();
       };
       unload.onclick = () => {
-        character.ammo[weapon.ammoType].count += weapon.shotsLoaded;
+        if (!reserve) return;
+        reserve.count += weapon.shotsLoaded;
         weapon.shotsLoaded = 0;
         render();
         save();
@@ -1296,8 +1824,10 @@ function renderWeapons() {
     }
 
     remove.onclick = () => {
-      if (isTrackedWeapon(weapon) && weapon.shotsLoaded > 0)
+      if (isTrackedWeapon(weapon) && weapon.shotsLoaded > 0) {
+        ensureAmmoReserve(weapon.ammoType);
         character.ammo[weapon.ammoType].count += weapon.shotsLoaded;
+      }
       character.weapons = character.weapons.filter(
         (item) => item.id !== weapon.id,
       );
@@ -1464,12 +1994,61 @@ function counterList(container, items, unitFn, emptyText) {
 }
 
 function renderConsumables() {
-  counterList(
-    els.consumablesList,
-    character.consumables,
-    (item) => `<span>${esc(item.unit)}</span>`,
-    "No consumables tracked.",
+  els.consumablesList.innerHTML = "";
+  const consumables = character.consumables.filter((item) => item.count > 0);
+  const hasMatches = consumables.some(
+    (item) => item.id === "matches" || /^matches$/i.test(item.name || ""),
   );
+  if (!consumables.length) {
+    els.consumablesList.innerHTML = emptyState("No consumables tracked.");
+  }
+
+  consumables.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<div><strong>${esc(item.name)}</strong><span>${item.count} ${esc(item.unit || "available")}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls consumable-use-actions"><input class="tiny" type="number" min="1" step="1" value="1" aria-label="Number of ${esc(item.name)} to adjust"><button type="button">Use</button><button type="button">Add</button><button class="delete-small" type="button">×</button></div>`;
+    const input = row.querySelector("input");
+    const [use, add, remove] = row.querySelectorAll("button");
+    use.onclick = () => {
+      const amount = clamp(
+        Math.floor(Number(input.value) || 1),
+        1,
+        item.count,
+      );
+      consumeItem(character.consumables, item, amount);
+      render();
+      save();
+    };
+    add.onclick = () => {
+      item.count += Math.max(1, Math.floor(Number(input.value) || 1));
+      render();
+      save();
+    };
+    remove.onclick = () => {
+      character.consumables.splice(character.consumables.indexOf(item), 1);
+      render();
+      save();
+    };
+    els.consumablesList.appendChild(row);
+  });
+
+  if (!hasMatches) {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<div><strong>Matches</strong><span>0 matches</span></div><div class="controls consumable-use-actions"><input class="tiny" type="number" min="1" step="1" value="1" aria-label="Number of matches to add"><button type="button">Add</button></div>`;
+    const input = row.querySelector("input");
+    row.querySelector("button").onclick = () => {
+      addConsumableCount(
+        "matches",
+        "Matches",
+        "matches",
+        Math.max(1, Math.floor(Number(input.value) || 1)),
+      );
+      render();
+      save();
+    };
+    els.consumablesList.appendChild(row);
+  }
 }
 
 function renderInventory() {
@@ -1509,6 +2088,32 @@ function addInventory() {
     1,
     Math.floor(Number(els.inventoryCountInput.value) || 1),
   );
+  const conversion = consumableConversionForGear(catalogItem);
+  const unitsPerPackage = conversion?.unitsLabel
+    ? Math.max(
+        1,
+        Math.floor(
+          Number(els.inventoryUnitsInput.value) || conversion.multiplier || 1,
+        ),
+      )
+    : conversion?.multiplier;
+  const addedConsumable = addConsumableFromGear(
+    catalogItem,
+    count,
+    unitsPerPackage,
+  );
+  if (addedConsumable) {
+    els.gearSelect.value = "";
+    els.inventoryNameInput.value = "";
+    els.inventoryCountInput.value = "";
+    els.inventoryUnitsInput.value = "";
+    els.inventoryNoteInput.value = "";
+    els.gearAddForm.classList.add("hidden");
+    updatePreviews();
+    render();
+    save();
+    return;
+  }
   const id = catalogItem?.id || slugify(name);
   const existing = character.inventory.find(
     (item) => item.id === id || item.name.toLowerCase() === name.toLowerCase(),
@@ -1527,7 +2132,9 @@ function addInventory() {
   els.gearSelect.value = "";
   els.inventoryNameInput.value = "";
   els.inventoryCountInput.value = "";
+  els.inventoryUnitsInput.value = "";
   els.inventoryNoteInput.value = "";
+  els.gearAddForm.classList.add("hidden");
   updatePreviews();
   render();
   save();
@@ -1556,6 +2163,7 @@ function addVehicle() {
   els.vehicleNameInput.value = "";
   els.vehicleQtyInput.value = "";
   els.vehicleNoteInput.value = "";
+  els.vehicleAddForm.classList.add("hidden");
   updatePreviews();
   render();
   save();
@@ -1565,26 +2173,30 @@ function addAmmo() {
   const catalogItem = chosen(GEAR_CATALOG, els.ammoGearSelect.value);
   const label = els.ammoLabelInput.value.trim() || catalogItem?.name;
   if (!label) return;
-  const map = {
-    "pistol-ammunition-large-40-50-caliber": "pistolLarge",
-    "rifle-ammunition-small-38-44-caliber": "rifleSmall",
-  };
-  const key = map[catalogItem?.id] || catalogItem?.id || slugify(label);
+  const selectedCaliber = normalizeCaliber(els.ammoCaliberSelect.value);
+  const exactKey = exactAmmoTypeForCatalogAmmo(catalogItem, selectedCaliber);
+  const key = exactKey || catalogItem?.id || slugify(label);
   const count = Math.max(1, Math.floor(Number(els.ammoCountInput.value) || 1));
   if (character.ammo[key]) character.ammo[key].count += count;
   else
     character.ammo[key] = {
-      label: els.ammoNoteInput.value.trim()
-        ? `${label} (${els.ammoNoteInput.value.trim()})`
-        : label,
+      label:
+        AMMO_KIND_BY_CATALOG_ID[catalogItem?.id] && selectedCaliber
+          ? ammoLabel(AMMO_KIND_BY_CATALOG_ID[catalogItem.id], selectedCaliber)
+          : label,
       count,
+      caliber: selectedCaliber || undefined,
+      kind: AMMO_KIND_BY_CATALOG_ID[catalogItem?.id],
+      note: els.ammoNoteInput.value.trim(),
       weight: catalogItem?.weight,
       costCents: catalogItem?.costCents,
     };
   els.ammoGearSelect.value = "";
   els.ammoLabelInput.value = "";
   els.ammoCountInput.value = "";
+  els.ammoCaliberSelect.innerHTML = caliberOptionsForAmmo();
   els.ammoNoteInput.value = "";
+  els.ammoAddForm.classList.add("hidden");
   updatePreviews();
   render();
   save();
@@ -1628,6 +2240,7 @@ function addArmor() {
   els.armorNameInput.value = "";
   els.armorCountInput.value = "";
   els.armorValueInput.value = "";
+  els.armorAddForm.classList.add("hidden");
   updatePreviews();
   render();
   save();
@@ -1645,7 +2258,11 @@ function addWeapon() {
     0,
     Math.floor(Number(els.weaponCapacityInput.value) || 0),
   );
-  const ammoType = capacity > 0 ? els.weaponAmmoTypeSelect.value : "";
+  const selectedAmmoType = capacity > 0 ? els.weaponAmmoTypeSelect.value : "";
+  const ammoType = selectedAmmoType
+    ? exactAmmoTypeForWeapon({ ...catalogItem, ammoType: selectedAmmoType })
+    : "";
+  if (ammoType) ensureAmmoReserve(ammoType);
   for (let index = 0; index < quantity; index += 1) {
     character.weapons.push({
       id: `${catalogItem?.id || slugify(name)}-${Date.now()}-${index}`,
@@ -1677,6 +2294,7 @@ function addWeapon() {
   els.weaponRofInput.value = "";
   els.weaponCapacityInput.value = "";
   els.weaponAmmoTypeSelect.innerHTML = ammoOptions();
+  els.weaponAddForm.classList.add("hidden");
   updatePreviews();
   render();
   save();
@@ -1807,12 +2425,43 @@ function exportJson(name, data) {
   URL.revokeObjectURL(url);
 }
 
+function importJsonText(text) {
+  const data = JSON.parse(text);
+  if (data.activeCharacter) {
+    character = normalize(data.activeCharacter);
+    if (data.creationDraft) {
+      creationDraft = normalizeDraft(data.creationDraft);
+      saveCreationDraft();
+    }
+  } else if (data.creationDraft) {
+    creationDraft = normalizeDraft(data.creationDraft);
+    saveCreationDraft();
+    setCreatorMode(true);
+  } else {
+    character = isSavagedUsExport(data) ? fromSavagedUs(data) : normalize(data);
+  }
+  render();
+  save();
+}
+
+function alertInvalidImport() {
+  alert(
+    "That was not valid tracker, full app state, creation draft, or Savaged.us character JSON.",
+  );
+}
+
+function closeHeaderMenu() {
+  els.headerToolsMenu.open = false;
+}
+
 document.addEventListener("click", (event) => {
   if (event.target?.dataset?.action) action(event.target.dataset.action);
   if (event.target?.dataset?.toggleForm) {
     const form = document.getElementById(event.target.dataset.toggleForm);
     form?.classList.toggle("hidden");
   }
+  if (event.target?.closest?.(".header-actions button")) closeHeaderMenu();
+  if (!event.target?.closest?.(".header-tools")) closeHeaderMenu();
 });
 
 els.armorSelect.onchange = () => {
@@ -1839,20 +2488,41 @@ els.spendMoneyBtn.onclick = () => {
   }
 };
 els.addInventoryBtn.onclick = addInventory;
+els.cancelInventoryAddBtn.onclick = () => {
+  els.inventoryUnitsInput.value = "";
+  updatePreviews();
+  els.gearAddForm.classList.add("hidden");
+};
 els.addVehicleBtn.onclick = addVehicle;
+els.cancelVehicleAddBtn.onclick = () => {
+  els.vehicleAddForm.classList.add("hidden");
+};
 els.addAmmoBtn.onclick = addAmmo;
+els.cancelAmmoAddBtn.onclick = () => {
+  els.ammoAddForm.classList.add("hidden");
+};
 els.addArmorBtn.onclick = addArmor;
+els.cancelArmorAddBtn.onclick = () => {
+  els.armorAddForm.classList.add("hidden");
+};
 els.addWeaponBtn.onclick = addWeapon;
+els.cancelWeaponAddBtn.onclick = () => {
+  els.weaponAddForm.classList.add("hidden");
+};
 els.addPowerBtn.onclick = addPower;
 els.addManualPowerPointsBtn.onclick = addManualPowerPoints;
 [
   els.gearSelect,
   els.ammoGearSelect,
+  els.ammoCaliberSelect,
   els.armorCatalogSelect,
   els.weaponCatalogSelect,
   els.vehicleCatalogSelect,
 ].forEach((select) => {
   select.onchange = updatePreviews;
+});
+[els.inventoryCountInput, els.inventoryUnitsInput].forEach((input) => {
+  input.oninput = updatePreviews;
 });
 els.notesArea.oninput = () => {
   character.notes = els.notesArea.value;
@@ -1894,6 +2564,12 @@ els.clearTempConditionsBtn.onclick = () => {
   };
 });
 els.newSessionBtn.onclick = () => {
+  if (
+    !confirm(
+      "Start a new play session? This resets bennies to starting, clears conviction, refills resources, and clears temporary conditions.",
+    )
+  )
+    return;
   character.bennies.current = character.bennies.starting;
   character.conviction = 0;
   character.resources.forEach((resource) => (resource.current = resource.max));
@@ -1923,30 +2599,30 @@ els.importFile.onchange = (event) => {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      const data = JSON.parse(reader.result);
-      if (data.activeCharacter) {
-        character = normalize(data.activeCharacter);
-        if (data.creationDraft) {
-          creationDraft = normalizeDraft(data.creationDraft);
-          saveCreationDraft();
-        }
-      } else if (data.creationDraft) {
-        creationDraft = normalizeDraft(data.creationDraft);
-        saveCreationDraft();
-        setCreatorMode(true);
-      } else {
-        character = isSavagedUsExport(data)
-          ? fromSavagedUs(data)
-          : normalize(data);
-      }
-      render();
-      save();
+      importJsonText(reader.result);
       els.importFile.value = "";
+      closeHeaderMenu();
     } catch {
-      alert(
-        "That file was not valid tracker, full app state, creation draft, or Savaged.us character JSON.",
-      );
+      alertInvalidImport();
     }
   };
   reader.readAsText(file);
+};
+els.pasteImportBtn.onclick = () => {
+  els.pasteImportPanel.classList.toggle("hidden");
+  if (!els.pasteImportPanel.classList.contains("hidden"))
+    els.importJsonText.focus();
+};
+els.cancelPasteImportBtn.onclick = () => {
+  els.importJsonText.value = "";
+  els.pasteImportPanel.classList.add("hidden");
+};
+els.confirmPasteImportBtn.onclick = () => {
+  try {
+    importJsonText(els.importJsonText.value.trim());
+    els.importJsonText.value = "";
+    els.pasteImportPanel.classList.add("hidden");
+  } catch {
+    alertInvalidImport();
+  }
 };

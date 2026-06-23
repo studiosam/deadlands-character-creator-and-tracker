@@ -116,6 +116,9 @@ button:disabled {
 
 .ghost,
 .file-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text);
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px);
@@ -190,6 +193,8 @@ h3 {
 }
 
 .hero {
+  position: relative;
+  z-index: 40;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
@@ -243,6 +248,95 @@ h3 {
   justify-content: flex-end;
 }
 
+.header-tools {
+  display: grid;
+  position: relative;
+  justify-items: end;
+  gap: 0.65rem;
+  min-width: min(100%, 18rem);
+}
+
+.header-menu {
+  position: relative;
+  z-index: 50;
+}
+
+.header-menu summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.65rem;
+  padding: 0.68rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 800;
+  list-style: none;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+.header-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.header-menu summary::after {
+  content: "\25be";
+  margin-left: 0.45rem;
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+}
+
+.header-menu[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.header-menu .header-actions {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: 1fr;
+  width: min(18rem, calc(100vw - 2rem));
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(8, 10, 15, 0.96);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.header-menu .header-actions button,
+.header-menu .header-actions .file-label {
+  justify-content: center;
+  width: 100%;
+}
+
+.paste-import-panel {
+  display: grid;
+  width: min(34rem, 100%);
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(4, 6, 10, 0.66);
+}
+
+.paste-import-panel label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.paste-import-panel textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
 #importFile,
 .creator-file {
   display: none;
@@ -270,6 +364,11 @@ h3 {
 }
 
 .creator-tabs button.active {
+  color: #17100a;
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+}
+
+.header-actions button.active {
   color: #17100a;
   background: linear-gradient(180deg, var(--accent-strong), var(--accent));
 }
@@ -342,20 +441,29 @@ h3 {
 }
 
 .combat-command-grid {
-  align-items: start;
+  align-items: stretch;
   display: grid;
-  grid-template-columns: minmax(280px, 5fr) minmax(340px, 6fr);
+  grid-template-columns: minmax(280px, 6.4fr) minmax(360px, 4.6fr);
   gap: 1rem;
 }
 
 .combat-status-grid {
-  align-items: start;
+  align-items: stretch;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
 }
 
-.combat-defense-panel {
+.combat-side-grid {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: minmax(190px, 1.18fr) minmax(160px, 0.82fr);
+  gap: 0.8rem;
+}
+
+.combat-defense-panel,
+.combat-penalty-panel {
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -363,8 +471,19 @@ h3 {
   padding: 0.85rem;
 }
 
+.combat-defense-panel {
+  align-content: start;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.combat-defense-panel .compact-derived {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
 .compact-derived {
-  margin: 0.5rem 0;
+  margin: 0.35rem 0;
 }
 
 .compact-derived strong {
@@ -380,9 +499,23 @@ h3 {
 }
 
 .derived.compact-derived > div {
-  justify-content: flex-start;
-  gap: 0.35rem;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.12rem;
   min-width: 0;
+  padding: 0.55rem;
+}
+
+.derived.compact-derived span {
+  font-size: 0.7rem;
+  line-height: 1.1;
+}
+
+.derived.compact-derived strong {
+  max-width: 100%;
+  font-size: 0.9rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .derived > div span::after {
@@ -394,8 +527,48 @@ h3 {
 }
 
 .combat-inline {
+  grid-column: 1 / -1;
+  grid-row: auto;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   margin-top: 1rem;
+}
+
+.combat-penalty-panel {
+  align-content: start;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.combat-penalty-panel h3,
+.combat-penalty-panel p {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.combat-penalty-panel .loaded {
+  max-width: 100%;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.penalty-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.penalty-breakdown span {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.16);
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  padding: 0.25rem 0.48rem;
 }
 
 .combat-resource-controls {
@@ -435,6 +608,14 @@ h3 {
 
 .section-title {
   align-items: flex-start;
+}
+
+.combat-conditions-card .section-title {
+  margin-bottom: 0.75rem;
+}
+
+#clearTempConditionsBtn {
+  padding: 0.5rem 0.8rem;
 }
 
 .combat-status-grid .topline {
@@ -597,6 +778,28 @@ h3 {
   padding: 0.45rem 0.75rem;
 }
 
+.consumable-use-actions {
+  align-items: center;
+}
+
+.consumable-use-actions input {
+  flex: 0 0 5rem;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.consumable-use-actions button {
+  width: auto;
+  min-width: 4rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.consumable-use-actions .delete-small {
+  width: 2.2rem;
+  min-width: 2.2rem;
+  padding: 0;
+}
+
 .step {
   align-items: center;
   display: grid;
@@ -660,6 +863,15 @@ h3 {
   grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
+.form label,
+.creator-grid label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .field-label {
   display: block;
   margin: 1rem 0 0.4rem;
@@ -671,6 +883,7 @@ h3 {
 .add-panel {
   min-width: 0;
   margin-top: 1rem;
+  margin-bottom: 1rem;
   padding: 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -710,6 +923,18 @@ h3 {
 .weapon-actions button {
   flex: 1 1 5.5rem;
   padding-inline: 0.75rem;
+}
+
+.weapon-warning {
+  border: 1px solid rgba(228, 189, 87, 0.45);
+  border-radius: var(--radius-md);
+  background: rgba(228, 189, 87, 0.11);
+  color: var(--warn);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.4;
+  margin: 0.65rem 0 0;
+  padding: 0.55rem 0.65rem;
 }
 
 .power-description {
@@ -887,6 +1112,16 @@ h3 {
     justify-content: flex-start;
   }
 
+  .header-tools {
+    justify-items: start;
+    width: 100%;
+  }
+
+  .header-menu .header-actions {
+    right: auto;
+    left: 0;
+  }
+
   .card,
   .creator-section,
   .compact-card,
@@ -938,6 +1173,11 @@ h3 {
     flex-direction: column;
   }
 
+  .combat-conditions-card .section-title {
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
   .stats,
   .play-stats,
   .combat-status-grid,
@@ -953,6 +1193,10 @@ h3 {
   }
 
   .combat-command-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .combat-side-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1018,6 +1262,11 @@ h3 {
     width: 100%;
   }
 
+  .header-tools,
+  .paste-import-panel {
+    width: 100%;
+  }
+
   .header-actions button,
   .header-actions .file-label {
     justify-content: center;
@@ -1062,6 +1311,10 @@ h3 {
     gap: 0.55rem;
   }
 
+  .combat-side-grid {
+    grid-template-columns: 1fr;
+  }
+
   .combat-status-grid .block {
     padding: 0.65rem;
   }
@@ -1085,7 +1338,10 @@ h3 {
     gap: 0.1rem;
   }
 
-  .combat-conditions-card .conditions,
+  .combat-conditions-card .conditions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .conditions {
     grid-template-columns: 1fr;
   }

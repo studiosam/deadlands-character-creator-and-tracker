@@ -15,8 +15,18 @@ const defaultCharacter = {
   hucksterDeal: null,
   moneyCents: 2122,
   ammo: {
-    pistolLarge: { label: "Large pistol ammo (.40-.50)", count: 8 },
-    rifleSmall: { label: "Small rifle ammo (.38-.44)", count: 10 },
+    "pistol-44-ammo": {
+      label: "Pistol ammo (.44)",
+      count: 8,
+      caliber: ".44",
+      kind: "pistol",
+    },
+    "rifle-44-ammo": {
+      label: "Rifle ammo (.44)",
+      count: 10,
+      caliber: ".44",
+      kind: "rifle",
+    },
   },
   weapons: [
     {
@@ -28,8 +38,8 @@ const defaultCharacter = {
       rof: "1",
       shotsMax: 6,
       shotsLoaded: 6,
-      ammoType: "pistolLarge",
-      notes: "Sidearm. Reload from large pistol ammo reserve.",
+      ammoType: "pistol-44-ammo",
+      notes: "Sidearm. Reload from .44 pistol ammo reserve.",
       weight: 2,
       costCents: 1200,
       minStr: "d4",
@@ -76,8 +86,8 @@ const defaultCharacter = {
       rof: "1",
       shotsMax: 15,
       shotsLoaded: 15,
-      ammoType: "rifleSmall",
-      notes: "Long gun. Reload from small rifle ammo reserve.",
+      ammoType: "rifle-44-ammo",
+      notes: "Long gun. Reload from .44 rifle ammo reserve.",
       weight: 10,
       costCents: 2500,
       minStr: "d6",

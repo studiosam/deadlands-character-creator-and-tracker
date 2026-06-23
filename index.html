@@ -14,14 +14,58 @@
           <h1 id="characterName"></h1>
           <p id="characterSubtitle" class="subtitle"></p>
         </div>
-        <div class="header-actions" aria-label="Tracker actions">
-          <button class="ghost" id="newSessionBtn" type="button">
-            New Session
-          </button>
-          <button class="ghost" id="exportBtn" type="button">Export</button>
-          <label class="ghost file-label" for="importFile">Import</label>
-          <input id="importFile" type="file" accept="application/json" />
-          <button class="danger" id="resetBtn" type="button">Reset</button>
+        <div class="header-tools">
+          <details id="headerToolsMenu" class="header-menu">
+            <summary>Manage</summary>
+            <div class="header-actions" aria-label="Session and file actions">
+              <button
+                class="ghost"
+                id="newSessionBtn"
+                type="button"
+                title="Reset bennies, conviction, resources, and temporary conditions for a new play session."
+              >
+                Start Session
+              </button>
+              <button class="ghost" id="loadSampleBtn" type="button">
+                Load Sample
+              </button>
+              <button
+                class="ghost"
+                id="creatorModeBtn"
+                type="button"
+                data-app-tab="creation"
+              >
+                Creation
+              </button>
+              <button class="ghost" id="exportBtn" type="button">Export</button>
+              <label class="ghost file-label" for="importFile">Import File</label>
+              <input id="importFile" type="file" accept="application/json" />
+              <button class="ghost" id="pasteImportBtn" type="button">
+                Paste JSON
+              </button>
+              <button class="danger" id="resetBtn" type="button">Reset</button>
+            </div>
+          </details>
+          <div id="pasteImportPanel" class="paste-import-panel hidden">
+            <label for="importJsonText">Import JSON</label>
+            <textarea
+              id="importJsonText"
+              rows="6"
+              placeholder="Paste tracker, full app state, creation draft, or Savaged.us JSON here"
+            ></textarea>
+            <div class="controls">
+              <button id="confirmPasteImportBtn" type="button">
+                Import JSON
+              </button>
+              <button
+                class="ghost"
+                id="cancelPasteImportBtn"
+                type="button"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -38,12 +82,6 @@
         <button type="button" data-app-tab="inventory">Inventory</button>
         <button type="button" data-app-tab="arcane">Arcane</button>
         <button type="button" data-app-tab="notes">Notes</button>
-        <button id="creatorModeBtn" type="button" data-app-tab="creation">
-          Creation
-        </button>
-        <button id="loadSampleBtn" class="ghost" type="button">
-          Load Sample: Dusty McCaw
-        </button>
       </nav>
 
       <main id="trackerDashboard">
@@ -116,25 +154,45 @@
                 </div>
               </div>
 
-              <div class="combat-defense-panel">
-                <h3>Defenses</h3>
-                <div class="grid derived compact-derived">
-                  <div><span>Pace</span><strong id="paceValue"></strong></div>
-                  <div><span>Parry</span><strong id="parryValue"></strong></div>
-                  <div>
-                    <span>Toughness</span><strong id="toughnessValue"></strong>
+              <div class="combat-side-grid">
+                <div class="combat-defense-panel">
+                  <h3>Defenses</h3>
+                  <div class="grid derived compact-derived">
+                    <div>
+                      <span>Pace</span><strong id="paceValue"></strong>
+                    </div>
+                    <div>
+                      <span>Parry</span><strong id="parryValue"></strong>
+                    </div>
+                    <div>
+                      <span>Toughness</span>
+                      <strong id="toughnessValue"></strong>
+                    </div>
                   </div>
+                  <select
+                    id="armorSelect"
+                    class="hidden"
+                    aria-hidden="true"
+                  ></select>
+                  <p id="armorNote" class="muted"></p>
+                  <div
+                    id="combatArmorLocations"
+                    class="combat-armor-locations"
+                  ></div>
                 </div>
-                <select
-                  id="armorSelect"
-                  class="hidden"
-                  aria-hidden="true"
-                ></select>
-                <p id="armorNote" class="muted"></p>
-                <div
-                  id="combatArmorLocations"
-                  class="combat-armor-locations"
-                ></div>
+
+                <div class="combat-penalty-panel">
+                  <div class="topline">
+                    <h3>Penalties</h3>
+                    <span id="combatPenaltyTotal" class="loaded"></span>
+                  </div>
+                  <p id="combatPenaltySummary" class="muted"></p>
+                  <div
+                    id="combatPenaltyBreakdown"
+                    class="penalty-breakdown"
+                  ></div>
+                </div>
+
                 <div
                   id="combatStatusResources"
                   class="grid combat-inline"
@@ -146,19 +204,6 @@
           <section id="playPowerPointsCard" class="card wide hidden">
             <h2>Power Points</h2>
             <div id="playPowerPointsList" class="list"></div>
-          </section>
-
-          <section class="card wide combat-conditions-card">
-            <div class="section-title">
-              <div>
-                <h2>Key Conditions</h2>
-              </div>
-              <button class="ghost" id="clearTempConditionsBtn" type="button">
-                Clear Temporary
-              </button>
-            </div>
-            <div id="keyConditionsList" class="grid conditions"></div>
-            <div id="conditionsList" class="grid conditions hidden"></div>
           </section>
 
           <section class="card wide">
@@ -185,6 +230,19 @@
           <section id="combatHucksterCard" class="card wide hidden">
             <h2>Huckster: Deal in Combat</h2>
             <div id="combatHucksterHelper" class="creator-grid"></div>
+          </section>
+
+          <section class="card wide combat-conditions-card">
+            <div class="section-title">
+              <div>
+                <h2>Key Conditions</h2>
+              </div>
+              <button class="ghost" id="clearTempConditionsBtn" type="button">
+                Clear Temporary
+              </button>
+            </div>
+            <div id="keyConditionsList" class="grid conditions"></div>
+            <div id="conditionsList" class="grid conditions hidden"></div>
           </section>
 
           <section id="combatConsumablesCard" class="card wide">
@@ -270,6 +328,11 @@
             <p class="muted">Money is stored as cents.</p>
           </section>
 
+          <section class="card">
+            <h2>Consumables</h2>
+            <div id="consumablesList" class="list"></div>
+          </section>
+
           <section class="card wide">
             <div class="section-title">
               <div>
@@ -284,33 +347,58 @@
                 Add Gear
               </button>
             </div>
-            <div id="inventoryList" class="list"></div>
             <div id="gearAddForm" class="add-panel collapsed-form hidden">
               <h3>Add Gear</h3>
               <div class="form">
-                <select class="full" id="gearSelect"></select>
-                <input
-                  id="inventoryNameInput"
-                  placeholder="Custom item name or override"
-                />
-                <input
-                  id="inventoryCountInput"
-                  class="tiny"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="Qty"
-                />
-                <input id="inventoryNoteInput" placeholder="Optional note" />
+                <label class="full">
+                  Catalog item
+                  <select id="gearSelect"></select>
+                </label>
+                <label>
+                  Name override
+                  <input
+                    id="inventoryNameInput"
+                    placeholder="Custom item name"
+                  />
+                </label>
+                <label>
+                  Quantity
+                  <input
+                    id="inventoryCountInput"
+                    class="tiny"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="1"
+                  />
+                </label>
+                <label id="inventoryUnitsField" class="hidden">
+                  <span id="inventoryUnitsLabel">Matches per box</span>
+                  <input
+                    id="inventoryUnitsInput"
+                    class="tiny"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="100"
+                  />
+                </label>
+                <label>
+                  Note
+                  <input id="inventoryNoteInput" placeholder="Optional note" />
+                </label>
                 <button id="addInventoryBtn" type="button">Add Gear</button>
+                <button
+                  id="cancelInventoryAddBtn"
+                  class="ghost"
+                  type="button"
+                >
+                  Cancel
+                </button>
                 <p id="gearPreview" class="preview"></p>
               </div>
             </div>
-          </section>
-
-          <section class="card">
-            <h2>Consumables</h2>
-            <div id="consumablesList" class="list"></div>
+            <div id="inventoryList" class="list"></div>
           </section>
 
           <section class="card wide">
@@ -327,37 +415,55 @@
                 Add Armor
               </button>
             </div>
-            <div id="armorLocationList" class="grid armor-locs"></div>
-            <div id="armorInventoryList" class="list"></div>
             <div id="armorAddForm" class="add-panel collapsed-form hidden">
               <h3>Add Armor</h3>
               <div class="form">
-                <select class="full" id="armorCatalogSelect"></select>
-                <input
-                  id="armorNameInput"
-                  placeholder="Custom armor name or override"
-                />
-                <input
-                  id="armorCountInput"
-                  class="tiny"
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="Qty"
-                />
-                <input
-                  id="armorValueInput"
-                  class="tiny"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="+"
-                />
-                <select id="armorLocationSelect"></select>
+                <label class="full">
+                  Catalog armor
+                  <select id="armorCatalogSelect"></select>
+                </label>
+                <label>
+                  Name override
+                  <input
+                    id="armorNameInput"
+                    placeholder="Custom armor name"
+                  />
+                </label>
+                <label>
+                  Quantity
+                  <input
+                    id="armorCountInput"
+                    class="tiny"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="1"
+                  />
+                </label>
+                <label>
+                  Armor bonus
+                  <input
+                    id="armorValueInput"
+                    class="tiny"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="1"
+                  />
+                </label>
+                <label>
+                  Location
+                  <select id="armorLocationSelect"></select>
+                </label>
                 <button id="addArmorBtn" type="button">Add Armor</button>
+                <button id="cancelArmorAddBtn" class="ghost" type="button">
+                  Cancel
+                </button>
                 <p id="armorCatalogPreview" class="preview"></p>
               </div>
             </div>
+            <div id="armorLocationList" class="grid armor-locs"></div>
+            <div id="armorInventoryList" class="list"></div>
           </section>
 
           <section class="card wide">
@@ -374,53 +480,87 @@
                 Add Weapon
               </button>
             </div>
-            <div id="weaponList" class="grid weapons"></div>
             <div id="weaponAddForm" class="add-panel collapsed-form hidden">
               <h3>Add Weapon</h3>
               <div class="form">
-                <select class="full" id="weaponCatalogSelect"></select>
-                <input
-                  id="weaponNameInput"
-                  placeholder="Custom weapon name or override"
-                />
-                <input
-                  id="weaponQtyInput"
-                  class="tiny"
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="Qty"
-                />
-                <input id="weaponDamageInput" placeholder="Damage" />
-                <input id="weaponRangeInput" placeholder="Range" />
-                <input
-                  id="weaponApInput"
-                  class="tiny"
-                  type="number"
-                  step="1"
-                  placeholder="AP"
-                />
-                <input id="weaponRofInput" class="tiny" placeholder="ROF" />
-                <input
-                  id="weaponCapacityInput"
-                  class="tiny"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="Cap"
-                />
-                <select id="weaponAmmoTypeSelect"></select>
+                <label class="full">
+                  Catalog weapon
+                  <select id="weaponCatalogSelect"></select>
+                </label>
+                <label>
+                  Name override
+                  <input
+                    id="weaponNameInput"
+                    placeholder="Custom weapon name"
+                  />
+                </label>
+                <label>
+                  Quantity
+                  <input
+                    id="weaponQtyInput"
+                    class="tiny"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="1"
+                  />
+                </label>
+                <label>
+                  Damage
+                  <input id="weaponDamageInput" placeholder="2d6+1" />
+                </label>
+                <label>
+                  Range
+                  <input id="weaponRangeInput" placeholder="12/24/48" />
+                </label>
+                <label>
+                  AP
+                  <input
+                    id="weaponApInput"
+                    class="tiny"
+                    type="number"
+                    step="1"
+                    placeholder="0"
+                  />
+                </label>
+                <label>
+                  RoF
+                  <input id="weaponRofInput" class="tiny" placeholder="1" />
+                </label>
+                <label>
+                  Shots
+                  <input
+                    id="weaponCapacityInput"
+                    class="tiny"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="6"
+                  />
+                </label>
+                <label>
+                  Ammunition
+                  <select id="weaponAmmoTypeSelect"></select>
+                </label>
                 <button id="addWeaponBtn" type="button">Add Weapon</button>
+                <button
+                  id="cancelWeaponAddBtn"
+                  class="ghost"
+                  type="button"
+                >
+                  Cancel
+                </button>
                 <p id="weaponCatalogPreview" class="preview"></p>
               </div>
             </div>
+            <div id="weaponList" class="grid weapons"></div>
           </section>
 
           <section class="card wide">
             <div class="section-title">
               <div>
                 <h2>Ammo Inventory</h2>
-                <p>Reserve ammunition by type.</p>
+                <p>Reserve ammunition by firearm type and caliber.</p>
               </div>
               <button
                 class="ghost"
@@ -430,31 +570,44 @@
                 Add Ammo
               </button>
             </div>
-            <div id="ammoReserves" class="grid ammo"></div>
             <div id="ammoAddForm" class="add-panel collapsed-form hidden">
               <h3>Add Ammunition</h3>
               <div class="form">
-                <select class="full" id="ammoGearSelect"></select>
-                <input
-                  id="ammoLabelInput"
-                  placeholder="Custom ammo name or override"
-                />
-                <input
-                  id="ammoCountInput"
-                  class="tiny"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="Qty"
-                />
-                <input
-                  id="ammoNoteInput"
-                  placeholder="Optional caliber or note"
-                />
+                <label class="full">
+                  Catalog ammunition
+                  <select id="ammoGearSelect"></select>
+                </label>
+                <label>
+                  Name override
+                  <input id="ammoLabelInput" placeholder="Custom ammo name" />
+                </label>
+                <label>
+                  Quantity
+                  <input
+                    id="ammoCountInput"
+                    class="tiny"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="1"
+                  />
+                </label>
+                <label>
+                  Caliber
+                  <select id="ammoCaliberSelect"></select>
+                </label>
+                <label>
+                  Note
+                  <input id="ammoNoteInput" placeholder="Optional note" />
+                </label>
                 <button id="addAmmoBtn" type="button">Add Ammo</button>
+                <button id="cancelAmmoAddBtn" class="ghost" type="button">
+                  Cancel
+                </button>
                 <p id="ammoGearPreview" class="preview"></p>
               </div>
             </div>
+            <div id="ammoReserves" class="grid ammo"></div>
           </section>
 
           <section class="card wide">
@@ -471,28 +624,43 @@
                 Add Vehicle
               </button>
             </div>
-            <div id="vehicleList" class="list"></div>
             <div id="vehicleAddForm" class="add-panel collapsed-form hidden">
               <h3>Add Vehicle</h3>
               <div class="form">
-                <select class="full" id="vehicleCatalogSelect"></select>
-                <input
-                  id="vehicleNameInput"
-                  placeholder="Custom vehicle name or override"
-                />
-                <input
-                  id="vehicleQtyInput"
-                  class="tiny"
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="Qty"
-                />
-                <input id="vehicleNoteInput" placeholder="Optional note" />
+                <label class="full">
+                  Catalog vehicle
+                  <select id="vehicleCatalogSelect"></select>
+                </label>
+                <label>
+                  Name override
+                  <input
+                    id="vehicleNameInput"
+                    placeholder="Custom vehicle name"
+                  />
+                </label>
+                <label>
+                  Quantity
+                  <input
+                    id="vehicleQtyInput"
+                    class="tiny"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="1"
+                  />
+                </label>
+                <label>
+                  Note
+                  <input id="vehicleNoteInput" placeholder="Optional note" />
+                </label>
                 <button id="addVehicleBtn" type="button">Add Vehicle</button>
+                <button id="cancelVehicleAddBtn" class="ghost" type="button">
+                  Cancel
+                </button>
                 <p id="vehicleCatalogPreview" class="preview"></p>
               </div>
             </div>
+            <div id="vehicleList" class="list"></div>
           </section>
         </section>
 
@@ -660,6 +828,7 @@
           <button class="remove-btn danger" type="button">Remove</button>
         </div>
         <p class="weapon-notes muted"></p>
+        <p class="weapon-warning hidden"></p>
       </article>
     </template>
 

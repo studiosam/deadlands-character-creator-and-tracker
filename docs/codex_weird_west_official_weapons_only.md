@@ -1,854 +1,31 @@
-const GEAR_CATALOG = [
-  {
-    id: "winter-coat",
-    name: "Winter coat",
-    book: "Deadlands",
-    weight: 3,
-    costCents: 1500,
-  },
-  {
-    id: "watch-standard",
-    name: "Watch, standard",
-    book: "Deadlands",
-    weight: 0.5,
-    costCents: 250,
-  },
-  {
-    id: "watch-gold",
-    name: "Watch, gold",
-    book: "Deadlands",
-    weight: 0.5,
-    costCents: 1000,
-  },
-  {
-    id: "vocal-unction-elixir",
-    name: "Vocal unction elixir",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 5000,
-  },
-  {
-    id: "vapor-mask",
-    name: "Vapor mask",
-    book: "Deadlands",
-    weight: 0.5,
-    costCents: 10000,
-  },
-  {
-    id: "trousers-skirt",
-    name: "Trousers/skirt",
-    book: "Deadlands",
-    weight: 2,
-    costCents: 200,
-  },
-  {
-    id: "trail-rations-per-day",
-    name: "Trail Rations (per day)",
-    book: "Deadlands",
-    weight: 3,
-    costCents: 50,
-  },
-  {
-    id: "tool-kit-weird-science",
-    name: "Tool Kit (Weird Science)",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 5000,
-  },
-  {
-    id: "tool-kit",
-    name: "Tool kit",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 2500,
-  },
-  {
-    id: "tobacco-smoking-pouch",
-    name: "Tobacco, smoking (pouch)",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 50,
-  },
-  {
-    id: "tobacco-chewing-tin",
-    name: "Tobacco, chewing (tin)",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 50,
-  },
-  {
-    id: "tactile-desensitizer",
-    name: "Tactile desensitizer",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 3000,
-  },
-  {
-    id: "suit-fancy-dress",
-    name: "Suit/fancy dress",
-    book: "Deadlands",
-    weight: 6,
-    costCents: 1500,
-  },
-  {
-    id: "stetson",
-    name: "Stetson",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 500,
-  },
-  {
-    id: "spring-boots",
-    name: "Spring Boots",
-    book: "Deadlands",
-    weight: 2,
-    costCents: 40000,
-  },
-  {
-    id: "speed-load-cylinder",
-    name: "Speed-load cylinder",
-    book: "Deadlands",
-    weight: 0.25,
-    costCents: 300,
-  },
-  {
-    id: "spectacles",
-    name: "Spectacles",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 500,
-  },
-  {
-    id: "sombrero",
-    name: "Sombrero",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 350,
-  },
-  {
-    id: "silver-ore",
-    name: "Silver ore",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 2400,
-  },
-  {
-    id: "silk-stockings",
-    name: "Silk Stockings",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 100,
-  },
-  {
-    id: "shovel",
-    name: "Shovel",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 150,
-  },
-  {
-    id: "shotgun-thong",
-    name: "Shotgun thong",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 25,
-  },
-  {
-    id: "shotgun-shells",
-    name: "Shotgun shells",
-    book: "Deadlands",
-    weight: 0.1,
-    costCents: 10,
-  },
-  {
-    id: "shot-w-powder",
-    name: "Shot w/powder",
-    book: "Deadlands",
-    weight: 0.2,
-    costCents: 5,
-  },
-  {
-    id: "shoes",
-    name: "Shoes",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 200,
-  },
-  {
-    id: "shirt-blouse-work",
-    name: "Shirt/blouse, work",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 100,
-  },
-  {
-    id: "shirt-blouse-dress",
-    name: "Shirt/blouse, dress",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 300,
-  },
-  {
-    id: "scope",
-    name: "Scope",
-    book: "Deadlands",
-    weight: 2,
-    costCents: 3000,
-  },
-  {
-    id: "samson-s-elixir",
-    name: "Samson's elixir",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 6000,
-  },
-  {
-    id: "saddlebags",
-    name: "Saddlebags",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 500,
-  },
-  {
-    id: "saddle",
-    name: "Saddle",
-    book: "Deadlands",
-    weight: 30,
-    costCents: 2500,
-  },
-  {
-    id: "rope-10",
-    name: 'Rope (10")',
-    book: "Deadlands",
-    weight: 8,
-    costCents: 500,
-  },
-  {
-    id: "rifle-boot",
-    name: "Rifle Boot",
-    book: "Deadlands",
-    weight: 0.5,
-    costCents: 300,
-  },
-  {
-    id: "rifle-ammunition-small-38-44-caliber",
-    name: "Rifle Ammunition (Small, .38-.44 caliber)",
-    book: "Deadlands",
-    weight: 0.12,
-    costCents: 8,
-  },
-  {
-    id: "rifle-ammunition-large-50-caliber",
-    name: "Rifle Ammunition (Large, .50+ caliber)",
-    book: "Deadlands",
-    weight: 0.16,
-    costCents: 10,
-  },
-  {
-    id: "restoration-elixir",
-    name: "Restoration elixir",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 10000,
-  },
-  {
-    id: "refined-ghost-rock",
-    name: "Refined Ghost Rock",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 15000,
-  },
-  {
-    id: "rattler-detector",
-    name: "Rattler detector",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 10000,
-  },
-  {
-    id: "quick-draw-holster",
-    name: "Quick-draw holster",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 1100,
-  },
-  {
-    id: "powered-de-moler",
-    name: "Powered De-Moler",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 12000,
-  },
-  {
-    id: "playing-cards",
-    name: "Playing cards",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 25,
-  },
-  {
-    id: "pistol-ammunition-small-22-38-caliber",
-    name: "Pistol Ammunition (Small, .22-.38 caliber)",
-    book: "Deadlands",
-    weight: 0.06,
-    costCents: 4,
-  },
-  {
-    id: "pistol-ammunition-large-40-50-caliber",
-    name: "Pistol Ammunition (Large, .40-.50 caliber)",
-    book: "Deadlands",
-    weight: 0.1,
-    costCents: 6,
-  },
-  {
-    id: "pipe",
-    name: "Pipe",
-    book: "Deadlands",
-    weight: 0.75,
-    costCents: 200,
-  },
-  {
-    id: "pick",
-    name: "Pick",
-    book: "Deadlands",
-    weight: 12,
-    costCents: 200,
-  },
-  {
-    id: "percussion-caps",
-    name: "Percussion caps",
-    book: "Deadlands",
-    weight: 0.17,
-    costCents: 1,
-  },
-  {
-    id: "owl-eye-goggles",
-    name: "Owl-eye goggles",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 60000,
-  },
-  {
-    id: "noiseless-shoes",
-    name: "Noiseless Shoes",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 50000,
-  },
-  {
-    id: "mule",
-    name: "Mule",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 5000,
-  },
-  {
-    id: "mess-kit",
-    name: "Mess kit",
-    book: "Deadlands",
-    weight: 3,
-    costCents: 200,
-  },
-  {
-    id: "mechanical-mule",
-    name: "Mechanical mule",
-    book: "Deadlands",
-    weight: 800,
-    costCents: 150000,
-  },
-  {
-    id: "matches-box-100",
-    name: "Matches (box 100)",
-    book: "Deadlands",
-    weight: 0.25,
-    costCents: 50,
-  },
-  {
-    id: "longjohns",
-    name: "Longjohns",
-    book: "Deadlands",
-    weight: 2,
-    costCents: 200,
-  },
-  {
-    id: "lockpicks",
-    name: "Lockpicks",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 500,
-  },
-  {
-    id: "liquid-courage",
-    name: "Liquid courage",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 3000,
-  },
-  {
-    id: "lantern-oil-per-gallon",
-    name: "Lantern oil (per gallon)",
-    book: "Deadlands",
-    weight: 6,
-    costCents: 10,
-  },
-  {
-    id: "lantern",
-    name: "Lantern",
-    book: "Deadlands",
-    weight: 4,
-    costCents: 250,
-  },
-  {
-    id: "iron-skillet",
-    name: "Iron Skillet",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 50,
-  },
-  {
-    id: "horse",
-    name: "Horse",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 15000,
-  },
-  {
-    id: "holster",
-    name: "Holster",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 300,
-  },
-  {
-    id: "healing-unguent",
-    name: "Healing unguent",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 8000,
-  },
-  {
-    id: "hatchet",
-    name: "Hatchet",
-    book: "Deadlands",
-    weight: 2.5,
-    costCents: 100,
-  },
-  {
-    id: "hat-periscope",
-    name: "Hat Periscope",
-    book: "Deadlands",
-    weight: 12,
-    costCents: 20000,
-  },
-  {
-    id: "harmonica",
-    name: "Harmonica",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 50,
-  },
-  {
-    id: "handcuffs",
-    name: "Handcuffs",
-    book: "Deadlands",
-    weight: 3,
-    costCents: 350,
-  },
-  {
-    id: "hammer",
-    name: "Hammer",
-    book: "Deadlands",
-    weight: 2,
-    costCents: 50,
-  },
-  {
-    id: "gun-belt",
-    name: "Gun belt",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 200,
-  },
-  {
-    id: "guitar",
-    name: "Guitar",
-    book: "Deadlands",
-    weight: 6,
-    costCents: 800,
-  },
-  {
-    id: "greased-lightning-pill",
-    name: "Greased lightning pill",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 7500,
-  },
-  {
-    id: "gold-ore",
-    name: "Gold ore",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 32000,
-  },
-  {
-    id: "ghost-rock-ore",
-    name: "Ghost rock ore",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 10000,
-  },
-  {
-    id: "gatling-shotgun-ammo-drum",
-    name: "Gatling Shotgun Ammo Drum",
-    book: "Deadlands",
-    weight: 3.5,
-    costCents: 500,
-  },
-  {
-    id: "gatling-rifle-ammo-drum",
-    name: "Gatling Rifle Ammo Drum",
-    book: "Deadlands",
-    weight: 7,
-    costCents: 500,
-  },
-  {
-    id: "gatling-pistol-ammo-drum",
-    name: "Gatling Pistol Ammo Drum",
-    book: "Deadlands",
-    weight: 3,
-    costCents: 200,
-  },
-  {
-    id: "gatling-carbine-ammo-drum",
-    name: "Gatling Carbine Ammo Drum",
-    book: "Deadlands",
-    weight: 7,
-    costCents: 500,
-  },
-  {
-    id: "fuse-per-foot",
-    name: "Fuse (per foot)",
-    book: "Deadlands",
-    weight: 0.1,
-    costCents: 5,
-  },
-  {
-    id: "file",
-    name: "File",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 25,
-  },
-  {
-    id: "fedora",
-    name: "Fedora",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 300,
-  },
-  {
-    id: "epitaph-camera",
-    name: "Epitaph camera",
-    book: "Deadlands",
-    weight: 7,
-    costCents: 160000,
-  },
-  {
-    id: "electrostatic-belt",
-    name: "Electrostatic belt",
-    book: "Deadlands",
-    weight: 7,
-    costCents: 150000,
-  },
-  {
-    id: "dynamite-plinger-3",
-    name: "Dynamite Plinger (3)",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 2000,
-  },
-  {
-    id: "duster",
-    name: "Duster",
-    book: "Deadlands",
-    weight: 4,
-    costCents: 1000,
-  },
-  {
-    id: "drill",
-    name: "Drill",
-    book: "Deadlands",
-    weight: 2,
-    costCents: 200,
-  },
-  {
-    id: "doctor-s-bag",
-    name: "Doctor's Bag",
-    book: "Deadlands",
-    weight: 6,
-    costCents: 1000,
-  },
-  {
-    id: "diving-suit",
-    name: "Diving Suit",
-    book: "Deadlands",
-    weight: 45,
-    costCents: 200000,
-  },
-  {
-    id: "disguise-kit",
-    name: "Disguise kit",
-    book: "Deadlands",
-    weight: 8,
-    costCents: 1000,
-  },
-  {
-    id: "detonator-plunger",
-    name: "Detonator, plunger",
-    book: "Deadlands",
-    weight: 10,
-    costCents: 1000,
-  },
-  {
-    id: "detonation-wire-per-50",
-    name: "Detonation wire (per 50\u2019)",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 250,
-  },
-  {
-    id: "derby",
-    name: "Derby",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 150,
-  },
-  {
-    id: "dehydrated-air-tablet",
-    name: "Dehydrated air tablet",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 3000,
-  },
-  {
-    id: "coffee-per-lb",
-    name: "Coffee (per lb)",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 25,
-  },
-  {
-    id: "cigar",
-    name: "Cigar",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 5,
-  },
-  {
-    id: "canteen",
-    name: "Canteen",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 100,
-  },
-  {
-    id: "camera",
-    name: "Camera",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 300,
-  },
-  {
-    id: "boots",
-    name: "Boots",
-    book: "Deadlands",
-    weight: 4,
-    costCents: 800,
-  },
-  {
-    id: "bonnet",
-    name: "Bonnet",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 200,
-  },
-  {
-    id: "blasting-cap",
-    name: "Blasting Cap",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 100,
-  },
-  {
-    id: "bedroll",
-    name: "Bedroll",
-    book: "Deadlands",
-    weight: 10,
-    costCents: 400,
-  },
-  {
-    id: "barbed-wire-per-yard",
-    name: "Barbed wire (per yard)",
-    book: "Deadlands",
-    weight: 3,
-    costCents: 200,
-  },
-  {
-    id: "bacon-per-lb",
-    name: "Bacon (per lb)",
-    book: "Deadlands",
-    weight: 1,
-    costCents: 15,
-  },
-  {
-    id: "backpack",
-    name: "Backpack",
-    book: "Deadlands",
-    weight: 3,
-    costCents: 200,
-  },
-  {
-    id: "ax-wood",
-    name: "Ax, wood",
-    book: "Deadlands",
-    weight: 5,
-    costCents: 200,
-  },
-  {
-    id: "arrow",
-    name: "Arrow",
-    book: "Deadlands",
-    weight: 0.2,
-    costCents: 10,
-  },
-  {
-    id: "adrenal-booster",
-    name: "Adrenal booster",
-    book: "Deadlands",
-    weight: 0,
-    costCents: 20000,
-  },
-];
-const ARMOR_LOCATIONS = [
-  { id: "head", label: "Head" },
-  { id: "face", label: "Face" },
-  { id: "torso", label: "Torso" },
-  { id: "arms", label: "Arms" },
-  { id: "legs", label: "Legs" },
-  { id: "shield", label: "Shield / carried" },
-];
-const ARMOR_CATALOG = [
-  {
-    id: "native-shield-small",
-    name: "Native Shield (Small)",
-    book: "Deadlands",
-    armor: 1,
-    weight: 3,
-    minStr: "d4",
-    costCents: 200,
-    location: "shield",
-  },
-  {
-    id: "native-shield-medium",
-    name: "Native Shield (Medium)",
-    book: "Deadlands",
-    armor: 2,
-    weight: 5,
-    minStr: "d4",
-    costCents: 300,
-    location: "shield",
-  },
-  {
-    id: "native-armor",
-    name: "Native Armor",
-    book: "Deadlands",
-    armor: 1,
-    weight: 3,
-    minStr: "d4",
-    costCents: 200,
-    location: "torso",
-  },
-  {
-    id: "inventors-apron",
-    name: "Inventor’s apron",
-    book: "Deadlands",
-    armor: 1,
-    weight: 4,
-    minStr: "d4",
-    costCents: 4000,
-    location: "torso",
-  },
-  {
-    id: "chaps",
-    name: "Chaps",
-    book: "Deadlands",
-    armor: 1,
-    weight: 6,
-    minStr: "d4",
-    costCents: 400,
-    location: "legs",
-  },
-  {
-    id: "armored-vest-corset-light",
-    name: "Armored vest/corset (light)",
-    book: "Deadlands",
-    armor: 1,
-    weight: 5,
-    minStr: "d4",
-    costCents: 10000,
-    location: "torso",
-  },
-  {
-    id: "armored-vest-corset-heavy",
-    name: "Armored vest/corset (heavy)",
-    book: "Deadlands",
-    armor: 2,
-    weight: 20,
-    minStr: "d6",
-    costCents: 50000,
-    location: "torso",
-  },
-  {
-    id: "armored-hat-light",
-    name: "Armored hat (light)",
-    book: "Deadlands",
-    armor: 1,
-    weight: 2,
-    minStr: "d4",
-    costCents: 4000,
-    location: "head",
-  },
-  {
-    id: "armored-hat-heavy",
-    name: "Armored hat (heavy)",
-    book: "Deadlands",
-    armor: 2,
-    weight: 4,
-    minStr: "d4",
-    costCents: 8000,
-    location: "head",
-  },
-  {
-    id: "armored-duster-light",
-    name: "Armored duster (light)",
-    book: "Deadlands",
-    armor: 1,
-    weight: 10,
-    minStr: "d6",
-    costCents: 20000,
-    location: "torso",
-  },
-  {
-    id: "armored-duster-heavy",
-    name: "Armored duster (heavy)",
-    book: "Deadlands",
-    armor: 2,
-    weight: 20,
-    minStr: "d8",
-    costCents: 40000,
-    location: "torso",
-  },
-];
-const WEAPON_CATALOG = [
+# Codex Task: Replace Weapon Catalog with Official Deadlands: The Weird West Weapons Only
+
+Use this file to update the app's `WEAPON_CATALOG` with official `Deadlands: The Weird West` weapon values only.
+
+Do not use any Deadlands: Hell on Earth or Greywolf house-rule data. Do not add HoE `speed` fields. The official Weird West weapon tables use SWADE-style fields: `Range`, `Damage`, `AP`, `RoF`, `Shots`, `Min. Str`, `Wt`, and `Cost`.
+
+## Target file
+
+```txt
+src/catalogs.js
+```
+
+## Implementation requirements
+
+1. Replace the current `WEAPON_CATALOG` weapon data with the `WEIRD_WEST_WEAPON_CATALOG` array below.
+2. Preserve these fields: `id`, `name`, `book`, `category`, `damage`, `range`, `ap`, `rof`, `shotsMax`, `shotsText`, `minStr`, `weight`, `weightText`, `costCents`, `costText`, `ammoType`, `caliber`, `modeOf`, and `notes`.
+3. If the existing UI cannot use every field yet, keep the extra fields anyway. They are useful for filtering, ammo tracking, and future modes.
+4. Treat LeMat revolver/carbine shotgun barrels as alternate modes, not as unrelated weapons. The `modeOf` field marks these.
+5. Treat thrown profiles as separate entries because their Range/AP/RoF/Shots fields differ from melee profiles.
+6. Treat dynamite/nitro entries as special explosive weapon entries. Do not force normal firearm reload or reserve-ammo behavior onto them.
+7. Keep `shotsMax: null` where the source table does not give a normal numeric capacity.
+8. Verify that weapon selection fills damage, range, AP, RoF, shots, minimum Strength, weight, cost, ammo type, and notes.
+9. Do not label this as fan data, HoE data, or a house-rule list. This file is for official Weird West weapon values only.
+
+## Weapon catalog data
+
+```js
+export const WEIRD_WEST_WEAPON_CATALOG = [
   {
     "id": "ww-brass-knuckles",
     "name": "Brass Knuckles",
@@ -868,7 +45,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Does not count as a weapon for Unarmed Defender."
+    "notes": "Does not count as a weapon for Unarmed Defender.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-bayonet",
@@ -889,7 +67,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Str+d6 and Parry +1 if attached to a rifle; Reach 1; two hands."
+    "notes": "Str+d6 and Parry +1 if attached to a rifle; Reach 1; two hands.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-club",
@@ -910,7 +89,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-club-war",
@@ -931,7 +111,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-club-war-bladed",
@@ -952,7 +133,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Parry -1; two hands."
+    "notes": "Parry -1; two hands.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-knife",
@@ -973,7 +155,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-knife-bowie",
@@ -994,7 +177,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-lance-plains-indian",
@@ -1015,7 +199,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Reach 2; mounted combat only."
+    "notes": "Reach 2; mounted combat only.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-lariat",
@@ -1036,7 +221,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Parry -1; Reach 2. Used to initiate a Test with Fighting. Target is Entangled on success, Bound on a raise."
+    "notes": "Parry -1; Reach 2. Used to initiate a Test with Fighting. Target is Entangled on success, Bound on a raise.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-saber",
@@ -1057,7 +243,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Typically used by cavalry."
+    "notes": "Typically used by cavalry.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-spear",
@@ -1078,7 +265,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Parry +1; Reach 1; two hands."
+    "notes": "Parry +1; Reach 1; two hands.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-tomahawk",
@@ -1099,7 +287,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-whip",
@@ -1120,7 +309,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Parry -1; Reach 2. With a raise on the attack roll, the victim is Entangled instead of taking bonus d6 damage."
+    "notes": "Parry -1; Reach 2. With a raise on the attack roll, the victim is Entangled instead of taking bonus d6 damage.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-gatling-pistol-36",
@@ -1141,7 +331,8 @@ const WEAPON_CATALOG = [
     "ammoType": "gatling-pistol-drum",
     "caliber": ".36",
     "modeOf": "",
-    "notes": "Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action. Pistol drums can be replaced in one action."
+    "notes": "Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action. Pistol drums can be replaced in one action.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-gatling-carbine-45",
@@ -1162,7 +353,8 @@ const WEAPON_CATALOG = [
     "ammoType": "gatling-rifle-carbine-drum",
     "caliber": ".45",
     "modeOf": "",
-    "notes": "Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action. Carbine drums can be replaced in one action."
+    "notes": "Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action. Carbine drums can be replaced in one action.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-gatling-rifle-45",
@@ -1183,7 +375,8 @@ const WEAPON_CATALOG = [
     "ammoType": "gatling-rifle-carbine-drum",
     "caliber": ".45",
     "modeOf": "",
-    "notes": "Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action. Rifle drums can be replaced in one action."
+    "notes": "Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action. Rifle drums can be replaced in one action.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-gatling-shotgun",
@@ -1204,7 +397,8 @@ const WEAPON_CATALOG = [
     "ammoType": "gatling-shotgun-drum",
     "caliber": "12-ga",
     "modeOf": "",
-    "notes": "Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action. Shotgun drums can be replaced in one action. Shotgun damage varies by range band."
+    "notes": "Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action. Shotgun drums can be replaced in one action. Shotgun damage varies by range band.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-gatling-gun-45",
@@ -1225,7 +419,8 @@ const WEAPON_CATALOG = [
     "ammoType": "gatling-gun-45",
     "caliber": ".45",
     "modeOf": "",
-    "notes": "Mounted on carriage or pintle mount, negating Recoil but possibly restricting firing arc. Early models use a 20-round stick; later models use a 100-round belt. Loading a stick takes one action. Loading a belt takes two actions. Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action."
+    "notes": "Mounted on carriage or pintle mount, negating Recoil but possibly restricting firing arc. Early models use a 20-round stick; later models use a 100-round belt. Loading a stick takes one action. Loading a belt takes two actions. Gatling weapons cannot fire single shots and must fire their full Rate of Fire. On a Critical Failure, the weapon jams and needs a Repair roll as an action.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-derringer-41",
@@ -1246,7 +441,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".41",
     "modeOf": "",
-    "notes": "-2 to be Noticed if hidden."
+    "notes": "-2 to be Noticed if hidden.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-english-1840-model-36",
@@ -1267,7 +463,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-small",
     "caliber": ".36",
     "modeOf": "",
-    "notes": "Reload 3; black powder weapon."
+    "notes": "Reload 3; black powder weapon.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-rupertus-pepperbox-22",
@@ -1288,7 +485,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-small",
     "caliber": ".22",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-wesson-dagger-pistol-41",
@@ -1309,7 +507,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".41",
     "modeOf": "",
-    "notes": "A knife blade dealing Str+d4 damage juts out from between the barrels."
+    "notes": "A knife blade dealing Str+d4 damage juts out from between the barrels.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-army-44",
@@ -1330,7 +529,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".44",
     "modeOf": "",
-    "notes": "Older versions are cap and ball weapons with Reload 3 and cost $10."
+    "notes": "Older versions are cap and ball weapons with Reload 3 and cost $10.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-buntline-special-45",
@@ -1351,7 +551,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".45",
     "modeOf": "",
-    "notes": "16-inch barrel and detachable shoulder stock. Must be ordered direct from Colt. Does not benefit from quick-draw holsters."
+    "notes": "16-inch barrel and detachable shoulder stock. Must be ordered direct from Colt. Does not benefit from quick-draw holsters.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-dragoon-44",
@@ -1372,7 +573,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".44",
     "modeOf": "",
-    "notes": "Reload 3; black powder weapon."
+    "notes": "Reload 3; black powder weapon.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-navy-36",
@@ -1393,7 +595,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-small",
     "caliber": ".36",
     "modeOf": "",
-    "notes": "Older versions are cap and ball weapons with Reload 3 and cost $8."
+    "notes": "Older versions are cap and ball weapons with Reload 3 and cost $8.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-peacemaker-45",
@@ -1414,7 +617,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".45",
     "modeOf": "",
-    "notes": "Also known as the Colt Single-Action Army."
+    "notes": "Also known as the Colt Single-Action Army.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-lemat-revolver-40",
@@ -1435,7 +639,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".40",
     "modeOf": "",
-    "notes": "Includes a 20-gauge shotgun barrel mounted under the pistol. Switching between revolver and shotgun mode is a free action."
+    "notes": "Includes a 20-gauge shotgun barrel mounted under the pistol. Switching between revolver and shotgun mode is a free action.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-lemat-revolver-shotgun-barrel-20-ga",
@@ -1456,7 +661,8 @@ const WEAPON_CATALOG = [
     "ammoType": "shotgun-20ga",
     "caliber": "20-ga",
     "modeOf": "LeMat Revolver (.40)",
-    "notes": "Alternate mode of the LeMat Revolver. Switching between revolver and shotgun mode is a free action. Shotgun damage varies by range band."
+    "notes": "Alternate mode of the LeMat Revolver. Switching between revolver and shotgun mode is a free action. Shotgun damage varies by range band.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-frontier-44-40",
@@ -1477,7 +683,8 @@ const WEAPON_CATALOG = [
     "ammoType": "44-40",
     "caliber": ".44-40",
     "modeOf": "",
-    "notes": "Also known as the Double-Action Army. Ammunition may be shared with the Winchester '73."
+    "notes": "Also known as the Double-Action Army. Ammunition may be shared with the Winchester '73.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-lightning-38",
@@ -1498,7 +705,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-small",
     "caliber": ".38",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-rainmaker-32",
@@ -1519,7 +727,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-small",
     "caliber": ".32",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-thunderer-41",
@@ -1540,7 +749,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".41",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-starr-revolver-44",
@@ -1561,7 +771,8 @@ const WEAPON_CATALOG = [
     "ammoType": "pistol-large",
     "caliber": ".44",
     "modeOf": "",
-    "notes": "Older versions are cap and ball weapons with Reload 3 and cost $7."
+    "notes": "Older versions are cap and ball weapons with Reload 3 and cost $7.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-sharps-55-57",
@@ -1582,7 +793,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".57",
     "modeOf": "",
-    "notes": "Reload 3; black powder weapon."
+    "notes": "Reload 3; black powder weapon.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-spencer-56",
@@ -1603,7 +815,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".56",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-lemat-carbine-42",
@@ -1624,7 +837,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-small",
     "caliber": ".42",
     "modeOf": "",
-    "notes": "Includes a 20-gauge shotgun barrel mounted under the rifle. Switching between carbine and shotgun mode is a free action. Carbine and shotgun are cap and ball weapons with Reload 3."
+    "notes": "Includes a 20-gauge shotgun barrel mounted under the rifle. Switching between carbine and shotgun mode is a free action. Carbine and shotgun are cap and ball weapons with Reload 3.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-lemat-carbine-shotgun-barrel-20-ga",
@@ -1645,7 +859,8 @@ const WEAPON_CATALOG = [
     "ammoType": "shotgun-20ga",
     "caliber": "20-ga",
     "modeOf": "LeMat Carbine (.42)",
-    "notes": "Alternate mode of the LeMat Carbine. Switching between carbine and shotgun mode is a free action. Carbine and shotgun are cap and ball weapons with Reload 3. Shotgun damage varies by range band."
+    "notes": "Alternate mode of the LeMat Carbine. Switching between carbine and shotgun mode is a free action. Carbine and shotgun are cap and ball weapons with Reload 3. Shotgun damage varies by range band.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-ballard-72-56",
@@ -1666,7 +881,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".56",
     "modeOf": "",
-    "notes": "Reload 3; black powder weapon."
+    "notes": "Reload 3; black powder weapon.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-bullard-express-50",
@@ -1687,7 +903,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".50",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-paterson-model-36-69",
@@ -1708,7 +925,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".69",
     "modeOf": "",
-    "notes": "Reload 3; black powder weapon."
+    "notes": "Reload 3; black powder weapon.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-enfield-musket-58",
@@ -1729,7 +947,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".58",
     "modeOf": "",
-    "notes": "Reload 3; black powder weapon."
+    "notes": "Reload 3; black powder weapon.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-evans-old-model-sporter-44",
@@ -1750,7 +969,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-small",
     "caliber": ".44",
     "modeOf": "",
-    "notes": "Uses special .44-caliber ammunition made only by the manufacturer. Delivery takes about three weeks if ordered directly."
+    "notes": "Uses special .44-caliber ammunition made only by the manufacturer. Delivery takes about three weeks if ordered directly.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-sawed-off-winchester-44-40",
@@ -1771,7 +991,8 @@ const WEAPON_CATALOG = [
     "ammoType": "44-40",
     "caliber": ".44-40",
     "modeOf": "",
-    "notes": "Commonly known as a mare's leg. About as easy to conceal as a pistol."
+    "notes": "Commonly known as a mare's leg. About as easy to conceal as a pistol.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-sharps-big-50-50",
@@ -1792,7 +1013,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".50",
     "modeOf": "",
-    "notes": "Snapfire; cap and ball firearm; Reload 3."
+    "notes": "Snapfire; cap and ball firearm; Reload 3.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-springfield-rifled-musket-58",
@@ -1813,7 +1035,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".58",
     "modeOf": "",
-    "notes": "Shots are listed as blank in the source table. Reload 3; black powder weapon."
+    "notes": "Shots are listed as blank in the source table. Reload 3; black powder weapon.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-winchester-73-44-40",
@@ -1834,7 +1057,8 @@ const WEAPON_CATALOG = [
     "ammoType": "44-40",
     "caliber": ".44-40",
     "modeOf": "",
-    "notes": "Ammunition may be shared with Colt Frontier (.44-40)."
+    "notes": "Ammunition may be shared with Colt Frontier (.44-40).",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-winchester-76-45",
@@ -1855,7 +1079,8 @@ const WEAPON_CATALOG = [
     "ammoType": "rifle-large",
     "caliber": ".45",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-colt-revolving-shotgun",
@@ -1876,7 +1101,8 @@ const WEAPON_CATALOG = [
     "ammoType": "shotgun-shells",
     "caliber": "12-ga",
     "modeOf": "",
-    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range. Cap and ball weapon; Reload 3."
+    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range. Cap and ball weapon; Reload 3.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-double-barrel-shotgun",
@@ -1897,7 +1123,8 @@ const WEAPON_CATALOG = [
     "ammoType": "shotgun-shells",
     "caliber": "12-ga",
     "modeOf": "",
-    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range. If both barrels are fired at the same target, roll damage once and add +4."
+    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range. If both barrels are fired at the same target, roll damage once and add +4.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-sawed-off-double-barrel-shotgun",
@@ -1918,7 +1145,8 @@ const WEAPON_CATALOG = [
     "ammoType": "shotgun-shells",
     "caliber": "12-ga",
     "modeOf": "",
-    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range. As double-barrel. May be fired in melee using the Savage Worlds ranged weapons in melee rule."
+    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range. As double-barrel. May be fired in melee using the Savage Worlds ranged weapons in melee rule.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-single-barrel-shotgun",
@@ -1939,7 +1167,8 @@ const WEAPON_CATALOG = [
     "ammoType": "shotgun-shells",
     "caliber": "12-ga",
     "modeOf": "",
-    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range."
+    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-winchester-lever-action-shotgun",
@@ -1960,7 +1189,8 @@ const WEAPON_CATALOG = [
     "ammoType": "shotgun-shells",
     "caliber": "12-ga",
     "modeOf": "",
-    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range."
+    "notes": "Shotguns get +2 Shooting. Damage is 3d6 at Short Range, 2d6 at Medium Range, and 1d6 at Long Range.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-bola",
@@ -1981,7 +1211,8 @@ const WEAPON_CATALOG = [
     "ammoType": "thrown",
     "caliber": "",
     "modeOf": "",
-    "notes": "With a raise on the attack roll, the victim is Entangled instead of taking bonus d6 damage."
+    "notes": "With a raise on the attack roll, the victim is Entangled instead of taking bonus d6 damage.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-bow",
@@ -2002,7 +1233,8 @@ const WEAPON_CATALOG = [
     "ammoType": "arrow",
     "caliber": "",
     "modeOf": "",
-    "notes": ""
+    "notes": "",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-knife-thrown",
@@ -2023,7 +1255,8 @@ const WEAPON_CATALOG = [
     "ammoType": "thrown",
     "caliber": "",
     "modeOf": "",
-    "notes": "Thrown profile for Knife."
+    "notes": "Thrown profile for Knife.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-knife-bowie-thrown",
@@ -2044,7 +1277,8 @@ const WEAPON_CATALOG = [
     "ammoType": "thrown",
     "caliber": "",
     "modeOf": "",
-    "notes": "Thrown profile for Knife, Bowie."
+    "notes": "Thrown profile for Knife, Bowie.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-lance-plains-indian-thrown",
@@ -2065,7 +1299,8 @@ const WEAPON_CATALOG = [
     "ammoType": "thrown",
     "caliber": "",
     "modeOf": "",
-    "notes": "Reach 2; mounted combat only; may only be thrown from horseback."
+    "notes": "Reach 2; mounted combat only; may only be thrown from horseback.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-spear-thrown",
@@ -2086,7 +1321,8 @@ const WEAPON_CATALOG = [
     "ammoType": "thrown",
     "caliber": "",
     "modeOf": "",
-    "notes": "Thrown profile for Spear."
+    "notes": "Thrown profile for Spear.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-tomahawk-thrown",
@@ -2107,7 +1343,8 @@ const WEAPON_CATALOG = [
     "ammoType": "thrown",
     "caliber": "",
     "modeOf": "",
-    "notes": "Thrown profile for Tomahawk."
+    "notes": "Thrown profile for Tomahawk.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-war-club-thrown",
@@ -2128,7 +1365,8 @@ const WEAPON_CATALOG = [
     "ammoType": "thrown",
     "caliber": "",
     "modeOf": "",
-    "notes": "Thrown profile for War Club."
+    "notes": "Thrown profile for War Club.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-dynamite-nitro-1-2-sticks-or-pints",
@@ -2149,7 +1387,8 @@ const WEAPON_CATALOG = [
     "ammoType": "explosive",
     "caliber": "",
     "modeOf": "",
-    "notes": "Dynamite and nitroglycerine are Heavy Weapons. Throwing uses Athletics; setting uses Repair. Dynamite costs $3 per stick. Each pint of nitroglycerine acts as one stick of dynamite. Medium Blast Template; +2 damage for 2 sticks or pints."
+    "notes": "Dynamite and nitroglycerine are Heavy Weapons. Throwing uses Athletics; setting uses Repair. Dynamite costs $3 per stick. Each pint of nitroglycerine acts as one stick of dynamite. Medium Blast Template; +2 damage for 2 sticks or pints.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-dynamite-nitro-3-4-sticks-or-pints",
@@ -2170,7 +1409,8 @@ const WEAPON_CATALOG = [
     "ammoType": "explosive",
     "caliber": "",
     "modeOf": "",
-    "notes": "Dynamite and nitroglycerine are Heavy Weapons. Throwing uses Athletics; setting uses Repair. Dynamite costs $3 per stick. Each pint of nitroglycerine acts as one stick of dynamite. Large Blast Template; +2 damage for 4 sticks or pints."
+    "notes": "Dynamite and nitroglycerine are Heavy Weapons. Throwing uses Athletics; setting uses Repair. Dynamite costs $3 per stick. Each pint of nitroglycerine acts as one stick of dynamite. Large Blast Template; +2 damage for 4 sticks or pints.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-dynamite-nitro-5-6-sticks-or-pints",
@@ -2191,7 +1431,8 @@ const WEAPON_CATALOG = [
     "ammoType": "explosive",
     "caliber": "",
     "modeOf": "",
-    "notes": "Dynamite and nitroglycerine are Heavy Weapons. Throwing uses Athletics; setting uses Repair. Dynamite costs $3 per stick. Each pint of nitroglycerine acts as one stick of dynamite. 6-inch radius; +2 damage for 6 sticks or pints."
+    "notes": "Dynamite and nitroglycerine are Heavy Weapons. Throwing uses Athletics; setting uses Repair. Dynamite costs $3 per stick. Each pint of nitroglycerine acts as one stick of dynamite. 6-inch radius; +2 damage for 6 sticks or pints.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-dynamite-nitro-each-additional-stick-or-pint",
@@ -2212,7 +1453,8 @@ const WEAPON_CATALOG = [
     "ammoType": "explosive",
     "caliber": "",
     "modeOf": "",
-    "notes": "Dynamite and nitroglycerine are Heavy Weapons. Throwing uses Athletics; setting uses Repair. Dynamite costs $3 per stick. Each pint of nitroglycerine acts as one stick of dynamite. Add +0.5 inch radius per additional stick or pint."
+    "notes": "Dynamite and nitroglycerine are Heavy Weapons. Throwing uses Athletics; setting uses Repair. Dynamite costs $3 per stick. Each pint of nitroglycerine acts as one stick of dynamite. Add +0.5 inch radius per additional stick or pint.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-flamethrower",
@@ -2233,7 +1475,8 @@ const WEAPON_CATALOG = [
     "ammoType": "ghost-rock-fuel",
     "caliber": "",
     "modeOf": "",
-    "notes": "Heavy Weapon. Attack may be Evaded. Flammable targets may catch fire. Uses a one-pound chunk of ghost rock as fuel."
+    "notes": "Heavy Weapon. Attack may be Evaded. Flammable targets may catch fire. Uses a one-pound chunk of ghost rock as fuel.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-steam-saw",
@@ -2254,7 +1497,8 @@ const WEAPON_CATALOG = [
     "ammoType": "",
     "caliber": "",
     "modeOf": "",
-    "notes": "Steam-powered saw. On a Critical Failure Malfunction, it hits the user instead. Boiler is usually ground-mounted via 20-foot hose; worn boiler weighs 30 pounds and requires ghost steel backpack protection."
+    "notes": "Steam-powered saw. On a Critical Failure Malfunction, it hits the user instead. Boiler is usually ground-mounted via 20-foot hose; worn boiler weighs 30 pounds and requires ghost steel backpack protection.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   },
   {
     "id": "ww-steam-gatling",
@@ -2275,99 +1519,8 @@ const WEAPON_CATALOG = [
     "ammoType": "gatling-gun-45",
     "caliber": ".45",
     "modeOf": "",
-    "notes": "Standard Gatling gun attached to a high-pressure steam boiler. Gatlings must fire their full Rate of Fire. On a Critical Failure, it jams and needs a Repair roll as an action."
+    "notes": "Standard Gatling gun attached to a high-pressure steam boiler. Gatlings must fire their full Rate of Fire. On a Critical Failure, it jams and needs a Repair roll as an action.",
+    "sourceUrl": "https://anyflip.com/fmydc/hkmt/basic"
   }
 ];
-const VEHICLE_CATALOG = [
-  {
-    id: "whirligig-personal",
-    name: "Whirligig (Personal)",
-    book: "Deadlands",
-    costCents: 100000,
-  },
-  { id: "wagon", name: "Wagon", book: "Deadlands", costCents: 20000 },
-  {
-    id: "velocipede",
-    name: "Velocipede",
-    book: "Deadlands",
-    costCents: 100000,
-  },
-  { id: "train-car", name: "Train Car", book: "Deadlands", costCents: 800000 },
-  {
-    id: "super-gyro",
-    name: "Super Gyro",
-    book: "Deadlands",
-    costCents: 400000,
-  },
-  {
-    id: "submersible-boat",
-    name: "Submersible boat",
-    book: "Deadlands",
-    costCents: 2000000,
-  },
-  {
-    id: "steam-wagon",
-    name: "Steam Wagon",
-    book: "Deadlands",
-    costCents: 150000,
-  },
-  { id: "steam-cart", name: "Steam Cart", book: "Deadlands", costCents: 80000 },
-  { id: "stagecoach", name: "Stagecoach", book: "Deadlands", costCents: 30000 },
-  {
-    id: "rocket-pack",
-    name: "Rocket Pack",
-    book: "Deadlands",
-    costCents: 210000,
-  },
-  {
-    id: "rail-runner",
-    name: "Rail Runner",
-    book: "Deadlands",
-    costCents: 250000,
-  },
-  {
-    id: "powered-ornithopter",
-    name: "Powered Ornithopter",
-    book: "Deadlands",
-    costCents: 300000,
-  },
-  {
-    id: "paddlewheeler-large",
-    name: "Paddlewheeler, Large",
-    book: "Deadlands",
-    costCents: 5000000,
-  },
-  {
-    id: "paddlewheel-small",
-    name: "Paddlewheel, Small",
-    book: "Deadlands",
-    costCents: 2000000,
-  },
-  {
-    id: "maze-runner",
-    name: "Maze Runner",
-    book: "Deadlands",
-    costCents: 1500000,
-  },
-  {
-    id: "locomotive",
-    name: "Locomotive",
-    book: "Deadlands",
-    costCents: 1500000,
-  },
-  { id: "carriage", name: "Carriage", book: "Deadlands", costCents: 20000 },
-  {
-    id: "buckboard-buggy",
-    name: "Buckboard/buggy",
-    book: "Deadlands",
-    costCents: 7500,
-  },
-  { id: "bateaux", name: "Bateaux", book: "Deadlands", costCents: 5000 },
-  { id: "auto-gyro", name: "Auto-Gyro", book: "Deadlands", costCents: 150000 },
-  {
-    id: "air-carriage",
-    name: "Air Carriage",
-    book: "Deadlands",
-    costCents: 500000,
-  },
-];
+```

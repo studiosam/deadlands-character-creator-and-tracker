@@ -455,6 +455,15 @@ function catalogOptions(items) {
   return `<option value="">Choose…</option>${items.map((item) => `<option value="${esc(item.id)}">${esc(item.name)} — ${money(item.costCents)}</option>`).join("")}`;
 }
 
+function catalogByName(items) {
+  return [...items].sort((left, right) =>
+    left.name.localeCompare(right.name, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
+  );
+}
+
 function setAppTab(tabName) {
   const panelMap = {
     play: "#playPanel",
@@ -935,7 +944,7 @@ function bindCreatorInputs() {
               ? ARMOR_CATALOG
               : type === "vehicle"
                 ? VEHICLE_CATALOG
-                : GEAR_CATALOG;
+                : catalogByName(GEAR_CATALOG);
       itemSelect.innerHTML = catalogOptions(items);
     };
     typeSelect.onchange = fill;

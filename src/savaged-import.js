@@ -27,11 +27,14 @@ function savagedAmmoKey(item) {
   if (/shotgun|shell/.test(text)) return "shotgun-shells";
   if (/arrow/.test(text)) return "arrow";
   if (/cap/.test(text)) return "percussion-caps";
-  if (/rifle.*small/.test(text)) return "rifleSmall";
-  if (/rifle.*large/.test(text)) return "rifle-ammunition-large-50-caliber";
-  if (/pistol.*large/.test(text)) return "pistolLarge";
+  if (/rifle.*small/.test(text))
+    return ammoKey("rifle", caliberFromText(text) || ".44");
+  if (/rifle.*large/.test(text))
+    return ammoKey("rifle", caliberFromText(text) || ".50");
+  if (/pistol.*large/.test(text))
+    return ammoKey("pistol", caliberFromText(text) || ".44");
   if (/pistol.*small/.test(text))
-    return "pistol-ammunition-small-22-38-caliber";
+    return ammoKey("pistol", caliberFromText(text) || ".38");
   return slugify(item?.name || "ammo");
 }
 
@@ -46,18 +49,18 @@ function savagedWeaponAmmo(weapon) {
   if (/shotgun|scattergun/.test(text)) return "shotgun-shells";
   if (/bow/.test(text)) return "arrow";
   if (/\.22|\.32|\.36|\.38/.test(text))
-    return "pistol-ammunition-small-22-38-caliber";
+    return ammoKey("pistol", caliberFromText(text) || ".38");
   if (
     /\.40|\.41|\.44|\.45|\.50|44-40/.test(text) &&
     !/rifle|winchester|sharps|spencer|ballard|bullard|musket|carbine/.test(text)
   )
-    return "pistolLarge";
+    return ammoKey("pistol", caliberFromText(text) || ".44");
   if (
     /rifle|winchester|sharps|spencer|ballard|bullard|musket|carbine/.test(text)
   ) {
     if (/\.50|\.56|\.57|\.58/.test(text))
-      return "rifle-ammunition-large-50-caliber";
-    return "rifleSmall";
+      return ammoKey("rifle", caliberFromText(text) || ".50");
+    return ammoKey("rifle", caliberFromText(text) || ".44");
   }
   return "";
 }
@@ -357,7 +360,7 @@ function fromSavagedUs(data) {
       const key = savagedAmmoKey(item);
       if (!ammo[key])
         ammo[key] = {
-          label: item.name || "Ammo",
+          label: ammoReserveForKey(key, { label: item.name || "Ammo" }).label,
           count: 0,
           weight: item.weight,
           costCents: cents(item.costBuy ?? item.cost),
@@ -376,8 +379,8 @@ function fromSavagedUs(data) {
     else if (/match/i.test(item.name))
       consumables.push({
         id: slugify(item.uuid || item.name),
-        name: item.name,
-        count,
+        name: "Matches",
+        count: count * (/100/.test(item.name) ? 100 : 1),
         unit: "matches",
       });
     else if (/elixir|oil|tobacco/i.test(item.name))
@@ -435,9 +438,7 @@ function fromSavagedUs(data) {
   weapons.forEach((weapon) => {
     if (weapon.ammoType && !ammo[weapon.ammoType]) {
       ammo[weapon.ammoType] = {
-        ...clone(
-          defaultCharacter.ammo[weapon.ammoType] || { label: weapon.ammoType },
-        ),
+        ...ammoReserveForKey(weapon.ammoType),
         count: 0,
       };
     }
