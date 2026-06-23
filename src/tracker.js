@@ -1868,6 +1868,60 @@ function powerOptionButtonMarkup(option, index, powerPoints) {
   return `<button class="cast-option-btn" type="button" data-power-option="${index}">${esc(option.name)}${powerPoints || option.cost ? ` (${option.cost} PP)` : ""}</button>`;
 }
 
+function variableSpendOptionsForPower(power) {
+  const catalogPower = findPowerCatalogEntryById(power.catalogId);
+  const supportsVariableSpend = Boolean(
+    power.supportsVariableSpend || catalogPower?.supportsVariableSpend,
+  );
+  const options = Array.isArray(power.variableSpendOptions)
+    ? power.variableSpendOptions
+    : catalogPower?.variableSpendOptions || [];
+  return supportsVariableSpend ? options : [];
+}
+
+function variableSpendMarkup(power) {
+  const options = variableSpendOptionsForPower(power);
+  if (!options.length) return "";
+  const rows = options
+    .map((option, index) => {
+      const hasCost = Number.isFinite(Number(option.costPer));
+      const unit = hasCost
+        ? `+${Number(option.costPer)} PP / ${esc(option.quantityLabel || "use")}`
+        : "manual PP";
+      return `<label class="variable-spend-row"><span><strong>${esc(option.label)}</strong><small>${unit}</small></span><input data-variable-spend="${index}" type="number" min="0" step="1" value="0" aria-label="${esc(option.label)} quantity"></label>`;
+    })
+    .join("");
+  return `<div class="variable-spend-controls"><div class="topline"><h3>Variable Spend</h3><small>Base ${powerCost(power)} PP</small></div>${rows}<button class="variable-spend-btn" type="button">Spend ${powerCost(power)} PP</button></div>`;
+}
+
+function variableSpendTotal(power, article) {
+  const baseCost = powerCost(power);
+  const options = variableSpendOptionsForPower(power);
+  return Array.from(article.querySelectorAll("[data-variable-spend]")).reduce(
+    (total, input) => {
+      const option = options[Number(input.dataset.variableSpend)];
+      const quantity = Math.max(0, Math.floor(Number(input.value) || 0));
+      const costPer = Number.isFinite(Number(option?.costPer))
+        ? Number(option.costPer)
+        : 1;
+      return total + quantity * costPer;
+    },
+    baseCost,
+  );
+}
+
+function updateVariableSpendButton(power, article, powerPoints) {
+  const button = article.querySelector(".variable-spend-btn");
+  if (!button) return;
+  const total = variableSpendTotal(power, article);
+  button.textContent = `Spend ${total} PP`;
+  button.disabled = Boolean(powerPoints && total > powerPoints.current);
+  button.title =
+    powerPoints && total > powerPoints.current
+      ? "Not enough Power Points"
+      : `Spend ${total} Power Points`;
+}
+
 function powerDescriptionMarkup(power, castOptions, powerPoints) {
   const parts = [];
   if (power.shortSummary || power.notes) {
@@ -1908,6 +1962,7 @@ function powerDescriptionMarkup(power, castOptions, powerPoints) {
       .join("");
     parts.push(`<ul class="power-modifiers">${modifiers}</ul>`);
   }
+  parts.push(variableSpendMarkup(power));
   return `<div class="power-description">${parts.join("")}</div>`;
 }
 
@@ -1929,6 +1984,8 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
   article.innerHTML = `<div class="topline"><div><h3>${esc(power.name || "Unnamed power")}</h3><p class="meta">${rankMeta} | ${esc(power.baseCost || power.powerPoints || "—")} PP${rangeMeta} | Duration ${esc(power.duration || "—")}${sourceMeta}</p></div><span class="loaded">${power.active ? "Active" : "Ready"}</span></div>${powerDescriptionMarkup(power, castOptions, powerPoints)}${managementMarkup}`;
 
   const optionButtons = article.querySelectorAll(".cast-option-btn");
+  const variableInputs = article.querySelectorAll("[data-variable-spend]");
+  const variableSpendButton = article.querySelector(".variable-spend-btn");
   const editButton = article.querySelector(".edit-power-btn");
   const deleteButton = article.querySelector(".delete-power-btn");
 
@@ -1947,6 +2004,21 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
       save();
     };
   });
+
+  variableInputs.forEach((input) => {
+    input.oninput = () => updateVariableSpendButton(power, article, powerPoints);
+  });
+  if (variableSpendButton) {
+    updateVariableSpendButton(power, article, powerPoints);
+    variableSpendButton.onclick = () => {
+      const total = variableSpendTotal(power, article);
+      if (powerPoints && total) {
+        powerPoints.current = Math.max(0, powerPoints.current - total);
+      }
+      render();
+      save();
+    };
+  }
 
   if (editButton) {
     editButton.onclick = () => openPowerEditor(power);

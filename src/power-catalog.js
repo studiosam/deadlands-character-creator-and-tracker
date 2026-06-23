@@ -2206,6 +2206,7 @@ function createKnownPowerFromCatalog(catalogPower, character, options = {}) {
     trapping: options.trapping || "",
     shortSummary: catalogPower.shortSummary,
     variableCostNotes: catalogPower.variableCostNotes,
+    supportsVariableSpend: Boolean(catalogPower.supportsVariableSpend),
     variableSpendOptions: catalogPower.variableSpendOptions || [],
     modifiers: options.modifiers || [],
     restrictions: restriction,

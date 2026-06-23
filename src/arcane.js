@@ -311,6 +311,9 @@ function normalizePowerRecord(power, index = 0, fallbackSource = "") {
     shortSummary,
     variableCostNotes,
     restrictions,
+    supportsVariableSpend: Boolean(
+      power.supportsVariableSpend || catalogEntry?.supportsVariableSpend,
+    ),
     variableSpendOptions: Array.isArray(power.variableSpendOptions)
       ? power.variableSpendOptions
       : catalogEntry?.variableSpendOptions || [],

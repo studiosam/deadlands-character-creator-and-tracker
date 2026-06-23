@@ -1025,6 +1025,45 @@ h3 {
   width: 100%;
 }
 
+.variable-spend-controls {
+  display: grid;
+  gap: 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 0.85rem;
+  padding-top: 0.7rem;
+}
+
+.variable-spend-controls h3 {
+  margin: 0;
+}
+
+.variable-spend-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5rem;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.variable-spend-row span {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.variable-spend-row small {
+  color: var(--muted);
+}
+
+.variable-spend-row input {
+  min-height: 2.35rem;
+  text-align: center;
+}
+
+.variable-spend-btn {
+  justify-self: start;
+  min-width: 8rem;
+}
+
 .power-actions {
   align-items: stretch;
 }
