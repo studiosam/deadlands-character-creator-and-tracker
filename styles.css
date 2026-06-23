@@ -988,3 +988,174 @@ h3 {
     flex: 1 1 auto;
   }
 }
+
+@media (max-width: 520px) {
+  .shell {
+    width: min(100% - 0.75rem, 1280px);
+    padding-bottom: 2rem;
+  }
+
+  .hero {
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: clamp(2.1rem, 13vw, 3.4rem);
+  }
+
+  h2 {
+    font-size: 1.02rem;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .header-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .header-actions button,
+  .header-actions .file-label {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .creator-tabs {
+    position: sticky;
+    top: 0.35rem;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border-radius: 999px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .creator-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .creator-tabs button {
+    flex: 0 0 auto;
+    min-height: 2.35rem;
+    white-space: nowrap;
+  }
+
+  .dashboard,
+  .creator {
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .card,
+  .creator-section {
+    padding: 0.85rem;
+  }
+
+  .combat-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .combat-status-grid .block {
+    padding: 0.65rem;
+  }
+
+  .stat-step {
+    grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  }
+
+  .step button {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .derived.compact-derived {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .derived.compact-derived > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .combat-conditions-card .conditions,
+  .conditions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .condition {
+    min-height: 2.75rem;
+    padding: 0.65rem;
+  }
+
+  .combat-armor-locations {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .combat-armor-locations span {
+    padding: 0.35rem 0.5rem;
+  }
+
+  .weapon-card,
+  .row,
+  .reminder {
+    padding: 0.75rem;
+  }
+
+  .weapon-actions,
+  .resource-recovery-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .weapon-actions button,
+  .resource-recovery-actions button {
+    width: 100%;
+  }
+
+  .controls:not(.resource-recovery-actions) button {
+    width: auto;
+    min-height: 2.35rem;
+    padding: 0.45rem 0.7rem;
+  }
+
+  .form,
+  .inline-form,
+  .creator-grid {
+    gap: 0.65rem;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .header-actions,
+  .weapon-actions,
+  .resource-recovery-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .combat-status-grid,
+  .combat-conditions-card .conditions,
+  .conditions,
+  .combat-armor-locations {
+    grid-template-columns: 1fr;
+  }
+
+  .derived.compact-derived {
+    grid-template-columns: 1fr;
+  }
+}
