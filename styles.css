@@ -606,6 +606,16 @@ h3 {
   gap: 0.8rem;
 }
 
+.row > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.row > .controls {
+  align-self: flex-start;
+  flex: 0 0 auto;
+}
+
 .section-title {
   align-items: flex-start;
 }
@@ -759,7 +769,18 @@ h3 {
   justify-content: flex-end;
 }
 
-.controls button,
+.row > .controls {
+  max-width: 100%;
+  flex-wrap: nowrap;
+}
+
+.controls button {
+  width: auto;
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  padding: 0.45rem 0.75rem;
+}
+
 .step button {
   width: 2.2rem;
   height: 2.2rem;
@@ -1716,6 +1737,12 @@ h3 {
   .controls,
   .creator-actions {
     justify-content: stretch;
+  }
+
+  .row > .controls {
+    align-self: stretch;
+    flex-wrap: wrap;
+    width: 100%;
   }
 
   .controls button,
