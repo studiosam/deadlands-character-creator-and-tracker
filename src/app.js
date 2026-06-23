@@ -1,0 +1,4 @@
+catalogs();
+updatePreviews();
+render();
+save();

@@ -1,0 +1,30 @@
+# OS/editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Private/local character saves
+character-exports/
+private-saves/
+local-saves/
+*.local.json
+
+# Savaged.us exports are private by default.
+# The sample files in docs/Sample Characters are intentionally kept.
+savaged-us-json-export-character-*.json
+!docs/Sample Characters/
+!docs/Sample Characters/*.json
+
+# Node/npm files, only relevant if this project later adds a build step
+node_modules/
+dist/
+build/
+.env
+.env.*

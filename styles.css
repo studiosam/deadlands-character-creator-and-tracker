@@ -1,0 +1,719 @@
+:root {
+  color-scheme: dark;
+  --bg: #090b10;
+  --surface: rgba(18, 22, 31, 0.82);
+  --surface-strong: rgba(25, 31, 43, 0.94);
+  --surface-soft: rgba(255, 255, 255, 0.045);
+  --line: rgba(255, 255, 255, 0.11);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text: #f7f0e5;
+  --muted: #b8aa98;
+  --accent: #d59a45;
+  --accent-strong: #f2b65f;
+  --danger: #ff715f;
+  --good: #83d18c;
+  --warn: #e4bd57;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --font-ui:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-ui);
+  background:
+    radial-gradient(
+      circle at 12% 8%,
+      rgba(213, 154, 69, 0.22),
+      transparent 26rem
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(118, 72, 36, 0.2),
+      transparent 22rem
+    ),
+    linear-gradient(135deg, #07080d 0%, #121018 48%, #090b10 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 70%);
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+
+button,
+.file-label {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(213, 154, 69, 0.95),
+    rgba(158, 98, 38, 0.95)
+  );
+  color: #17100a;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  padding: 0.68rem 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease,
+    opacity 140ms ease;
+}
+
+button:hover,
+.file-label:hover {
+  transform: translateY(-1px);
+  border-color: rgba(242, 182, 95, 0.75);
+}
+
+button:active,
+.file-label:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+}
+
+.ghost,
+.file-label {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+.danger,
+.delete-small {
+  color: #fff3ef;
+  border-color: rgba(255, 113, 95, 0.5);
+  background: rgba(128, 42, 34, 0.72);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(4, 6, 10, 0.56);
+  color: var(--text);
+  padding: 0.78rem 0.86rem;
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(242, 182, 95, 0.75);
+  box-shadow: 0 0 0 4px rgba(213, 154, 69, 0.15);
+  background: rgba(4, 6, 10, 0.72);
+}
+
+textarea {
+  min-height: 9rem;
+  resize: vertical;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0.3rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  margin-bottom: 0.35rem;
+  font-size: 1.12rem;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  margin-bottom: 0.25rem;
+  font-size: 0.98rem;
+}
+
+.shell {
+  width: min(1280px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.25rem 0 4rem;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1.25rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.09),
+      rgba(255, 255, 255, 0.035)
+    ),
+    rgba(18, 22, 31, 0.86);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.hero-copy {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  color: var(--accent-strong);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.subtitle,
+.muted,
+.section-title p {
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.header-actions,
+.creator-tabs,
+.creator-actions,
+.weapon-actions,
+.controls,
+.step {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.header-actions {
+  justify-content: flex-end;
+}
+
+#importFile,
+.creator-file {
+  display: none;
+}
+
+.creator-tabs {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 10;
+  align-items: center;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(8, 10, 15, 0.74);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.creator-tabs button {
+  flex: 0 1 auto;
+  color: var(--muted);
+  background: transparent;
+  box-shadow: none;
+}
+
+.creator-tabs button.active {
+  color: #17100a;
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+}
+
+.dashboard,
+.creator {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.card,
+.creator-section {
+  grid-column: span 6;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.025)
+    ),
+    var(--surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(16px);
+}
+
+.wide,
+.creator-wide {
+  grid-column: 1 / -1;
+}
+
+.section-title,
+.topline,
+.row,
+.creator-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.section-title {
+  align-items: flex-start;
+}
+
+.pill,
+.save-state,
+.loaded,
+.creator-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid rgba(213, 154, 69, 0.4);
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  color: var(--accent-strong);
+  background: rgba(213, 154, 69, 0.11);
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.creator-status.ok {
+  color: var(--good);
+  border-color: rgba(131, 209, 140, 0.56);
+  background: rgba(131, 209, 140, 0.11);
+}
+
+.creator-status.warn {
+  color: var(--warn);
+  border-color: rgba(228, 189, 87, 0.56);
+  background: rgba(228, 189, 87, 0.12);
+}
+
+.creator-status.err {
+  color: var(--danger);
+  border-color: rgba(255, 113, 95, 0.56);
+  background: rgba(255, 113, 95, 0.12);
+}
+
+.grid,
+.list,
+.creator-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.derived {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.weapons,
+.ammo,
+.conditions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.armor-locs {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.block,
+.weapon-card,
+.row,
+.condition,
+.reminder,
+.loc-card,
+.creator-row,
+.creator-review div {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  padding: 0.85rem;
+}
+
+.block {
+  padding: 1rem;
+}
+
+.block:hover,
+.weapon-card:hover,
+.power-card.active,
+.row:hover,
+.creator-row:hover,
+.loc-card:hover {
+  border-color: rgba(242, 182, 95, 0.28);
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.power-card.active {
+  background: linear-gradient(
+    145deg,
+    rgba(242, 182, 95, 0.15),
+    rgba(255, 255, 255, 0.05)
+  );
+}
+
+.value {
+  display: block;
+  margin: 0.35rem 0;
+  color: var(--accent-strong);
+  font-size: 2.35rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.controls {
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.controls button,
+.step button {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+}
+
+.step {
+  align-items: center;
+}
+
+.step strong,
+.controls strong {
+  min-width: 2.25rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.55rem 0.68rem;
+  text-align: center;
+}
+
+.money {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 4.75rem;
+  margin: 1rem 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    rgba(213, 154, 69, 0.14),
+    rgba(255, 255, 255, 0.04)
+  );
+  color: var(--accent-strong);
+  font-size: 2.25rem;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.inline-form,
+.form,
+.creator-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.inline-form {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.field-label {
+  display: block;
+  margin: 1rem 0 0.4rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.add-panel {
+  min-width: 0;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.form .full,
+.preview,
+.creator-wide {
+  grid-column: 1 / -1;
+}
+
+.tiny,
+.creator-small {
+  max-width: 6rem;
+  text-align: center;
+}
+
+.preview {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.weapon-card {
+  padding: 1rem;
+}
+
+.weapon-actions {
+  margin-top: 0.85rem;
+}
+
+.weapon-actions button {
+  flex: 1 1 8rem;
+}
+
+.meta,
+.note,
+.row span,
+.creator-row span,
+.loc-card span {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.meta {
+  color: var(--accent-strong);
+  font-size: 0.84rem;
+  margin-top: 0.3rem;
+}
+
+.list,
+.creator-list {
+  margin-top: 1rem;
+}
+
+.condition {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.condition input,
+.checkline input {
+  width: auto;
+}
+
+.condition.active {
+  color: var(--text);
+  border-color: rgba(242, 182, 95, 0.54);
+  background: rgba(213, 154, 69, 0.12);
+}
+
+.delete-small {
+  width: auto !important;
+  min-width: 2.2rem;
+  padding: 0 0.68rem !important;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 0.9rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.creator-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.8rem 0;
+}
+
+.creator-points .pill {
+  white-space: normal;
+}
+
+.creator-row {
+  flex-wrap: wrap;
+}
+
+.creator-row > div {
+  min-width: 0;
+}
+
+.creator-note {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.creator-review {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.checkline {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+  color: var(--muted);
+}
+
+@media (max-width: 1080px) {
+  .hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .card,
+  .creator-section {
+    grid-column: 1 / -1;
+  }
+
+  .stats,
+  .weapons,
+  .ammo,
+  .conditions,
+  .armor-locs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .shell {
+    width: min(100% - 1rem, 1280px);
+    padding-top: 0.5rem;
+  }
+
+  .hero,
+  .card,
+  .creator-section {
+    border-radius: 18px;
+  }
+
+  .creator-tabs {
+    position: static;
+    border-radius: var(--radius-lg);
+  }
+
+  .creator-tabs button,
+  .header-actions button,
+  .header-actions .file-label {
+    flex: 1 1 auto;
+  }
+
+  .section-title,
+  .topline,
+  .row,
+  .creator-row,
+  .inline-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stats,
+  .weapons,
+  .ammo,
+  .conditions,
+  .derived,
+  .armor-locs,
+  .form,
+  .creator-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .loaded,
+  .pill {
+    align-self: flex-start;
+  }
+
+  .tiny,
+  .creator-small {
+    max-width: 100%;
+  }
+
+  .controls,
+  .creator-actions {
+    justify-content: stretch;
+  }
+
+  .controls button,
+  .creator-actions button {
+    flex: 1 1 auto;
+  }
+}
