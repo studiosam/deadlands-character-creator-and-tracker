@@ -1029,6 +1029,50 @@ h3 {
   align-items: stretch;
 }
 
+.power-picker {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.catalog-preview,
+.catalog-warning {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.catalog-preview-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  padding: 0.85rem;
+}
+
+.catalog-preview-card p,
+.catalog-warning p {
+  margin: 0;
+}
+
+.catalog-warning {
+  color: var(--warn);
+}
+
+.catalog-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.catalog-chip-list span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.16);
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 0.25rem 0.55rem;
+}
+
 .meta,
 .note,
 .row span,

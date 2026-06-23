@@ -795,18 +795,62 @@
             <div id="powersList" class="grid powers"></div>
             <div id="powerAddForm" class="add-panel collapsed-form hidden">
               <h3>Add or Update Power</h3>
+              <div id="powerSetupNotice" class="catalog-warning hidden"></div>
+              <div class="power-picker">
+                <div class="form">
+                  <input
+                    id="powerCatalogSearch"
+                    class="full"
+                    placeholder="Search Deadlands powers"
+                  />
+                  <select id="powerRankFilter">
+                    <option value="">Any rank</option>
+                    <option value="Novice">Novice</option>
+                    <option value="Seasoned">Seasoned</option>
+                    <option value="Veteran">Veteran</option>
+                    <option value="Heroic">Heroic</option>
+                    <option value="Legendary">Legendary</option>
+                  </select>
+                  <label class="checkline">
+                    <input id="powerValidOnlyInput" type="checkbox" checked />
+                    Valid for current Arcane Background
+                  </label>
+                  <label class="checkline">
+                    <input id="powerMarshalOverrideInput" type="checkbox" />
+                    Marshal override
+                  </label>
+                  <select id="powerCatalogSelect" class="full"></select>
+                  <button id="addCatalogPowerBtn" type="button">
+                    Add Catalog Power
+                  </button>
+                  <button
+                    id="addRequiredPowerBtn"
+                    class="ghost hidden"
+                    type="button"
+                  >
+                    Add Required Power
+                  </button>
+                </div>
+                <div id="powerCatalogWarning" class="catalog-warning"></div>
+                <div id="powerCatalogPreview" class="catalog-preview"></div>
+              </div>
+              <h3>Manual / Custom Power</h3>
               <div class="inline-form">
                 <input id="powerNameInput" placeholder="Power name" />
                 <input id="powerCostInput" class="tiny" placeholder="Cost" />
+                <input id="powerRangeInput" placeholder="Range" />
                 <input id="powerDurationInput" placeholder="Duration" />
+                <input id="powerSourceInput" placeholder="Source" />
                 <input
                   id="powerTrappingInput"
                   placeholder="Trapping, device, or manifestation"
                 />
+                <input id="powerSummaryInput" placeholder="Short summary" />
                 <input id="powerNotesInput" placeholder="Notes" />
                 <button id="addPowerBtn" type="button">Add Power</button>
               </div>
             </div>
+            <div id="hucksterAvailablePowers" class="catalog-preview hidden"></div>
           </section>
 
           <section id="hucksterDealPanel" class="card wide hidden">
@@ -928,6 +972,7 @@
 
     <script src="src/config.js"></script>
     <script src="src/catalogs.js"></script>
+    <script src="src/power-catalog.js"></script>
     <script src="src/arcane.js"></script>
     <script src="src/default-character.js"></script>
     <script src="src/tracker.js"></script>

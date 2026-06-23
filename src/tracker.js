@@ -103,6 +103,7 @@ let character = loadCharacter();
 let saveTimer = null;
 let edgeEditingId = "";
 let hindranceEditingId = "";
+let powerEditingId = "";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -198,10 +199,24 @@ const els = {
   longFormNotesList: $("#longFormNotesList"),
   arcaneSummary: $("#arcaneSummary"),
   powersList: $("#powersList"),
+  powerSetupNotice: $("#powerSetupNotice"),
+  powerCatalogSearch: $("#powerCatalogSearch"),
+  powerRankFilter: $("#powerRankFilter"),
+  powerValidOnlyInput: $("#powerValidOnlyInput"),
+  powerMarshalOverrideInput: $("#powerMarshalOverrideInput"),
+  powerCatalogSelect: $("#powerCatalogSelect"),
+  powerCatalogWarning: $("#powerCatalogWarning"),
+  powerCatalogPreview: $("#powerCatalogPreview"),
+  addCatalogPowerBtn: $("#addCatalogPowerBtn"),
+  addRequiredPowerBtn: $("#addRequiredPowerBtn"),
+  hucksterAvailablePowers: $("#hucksterAvailablePowers"),
   powerNameInput: $("#powerNameInput"),
   powerCostInput: $("#powerCostInput"),
+  powerRangeInput: $("#powerRangeInput"),
   powerDurationInput: $("#powerDurationInput"),
+  powerSourceInput: $("#powerSourceInput"),
   powerTrappingInput: $("#powerTrappingInput"),
+  powerSummaryInput: $("#powerSummaryInput"),
   powerNotesInput: $("#powerNotesInput"),
   addPowerBtn: $("#addPowerBtn"),
   hucksterDealPanel: $("#hucksterDealPanel"),
@@ -1774,7 +1789,9 @@ function renderCombatWeapons() {
 }
 
 function powerCost(power) {
-  const match = String(power.baseCost || "").match(/\d+/);
+  if (Number.isFinite(Number(power.basePowerPoints)))
+    return Math.max(0, Math.floor(Number(power.basePowerPoints)));
+  const match = String(power.baseCost || power.powerPoints || "").match(/\d+/);
   const cost = match ? Math.floor(Number(match[0]) || 0) : 0;
   return Math.max(0, cost);
 }
@@ -1853,11 +1870,21 @@ function powerOptionButtonMarkup(option, index, powerPoints) {
 
 function powerDescriptionMarkup(power, castOptions, powerPoints) {
   const parts = [];
-  if (power.notes) {
-    parts.push(`<p>${esc(power.notes)}</p>`);
+  if (power.shortSummary || power.notes) {
+    parts.push(`<p>${esc(power.shortSummary || power.notes)}</p>`);
   } else {
     parts.push(
       '<p class="muted">No description imported yet. Add what this power does in the Arcane tab notes.</p>',
+    );
+  }
+  if (power.restrictions) {
+    parts.push(
+      `<p class="catalog-warning"><strong>Restriction:</strong> ${esc(power.restrictions)}</p>`,
+    );
+  }
+  if (power.variableCostNotes) {
+    parts.push(
+      `<p class="muted"><strong>Variable PP:</strong> ${esc(power.variableCostNotes)}</p>`,
     );
   }
   if (power.trapping) {
@@ -1889,17 +1916,20 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
   const castOptions = powerCastOptions(power);
   const article = document.createElement("article");
   article.className = `weapon-card power-card${power.active ? " active" : ""}`;
-  const rankMeta = power.rank ? ` | Rank ${esc(power.rank)}` : "";
+  const rankMeta = power.rank ? `Rank ${esc(power.rank)}` : "";
+  const rangeMeta = power.range ? ` | Range ${esc(power.range)}` : "";
+  const sourceMeta = power.source ? ` | ${esc(power.source)}` : "";
   const deleteButtonMarkup = includeDelete
-    ? '<button class="delete-small delete-power-btn" type="button">×</button>'
+    ? '<button class="edit-power-btn ghost" type="button">Edit</button><button class="delete-small delete-power-btn" type="button">×</button>'
     : "";
   const managementButtonsMarkup = deleteButtonMarkup;
   const managementMarkup = deleteButtonMarkup
     ? `<div class="weapon-actions power-actions">${managementButtonsMarkup}</div>`
     : "";
-  article.innerHTML = `<div class="topline"><div><h3>${esc(power.name || "Unnamed power")}</h3><p class="meta">Cost ${esc(power.baseCost || "—")} | Duration ${esc(power.duration || "—")}${rankMeta}</p></div><span class="loaded">${power.active ? "Active" : "Ready"}</span></div>${powerDescriptionMarkup(power, castOptions, powerPoints)}${managementMarkup}`;
+  article.innerHTML = `<div class="topline"><div><h3>${esc(power.name || "Unnamed power")}</h3><p class="meta">${rankMeta} | ${esc(power.baseCost || power.powerPoints || "—")} PP${rangeMeta} | Duration ${esc(power.duration || "—")}${sourceMeta}</p></div><span class="loaded">${power.active ? "Active" : "Ready"}</span></div>${powerDescriptionMarkup(power, castOptions, powerPoints)}${managementMarkup}`;
 
   const optionButtons = article.querySelectorAll(".cast-option-btn");
+  const editButton = article.querySelector(".edit-power-btn");
   const deleteButton = article.querySelector(".delete-power-btn");
 
   optionButtons.forEach((button) => {
@@ -1917,6 +1947,10 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
       save();
     };
   });
+
+  if (editButton) {
+    editButton.onclick = () => openPowerEditor(power);
+  }
 
   if (deleteButton) {
     deleteButton.onclick = () => {
@@ -2381,6 +2415,125 @@ function powerPointResource() {
   return character.resources.find((resource) => resource.id === "power-points");
 }
 
+function knownPowerCatalogIds() {
+  return new Set(character.powers.map((power) => power.catalogId).filter(Boolean));
+}
+
+function missingRequiredPower(profile) {
+  if (!profile) return null;
+  const knownIds = knownPowerCatalogIds();
+  return (profile.requiredStartingPowers || [])
+    .map(findPowerCatalogEntryById)
+    .find((power) => power && !knownIds.has(power.id));
+}
+
+function filteredCatalogPowers() {
+  const profile = getArcaneBackgroundProfile(character);
+  const query = normalizePowerCatalogText(els.powerCatalogSearch.value);
+  const rank = els.powerRankFilter.value;
+  const validOnly = els.powerValidOnlyInput.checked;
+  const allowedIds = new Set(profile?.allowedPowerIds || []);
+  return POWER_CATALOG.filter((power) => {
+    if (validOnly && profile && !allowedIds.has(power.id)) return false;
+    if (rank && power.rank !== rank) return false;
+    if (
+      query &&
+      !normalizePowerCatalogText(
+        `${power.name} ${power.shortSummary} ${power.variableCostNotes}`,
+      ).includes(query)
+    )
+      return false;
+    return true;
+  }).sort(
+    (left, right) =>
+      powerRankValue(left.rank) - powerRankValue(right.rank) ||
+      (left.basePowerPoints ?? 999) - (right.basePowerPoints ?? 999) ||
+      left.name.localeCompare(right.name),
+  );
+}
+
+function selectedCatalogPower() {
+  return findPowerCatalogEntryById(els.powerCatalogSelect.value);
+}
+
+function getKnownPowerWarnings(character, power) {
+  const warnings = [];
+  const profile = getArcaneBackgroundProfile(character);
+  if (!profile) {
+    warnings.push("No Arcane Background is selected.");
+    return warnings;
+  }
+  if (!profile.allowedPowerIds.includes(power.id))
+    warnings.push(`${power.name} is not normally allowed for ${profile.name}.`);
+  if (!rankAllowsPower(character.rank, power.rank))
+    warnings.push(`${power.name} requires ${power.rank} rank.`);
+  if (character.powers.some((known) => known.catalogId === power.id))
+    warnings.push(`${power.name} is already a known power.`);
+  const restriction = powerRestrictionForProfile(power, profile);
+  if (restriction) warnings.push(restriction);
+  return warnings;
+}
+
+function catalogPowerPreviewMarkup(power) {
+  if (!power) return emptyState("Choose a catalog power.");
+  const profile = getArcaneBackgroundProfile(character);
+  const restriction = powerRestrictionForProfile(power, profile);
+  return `<div class="catalog-preview-card"><div class="topline"><div><h3>${esc(power.name)}</h3><p class="meta">${esc(power.rank)} • ${esc(power.powerPoints)} PP • Range ${esc(power.range)} • Duration ${esc(power.duration)}</p></div><span class="pill">${esc(power.source)}</span></div><p>${esc(power.shortSummary)}</p>${power.variableCostNotes ? `<p class="muted"><strong>Variable PP:</strong> ${esc(power.variableCostNotes)}</p>` : ""}${restriction ? `<p class="catalog-warning"><strong>Restriction:</strong> ${esc(restriction)}</p>` : ""}<p class="muted">Allowed: ${esc(power.allowedBackgrounds.join(", "))}</p></div>`;
+}
+
+function renderPowerSetupNotice() {
+  const profile = getArcaneBackgroundProfile(character);
+  if (!profile) {
+    els.powerSetupNotice.classList.remove("hidden");
+    els.powerSetupNotice.textContent =
+      "Select an Arcane Background before choosing catalog powers. Marshal override still allows custom additions.";
+    els.addRequiredPowerBtn.classList.add("hidden");
+    return;
+  }
+  const missing = missingRequiredPower(profile);
+  els.powerSetupNotice.classList.remove("hidden");
+  els.powerSetupNotice.textContent = `${profile.notes} Known powers: ${character.powers.length} / ${profile.startingPowerCount} starting powers.`;
+  els.addRequiredPowerBtn.classList.toggle("hidden", !missing);
+  if (missing) els.addRequiredPowerBtn.textContent = `Add Required Power: ${missing.name}`;
+}
+
+function renderPowerCatalogPicker() {
+  renderPowerSetupNotice();
+  const powers = filteredCatalogPowers();
+  const previous = els.powerCatalogSelect.value;
+  els.powerCatalogSelect.innerHTML = powers.length
+    ? powers
+        .map(
+          (power) =>
+            `<option value="${esc(power.id)}">${esc(power.name)} • ${esc(power.rank)} • ${esc(power.powerPoints)} PP</option>`,
+        )
+        .join("")
+    : '<option value="">No matching powers</option>';
+  if (powers.some((power) => power.id === previous))
+    els.powerCatalogSelect.value = previous;
+  const selected = selectedCatalogPower();
+  const warnings = selected ? getKnownPowerWarnings(character, selected) : [];
+  els.powerCatalogWarning.innerHTML = warnings.length
+    ? warnings.map((warning) => `<p>${esc(warning)}</p>`).join("")
+    : "";
+  els.powerCatalogPreview.innerHTML = catalogPowerPreviewMarkup(selected);
+  renderHucksterAvailablePowers();
+}
+
+function renderHucksterAvailablePowers() {
+  const profile = getArcaneBackgroundProfile(character);
+  els.hucksterAvailablePowers.classList.toggle(
+    "hidden",
+    profile?.id !== "huckster",
+  );
+  if (profile?.id !== "huckster") return;
+  const knownIds = knownPowerCatalogIds();
+  const available = getAllowedPowersForCharacter(character)
+    .filter((power) => !knownIds.has(power.id))
+    .slice(0, 60);
+  els.hucksterAvailablePowers.innerHTML = `<h3>Deal with the Devil Available Powers</h3><p class="muted">These are available to Hucksters through Deal with the Devil. They are not automatically Known Powers.</p><div class="catalog-chip-list">${available.map((power) => `<span>${esc(power.name)}</span>`).join("")}</div>`;
+}
+
 function renderPowers() {
   const background = character.arcaneBackground;
   const powerPoints = powerPointResource();
@@ -2389,6 +2542,7 @@ function renderPowers() {
     : powerPoints
       ? "Manual Power Points"
       : "No Arcane Background";
+  renderPowerCatalogPicker();
   els.powersList.innerHTML = "";
   if (!character.powers.length) {
     els.powersList.innerHTML = emptyState("No powers tracked yet.");
@@ -2780,16 +2934,24 @@ function addWeapon() {
 function addPower() {
   const name = els.powerNameInput.value.trim();
   if (!name) return;
-  const existing = character.powers.find(
-    (power) => power.name.toLowerCase() === name.toLowerCase(),
-  );
+  const existing = powerEditingId
+    ? character.powers.find((power) => power.id === powerEditingId)
+    : character.powers.find(
+        (power) => power.name.toLowerCase() === name.toLowerCase(),
+      );
   const data = {
     name,
     baseCost: els.powerCostInput.value.trim(),
+    powerPoints: els.powerCostInput.value.trim(),
+    range: els.powerRangeInput.value.trim(),
     duration: els.powerDurationInput.value.trim(),
+    source: els.powerSourceInput.value.trim() || "Manual power",
     trapping: els.powerTrappingInput.value.trim(),
+    shortSummary: els.powerSummaryInput.value.trim(),
     notes: els.powerNotesInput.value.trim(),
-    source: character.arcaneBackground?.edgeName || "Manual power",
+    arcaneBackground: character.arcaneBackground?.name || "",
+    addedReason: "custom-homebrew",
+    isCustom: true,
   };
   if (existing) Object.assign(existing, data);
   else
@@ -2809,11 +2971,69 @@ function addPower() {
 
   els.powerNameInput.value = "";
   els.powerCostInput.value = "";
+  els.powerRangeInput.value = "";
   els.powerDurationInput.value = "";
+  els.powerSourceInput.value = "";
   els.powerTrappingInput.value = "";
+  els.powerSummaryInput.value = "";
   els.powerNotesInput.value = "";
+  powerEditingId = "";
   render();
   save();
+}
+
+function addCatalogPower(power = selectedCatalogPower(), options = {}) {
+  if (!power) return;
+  const warnings = getKnownPowerWarnings(character, power);
+  const duplicate = character.powers.some(
+    (known) => known.catalogId === power.id,
+  );
+  let marshalOverride = els.powerMarshalOverrideInput.checked;
+  if (
+    duplicate &&
+    !marshalOverride &&
+    !confirm(`${power.name} is already known. Add another copy anyway?`)
+  )
+    return;
+  if (warnings.length && !marshalOverride) {
+    const proceed = confirm(
+      `${warnings.join("\n")}\n\nAdd anyway as a Marshal override?`,
+    );
+    if (!proceed) return;
+    marshalOverride = true;
+  }
+  character.powers.push(
+    normalizePowerRecord(
+      createKnownPowerFromCatalog(power, character, {
+        addedReason:
+          options.addedReason ||
+          (marshalOverride ? "marshal-override" : "new-powers-edge"),
+      }),
+      character.powers.length,
+      character.arcaneBackground?.edgeName,
+    ),
+  );
+  render();
+  save();
+}
+
+function addRequiredPower() {
+  const missing = missingRequiredPower(getArcaneBackgroundProfile(character));
+  if (missing) addCatalogPower(missing, { addedReason: "starting-power" });
+}
+
+function openPowerEditor(power) {
+  powerEditingId = power.id;
+  els.powerNameInput.value = power.name || "";
+  els.powerCostInput.value = power.baseCost || power.powerPoints || "";
+  els.powerRangeInput.value = power.range || "";
+  els.powerDurationInput.value = power.duration || "";
+  els.powerSourceInput.value = power.source || "";
+  els.powerTrappingInput.value = power.trapping || "";
+  els.powerSummaryInput.value = power.shortSummary || "";
+  els.powerNotesInput.value = power.notes || "";
+  els.powerAddForm.classList.remove("hidden");
+  els.powerNameInput.focus();
 }
 
 function addManualPowerPoints() {
@@ -3201,6 +3421,17 @@ els.cancelWeaponAddBtn.onclick = () => {
   els.weaponAddForm.classList.add("hidden");
 };
 els.addPowerBtn.onclick = addPower;
+els.addCatalogPowerBtn.onclick = () => addCatalogPower();
+els.addRequiredPowerBtn.onclick = addRequiredPower;
+[
+  els.powerCatalogSearch,
+  els.powerRankFilter,
+  els.powerValidOnlyInput,
+  els.powerCatalogSelect,
+].forEach((input) => {
+  input.oninput = renderPowerCatalogPicker;
+  input.onchange = renderPowerCatalogPicker;
+});
 els.addManualPowerPointsBtn.onclick = addManualPowerPoints;
 els.showEdgeFormBtn.onclick = () => openEdgeEditor();
 els.edgeCatalogSelect.onchange = chooseEdgeCatalogEntry;

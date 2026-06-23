@@ -269,21 +269,61 @@ function makeHucksterDeal() {
 }
 
 function normalizePowerRecord(power, index = 0, fallbackSource = "") {
+  if (typeof power === "string") power = { name: power };
+  const catalogEntry =
+    findPowerCatalogEntryById(power.catalogId) ||
+    findPowerCatalogEntryByName(power.name);
+  const basePowerPoints =
+    power.basePowerPoints ??
+    (Number.isFinite(Number(power.baseCost))
+      ? Number(power.baseCost)
+      : catalogEntry?.basePowerPoints);
+  const source = power.source || catalogEntry?.source || fallbackSource;
+  const range = power.range || catalogEntry?.range || "";
+  const duration = power.duration || catalogEntry?.duration || "";
+  const shortSummary =
+    power.shortSummary || power.summary || catalogEntry?.shortSummary || "";
+  const variableCostNotes =
+    power.variableCostNotes || catalogEntry?.variableCostNotes || "";
+  const restrictions =
+    power.restrictions ||
+    (catalogEntry
+      ? Object.values(catalogEntry.restrictionsByBackground || {}).join(" ")
+      : "");
   return {
     id: power.id || power.uuid || `power-${index + 1}`,
-    name: power.name || "",
-    rank: power.rank || "Novice",
-    baseCost: power.baseCost ?? power.cost ?? power.powerPoints ?? "",
-    duration: power.duration || "",
-    active: Boolean(power.active),
-    source: power.source || fallbackSource,
+    catalogId: power.catalogId || catalogEntry?.id || "",
+    name: power.name || catalogEntry?.name || "",
+    rank: power.rank || catalogEntry?.rank || "Novice",
+    basePowerPoints,
+    baseCost:
+      power.baseCost ?? power.cost ?? power.powerPoints ?? catalogEntry?.powerPoints ?? "",
+    powerPoints:
+      power.powerPoints ?? power.baseCost ?? power.cost ?? catalogEntry?.powerPoints ?? "",
+    range,
+    originalRange: power.originalRange || "",
+    duration,
+    active: Boolean(power.active || power.isActive),
+    isActive: Boolean(power.active || power.isActive),
+    source,
+    arcaneBackground: power.arcaneBackground || "",
     trapping: power.trapping || power.trappings || power.deviceName || "",
-    notes: power.notes || power.summary || power.description || "",
+    shortSummary,
+    variableCostNotes,
+    restrictions,
+    variableSpendOptions: Array.isArray(power.variableSpendOptions)
+      ? power.variableSpendOptions
+      : catalogEntry?.variableSpendOptions || [],
+    notes: power.notes || power.description || "",
     modifiers: Array.isArray(power.modifiers)
       ? power.modifiers
       : Array.isArray(power.powerModifiers)
         ? power.powerModifiers
         : [],
+    activeTargets: Array.isArray(power.activeTargets) ? power.activeTargets : [],
+    addedReason:
+      power.addedReason || (catalogEntry ? "imported" : "custom-homebrew"),
+    isCustom: Boolean(power.isCustom || !catalogEntry),
     fixed: Boolean(power.fixed),
   };
 }
