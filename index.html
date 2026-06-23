@@ -256,58 +256,152 @@
           </section>
         </section>
 
-        <section id="characterPanel" class="dashboard tab-panel hidden">
-          <section class="card wide">
-            <div class="section-title">
+        <section id="characterPanel" class="dashboard tab-panel hidden character-dossier">
+          <section class="card wide dossier-header">
+            <div class="dossier-heading">
               <div>
-                <p class="eyebrow">Character</p>
+                <p class="eyebrow">Character Dossier</p>
                 <h2 id="characterSummaryName"></h2>
+                <p id="characterDossierSubtitle" class="subtitle"></p>
               </div>
-              <button id="addManualPowerPointsBtn" class="ghost" type="button">
-                Enable Manual Power Points
-              </button>
-            </div>
-            <div id="characterBasicsList" class="grid derived"></div>
-          </section>
-
-          <section class="card">
-            <h2>Attributes</h2>
-            <div id="attributesList" class="list"></div>
-          </section>
-
-          <section class="card">
-            <h2>Skills</h2>
-            <div id="skillsList" class="list"></div>
-          </section>
-
-          <section class="card">
-            <h2>Edges</h2>
-            <div id="edgesList" class="list"></div>
-          </section>
-
-          <section class="card">
-            <h2>Hindrances</h2>
-            <div id="hindrancesList" class="list"></div>
-          </section>
-
-          <section class="card wide">
-            <div class="section-title">
-              <div>
-                <h2>Derived Details</h2>
-                <p>
-                  Character stat summary. Combat armor controls live on the
-                  Combat tab.
-                </p>
+              <div class="dossier-header-actions">
+                <span id="characterSourceBadge" class="pill"></span>
+                <button id="addManualPowerPointsBtn" class="ghost" type="button">
+                  Enable Manual Power Points
+                </button>
               </div>
-              <span id="armorStrengthPill" class="pill"></span>
             </div>
-            <div id="characterDerivedDetails" class="grid derived"></div>
+            <div id="characterBasicsList" class="dossier-meta"></div>
+            <div id="characterStatusStrip" class="dossier-status-strip"></div>
           </section>
 
-          <section class="card wide">
-            <h2>Arcane Background</h2>
-            <div id="characterArcaneSummary" class="list"></div>
-          </section>
+          <div class="character-dossier-layout wide">
+            <div class="dossier-column">
+              <section class="card dossier-card">
+                <div class="dossier-section-title">
+                  <h2>Core Traits</h2>
+                  <span id="armorStrengthPill" class="pill"></span>
+                </div>
+                <div id="attributesList" class="attribute-dice-grid"></div>
+              </section>
+
+              <section class="card dossier-card">
+                <h2>Skills</h2>
+                <div id="skillsList" class="skill-chip-grid"></div>
+              </section>
+
+              <section class="card dossier-card">
+                <div class="dossier-section-title">
+                  <h2>Edges</h2>
+                  <button id="showEdgeFormBtn" class="ghost small-action" type="button">
+                    Add Edge
+                  </button>
+                </div>
+                <div id="edgesList" class="dossier-tag-list edges"></div>
+                <div id="edgeEditorPanel" class="add-panel dossier-editor hidden">
+                  <h3 id="edgeEditorTitle">Add Edge</h3>
+                  <div class="form">
+                    <label class="full">Choose from catalog<select id="edgeCatalogSelect"></select></label>
+                    <label>Name<input id="edgeNameInput" /></label>
+                    <label>Category<select id="edgeCategoryInput">
+                      <option>Background</option>
+                      <option>Combat</option>
+                      <option>Leadership</option>
+                      <option>Professional</option>
+                      <option>Social</option>
+                      <option>Weird</option>
+                      <option>Legendary</option>
+                      <option>Arcane</option>
+                      <option>Organization</option>
+                      <option>Custom</option>
+                      <option>Unknown</option>
+                    </select></label>
+                    <label>Rank<select id="edgeRankInput">
+                      <option>Novice</option>
+                      <option>Seasoned</option>
+                      <option>Veteran</option>
+                      <option>Heroic</option>
+                      <option>Legendary</option>
+                      <option>Custom</option>
+                      <option>Unknown</option>
+                    </select></label>
+                    <label>Source<input id="edgeSourceInput" list="entrySourceOptions" /></label>
+                    <label class="full">Requirements<input id="edgeRequirementsInput" /></label>
+                    <label>Subchoice<input id="edgeSubchoiceInput" /></label>
+                    <label class="full">Short summary<input id="edgeSummaryInput" /></label>
+                    <label class="full">Notes<textarea id="edgeNotesInput" rows="3"></textarea></label>
+                  </div>
+                  <p id="edgeWarningText" class="entry-warning hidden"></p>
+                  <div class="controls editor-actions">
+                    <button id="saveEdgeBtn" type="button">Save Edge</button>
+                    <button id="cancelEdgeEditBtn" class="ghost" type="button">Cancel</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card dossier-card">
+                <div class="dossier-section-title">
+                  <h2>Hindrances</h2>
+                  <button id="showHindranceFormBtn" class="ghost small-action" type="button">
+                    Add Hindrance
+                  </button>
+                </div>
+                <div id="hindrancesList" class="dossier-tag-list hindrances"></div>
+                <div id="hindranceEditorPanel" class="add-panel dossier-editor hidden">
+                  <h3 id="hindranceEditorTitle">Add Hindrance</h3>
+                  <div class="form">
+                    <label class="full">Choose from catalog<select id="hindranceCatalogSelect"></select></label>
+                    <label>Name<input id="hindranceNameInput" /></label>
+                    <label>Severity<select id="hindranceSeverityInput">
+                      <option>Minor</option>
+                      <option>Major</option>
+                      <option>Minor or Major</option>
+                      <option>Custom</option>
+                      <option>Unknown</option>
+                    </select></label>
+                    <label>Source<input id="hindranceSourceInput" list="entrySourceOptions" /></label>
+                    <label class="full">Short summary<input id="hindranceSummaryInput" /></label>
+                    <label class="full">Notes<textarea id="hindranceNotesInput" rows="3"></textarea></label>
+                  </div>
+                  <p id="hindranceWarningText" class="entry-warning hidden"></p>
+                  <div class="controls editor-actions">
+                    <button id="saveHindranceBtn" type="button">Save Hindrance</button>
+                    <button id="cancelHindranceEditBtn" class="ghost" type="button">Cancel</button>
+                  </div>
+                </div>
+                <datalist id="entrySourceOptions">
+                  <option value="Manual"></option>
+                  <option value="Imported"></option>
+                  <option value="Deadlands: The Weird West"></option>
+                  <option value="Savage Worlds"></option>
+                  <option value="Savage Worlds Adventure Edition"></option>
+                  <option value="Custom"></option>
+                </datalist>
+              </section>
+            </div>
+
+            <aside class="dossier-column">
+              <section class="card dossier-card">
+                <h2>Derived Stats</h2>
+                <div id="characterDerivedDetails" class="derived-scan-grid"></div>
+              </section>
+
+              <section class="card dossier-card">
+                <h2>Arcane Snapshot</h2>
+                <div id="characterArcaneSummary" class="arcane-snapshot"></div>
+              </section>
+
+              <section class="card dossier-card">
+                <h2>Equipped Summary</h2>
+                <div id="characterEquippedSummary" class="equipped-summary"></div>
+              </section>
+
+              <section class="card dossier-card">
+                <h2>Background / Import Notes</h2>
+                <div id="characterBackgroundSummary" class="dossier-notes-list"></div>
+              </section>
+            </aside>
+          </div>
         </section>
 
         <section id="inventoryPanel" class="dashboard tab-panel hidden">

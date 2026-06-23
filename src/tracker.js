@@ -22,6 +22,36 @@ const LEGACY_AMMO_KEY_DEFAULTS = {
 };
 
 const STRENGTH_DIE_STEPS = ["d4", "d6", "d8", "d10", "d12"];
+const ATTRIBUTE_ORDER = ["agility", "smarts", "spirit", "strength", "vigor"];
+const EDGE_CATEGORIES = [
+  "Background",
+  "Combat",
+  "Leadership",
+  "Professional",
+  "Social",
+  "Weird",
+  "Legendary",
+  "Arcane",
+  "Organization",
+  "Custom",
+  "Unknown",
+];
+const EDGE_RANKS = [
+  "Novice",
+  "Seasoned",
+  "Veteran",
+  "Heroic",
+  "Legendary",
+  "Custom",
+  "Unknown",
+];
+const HINDRANCE_SEVERITIES = [
+  "Minor",
+  "Major",
+  "Minor or Major",
+  "Custom",
+  "Unknown",
+];
 
 const CONSUMABLE_GEAR_CONVERSIONS = {
   "matches-box-100": {
@@ -71,6 +101,8 @@ const CONSUMABLE_GEAR_CONVERSIONS = {
 
 let character = loadCharacter();
 let saveTimer = null;
+let edgeEditingId = "";
+let hindranceEditingId = "";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -121,6 +153,9 @@ const els = {
   playWeaponList: $("#playWeaponList"),
   playAmmoReserves: $("#playAmmoReserves"),
   characterSummaryName: $("#characterSummaryName"),
+  characterDossierSubtitle: $("#characterDossierSubtitle"),
+  characterSourceBadge: $("#characterSourceBadge"),
+  characterStatusStrip: $("#characterStatusStrip"),
   characterBasicsList: $("#characterBasicsList"),
   attributesList: $("#attributesList"),
   skillsList: $("#skillsList"),
@@ -128,6 +163,35 @@ const els = {
   hindrancesList: $("#hindrancesList"),
   characterDerivedDetails: $("#characterDerivedDetails"),
   characterArcaneSummary: $("#characterArcaneSummary"),
+  characterEquippedSummary: $("#characterEquippedSummary"),
+  characterBackgroundSummary: $("#characterBackgroundSummary"),
+  showEdgeFormBtn: $("#showEdgeFormBtn"),
+  edgeEditorPanel: $("#edgeEditorPanel"),
+  edgeEditorTitle: $("#edgeEditorTitle"),
+  edgeCatalogSelect: $("#edgeCatalogSelect"),
+  edgeNameInput: $("#edgeNameInput"),
+  edgeCategoryInput: $("#edgeCategoryInput"),
+  edgeRankInput: $("#edgeRankInput"),
+  edgeSourceInput: $("#edgeSourceInput"),
+  edgeRequirementsInput: $("#edgeRequirementsInput"),
+  edgeSubchoiceInput: $("#edgeSubchoiceInput"),
+  edgeSummaryInput: $("#edgeSummaryInput"),
+  edgeNotesInput: $("#edgeNotesInput"),
+  edgeWarningText: $("#edgeWarningText"),
+  saveEdgeBtn: $("#saveEdgeBtn"),
+  cancelEdgeEditBtn: $("#cancelEdgeEditBtn"),
+  showHindranceFormBtn: $("#showHindranceFormBtn"),
+  hindranceEditorPanel: $("#hindranceEditorPanel"),
+  hindranceEditorTitle: $("#hindranceEditorTitle"),
+  hindranceCatalogSelect: $("#hindranceCatalogSelect"),
+  hindranceNameInput: $("#hindranceNameInput"),
+  hindranceSeverityInput: $("#hindranceSeverityInput"),
+  hindranceSourceInput: $("#hindranceSourceInput"),
+  hindranceSummaryInput: $("#hindranceSummaryInput"),
+  hindranceNotesInput: $("#hindranceNotesInput"),
+  hindranceWarningText: $("#hindranceWarningText"),
+  saveHindranceBtn: $("#saveHindranceBtn"),
+  cancelHindranceEditBtn: $("#cancelHindranceEditBtn"),
   arcaneDetailSummary: $("#arcaneDetailSummary"),
   arcaneRemindersList: $("#arcaneRemindersList"),
   importWarningsList: $("#importWarningsList"),
@@ -521,6 +585,311 @@ function traitListMarkup(items, emptyText) {
     : emptyState(emptyText);
 }
 
+function compactText(value, fallback = "—") {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+}
+
+function sourceLabel() {
+  const source = compactText(character.source || "Tracker", "Tracker");
+  if (source.toLowerCase() === "savaged.us") return "Savaged.us import";
+  if (source.toLowerCase() === "created") return "Created in tracker";
+  return source;
+}
+
+function statusPipMarkup(label, value, note = "") {
+  return `<div class="status-pip"><span>${esc(label)}</span><strong>${esc(value)}</strong>${note ? `<small>${esc(note)}</small>` : ""}</div>`;
+}
+
+function tagCardMarkup(item, kind = "") {
+  const controls = item.id
+    ? `<div class="tag-actions"><button class="ghost tag-action" type="button" data-entry-type="${esc(kind)}" data-entry-action="edit" data-entry-id="${esc(item.id)}">Edit</button><button class="ghost tag-action danger-lite" type="button" data-entry-type="${esc(kind)}" data-entry-action="remove" data-entry-id="${esc(item.id)}">Remove</button></div>`
+    : "";
+  return `<article class="dossier-tag ${kind}"><div class="dossier-tag-head"><div><strong>${esc(item.name)}</strong>${item.meta ? `<span>${esc(item.meta)}</span>` : ""}</div>${controls}</div>${item.summary ? `<p>${esc(item.summary)}</p>` : ""}${item.note ? `<p class="tag-note">${esc(item.note)}</p>` : ""}${item.sourceMeta ? `<small>${esc(item.sourceMeta)}</small>` : ""}</article>`;
+}
+
+function attributeCardMarkup(name, die) {
+  return `<div class="attribute-die-card"><span>${esc(displayNameFromKey(name))}</span><strong>${esc(die || "—")}</strong></div>`;
+}
+
+function skillChipMarkup(skill) {
+  const meta = skill.die || skill.value || "—";
+  const note = skill.notes || skill.linkedAttribute || "";
+  return `<div class="skill-chip"><strong>${esc(skill.name || "Skill")}</strong><span>${esc(meta)}${note ? ` • ${esc(note)}` : ""}</span></div>`;
+}
+
+function equippedArmorSummaryMarkup() {
+  const equipped = character.armorInventory.filter(
+    (armor) => armor.equipped && armor.count > 0,
+  );
+  if (!equipped.length) return emptyState("No equipped armor recorded.");
+
+  return equipped
+    .map(
+      (armor) =>
+        `<div class="equipment-line"><strong>${esc(armor.name)}</strong><span>+${esc(armor.armor)} ${esc(armorLabel(armor.location))}${armor.minStr ? ` • Min Str ${esc(armor.minStr)}` : ""}</span></div>`,
+    )
+    .join("");
+}
+
+function equippedWeaponSummaryMarkup() {
+  const weapons = character.weapons.filter((weapon) => weapon.name).slice(0, 4);
+  if (!weapons.length) return emptyState("No weapons recorded.");
+
+  return weapons
+    .map((weapon) => {
+      const loaded = isTrackedWeapon(weapon)
+        ? ` • ${weapon.shotsLoaded} / ${weapon.shotsMax}`
+        : "";
+      return `<div class="equipment-line"><strong>${esc(weapon.name)}</strong><span>Damage ${esc(weapon.damage || "—")} • Range ${esc(weapon.range || "—")}${loaded}</span></div>`;
+    })
+    .join("");
+}
+
+function characterNotesSummaryMarkup() {
+  const importWarnings = character.reminders.filter(
+    (reminder) => reminder.type === "Import Warning",
+  );
+  const notes = [
+    ["Description", character.description],
+    ["Background", character.background],
+    ["Worst Nightmare", character.worstNightmare],
+  ].filter(([, value]) => value);
+
+  const parts = [];
+  if (character.sourceId) {
+    parts.push(
+      `<article class="dossier-note"><strong>Import ID</strong><p>${esc(character.sourceId)}</p></article>`,
+    );
+  }
+  notes.slice(0, 3).forEach(([label, value]) => {
+    parts.push(
+      `<article class="dossier-note"><strong>${esc(label)}</strong><p>${esc(value)}</p></article>`,
+    );
+  });
+  importWarnings.slice(0, 3).forEach((warning) => {
+    parts.push(
+      `<article class="dossier-note warning"><strong>${esc(warning.name)}</strong><p>${esc(warning.text)}</p></article>`,
+    );
+  });
+
+  return parts.length
+    ? parts.join("")
+    : emptyState("No background or import notes recorded.");
+}
+
+function generateStableEntryId(type, name) {
+  return `${type}-${slugify(name || type)}`;
+}
+
+function uniqueEntryId(id, used) {
+  const base = id || "entry";
+  let candidate = base;
+  let index = 2;
+  while (used.has(candidate)) {
+    candidate = `${base}-${index}`;
+    index += 1;
+  }
+  used.add(candidate);
+  return candidate;
+}
+
+function normalizeEdgeEntry(entry) {
+  if (typeof entry === "string") {
+    return {
+      id: generateStableEntryId("edge", entry),
+      name: entry,
+      type: "edge",
+      category: "Unknown",
+      rank: "Unknown",
+      requirements: "",
+      shortSummary: "",
+      notes: "",
+      source: "Imported",
+      subchoice: "",
+      isCustom: false,
+    };
+  }
+
+  const source = entry && typeof entry === "object" ? entry : {};
+  return {
+    ...source,
+    id: source.id || generateStableEntryId("edge", source.name || "edge"),
+    name: source.name || "Unnamed Edge",
+    type: source.type || "edge",
+    category: source.category || "Unknown",
+    rank: source.rank || "Unknown",
+    requirements: source.requirements || "",
+    shortSummary: source.shortSummary || source.summary || "",
+    notes: source.notes || source.text || "",
+    source: source.source || "Imported",
+    subchoice: source.subchoice || "",
+    isCustom: Boolean(source.isCustom),
+  };
+}
+
+function normalizeHindranceEntry(entry) {
+  if (typeof entry === "string") {
+    return {
+      id: generateStableEntryId("hindrance", entry),
+      name: entry,
+      type: "hindrance",
+      severity: "Unknown",
+      shortSummary: "",
+      notes: "",
+      source: "Imported",
+      isCustom: false,
+    };
+  }
+
+  const source = entry && typeof entry === "object" ? entry : {};
+  return {
+    ...source,
+    id:
+      source.id || generateStableEntryId("hindrance", source.name || "hindrance"),
+    name: source.name || "Unnamed Hindrance",
+    type: source.type || "hindrance",
+    severity: source.severity || "Unknown",
+    shortSummary: source.shortSummary || source.summary || "",
+    notes: source.notes || source.text || "",
+    source: source.source || "Imported",
+    isCustom: Boolean(source.isCustom),
+  };
+}
+
+function normalizeEdges(entries) {
+  const used = new Set();
+  return (Array.isArray(entries) ? entries : []).map((entry) => {
+    const normalized = normalizeEdgeEntry(entry);
+    normalized.id = uniqueEntryId(normalized.id, used);
+    return normalized;
+  });
+}
+
+function normalizeHindrances(entries) {
+  const used = new Set();
+  return (Array.isArray(entries) ? entries : []).map((entry) => {
+    const normalized = normalizeHindranceEntry(entry);
+    normalized.id = uniqueEntryId(normalized.id, used);
+    return normalized;
+  });
+}
+
+function plainEntryName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function entryTextValue(value) {
+  if (Array.isArray(value)) return value.join(", ");
+  if (value && typeof value === "object") return JSON.stringify(value);
+  return String(value ?? "");
+}
+
+function selectKnownValue(select, value, fallback) {
+  const text = compactText(value, fallback);
+  select.value = [...select.options].some((option) => option.value === text)
+    ? text
+    : fallback;
+}
+
+function edgeDisplayMeta(edge) {
+  return [
+    edge.rank && edge.rank !== "Unknown" ? edge.rank : "",
+    edge.category && edge.category !== "Unknown" ? edge.category : "",
+    edge.requirements ? `Req: ${entryTextValue(edge.requirements)}` : "",
+    edge.subchoice ? `Choice: ${edge.subchoice}` : "",
+  ]
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function hindranceDisplayMeta(hindrance) {
+  return hindrance.severity && hindrance.severity !== "Unknown"
+    ? hindrance.severity
+    : "";
+}
+
+function sourceMeta(entry) {
+  if (!entry.source || entry.source === "Manual") return "";
+  return `Source: ${entry.source}`;
+}
+
+function getEdgeWarnings(currentCharacter, draftEdge, editingId = "") {
+  const warnings = [];
+  if (!draftEdge.name.trim()) warnings.push("Edge name is blank.");
+
+  if (isArcaneBackgroundEdge(draftEdge.name)) {
+    const hasOtherArcaneBackground = currentCharacter.edges.some(
+      (edge) => edge.id !== editingId && isArcaneBackgroundEdge(edge.name),
+    );
+    if (hasOtherArcaneBackground)
+      warnings.push("This character already has an Arcane Background Edge.");
+  }
+
+  const draftName = plainEntryName(draftEdge.name);
+  const hasTenderfoot = currentCharacter.hindrances.some(
+    (hindrance) => plainEntryName(hindrance.name) === "tenderfoot",
+  );
+  if (draftName === "dont get im riled" && hasTenderfoot) {
+    warnings.push("Tenderfoot conflicts with Don’t Get ’im Riled!.");
+  }
+
+  return warnings;
+}
+
+function getHindranceWarnings(currentCharacter, draftHindrance, editingId = "") {
+  const warnings = [];
+  if (!draftHindrance.name.trim()) warnings.push("Hindrance name is blank.");
+  if (!draftHindrance.severity || draftHindrance.severity === "Unknown")
+    warnings.push("Hindrance severity is not selected.");
+
+  const draftName = plainEntryName(draftHindrance.name);
+  const hasRiled = currentCharacter.edges.some(
+    (edge) => plainEntryName(edge.name) === "dont get im riled",
+  );
+  if (draftName === "tenderfoot" && hasRiled) {
+    warnings.push("Tenderfoot conflicts with Don’t Get ’im Riled!.");
+  }
+
+  return warnings;
+}
+
+function upsertEdge(currentCharacter, edge) {
+  const normalized = normalizeEdgeEntry(edge);
+  const index = currentCharacter.edges.findIndex(
+    (item) => item.id === normalized.id,
+  );
+  if (index >= 0) currentCharacter.edges[index] = normalized;
+  else currentCharacter.edges.push(normalized);
+  currentCharacter.edges = normalizeEdges(currentCharacter.edges);
+}
+
+function removeEdge(currentCharacter, edgeId) {
+  currentCharacter.edges = currentCharacter.edges.filter(
+    (edge) => edge.id !== edgeId,
+  );
+}
+
+function upsertHindrance(currentCharacter, hindrance) {
+  const normalized = normalizeHindranceEntry(hindrance);
+  const index = currentCharacter.hindrances.findIndex(
+    (item) => item.id === normalized.id,
+  );
+  if (index >= 0) currentCharacter.hindrances[index] = normalized;
+  else currentCharacter.hindrances.push(normalized);
+  currentCharacter.hindrances = normalizeHindrances(currentCharacter.hindrances);
+}
+
+function removeHindrance(currentCharacter, hindranceId) {
+  currentCharacter.hindrances = currentCharacter.hindrances.filter(
+    (hindrance) => hindrance.id !== hindranceId,
+  );
+}
+
 function normalize(data) {
   const defaults = clone(defaultCharacter);
   const normalized = data && typeof data === "object" ? data : defaults;
@@ -671,6 +1040,8 @@ function normalize(data) {
   )
     normalized.hucksterDeal = makeHucksterDeal();
 
+  normalized.edges = normalizeEdges(normalized.edges);
+  normalized.hindrances = normalizeHindrances(normalized.hindrances);
   normalized.inventory = Array.isArray(normalized.inventory)
     ? normalized.inventory
     : [];
@@ -740,6 +1111,18 @@ function caliberOptionsForAmmo(item, selected = "") {
     .join("");
 }
 
+function entryCatalogOptions(items, placeholder) {
+  return [
+    `<option value="">${placeholder}</option>`,
+    ...items
+      .map(
+        (item) =>
+          `<option value="${esc(item.id)}">${esc(item.name)}${item.rank ? ` • ${esc(item.rank)}` : ""}${item.severity ? ` • ${esc(item.severity)}` : ""}${item.source ? ` • ${esc(item.source)}` : ""}</option>`,
+      )
+      .join(""),
+  ].join("");
+}
+
 function catalogs() {
   els.gearSelect.innerHTML = optionList(
     byName(GEAR_CATALOG),
@@ -766,6 +1149,14 @@ function catalogs() {
     VEHICLE_CATALOG,
     "Choose vehicle from catalog…",
     (item) => money(item.costCents),
+  );
+  els.edgeCatalogSelect.innerHTML = entryCatalogOptions(
+    EDGE_CATALOG,
+    "Manual Edge or choose from catalog…",
+  );
+  els.hindranceCatalogSelect.innerHTML = entryCatalogOptions(
+    HINDRANCE_CATALOG,
+    "Manual Hindrance or choose from catalog…",
   );
   els.armorLocationSelect.innerHTML = ARMOR_LOCATIONS.map(
     (location) =>
@@ -938,77 +1329,163 @@ function render() {
 
 function renderCharacterSummary() {
   els.characterSummaryName.textContent = character.name;
+  els.characterDossierSubtitle.textContent = [
+    character.rank,
+    character.ancestry,
+    character.archetype,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+  els.characterSourceBadge.textContent = sourceLabel();
   els.characterBasicsList.innerHTML = [
     ["Rank", character.rank],
     ["Ancestry", character.ancestry],
     ["Concept", character.archetype],
-    ["Source", character.source || "Tracker"],
+    ["Source", sourceLabel()],
   ]
     .map(
       ([label, value]) =>
-        `<div><span>${label}</span><strong>${esc(value || "—")}</strong></div>`,
+        `<div class="dossier-meta-item"><span>${label}</span><strong>${esc(value || "—")}</strong></div>`,
     )
     .join("");
 
-  const attributes = Object.entries(character.attributes || {}).map(
-    ([name, die]) => ({
-      name: displayNameFromKey(name),
-      meta: die,
+  const powerPoints = powerPointResource();
+  els.characterStatusStrip.innerHTML = [
+    statusPipMarkup(
+      "Wounds",
+      `${character.damage.wounds} / ${character.damage.maxWounds}`,
+    ),
+    statusPipMarkup(
+      "Fatigue",
+      `${character.damage.fatigue} / ${character.damage.maxFatigue}`,
+    ),
+    statusPipMarkup("Bennies", character.bennies.current, `Start ${character.bennies.starting}`),
+    statusPipMarkup("Conviction", character.conviction),
+    powerPoints
+      ? statusPipMarkup(
+          "Power Points",
+          `${powerPoints.current} / ${powerPoints.max}`,
+          powerPoints.source,
+        )
+      : "",
+  ]
+    .filter(Boolean)
+    .join("");
+  els.addManualPowerPointsBtn.classList.toggle("hidden", Boolean(powerPoints));
+
+  const attributeEntries = Object.entries(character.attributes || {}).sort(
+    ([left], [right]) => {
+      const leftIndex = ATTRIBUTE_ORDER.indexOf(left);
+      const rightIndex = ATTRIBUTE_ORDER.indexOf(right);
+      return (
+        (leftIndex < 0 ? 99 : leftIndex) -
+          (rightIndex < 0 ? 99 : rightIndex) ||
+        displayNameFromKey(left).localeCompare(displayNameFromKey(right))
+      );
+    },
+  );
+  els.attributesList.innerHTML = attributeEntries.length
+    ? attributeEntries
+        .map(([name, die]) => attributeCardMarkup(name, die))
+        .join("")
+    : emptyState("No attributes recorded.");
+
+  const skills = [...(character.skills || [])].sort((left, right) =>
+    String(left.name || "").localeCompare(String(right.name || ""), undefined, {
+      numeric: true,
+      sensitivity: "base",
     }),
   );
-  els.attributesList.innerHTML = traitListMarkup(
-    attributes,
-    "No attributes recorded.",
-  );
-
-  const skills = (character.skills || []).map((skill) => ({
-    name: skill.name,
-    meta: skill.die || skill.value || "",
-    note: skill.notes || skill.linkedAttribute || "",
-  }));
-  els.skillsList.innerHTML = traitListMarkup(skills, "No skills recorded.");
+  els.skillsList.innerHTML = skills.length
+    ? skills.map(skillChipMarkup).join("")
+    : emptyState("No skills recorded.");
 
   const edges = (character.edges || [])
     .filter((edge) => edge.name)
     .map((edge) => ({
+      id: edge.id,
       name: edge.name,
-      meta: edge.source || edge.requirements || "",
+      meta: edgeDisplayMeta(edge),
+      summary: edge.shortSummary || edge.summary || "",
       note: edge.notes || edge.text || "",
+      sourceMeta: sourceMeta(edge),
     }));
-  els.edgesList.innerHTML = traitListMarkup(edges, "No Edges recorded.");
+  els.edgesList.innerHTML = edges.length
+    ? edges.map((edge) => tagCardMarkup(edge, "edge")).join("")
+    : emptyState("No Edges added yet.");
 
   const hindrances = (character.hindrances || [])
     .filter((hindrance) => hindrance.name)
     .map((hindrance) => ({
+      id: hindrance.id,
       name: hindrance.name,
-      meta: hindrance.severity || hindrance.points || "",
+      meta: hindranceDisplayMeta(hindrance),
+      summary: hindrance.shortSummary || hindrance.summary || "",
       note: hindrance.notes || hindrance.text || "",
+      sourceMeta: sourceMeta(hindrance),
     }));
-  els.hindrancesList.innerHTML = traitListMarkup(
-    hindrances,
-    "No Hindrances recorded.",
-  );
+  els.hindrancesList.innerHTML = hindrances.length
+    ? hindrances
+        .map((hindrance) => tagCardMarkup(hindrance, "hindrance"))
+        .join("")
+    : emptyState("No Hindrances added yet.");
 
   els.characterDerivedDetails.innerHTML = [
-    ["Pace", character.derived.pace],
-    ["Parry", character.derived.parry],
-    ["Base Toughness", character.derived.baseToughness],
-    ["Armor", character.derived.armor],
-    ["Total Toughness", character.derived.toughness],
+    ["Pace", character.derived.pace, ""],
+    ["Parry", character.derived.parry, ""],
+    [
+      "Toughness",
+      character.derived.toughness,
+      `Base ${compactText(character.derived.baseToughness)} + Armor ${compactText(character.derived.armor, "0")}`,
+    ],
+    ["Size", character.derived.size ?? character.size, ""],
+    ["Armor", `+${compactText(character.derived.armor, "0")}`, "Best equipped"],
   ]
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
     .map(
-      ([label, value]) =>
-        `<div><span>${label}</span><strong>${esc(value ?? "—")}</strong></div>`,
+      ([label, value, note]) =>
+        `<div class="derived-scan-card"><span>${esc(label)}</span><strong>${esc(value ?? "—")}</strong>${note ? `<small>${esc(note)}</small>` : ""}</div>`,
     )
     .join("");
 
   const background = character.arcaneBackground;
-  const powerPoints = powerPointResource();
   els.characterArcaneSummary.innerHTML = background
-    ? `<div class="row"><div><strong>${esc(background.name)}</strong><span>${esc(background.edgeName)} • ${esc(background.arcaneSkill)} (${esc(background.linkedAttribute)})</span>${powerPoints ? `<span>Power Points ${powerPoints.current} / ${powerPoints.max}</span>` : ""}</div></div>`
+    ? `<div class="arcane-snapshot-grid">${[
+        ["Background", background.name || background.edgeName],
+        ["Edge", background.edgeName],
+        [
+          "Arcane Skill",
+          background.arcaneSkill
+            ? `${background.arcaneSkill}${background.linkedAttribute ? ` (${background.linkedAttribute})` : ""}`
+            : "",
+        ],
+        [
+          "Power Points",
+          powerPoints ? `${powerPoints.current} / ${powerPoints.max}` : "—",
+        ],
+        ["Known Powers", character.powers.length],
+      ]
+        .map(
+          ([label, value]) =>
+            `<div><span>${esc(label)}</span><strong>${esc(compactText(value))}</strong></div>`,
+        )
+        .join("")}</div>`
     : powerPoints
-      ? `<div class="row"><div><strong>Manual Power Points</strong><span>${powerPoints.current} / ${powerPoints.max}</span><span>${esc(powerPoints.note || "")}</span></div></div>`
+      ? `<div class="arcane-snapshot-grid">${[
+          ["Background", "Manual Power Points"],
+          ["Power Points", `${powerPoints.current} / ${powerPoints.max}`],
+          ["Known Powers", character.powers.length],
+          ["Notes", powerPoints.note || "Manual post-import setup"],
+        ]
+          .map(
+            ([label, value]) =>
+              `<div><span>${esc(label)}</span><strong>${esc(compactText(value))}</strong></div>`,
+          )
+          .join("")}</div>`
       : emptyState("No Arcane Background or Power Points configured.");
+
+  els.characterEquippedSummary.innerHTML = `<div class="equipment-group"><h3>Weapons</h3>${equippedWeaponSummaryMarkup()}</div><div class="equipment-group"><h3>Armor</h3>${equippedArmorSummaryMarkup()}</div><div class="equipment-line secondary"><strong>Cash</strong><span>${money(character.moneyCents)} • Inventory tracks money and gear details.</span></div>`;
+  els.characterBackgroundSummary.innerHTML = characterNotesSummaryMarkup();
 }
 
 function renderKeyConditions() {
@@ -2357,6 +2834,218 @@ function addManualPowerPoints() {
   save();
 }
 
+function setEntryWarning(element, warnings) {
+  element.textContent = warnings.join(" ");
+  element.classList.toggle("hidden", !warnings.length);
+}
+
+function applyEdgeCatalogSelection(edge) {
+  els.edgeCatalogSelect.value = edge.catalogId || "";
+  els.edgeNameInput.value = edge.name || "";
+  selectKnownValue(els.edgeCategoryInput, edge.category, "Unknown");
+  selectKnownValue(els.edgeRankInput, edge.rank, "Unknown");
+  els.edgeSourceInput.value = edge.source || "Deadlands: The Weird West";
+  els.edgeRequirementsInput.value = entryTextValue(edge.requirements);
+  els.edgeSubchoiceInput.value = edge.subchoice || "";
+  els.edgeSummaryInput.value = edge.shortSummary || edge.summary || "";
+  els.edgeNotesInput.value = edge.notes || "";
+  setEntryWarning(els.edgeWarningText, []);
+}
+
+function applyHindranceCatalogSelection(hindrance) {
+  els.hindranceCatalogSelect.value = hindrance.catalogId || "";
+  els.hindranceNameInput.value = hindrance.name || "";
+  selectKnownValue(els.hindranceSeverityInput, hindrance.severity, "Unknown");
+  els.hindranceSourceInput.value =
+    hindrance.source || "Deadlands: The Weird West";
+  els.hindranceSummaryInput.value =
+    hindrance.shortSummary || hindrance.summary || "";
+  els.hindranceNotesInput.value = hindrance.notes || "";
+  setEntryWarning(els.hindranceWarningText, []);
+}
+
+function chooseEdgeCatalogEntry() {
+  const entry = chosen(EDGE_CATALOG, els.edgeCatalogSelect.value);
+  if (!entry) return;
+  applyEdgeCatalogSelection({ ...entry, catalogId: entry.id });
+}
+
+function chooseHindranceCatalogEntry() {
+  const entry = chosen(HINDRANCE_CATALOG, els.hindranceCatalogSelect.value);
+  if (!entry) return;
+  applyHindranceCatalogSelection({ ...entry, catalogId: entry.id });
+}
+
+function resetEdgeEditor(edge = null) {
+  edgeEditingId = edge?.id || "";
+  els.edgeEditorTitle.textContent = edge ? "Edit Edge" : "Add Edge";
+  els.saveEdgeBtn.textContent = edge ? "Save Edge" : "Add Edge";
+  els.edgeCatalogSelect.value = edge?.catalogId || "";
+  els.edgeNameInput.value = edge?.name || "";
+  selectKnownValue(els.edgeCategoryInput, edge?.category, "Unknown");
+  selectKnownValue(els.edgeRankInput, edge?.rank, "Unknown");
+  els.edgeSourceInput.value = edge?.source || "Manual";
+  els.edgeRequirementsInput.value = entryTextValue(edge?.requirements);
+  els.edgeSubchoiceInput.value = edge?.subchoice || "";
+  els.edgeSummaryInput.value = edge?.shortSummary || edge?.summary || "";
+  els.edgeNotesInput.value = edge?.notes || edge?.text || "";
+  setEntryWarning(els.edgeWarningText, []);
+}
+
+function openEdgeEditor(edge = null) {
+  resetEdgeEditor(edge);
+  els.edgeEditorPanel.classList.remove("hidden");
+  els.edgeNameInput.focus();
+}
+
+function closeEdgeEditor() {
+  edgeEditingId = "";
+  els.edgeEditorPanel.classList.add("hidden");
+  setEntryWarning(els.edgeWarningText, []);
+}
+
+function edgeDraftFromForm() {
+  const existing = character.edges.find((edge) => edge.id === edgeEditingId);
+  const catalogEntry = chosen(EDGE_CATALOG, els.edgeCatalogSelect.value);
+  const id = edgeEditingId || uniqueEntryId(
+    generateStableEntryId("edge", els.edgeNameInput.value.trim() || "edge"),
+    new Set(character.edges.map((edge) => edge.id)),
+  );
+  return {
+    ...(existing || {}),
+    id,
+    name: els.edgeNameInput.value.trim(),
+    type: "edge",
+    category: els.edgeCategoryInput.value || "Unknown",
+    rank: els.edgeRankInput.value || "Unknown",
+    requirements: els.edgeRequirementsInput.value.trim(),
+    shortSummary: els.edgeSummaryInput.value.trim(),
+    notes: els.edgeNotesInput.value.trim(),
+    source: els.edgeSourceInput.value.trim() || "Manual",
+    subchoice: els.edgeSubchoiceInput.value.trim(),
+    catalogId: catalogEntry?.id || existing?.catalogId || "",
+    isCustom: catalogEntry ? false : existing ? Boolean(existing.isCustom) : true,
+  };
+}
+
+function saveEdgeEditor() {
+  const draft = edgeDraftFromForm();
+  const warnings = getEdgeWarnings(character, draft, edgeEditingId);
+  setEntryWarning(els.edgeWarningText, warnings);
+  if (
+    warnings.length &&
+    !confirm(`${warnings.join("\n")}\n\nSave this Edge anyway?`)
+  )
+    return;
+  upsertEdge(character, draft);
+  closeEdgeEditor();
+  render();
+  save();
+}
+
+function resetHindranceEditor(hindrance = null) {
+  hindranceEditingId = hindrance?.id || "";
+  els.hindranceEditorTitle.textContent = hindrance
+    ? "Edit Hindrance"
+    : "Add Hindrance";
+  els.saveHindranceBtn.textContent = hindrance
+    ? "Save Hindrance"
+    : "Add Hindrance";
+  els.hindranceCatalogSelect.value = hindrance?.catalogId || "";
+  els.hindranceNameInput.value = hindrance?.name || "";
+  selectKnownValue(els.hindranceSeverityInput, hindrance?.severity, "Unknown");
+  els.hindranceSourceInput.value = hindrance?.source || "Manual";
+  els.hindranceSummaryInput.value =
+    hindrance?.shortSummary || hindrance?.summary || "";
+  els.hindranceNotesInput.value = hindrance?.notes || hindrance?.text || "";
+  setEntryWarning(els.hindranceWarningText, []);
+}
+
+function openHindranceEditor(hindrance = null) {
+  resetHindranceEditor(hindrance);
+  els.hindranceEditorPanel.classList.remove("hidden");
+  els.hindranceNameInput.focus();
+}
+
+function closeHindranceEditor() {
+  hindranceEditingId = "";
+  els.hindranceEditorPanel.classList.add("hidden");
+  setEntryWarning(els.hindranceWarningText, []);
+}
+
+function hindranceDraftFromForm() {
+  const existing = character.hindrances.find(
+    (hindrance) => hindrance.id === hindranceEditingId,
+  );
+  const catalogEntry = chosen(HINDRANCE_CATALOG, els.hindranceCatalogSelect.value);
+  const id = hindranceEditingId || uniqueEntryId(
+    generateStableEntryId(
+      "hindrance",
+      els.hindranceNameInput.value.trim() || "hindrance",
+    ),
+    new Set(character.hindrances.map((hindrance) => hindrance.id)),
+  );
+  return {
+    ...(existing || {}),
+    id,
+    name: els.hindranceNameInput.value.trim(),
+    type: "hindrance",
+    severity: els.hindranceSeverityInput.value || "Unknown",
+    shortSummary: els.hindranceSummaryInput.value.trim(),
+    notes: els.hindranceNotesInput.value.trim(),
+    source: els.hindranceSourceInput.value.trim() || "Manual",
+    catalogId: catalogEntry?.id || existing?.catalogId || "",
+    isCustom: catalogEntry ? false : existing ? Boolean(existing.isCustom) : true,
+  };
+}
+
+function saveHindranceEditor() {
+  const draft = hindranceDraftFromForm();
+  const warnings = getHindranceWarnings(character, draft, hindranceEditingId);
+  setEntryWarning(els.hindranceWarningText, warnings);
+  if (
+    warnings.length &&
+    !confirm(`${warnings.join("\n")}\n\nSave this Hindrance anyway?`)
+  )
+    return;
+  upsertHindrance(character, draft);
+  closeHindranceEditor();
+  render();
+  save();
+}
+
+function handleEntryAction(target) {
+  const actionName = target.dataset.entryAction;
+  const type = target.dataset.entryType;
+  const id = target.dataset.entryId;
+  if (type === "edge") {
+    const edge = character.edges.find((item) => item.id === id);
+    if (!edge) return;
+    if (actionName === "edit") openEdgeEditor(edge);
+    if (
+      actionName === "remove" &&
+      confirm(`Remove Edge "${edge.name || "Unnamed Edge"}"?`)
+    ) {
+      removeEdge(character, id);
+      render();
+      save();
+    }
+  }
+  if (type === "hindrance") {
+    const hindrance = character.hindrances.find((item) => item.id === id);
+    if (!hindrance) return;
+    if (actionName === "edit") openHindranceEditor(hindrance);
+    if (
+      actionName === "remove" &&
+      confirm(`Remove Hindrance "${hindrance.name || "Unnamed Hindrance"}"?`)
+    ) {
+      removeHindrance(character, id);
+      render();
+      save();
+    }
+  }
+}
+
 function updateHucksterDealField(field, value) {
   if (!character.hucksterDeal) character.hucksterDeal = makeHucksterDeal();
   character.hucksterDeal[field] = value;
@@ -2456,6 +3145,8 @@ function closeHeaderMenu() {
 
 document.addEventListener("click", (event) => {
   if (event.target?.dataset?.action) action(event.target.dataset.action);
+  const entryAction = event.target?.closest?.("[data-entry-action]");
+  if (entryAction) handleEntryAction(entryAction);
   if (event.target?.dataset?.toggleForm) {
     const form = document.getElementById(event.target.dataset.toggleForm);
     form?.classList.toggle("hidden");
@@ -2511,6 +3202,14 @@ els.cancelWeaponAddBtn.onclick = () => {
 };
 els.addPowerBtn.onclick = addPower;
 els.addManualPowerPointsBtn.onclick = addManualPowerPoints;
+els.showEdgeFormBtn.onclick = () => openEdgeEditor();
+els.edgeCatalogSelect.onchange = chooseEdgeCatalogEntry;
+els.saveEdgeBtn.onclick = saveEdgeEditor;
+els.cancelEdgeEditBtn.onclick = closeEdgeEditor;
+els.showHindranceFormBtn.onclick = () => openHindranceEditor();
+els.hindranceCatalogSelect.onchange = chooseHindranceCatalogEntry;
+els.saveHindranceBtn.onclick = saveHindranceEditor;
+els.cancelHindranceEditBtn.onclick = closeHindranceEditor;
 [
   els.gearSelect,
   els.ammoGearSelect,
