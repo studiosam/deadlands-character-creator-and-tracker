@@ -39,6 +39,12 @@ want a local, private, session-focused tracker at the table.
 
 ## Demo and Screenshots
 
+Try the hosted demo:
+
+```text
+https://studiosam.github.io/deadlands-character-creator-and-tracker/
+```
+
 Open `index.html` directly in a browser, or serve the folder locally:
 
 ```sh
@@ -46,12 +52,8 @@ npm install
 npm run dev
 ```
 
-The app is ready for GitHub Pages from the repository root. Once published, add
-the hosted demo URL here:
-
-```text
-Demo: TBD
-```
+The app is published from GitHub Pages and can also be served from the
+repository root.
 
 Recommended portfolio screenshots/GIFs:
 
@@ -164,7 +166,7 @@ Scripts:
 
 ## Roadmap
 
-- Add final screenshots/GIFs and a GitHub Pages demo URL.
+- Add final screenshots/GIFs for the hosted demo.
 - Continue converting manual rules-heavy checklist items into automated tests.
 - Harden schema migrations as real breaking data changes appear.
 - Improve onboarding copy and empty states from actual table feedback.
