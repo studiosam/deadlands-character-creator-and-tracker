@@ -161,6 +161,7 @@ function normalize(data) {
   normalized.consumables = Array.isArray(normalized.consumables)
     ? normalized.consumables
     : [];
+  normalizePhysicalInventoryState(normalized);
   normalized.reminders = Array.isArray(normalized.reminders)
     ? normalized.reminders
     : [];

@@ -5,7 +5,12 @@ function renderArmor() {
     .map((location) => {
       const equipped = character.armorInventory.filter(
         (armor) =>
-          armor.equipped && armor.count > 0 && armor.location === location.id,
+          armor.equipped &&
+          armor.itemLocation !== "dropped" &&
+          armor.itemLocation !== "stored" &&
+          armor.itemLocation !== "container" &&
+          armor.count > 0 &&
+          armor.location === location.id,
       );
       return `<div class="loc-card"><strong>${esc(location.label)} (${armorValue(location.id)})</strong><span>${equipped.map((armor) => `${esc(armor.name)} (+${armor.armor})`).join("<br>") || "—"}</span></div>`;
     })
@@ -20,10 +25,12 @@ function renderArmor() {
   character.armorInventory.forEach((armor) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${esc(armor.name)}</strong><span>+${armor.armor} • ${armorLabel(armor.location)} • Min Str ${esc(armor.minStr)} • Weight ${wt(armor.weight)} • Cost ${armor.costCents !== undefined ? money(armor.costCents) : "—"} each</span>${armor.note ? `<span>${esc(armor.note)}</span>` : ""}</div><div class="controls"><button>${armor.equipped ? "Equipped" : "Equip"}</button><button>&minus;</button><strong>${armor.count}</strong><button>+</button><button class="delete-small">×</button></div>`;
+    const entry = { type: "armor", id: armor.id, label: armor.name, item: armor };
+    row.innerHTML = `<div><strong>${esc(armor.name)}</strong><span>+${armor.armor} • ${armorLabel(armor.location)} • ${esc(physicalItemLocationLabel(entry))} • Min Str ${esc(armor.minStr)} • Weight ${formatWeightPounds(physicalItemWeight(entry))} • Cost ${armor.costCents !== undefined ? money(armor.costCents) : "—"} each</span>${armor.note ? `<span>${esc(armor.note)}</span>` : ""}</div><div class="controls"><button>${armor.equipped ? "Equipped" : "Equip"}</button><button>&minus;</button><strong>${armor.count}</strong><button>+</button>${physicalMoveControl("armor", armor.id)}<button class="delete-small">×</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
       armor.equipped = !armor.equipped;
+      armor.itemLocation = armor.equipped ? "equipped" : "carried";
       render();
       save();
     };
@@ -45,6 +52,7 @@ function renderArmor() {
       render();
       save();
     };
+    bindPhysicalMoveControls(row);
     els.armorInventoryList.appendChild(row);
   });
 }
@@ -60,14 +68,21 @@ function renderWeapons() {
     const fragment = els.weaponTemplate.content.cloneNode(true);
     const query = (selector) => fragment.querySelector(selector);
     query(".weapon-name").textContent = weapon.name;
+    const weaponEntry = {
+      type: "weapon",
+      id: weapon.id,
+      label: weapon.name,
+      item: weapon,
+    };
     query(".weapon-details").textContent =
-      `Damage ${weapon.damage || "—"} • Range ${weapon.range || "—"} • AP ${weapon.ap ?? "—"} • ROF ${weapon.rof ?? "—"} • Weight ${wt(weapon.weight)} • Min Str ${weapon.minStr || "—"} • Cost ${weapon.costCents !== undefined ? money(weapon.costCents) : "—"}`;
+      `Damage ${weapon.damage || "—"} • Range ${weapon.range || "—"} • AP ${weapon.ap ?? "—"} • ROF ${weapon.rof ?? "—"} • ${physicalItemLocationLabel(weaponEntry)} • Weight ${formatWeightPounds(physicalItemWeight(weaponEntry))} • Min Str ${weapon.minStr || "—"} • Cost ${weapon.costCents !== undefined ? money(weapon.costCents) : "—"}`;
 
     const fire = query(".fire-btn");
     const load = query(".load-btn");
     const reload = query(".reload-btn");
     const unload = query(".unload-btn");
     const remove = query(".remove-btn");
+    remove.insertAdjacentHTML("beforebegin", physicalMoveControl("weapon", weapon.id));
     const strengthInfo = getWeaponStrengthUsageInfo(
       character.weaponStrength,
       weapon,
@@ -79,10 +94,13 @@ function renderWeapons() {
     if (isTrackedWeapon(weapon)) {
       const reserve = character.ammo[weapon.ammoType];
       const reserveCount = reserve?.count || 0;
+      const reserveEntry = reserve
+        ? { type: "ammo", id: weapon.ammoType, label: reserve.label, item: reserve }
+        : null;
       query(".loaded").textContent =
         `Loaded ${weapon.shotsLoaded} / ${weapon.shotsMax}`;
       query(".weapon-notes").textContent =
-        `${reserve?.label || "Ammo"} reserve: ${reserveCount}.`;
+        `${reserve?.label || "Ammo"} reserve: ${reserveCount}${reserveEntry ? ` • ${physicalItemLocationLabel(reserveEntry)}` : ""}.`;
       fire.disabled = weapon.shotsLoaded <= 0;
       load.disabled =
         weapon.shotsLoaded >= weapon.shotsMax || reserveCount <= 0;
@@ -138,6 +156,7 @@ function renderWeapons() {
       render();
       save();
     };
+    bindPhysicalMoveControls(fragment);
     els.weaponList.appendChild(fragment);
   });
 }
@@ -154,7 +173,8 @@ function renderAmmo() {
   Object.entries(character.ammo).forEach(([key, ammo]) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${ammo.count}</strong><span>${esc(ammo.label)}</span></div><div class="controls"><button type="button">&minus;</button><button type="button">+</button><button class="delete-small" type="button" title="Remove ammo category">×</button></div>`;
+    const entry = { type: "ammo", id: key, label: ammo.label, item: ammo };
+    row.innerHTML = `<div><strong>${ammo.count}</strong><span>${esc(ammo.label)} • ${esc(physicalItemLocationLabel(entry))} • Weight ${formatWeightPounds(physicalItemWeight(entry))}</span></div><div class="controls"><button type="button">&minus;</button><button type="button">+</button>${physicalMoveControl("ammo", key)}<button class="delete-small" type="button" title="Remove ammo category">×</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
       ammo.count = Math.max(0, ammo.count - 1);
@@ -167,6 +187,7 @@ function renderAmmo() {
       save();
     };
     buttons[2].onclick = () => removeAmmoCategory(key);
+    bindPhysicalMoveControls(row);
     els.ammoReserves.appendChild(row);
   });
   els.weaponAmmoTypeSelect.innerHTML = ammoOptions(

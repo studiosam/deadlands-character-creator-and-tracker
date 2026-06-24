@@ -113,6 +113,9 @@ function armorValue(location) {
     .filter(
       (armor) =>
         armor.equipped &&
+        armor.itemLocation !== "dropped" &&
+        armor.itemLocation !== "stored" &&
+        armor.itemLocation !== "container" &&
         armor.count > 0 &&
         (location === "best" || armor.location === location),
     )

@@ -381,6 +381,7 @@ function fromSavagedUs(data) {
           label: ammoReserveForKey(key, { label: item.name || "Ammo" }).label,
           count: 0,
           weight: parseWeight(item.weight) / count,
+          itemLocation: "carried",
           costCents: cents(item.costBuy ?? item.cost),
         };
       ammo[key].count += count;
@@ -396,6 +397,7 @@ function fromSavagedUs(data) {
         count,
         unit: "days",
         weight: parseWeight(item.weight) / count,
+        itemLocation: "carried",
       });
     else if (/match/i.test(item.name))
       consumables.push({
@@ -406,6 +408,7 @@ function fromSavagedUs(data) {
         count: count * (/100/.test(item.name) ? 100 : 1),
         unit: "matches",
         weight: parseWeight(item.weight) / (count * (/100/.test(item.name) ? 100 : 1)),
+        itemLocation: "carried",
       });
     else if (/elixir|oil|tobacco/i.test(item.name))
       consumables.push({
@@ -420,6 +423,7 @@ function fromSavagedUs(data) {
             ? "pouch"
             : "dose",
         weight: parseWeight(item.weight) / count,
+        itemLocation: "carried",
       });
     else
       inventory.push({
@@ -459,6 +463,7 @@ function fromSavagedUs(data) {
           ammoType: capacity && ammoType ? ammoType : null,
           notes: weapon.notes || "",
           weight: weapon.weight,
+          itemLocation: "carried",
           costCents: cents(weapon.costBuy ?? weapon.cost),
           minStr: weapon.minStr || "—",
           book: savagedBook(weapon),
@@ -488,6 +493,7 @@ function fromSavagedUs(data) {
       count: Math.max(1, Math.floor(Number(armor.quantity) || 1)),
       armor: Math.max(0, Math.floor(Number(armor.armor) || 0)),
       weight: armor.weight,
+      itemLocation: armor.equipped ? "equipped" : "carried",
       minStr: armor.minStr || strength,
       costCents: cents(armor.costBuy ?? armor.cost),
       book: savagedBook(armor),
@@ -505,6 +511,7 @@ function fromSavagedUs(data) {
         count: Math.max(1, Math.floor(Number(shield.quantity) || 1)),
         armor: Math.max(0, Math.floor(Number(shield.armor) || 0)),
         weight: shield.weight,
+        itemLocation: shield.equipped ? "equipped" : "carried",
         minStr: shield.minStr || strength,
         costCents: cents(shield.costBuy ?? shield.cost),
         book: savagedBook(shield),

@@ -57,7 +57,8 @@ function renderConsumables() {
   consumables.forEach((item) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${esc(item.name)}</strong><span>${item.count} ${esc(item.unit || "available")}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls consumable-use-actions"><input class="tiny" type="number" min="1" step="1" value="1" aria-label="Number of ${esc(item.name)} to adjust"><button type="button">Use</button><button type="button">Add</button><button class="delete-small" type="button">×</button></div>`;
+    const entry = { type: "consumable", id: item.id, label: item.name, item };
+    row.innerHTML = `<div><strong>${esc(item.name)}</strong><span>${item.count} ${esc(item.unit || "available")} • ${esc(physicalItemLocationLabel(entry))} • Weight ${formatWeightPounds(physicalItemWeight(entry))}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls consumable-use-actions"><input class="tiny" type="number" min="1" step="1" value="1" aria-label="Number of ${esc(item.name)} to adjust"><button type="button">Use</button><button type="button">Add</button>${physicalMoveControl("consumable", item.id)}<button class="delete-small" type="button">×</button></div>`;
     const input = row.querySelector("input");
     const [use, add, remove] = row.querySelectorAll("button");
     use.onclick = () => {
@@ -80,6 +81,7 @@ function renderConsumables() {
       render();
       save();
     };
+    bindPhysicalMoveControls(row);
     els.consumablesList.appendChild(row);
   });
 
@@ -139,6 +141,59 @@ function inventoryMoveOptions(currentItem) {
   ].join("");
 }
 
+function physicalMoveOptions(type, id) {
+  const containers = flattenInventory()
+    .map(({ item }) => item)
+    .filter((item) => item.isContainer);
+  const storageOptions = allStorageLocations()
+    .map(
+      (location) =>
+        `<option value="stored:${esc(location.id)}">Store: ${esc(location.name)}</option>`,
+    )
+    .join("");
+  const containerOptions = containers
+    .map(
+      (container) =>
+        `<option value="container:${esc(container.id)}">Inside: ${esc(container.name)}</option>`,
+    )
+    .join("");
+  return [
+    '<option value="">Move...</option>',
+    '<option value="carried">On Body</option>',
+    '<option value="equipped">Equipped / Worn</option>',
+    '<option value="dropped">Dropped</option>',
+    storageOptions,
+    containerOptions,
+  ].join("");
+}
+
+function physicalMoveControl(type, id) {
+  return `<select data-physical-move="${esc(type)}:${esc(id)}" aria-label="Move item">${physicalMoveOptions(type, id)}</select>`;
+}
+
+function bindPhysicalMoveControls(root = document) {
+  root.querySelectorAll("[data-physical-move]").forEach((select) => {
+    select.onchange = () => {
+      const [type, id] = select.dataset.physicalMove.split(":");
+      const [destination, destinationId = ""] = select.value.split(":");
+      if (!destination) return;
+      movePhysicalItem(type, id, destination, destinationId);
+      render();
+      save();
+    };
+  });
+}
+
+function renderPhysicalNestedRow(entry, depth = 1, parent = null) {
+  const row = document.createElement("div");
+  row.className = `row inventory-row physical-row depth-${Math.min(depth, 4)}`;
+  const weight = physicalItemWeight(entry);
+  const location = parent ? `Inside ${parent.name}` : physicalItemLocationLabel(entry);
+  row.innerHTML = `<div class="inventory-item-main" style="--depth:${depth}"><strong>${esc(entry.label)}</strong><span>${esc(location)} • ${esc(entry.type)} • Weight ${formatWeightPounds(weight)}</span></div><div class="controls inventory-actions">${physicalMoveControl(entry.type, entry.id)}</div>`;
+  bindPhysicalMoveControls(row);
+  els.inventoryList.appendChild(row);
+}
+
 function renderInventoryItemRow(item, depth = 0, parent = null) {
   const row = document.createElement("div");
   row.className = `row inventory-row depth-${Math.min(depth, 4)}`;
@@ -190,6 +245,9 @@ function renderInventoryItemRow(item, depth = 0, parent = null) {
   (item.contents || []).forEach((child) =>
     renderInventoryItemRow(child, depth + 1, item),
   );
+  physicalItemsInContainer(item.id).forEach((entry) =>
+    renderPhysicalNestedRow(entry, depth + 1, item),
+  );
 }
 
 function renderInventoryLocationOptions() {
@@ -222,12 +280,20 @@ function renderStorageLocations() {
   const locations = [...builtin, ...custom.map((location) => ({ ...location }))];
   els.storageLocationList.innerHTML = "";
   locations.forEach((location) => {
-    const weight = (character.inventory || [])
-      .filter((item) => item.location === "stored" && item.storageId === location.id)
-      .reduce((sum, item) => sum + inventoryItemTotalWeight(item), 0);
+    const storedGear = (character.inventory || []).filter(
+      (item) => item.location === "stored" && item.storageId === location.id,
+    );
+    const storedPhysical = physicalItemsInStorage(location.id);
+    const weight =
+      storedGear.reduce((sum, item) => sum + inventoryItemTotalWeight(item), 0) +
+      storedPhysical.reduce((sum, entry) => sum + physicalItemWeight(entry), 0);
+    const itemNames = [
+      ...storedGear.map((item) => item.name),
+      ...storedPhysical.map((entry) => entry.label),
+    ];
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${esc(location.name)}</strong><span>${formatWeightPounds(weight)} stored here</span></div><div class="controls">${location.builtin ? "" : `<input value="${esc(location.name)}" aria-label="Rename ${esc(location.name)}"><button type="button">Rename</button><button class="delete-small" type="button">×</button>`}</div>`;
+    row.innerHTML = `<div><strong>${esc(location.name)}</strong><span>${formatWeightPounds(weight)} stored here</span>${itemNames.length ? `<span>${esc(itemNames.join(", "))}</span>` : ""}</div><div class="controls">${location.builtin ? "" : `<input value="${esc(location.name)}" aria-label="Rename ${esc(location.name)}"><button type="button">Rename</button><button class="delete-small" type="button">×</button>`}</div>`;
     if (!location.builtin) {
       const input = row.querySelector("input");
       const buttons = row.querySelectorAll("button");
@@ -394,6 +460,7 @@ function addAmmo() {
       note: els.ammoNoteInput.value.trim(),
       weight: catalogItem?.weight,
       costCents: catalogItem?.costCents,
+      itemLocation: "carried",
     };
   els.ammoGearSelect.value = "";
   els.ammoLabelInput.value = "";
@@ -424,6 +491,7 @@ function addArmor() {
     existing.armor = armor;
     existing.location = els.armorLocationSelect.value;
     existing.equipped = true;
+    existing.itemLocation = "equipped";
   } else {
     character.armorInventory.push({
       id,
@@ -433,6 +501,7 @@ function addArmor() {
       location:
         els.armorLocationSelect.value || catalogItem?.location || "torso",
       equipped: true,
+      itemLocation: "equipped",
       weight: catalogItem?.weight,
       minStr: catalogItem?.minStr,
       costCents: catalogItem?.costCents,
@@ -484,6 +553,7 @@ function addWeapon() {
       ammoType: capacity && ammoType ? ammoType : null,
       notes: catalogItem?.notes || "",
       weight: catalogItem?.weight,
+      itemLocation: "carried",
       costCents: catalogItem?.costCents,
       minStr: catalogItem?.minStr,
       book: catalogItem?.book || "Deadlands",

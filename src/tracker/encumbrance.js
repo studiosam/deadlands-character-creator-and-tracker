@@ -172,23 +172,7 @@ function activeInventoryWeight(currentCharacter) {
 }
 
 function calculateTotalCarriedWeight(currentCharacter) {
-  const inventoryWeight = activeInventoryWeight(currentCharacter);
-
-  const weaponWeight = (currentCharacter.weapons || []).reduce(
-    (sum, weapon) => sum + carriedWeightForItem(weapon, 1),
-    0,
-  );
-  const armorWeight = (currentCharacter.armorInventory || []).reduce(
-    (sum, armor) => sum + carriedWeightForItem(armor),
-    0,
-  );
-  const ammoWeight = carriedAmmoWeight(currentCharacter);
-  const consumableWeight = (currentCharacter.consumables || []).reduce(
-    (sum, item) => sum + carriedWeightForItem(item),
-    0,
-  );
-
-  return inventoryWeight + weaponWeight + armorWeight + ammoWeight + consumableWeight;
+  return activeInventoryWeight(currentCharacter);
 }
 
 function calculateEncumbrancePenalty(carriedWeight, loadLimit) {

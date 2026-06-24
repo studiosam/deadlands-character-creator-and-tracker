@@ -190,9 +190,27 @@ function renderCombatWeapons() {
       const reserve = weapon.ammoType ? character.ammo[weapon.ammoType] : null;
       const tracked = isTrackedWeapon(weapon);
       const strengthWarning = weaponStrengthWarningMarkup(weapon);
+      const weaponEntry = {
+        type: "weapon",
+        id: weapon.id,
+        label: weapon.name,
+        item: weapon,
+      };
+      const reserveEntry = reserve
+        ? {
+            type: "ammo",
+            id: weapon.ammoType,
+            label: reserve.label,
+            item: reserve,
+          }
+        : null;
+      const availability = physicalItemLocationLabel(weaponEntry);
+      const reserveLocation = reserveEntry
+        ? ` • ${physicalItemLocationLabel(reserveEntry)}`
+        : "";
       const article = document.createElement("article");
       article.className = "weapon-card";
-      article.innerHTML = `<div class="topline"><div><h3>${esc(weapon.name)}</h3><p class="meta">Damage ${esc(weapon.damage || "—")} • Range ${esc(weapon.range || "—")} • AP ${esc(weapon.ap ?? "—")} • ROF ${esc(weapon.rof ?? "—")} • Min Str ${esc(weapon.minStr || "—")}</p></div><span class="loaded">${tracked ? `${weapon.shotsLoaded} / ${weapon.shotsMax}` : "No ammo"}</span></div>${tracked ? `<p class="muted">${esc(reserve?.label || "Ammo")} reserve: ${reserve?.count || 0}</p>` : '<p class="muted">Melee / no ammo tracking.</p>'}${strengthWarning}${weapon.notes ? `<p class="muted">${esc(weapon.notes)}</p>` : ""}${tracked ? '<div class="weapon-actions"><button class="fire-btn" type="button">Fire</button><button class="load-btn" type="button">Load +1</button><button class="reload-btn" type="button">Fill</button><button class="unload-btn" type="button">Unload</button></div>' : ""}`;
+      article.innerHTML = `<div class="topline"><div><h3>${esc(weapon.name)}</h3><p class="meta">Damage ${esc(weapon.damage || "—")} • Range ${esc(weapon.range || "—")} • AP ${esc(weapon.ap ?? "—")} • ROF ${esc(weapon.rof ?? "—")} • Min Str ${esc(weapon.minStr || "—")} • ${esc(availability)}</p></div><span class="loaded">${tracked ? `${weapon.shotsLoaded} / ${weapon.shotsMax}` : "No ammo"}</span></div>${tracked ? `<p class="muted">${esc(reserve?.label || "Ammo")} reserve: ${reserve?.count || 0}${esc(reserveLocation)}</p>` : '<p class="muted">Melee / no ammo tracking.</p>'}${strengthWarning}${weapon.notes ? `<p class="muted">${esc(weapon.notes)}</p>` : ""}${tracked ? '<div class="weapon-actions"><button class="fire-btn" type="button">Fire</button><button class="load-btn" type="button">Load +1</button><button class="reload-btn" type="button">Fill</button><button class="unload-btn" type="button">Unload</button></div>' : ""}`;
 
       if (tracked) {
         const [fire, load, reload, unload] = article.querySelectorAll("button");
@@ -612,6 +630,7 @@ function addConsumableCount(
       unit,
       note,
       weight,
+      itemLocation: "carried",
     });
   }
 }
@@ -626,10 +645,20 @@ function consumeItem(source, item, amount) {
 
 function renderCombatConsumables() {
   const consumables = character.consumables
-    .filter((item) => item.count > 0 && isCombatConsumable(item))
+    .filter(
+      (item) =>
+        item.count > 0 &&
+        isCombatConsumable(item) &&
+        physicalItemIsTopLevelActive(item),
+    )
     .map((item) => ({ item, source: character.consumables }));
   const inventory = character.inventory
-    .filter((item) => item.count > 0 && isCombatConsumable(item))
+    .filter(
+      (item) =>
+        item.count > 0 &&
+        isCombatConsumable(item) &&
+        !["dropped", "stored", "container"].includes(item.location),
+    )
     .map((item) => ({ item, source: character.inventory }));
   const entries = [...consumables, ...inventory];
 

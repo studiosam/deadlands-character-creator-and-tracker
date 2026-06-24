@@ -1,4 +1,10 @@
-const INVENTORY_LOCATIONS = ["equipped", "carried", "dropped", "stored"];
+const INVENTORY_LOCATIONS = [
+  "equipped",
+  "carried",
+  "dropped",
+  "stored",
+  "container",
+];
 const BUILT_IN_STORAGE_LOCATIONS = [
   { id: "cart", name: "Cart" },
   { id: "horse", name: "Horse" },
@@ -34,6 +40,14 @@ function storageLocationName(id) {
 
 function normalizeInventoryLocation(value) {
   return INVENTORY_LOCATIONS.includes(value) ? value : "carried";
+}
+
+function normalizePhysicalItemLocation(item, fallback = "carried") {
+  item.itemLocation = normalizeInventoryLocation(item.itemLocation || fallback);
+  item.storageId = item.itemLocation === "stored" ? item.storageId || "" : "";
+  item.containerId =
+    item.itemLocation === "container" ? item.containerId || "" : "";
+  return item;
 }
 
 function knownEmptyContainerWeight(item) {
@@ -176,6 +190,21 @@ function normalizeInventoryState(currentCharacter) {
   ).map((item, index) => normalizeInventoryItem(item, index, usedIds));
 }
 
+function normalizePhysicalInventoryState(currentCharacter) {
+  (currentCharacter.weapons || []).forEach((weapon) =>
+    normalizePhysicalItemLocation(weapon, "carried"),
+  );
+  (currentCharacter.armorInventory || []).forEach((armor) =>
+    normalizePhysicalItemLocation(armor, armor.equipped ? "equipped" : "carried"),
+  );
+  Object.values(currentCharacter.ammo || {}).forEach((ammo) =>
+    normalizePhysicalItemLocation(ammo, "carried"),
+  );
+  (currentCharacter.consumables || []).forEach((item) =>
+    normalizePhysicalItemLocation(item, "carried"),
+  );
+}
+
 function inventoryItemOwnWeight(item) {
   const count = carriedQuantity(item);
   if (item?.isContainer)
@@ -186,15 +215,95 @@ function inventoryItemOwnWeight(item) {
   return parseWeight(item?.weight) * count;
 }
 
-function inventoryItemContentsWeight(item) {
-  return (item?.contents || []).reduce(
-    (sum, child) => sum + inventoryItemTotalWeight(child),
-    0,
+function physicalItems(currentCharacter = character) {
+  return [
+    ...(currentCharacter.weapons || []).map((item) => ({
+      type: "weapon",
+      id: item.id,
+      label: item.name || "Weapon",
+      item,
+    })),
+    ...(currentCharacter.armorInventory || []).map((item) => ({
+      type: "armor",
+      id: item.id,
+      label: item.name || "Armor",
+      item,
+    })),
+    ...Object.entries(currentCharacter.ammo || {}).map(([id, item]) => ({
+      type: "ammo",
+      id,
+      label: item.label || "Ammo",
+      item,
+    })),
+    ...(currentCharacter.consumables || []).map((item) => ({
+      type: "consumable",
+      id: item.id,
+      label: item.name || "Consumable",
+      item,
+    })),
+  ];
+}
+
+function carriedWeightForPhysicalItem(item, quantity = carriedQuantity(item)) {
+  if (parseWeightNumber(item?.unitWeight) !== null)
+    return parseWeight(item.unitWeight) * quantity;
+  if (parseWeightNumber(item?.totalWeight) !== null) return parseWeight(item.totalWeight);
+  return parseWeight(item?.weight) * quantity;
+}
+
+function physicalItemWeight(entry, currentCharacter = character) {
+  const item = entry.item;
+  if (entry.type === "ammo") {
+    return ammoUnitWeight(entry.id, item) * carriedQuantity(item);
+  }
+  if (entry.type === "weapon") {
+    const loadedWeight = isTrackedWeapon(item)
+      ? ammoUnitWeight(item.ammoType, currentCharacter.ammo?.[item.ammoType] || {}) *
+        carriedQuantity({ count: item.shotsLoaded }, 0)
+      : 0;
+    return carriedWeightForPhysicalItem(item, 1) + loadedWeight;
+  }
+  return carriedWeightForPhysicalItem(item);
+}
+
+function physicalItemsInContainer(containerId, currentCharacter = character) {
+  return physicalItems(currentCharacter).filter(
+    ({ item }) => item.itemLocation === "container" && item.containerId === containerId,
   );
 }
 
-function inventoryItemTotalWeight(item) {
-  return inventoryItemOwnWeight(item) + inventoryItemContentsWeight(item);
+function physicalItemsInStorage(storageId, currentCharacter = character) {
+  return physicalItems(currentCharacter).filter(
+    ({ item }) => item.itemLocation === "stored" && item.storageId === storageId,
+  );
+}
+
+function physicalItemLocationLabel(entry) {
+  const item = entry.item;
+  if (item.itemLocation === "container") {
+    const parent = findInventoryEntry(item.containerId)?.item;
+    return parent ? `Inside ${parent.name}` : "Inside Container";
+  }
+  return locationLabel(item.itemLocation, item.storageId);
+}
+
+function physicalItemIsTopLevelActive(item) {
+  return !["dropped", "stored", "container"].includes(item?.itemLocation);
+}
+
+function inventoryItemContentsWeight(item, currentCharacter = character) {
+  const physicalWeight = physicalItemsInContainer(item.id, currentCharacter).reduce(
+    (sum, entry) => sum + physicalItemWeight(entry, currentCharacter),
+    0,
+  );
+  return (item?.contents || []).reduce(
+    (sum, child) => sum + inventoryItemTotalWeight(child, currentCharacter),
+    physicalWeight,
+  );
+}
+
+function inventoryItemTotalWeight(item, currentCharacter = character) {
+  return inventoryItemOwnWeight(item) + inventoryItemContentsWeight(item, currentCharacter);
 }
 
 function flattenInventory(items = character.inventory, parent = null, output = []) {
@@ -227,6 +336,12 @@ function setInventoryItemLocation(item, location, storageId = "") {
   item.storageId = item.location === "stored" ? storageId : "";
 }
 
+function setPhysicalItemLocation(item, location, storageId = "", containerId = "") {
+  item.itemLocation = normalizeInventoryLocation(location);
+  item.storageId = item.itemLocation === "stored" ? storageId : "";
+  item.containerId = item.itemLocation === "container" ? containerId : "";
+}
+
 function moveInventoryItem(id, destination, destinationId = "") {
   const moving = removeInventoryItem(id);
   if (!moving) return;
@@ -247,6 +362,34 @@ function moveInventoryItem(id, destination, destinationId = "") {
 
   setInventoryItemLocation(moving, destination, destinationId);
   character.inventory.push(moving);
+}
+
+function findPhysicalItem(type, id) {
+  if (type === "weapon")
+    return character.weapons.find((item) => item.id === id) || null;
+  if (type === "armor")
+    return character.armorInventory.find((item) => item.id === id) || null;
+  if (type === "ammo") return character.ammo[id] || null;
+  if (type === "consumable")
+    return character.consumables.find((item) => item.id === id) || null;
+  return null;
+}
+
+function movePhysicalItem(type, id, destination, destinationId = "") {
+  const item = findPhysicalItem(type, id);
+  if (!item) return;
+
+  if (destination === "container") {
+    const target = findInventoryEntry(destinationId);
+    if (!target) return;
+    target.item.isContainer = true;
+    setPhysicalItemLocation(item, "container", "", destinationId);
+  } else {
+    setPhysicalItemLocation(item, destination, destinationId);
+  }
+
+  if (type === "armor" && item.itemLocation !== "equipped") item.equipped = false;
+  if (type === "armor" && item.itemLocation === "equipped") item.equipped = true;
 }
 
 function addStorageLocation(name) {
@@ -272,9 +415,14 @@ function renameStorageLocation(id, name) {
 function deleteStorageLocation(id) {
   const custom = character.storageLocations?.find((item) => item.id === id);
   if (!custom) return false;
-  const hasItems = flattenInventory().some(
-    ({ item, parent }) => !parent && item.location === "stored" && item.storageId === id,
-  );
+  const hasItems =
+    flattenInventory().some(
+      ({ item, parent }) =>
+        !parent && item.location === "stored" && item.storageId === id,
+    ) ||
+    physicalItems().some(
+      ({ item }) => item.itemLocation === "stored" && item.storageId === id,
+    );
   if (hasItems) return false;
   character.storageLocations = character.storageLocations.filter(
     (item) => item.id !== id,
@@ -292,11 +440,20 @@ function inventoryWeightBreakdown(currentCharacter) {
   };
 
   (currentCharacter.inventory || []).forEach((item) => {
-    const total = inventoryItemTotalWeight(item);
+    const total = inventoryItemTotalWeight(item, currentCharacter);
     totals.ownedWeight += total;
     if (item.isContainer) totals.containerLoad += total;
     if (item.location === "dropped") totals.droppedLoad += total;
     else if (item.location === "stored") totals.storedLoad += total;
+    else totals.activeLoad += total;
+  });
+
+  physicalItems(currentCharacter).forEach((entry) => {
+    if (entry.item.itemLocation === "container") return;
+    const total = physicalItemWeight(entry, currentCharacter);
+    totals.ownedWeight += total;
+    if (entry.item.itemLocation === "dropped") totals.droppedLoad += total;
+    else if (entry.item.itemLocation === "stored") totals.storedLoad += total;
     else totals.activeLoad += total;
   });
 
