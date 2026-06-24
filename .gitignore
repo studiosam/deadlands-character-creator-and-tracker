@@ -9,6 +9,7 @@ desktop.ini
 *.log
 *.tmp
 *.temp
+.tmp-combined-browser-scripts.js
 
 # Private/local character saves
 character-exports/
