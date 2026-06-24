@@ -119,6 +119,72 @@ test("manages multiple local character save slots", async ({ page }) => {
   );
 });
 
+test("keeps character slots in stable order when switching", async ({ page }) => {
+  await page.locator("#landingLoadSampleBtn").click();
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await page.locator("#libraryDuplicateActiveBtn").click();
+
+  const namesBefore = await page
+    .locator(".library-character h3")
+    .allTextContents();
+  await page.locator(".library-character").first().getByRole("button", {
+    name: "Switch",
+  }).click();
+  const namesAfter = await page
+    .locator(".library-character h3")
+    .allTextContents();
+
+  expect(namesAfter).toEqual(namesBefore);
+});
+
+test("persists an edited character name across reload", async ({ page }) => {
+  const newName = "Persistence Test Character";
+
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await page.locator("#librarySaveCurrentBtn").click();
+
+  const activeCharacter = page.locator(".library-character.active");
+  await expect(activeCharacter).toHaveCount(1);
+  await activeCharacter.getByRole("button", { name: "Rename" }).click();
+  await page.locator("#appDialogInput").fill(newName);
+  await page.locator("#appDialogConfirmBtn").click();
+
+  await expect(page.locator("#characterName")).toContainText(newName);
+  await expect.poll(async () =>
+    page.evaluate(
+      ({ libraryKey, storageKey, expectedName }) => {
+        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+        const active =
+          library?.charactersById?.[library.activeCharacterId] || null;
+        const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
+        return (
+          active?.name === expectedName &&
+          active?.character?.name === expectedName &&
+          tracker?.name === expectedName
+        );
+      },
+      {
+        libraryKey: CHARACTER_LIBRARY_KEY,
+        storageKey: STORAGE_KEY,
+        expectedName: newName,
+      },
+    ),
+  ).toBe(true);
+
+  await page.reload();
+  if (await page.locator("#landingPage").isVisible()) {
+    await page.locator("#landingContinueBtn").click();
+  }
+  await expect(page.locator("#characterName")).toContainText(newName);
+});
+
 test("persists core combat controls across reload", async ({ page }) => {
   await page.locator("#landingContinueBtn").click();
   await page.getByRole("button", { name: "+", exact: true }).first().click();

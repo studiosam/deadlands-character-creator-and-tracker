@@ -183,10 +183,15 @@ function emptyCharacterLibrary() {
 }
 
 function characterLibraryEntries() {
-  return Object.values(characterLibrary?.charactersById || {}).sort(
-    (left, right) =>
-      String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")),
-  );
+  return Object.values(characterLibrary?.charactersById || {})
+    .map((entry, index) => ({ entry, index }))
+    .sort(
+      (left, right) =>
+        String(left.entry.createdAt || "").localeCompare(
+          String(right.entry.createdAt || ""),
+        ) || left.index - right.index,
+    )
+    .map(({ entry }) => entry);
 }
 
 function uniqueCharacterSlotId(
@@ -390,11 +395,11 @@ function loadCharacter() {
 }
 
 function save() {
+  saveCharacterSlot(character);
   if (!els.saveState) return;
   els.saveState.textContent = "Saving…";
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    saveCharacterSlot(character);
     els.saveState.textContent = "Saved";
   }, 120);
 }

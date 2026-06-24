@@ -190,7 +190,8 @@ h3 {
   position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  min-height: min(86vh, 52rem);
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   padding: clamp(1.25rem, 3.4vw, 3rem);
   background:
@@ -2242,7 +2243,8 @@ h3 {
 
 @media (max-width: 1080px) {
   .landing-page {
-    min-height: 88vh;
+    min-height: 100vh;
+    min-height: 100dvh;
     background-position: 58% center;
   }
 
@@ -2300,7 +2302,8 @@ h3 {
 
 @media (max-width: 680px) {
   .landing-page {
-    min-height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 1rem;
     background-position: 66% center;
   }
