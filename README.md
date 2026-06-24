@@ -38,7 +38,16 @@ deadlands-tracker/
     savaged-import.js
     tracker.js              # Compatibility note; tracker implementation is split below
     tracker/
-      core.js               # State, DOM references, utilities, normalization, storage, catalogs
+      core.js               # Compatibility note for the split tracker implementation
+      constants.js          # Shared tracker constants and rule lookup tables
+      state-dom.js          # Mutable tracker state and DOM element references
+      utils.js              # Generic formatting, escaping, and small utility helpers
+      equipment-helpers.js  # Ammo, armor, weapon, and strength helper functions
+      render-helpers.js     # Shared card/list markup helper functions
+      advancement-core.js   # Advancement normalization, validation, apply, and undo helpers
+      entries.js            # Edge and Hindrance normalization, warnings, and updates
+      storage.js            # Character normalization, localStorage load, and save behavior
+      catalog-ui.js         # Catalog option lists and add-form preview updates
       render.js             # Main render pipeline and character overview rendering
       combat.js             # Play tab, combat controls, resources, powers in play
       notes.js              # Arcane and notes summary panels

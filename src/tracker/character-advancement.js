@@ -197,9 +197,55 @@ function currentAdvanceTargets() {
   });
 }
 
+function skillOptionLabel(skill) {
+  const die = skillValue(skill);
+  return skill.unskilled || !isValidDieStep(die)
+    ? `${skill.name} (unskilled 1d4-2 -> d4)`
+    : `${skill.name} (${die})`;
+}
+
+function skillAdvanceBeforeLabel(target) {
+  return target?.unskilled || !target?.before
+    ? "unskilled 1d4-2"
+    : target.before;
+}
+
+function skillOptionSort(left, right) {
+  return String(left.name || "").localeCompare(String(right.name || ""), undefined, {
+    sensitivity: "base",
+  });
+}
+
+function deadlandsSkillLibraryOptions() {
+  return Object.entries(SKILL_LINKED_ATTRIBUTES).map(([name, linkedAttribute]) => ({
+    name,
+    die: "",
+    linkedAttribute,
+    unskilled: true,
+  }));
+}
+
+function twoSkillAdvanceCandidates() {
+  const candidates = new Map();
+  deadlandsSkillLibraryOptions().forEach((skill) => {
+    candidates.set(plainEntryName(skill.name), skill);
+  });
+  (character.skills || []).forEach((skill) => {
+    if (!skill?.name) return;
+    const die = skillValue(skill);
+    candidates.set(plainEntryName(skill.name), {
+      ...skill,
+      unskilled: !isValidDieStep(die),
+    });
+  });
+  return [...candidates.values()];
+}
+
 function eligibleSkillsForAdvanceMode(mode, excludedNames = []) {
   const excluded = new Set(excludedNames.map(plainEntryName).filter(Boolean));
-  return [...(character.skills || [])]
+  const sourceSkills =
+    mode === "two" ? twoSkillAdvanceCandidates() : [...(character.skills || [])];
+  return sourceSkills
     .filter((skill) => {
       if (!skill.name || excluded.has(plainEntryName(skill.name))) return false;
       if (mode === "single")
@@ -207,11 +253,7 @@ function eligibleSkillsForAdvanceMode(mode, excludedNames = []) {
       if (mode === "two") return canUseTwoSkillAdvance(character, skill.name).ok;
       return true;
     })
-    .sort((left, right) =>
-      String(left.name || "").localeCompare(String(right.name || ""), undefined, {
-        sensitivity: "base",
-      }),
-    );
+    .sort(skillOptionSort);
 }
 
 function skillSelectMarkup(
@@ -221,16 +263,12 @@ function skillSelectMarkup(
   mode = "all",
   excludedNames = [],
 ) {
-  const skills = [...(character.skills || [])].sort((left, right) =>
-    String(left.name || "").localeCompare(String(right.name || ""), undefined, {
-      sensitivity: "base",
-    }),
-  );
+  const skills = [...(character.skills || [])].sort(skillOptionSort);
   const eligibleSkills =
     mode === "all" ? skills : eligibleSkillsForAdvanceMode(mode, excludedNames);
   return `<label>${esc(label)}<select id="${esc(id)}">${optionMarkup("", "Choose skill", !selectedName)}${eligibleSkills
     .map((skill) =>
-      optionMarkup(skill.name, `${skill.name} (${skillValue(skill) || "untrained"})`, skill.name === selectedName),
+      optionMarkup(skill.name, skillOptionLabel(skill), skill.name === selectedName),
     )
     .join("")}</select></label>`;
 }
@@ -272,10 +310,10 @@ function advanceGeneratedValues() {
       targetType: "skill",
       targetName: name,
       summary: target
-        ? `Increase Skill: ${name} ${target.before || "untrained"} → ${target.after}`
+        ? `Increase Skill: ${name} ${skillAdvanceBeforeLabel(target)} → ${target.after}`
         : "",
       preview: target
-        ? `Increase Skill: ${name} ${target.before || "untrained"} -> ${target.after}\nLinked Attribute: ${target.linkedAttribute || "Unknown"} ${target.linkedAttributeDie || "-"}\nEligible: ${check?.ok ? "yes" : `no - ${check?.reason || "not eligible"}`}`
+        ? `Increase Skill: ${name} ${skillAdvanceBeforeLabel(target)} -> ${target.after}\nLinked Attribute: ${target.linkedAttribute || "Unknown"} ${target.linkedAttributeDie || "-"}\nEligible: ${check?.ok ? "yes" : `no - ${check?.reason || "not eligible"}`}`
         : "Select a skill. Add missing skills to the character sheet first, then return here to advance it.",
       targets: target ? [target] : [],
     };
@@ -290,17 +328,17 @@ function advanceGeneratedValues() {
       targetName: targets.map((target) => target.targetName).join(", "),
       summary: targets.length
         ? `Increase Two Skills: ${targets
-            .map((target) => `${target.targetName} ${target.before || "untrained"} → ${target.after}`)
+            .map((target) => `${target.targetName} ${skillAdvanceBeforeLabel(target)} → ${target.after}`)
             .join(", ")}`
         : "",
       preview: targets.length
         ? `Increase Two Skills:\n${targets
             .map((target) => {
               const check = canUseTwoSkillAdvance(character, target.targetName);
-              return `${target.targetName} ${target.before || "untrained"} -> ${target.after}, linked ${target.linkedAttribute || "Unknown"} ${target.linkedAttributeDie || "-"}, ${check.ok ? "eligible" : `not eligible - ${check.reason || "not eligible"}`}`;
+              return `${target.targetName} ${skillAdvanceBeforeLabel(target)} -> ${target.after}, linked ${target.linkedAttribute || "Unknown"} ${target.linkedAttributeDie || "-"}, ${check.ok ? "eligible" : `not eligible - ${check.reason || "not eligible"}`}`;
             })
             .join("\n")}`
-        : "Select two skills. Add missing skills to the character sheet first, then return here to advance them.",
+        : "Select two skills. Unskilled Deadlands skills can be advanced to d4.",
       targets,
     };
   }

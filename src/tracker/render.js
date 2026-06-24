@@ -248,15 +248,6 @@ function nextAdvanceNumber() {
   );
 }
 
-function targetTypeForAdvanceType(type) {
-  if (type === "New Edge") return "edge";
-  if (type === "Increase Skill" || type === "Increase Two Skills") return "skill";
-  if (type === "Increase Attribute") return "attribute";
-  if (type === "New Powers") return "power";
-  if (type === "Power Points") return "power-points";
-  return "custom";
-}
-
 function advanceCardMarkup(advance) {
   const warnings = advanceWarnings(character, advance, advance.id);
   const status = advance.applied
