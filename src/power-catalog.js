@@ -2252,7 +2252,8 @@ function getAllowedPowersForCharacter(character) {
 }
 
 function powerRankValue(rank) {
-  return RANK_ORDER[rank] ?? 0;
+  const rankOrder = { Novice: 0, Seasoned: 1, Veteran: 2, Heroic: 3, Legendary: 4 };
+  return rankOrder[rank] ?? 0;
 }
 
 function rankAllowsPower(characterRank, powerRank) {

@@ -1869,7 +1869,10 @@ function powerOptionButtonMarkup(option, index, powerPoints) {
 }
 
 function variableSpendOptionsForPower(power) {
-  const catalogPower = findPowerCatalogEntryById(power.catalogId);
+  const catalogPower =
+    hasPowerCatalog() && power.catalogId
+      ? findPowerCatalogEntryById(power.catalogId)
+      : null;
   const supportsVariableSpend = Boolean(
     power.supportsVariableSpend || catalogPower?.supportsVariableSpend,
   );
@@ -2487,6 +2490,18 @@ function powerPointResource() {
   return character.resources.find((resource) => resource.id === "power-points");
 }
 
+function hasPowerCatalog() {
+  return (
+    Array.isArray(window.POWER_CATALOG) &&
+    typeof getArcaneBackgroundProfile === "function" &&
+    typeof findPowerCatalogEntryById === "function"
+  );
+}
+
+function powerCatalogEntries() {
+  return hasPowerCatalog() ? window.POWER_CATALOG : [];
+}
+
 function knownPowerCatalogIds() {
   return new Set(character.powers.map((power) => power.catalogId).filter(Boolean));
 }
@@ -2495,17 +2510,18 @@ function missingRequiredPower(profile) {
   if (!profile) return null;
   const knownIds = knownPowerCatalogIds();
   return (profile.requiredStartingPowers || [])
-    .map(findPowerCatalogEntryById)
+    .map((id) => findPowerCatalogEntryById(id))
     .find((power) => power && !knownIds.has(power.id));
 }
 
 function filteredCatalogPowers() {
+  if (!hasPowerCatalog() || !els.powerCatalogSearch) return [];
   const profile = getArcaneBackgroundProfile(character);
   const query = normalizePowerCatalogText(els.powerCatalogSearch.value);
   const rank = els.powerRankFilter.value;
   const validOnly = els.powerValidOnlyInput.checked;
   const allowedIds = new Set(profile?.allowedPowerIds || []);
-  return POWER_CATALOG.filter((power) => {
+  return powerCatalogEntries().filter((power) => {
     if (validOnly && profile && !allowedIds.has(power.id)) return false;
     if (rank && power.rank !== rank) return false;
     if (
@@ -2525,12 +2541,13 @@ function filteredCatalogPowers() {
 }
 
 function selectedCatalogPower() {
+  if (!hasPowerCatalog() || !els.powerCatalogSelect) return null;
   return findPowerCatalogEntryById(els.powerCatalogSelect.value);
 }
 
 function getKnownPowerWarnings(character, power) {
   const warnings = [];
-  const profile = getArcaneBackgroundProfile(character);
+  const profile = hasPowerCatalog() ? getArcaneBackgroundProfile(character) : null;
   if (!profile) {
     warnings.push("No Arcane Background is selected.");
     return warnings;
@@ -2554,7 +2571,8 @@ function catalogPowerPreviewMarkup(power) {
 }
 
 function renderPowerSetupNotice() {
-  const profile = getArcaneBackgroundProfile(character);
+  if (!els.powerSetupNotice || !els.addRequiredPowerBtn) return;
+  const profile = hasPowerCatalog() ? getArcaneBackgroundProfile(character) : null;
   if (!profile) {
     els.powerSetupNotice.classList.remove("hidden");
     els.powerSetupNotice.textContent =
@@ -2570,6 +2588,20 @@ function renderPowerSetupNotice() {
 }
 
 function renderPowerCatalogPicker() {
+  if (
+    !els.powerCatalogSelect ||
+    !els.powerCatalogPreview ||
+    !els.powerCatalogWarning
+  )
+    return;
+  if (!hasPowerCatalog()) {
+    els.powerCatalogSelect.innerHTML =
+      '<option value="">Power catalog unavailable</option>';
+    els.powerCatalogPreview.innerHTML = emptyState(
+      "Power catalog is unavailable. Manual powers still work.",
+    );
+    return;
+  }
   renderPowerSetupNotice();
   const powers = filteredCatalogPowers();
   const previous = els.powerCatalogSelect.value;
@@ -2593,6 +2625,7 @@ function renderPowerCatalogPicker() {
 }
 
 function renderHucksterAvailablePowers() {
+  if (!els.hucksterAvailablePowers || !hasPowerCatalog()) return;
   const profile = getArcaneBackgroundProfile(character);
   els.hucksterAvailablePowers.classList.toggle(
     "hidden",
@@ -3055,12 +3088,12 @@ function addPower() {
 }
 
 function addCatalogPower(power = selectedCatalogPower(), options = {}) {
-  if (!power) return;
+  if (!hasPowerCatalog() || !power) return;
   const warnings = getKnownPowerWarnings(character, power);
   const duplicate = character.powers.some(
     (known) => known.catalogId === power.id,
   );
-  let marshalOverride = els.powerMarshalOverrideInput.checked;
+  let marshalOverride = Boolean(els.powerMarshalOverrideInput?.checked);
   if (
     duplicate &&
     !marshalOverride &&
@@ -3493,14 +3526,14 @@ els.cancelWeaponAddBtn.onclick = () => {
   els.weaponAddForm.classList.add("hidden");
 };
 els.addPowerBtn.onclick = addPower;
-els.addCatalogPowerBtn.onclick = () => addCatalogPower();
-els.addRequiredPowerBtn.onclick = addRequiredPower;
+if (els.addCatalogPowerBtn) els.addCatalogPowerBtn.onclick = () => addCatalogPower();
+if (els.addRequiredPowerBtn) els.addRequiredPowerBtn.onclick = addRequiredPower;
 [
   els.powerCatalogSearch,
   els.powerRankFilter,
   els.powerValidOnlyInput,
   els.powerCatalogSelect,
-].forEach((input) => {
+].filter(Boolean).forEach((input) => {
   input.oninput = renderPowerCatalogPicker;
   input.onchange = renderPowerCatalogPicker;
 });

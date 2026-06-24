@@ -270,9 +270,17 @@ function makeHucksterDeal() {
 
 function normalizePowerRecord(power, index = 0, fallbackSource = "") {
   if (typeof power === "string") power = { name: power };
+  if (!power || typeof power !== "object") power = {};
+  const findCatalogById =
+    typeof findPowerCatalogEntryById === "function"
+      ? findPowerCatalogEntryById
+      : () => null;
+  const findCatalogByName =
+    typeof findPowerCatalogEntryByName === "function"
+      ? findPowerCatalogEntryByName
+      : () => null;
   const catalogEntry =
-    findPowerCatalogEntryById(power.catalogId) ||
-    findPowerCatalogEntryByName(power.name);
+    findCatalogById(power.catalogId) || findCatalogByName(power.name);
   const basePowerPoints =
     power.basePowerPoints ??
     (Number.isFinite(Number(power.baseCost))
