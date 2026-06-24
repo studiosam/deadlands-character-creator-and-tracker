@@ -36,7 +36,18 @@ deadlands-tracker/
     creator.js
     default-character.js
     savaged-import.js
-    tracker.js
+    tracker.js              # Compatibility note; tracker implementation is split below
+    tracker/
+      core.js               # State, DOM references, utilities, normalization, storage, catalogs
+      render.js             # Main render pipeline and character overview rendering
+      combat.js             # Play tab, combat controls, resources, powers in play
+      notes.js              # Arcane and notes summary panels
+      equipment.js          # Armor, weapons, ammo rendering and equipment controls
+      arcane-powers.js      # Resource and power catalog rendering
+      inventory.js          # Inventory, consumables, vehicles, and add-item workflows
+      power-editing.js      # Known power editing and manual Power Point setup
+      character-advancement.js # Edge, Hindrance, and Advancement editors
+      events.js             # Event binding, actions, import/export glue
   docs/
     Sample Characters/
     deadlands-power-points-arcane-backgrounds.md

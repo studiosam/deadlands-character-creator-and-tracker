@@ -298,3 +298,16 @@ Use this section during testing.
 - [ ] JSON export/import preserves cleaned adaptive advance entries.
 - [ ] Existing old advances still load.
 - [ ] Existing applied advances still preserve `appliedChanges`.
+
+# Advancement Skill Dropdown Filtering Tests
+
+- [ ] With Agility d8 and Shooting d8, Shooting appears under Increase Skill.
+- [ ] With Agility d8 and Shooting d10, Shooting appears under Increase Skill.
+- [ ] With Agility d8 and Shooting d6, Shooting does not appear under Increase Skill.
+- [ ] With Agility d8 and Shooting d4, Shooting appears under Increase Two Skills.
+- [ ] With Agility d8 and Shooting d6, Shooting appears under Increase Two Skills.
+- [ ] With Agility d8 and Shooting d8, Shooting does not appear under Increase Two Skills.
+- [ ] With Agility d8 and Shooting d10, Shooting does not appear under Increase Two Skills.
+- [ ] Ineligible skills are not shown as disabled options; they are absent from the dropdown.
+- [ ] Increase Two Skills does not allow the same skill to be selected twice.
+- [ ] Existing application-time blocking still prevents invalid skill advancement if invalid data somehow gets through.
