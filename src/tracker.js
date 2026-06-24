@@ -52,6 +52,33 @@ const HINDRANCE_SEVERITIES = [
   "Custom",
   "Unknown",
 ];
+const ADVANCE_RANKS = ["Novice", "Seasoned", "Veteran", "Heroic", "Legendary"];
+const ADVANCE_TYPES = [
+  "New Edge",
+  "Increase Skill",
+  "Increase Two Skills",
+  "Increase Attribute",
+  "New Powers",
+  "Power Points",
+  "Other / Marshal-approved",
+];
+const ADVANCE_TARGET_TYPES = [
+  "",
+  "edge",
+  "hindrance",
+  "skill",
+  "attribute",
+  "power",
+  "power-points",
+  "resource",
+  "custom",
+];
+const ADVANCE_SOURCES = [
+  "manual",
+  "imported",
+  "marshal-override",
+  "advancement",
+];
 
 const CONSUMABLE_GEAR_CONVERSIONS = {
   "matches-box-100": {
@@ -104,6 +131,7 @@ let saveTimer = null;
 let edgeEditingId = "";
 let hindranceEditingId = "";
 let powerEditingId = "";
+let advanceEditingId = "";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -160,6 +188,23 @@ const els = {
   characterBasicsList: $("#characterBasicsList"),
   attributesList: $("#attributesList"),
   skillsList: $("#skillsList"),
+  advanceSummaryList: $("#advanceSummaryList"),
+  advanceWarningList: $("#advanceWarningList"),
+  advancesList: $("#advancesList"),
+  showAdvanceFormBtn: $("#showAdvanceFormBtn"),
+  advanceEditorPanel: $("#advanceEditorPanel"),
+  advanceEditorTitle: $("#advanceEditorTitle"),
+  advanceNumberInput: $("#advanceNumberInput"),
+  advanceRankInput: $("#advanceRankInput"),
+  advanceTypeInput: $("#advanceTypeInput"),
+  advanceSummaryInput: $("#advanceSummaryInput"),
+  advanceTargetNameInput: $("#advanceTargetNameInput"),
+  advanceTargetTypeInput: $("#advanceTargetTypeInput"),
+  advanceNotesInput: $("#advanceNotesInput"),
+  advanceSourceInput: $("#advanceSourceInput"),
+  advanceWarningText: $("#advanceWarningText"),
+  saveAdvanceBtn: $("#saveAdvanceBtn"),
+  cancelAdvanceEditBtn: $("#cancelAdvanceEditBtn"),
   edgesList: $("#edgesList"),
   hindrancesList: $("#hindrancesList"),
   characterDerivedDetails: $("#characterDerivedDetails"),
@@ -709,6 +754,167 @@ function uniqueEntryId(id, used) {
   return candidate;
 }
 
+function generateAdvanceId(number, type, targetName) {
+  return `advance-${slugify(number || "x")}-${slugify(type || "advance")}-${slugify(targetName || "entry")}`;
+}
+
+function inferAdvanceTypeFromText(text) {
+  const value = String(text || "").trim();
+  if (/^raise attribute:/i.test(value)) return "Increase Attribute";
+  if (/^raise skills:/i.test(value)) return "Increase Two Skills";
+  if (/^raise skill:/i.test(value)) return "Increase Skill";
+  if (/^edge:\s*new powers/i.test(value)) return "New Powers";
+  if (/^edge:\s*power points/i.test(value)) return "Power Points";
+  if (/^edge:/i.test(value)) return "New Edge";
+  return "";
+}
+
+function inferAdvanceTargetName(text, type) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+  const [, afterColon = ""] = value.match(/^[^:]+:\s*(.+)$/) || [];
+  if (type === "Power Points") return "+5 Power Points";
+  if (type === "New Powers") {
+    const powers = afterColon.match(/\((.+)\)/);
+    return powers?.[1] || afterColon.replace(/^New Powers\s*/i, "").trim();
+  }
+  return afterColon || "";
+}
+
+function getAdvanceRankFromCount(count) {
+  const total = Math.max(0, Math.floor(Number(count) || 0));
+  if (total >= 16) return "Legendary";
+  if (total >= 12) return "Heroic";
+  if (total >= 8) return "Veteran";
+  if (total >= 4) return "Seasoned";
+  return "Novice";
+}
+
+function normalizeAdvanceEntry(entry, index = 0) {
+  const raw =
+    typeof entry === "string"
+      ? { summary: entry }
+      : entry && typeof entry === "object"
+        ? entry
+        : {};
+  const sourceText = raw.summary || raw.description || raw.name || "";
+  const number = Math.max(
+    1,
+    Math.floor(Number(raw.number ?? raw.advanceNumber ?? index + 1) || index + 1),
+  );
+  const type =
+    raw.type ||
+    raw.advanceType ||
+    raw.advancementType ||
+    inferAdvanceTypeFromText(sourceText);
+  const summary = raw.summary || raw.description || raw.name || "";
+  const rank = raw.rank || raw.rankAtAdvance || raw.selectedRank || "";
+  const targetName =
+    raw.targetName || raw.target || inferAdvanceTargetName(sourceText, type);
+  const targetType = raw.targetType || raw.targetKind || targetTypeForAdvanceType(type);
+  const source = raw.source || "manual";
+
+  return {
+    ...raw,
+    id: raw.id || generateAdvanceId(number, type, targetName || summary),
+    number,
+    rank: ADVANCE_RANKS.includes(rank)
+      ? rank
+      : getAdvanceRankFromCount(Math.max(0, number - 1)),
+    type: ADVANCE_TYPES.includes(type) ? type : type || "",
+    summary,
+    targetName,
+    targetType: ADVANCE_TARGET_TYPES.includes(targetType) ? targetType : "",
+    targetId: raw.targetId || "",
+    catalogId: raw.catalogId || "",
+    notes: raw.notes || "",
+    dateAdded: raw.dateAdded || "",
+    source: ADVANCE_SOURCES.includes(source) ? source : source || "manual",
+  };
+}
+
+function normalizeAdvances(entries) {
+  const used = new Set();
+  return (Array.isArray(entries) ? entries : []).map((entry, index) => {
+    const normalized = normalizeAdvanceEntry(entry, index);
+    normalized.id = uniqueEntryId(normalized.id, used);
+    return normalized;
+  });
+}
+
+function getCharacterAdvanceSummary(currentCharacter) {
+  const advances = normalizeAdvances(currentCharacter.advances || []);
+  const count = advances.length;
+  const derivedRank = getAdvanceRankFromCount(count);
+  const recordedRank = currentCharacter.rank || "";
+  return {
+    count,
+    derivedRank,
+    recordedRank,
+    rankMismatch:
+      Boolean(recordedRank) &&
+      ADVANCE_RANKS.includes(recordedRank) &&
+      recordedRank !== derivedRank,
+  };
+}
+
+function advanceDisplaySummary(advance) {
+  const summary = compactText(advance.summary, "");
+  if (summary) return summary;
+  const target = compactText(advance.targetName, "");
+  if (target) return `${compactText(advance.type, "Advance")}: ${target}`;
+  if (advance.type === "Power Points") return "Power Points: +5 Power Points";
+  return compactText(advance.type, "Advance recorded");
+}
+
+function advanceWarnings(currentCharacter, advance, editingId = "") {
+  const warnings = [];
+  const type = compactText(advance.type, "");
+  if (!type) warnings.push("Advance type is missing.");
+
+  const needsTarget = [
+    "New Edge",
+    "Increase Skill",
+    "Increase Two Skills",
+    "Increase Attribute",
+    "New Powers",
+    "Power Points",
+  ].includes(type);
+  if (needsTarget && !compactText(advance.targetName, ""))
+    warnings.push("Target name is missing for this advance type.");
+
+  const duplicate = (currentCharacter.advances || []).some(
+    (item) => item.id !== editingId && Number(item.number) === Number(advance.number),
+  );
+  if (duplicate) warnings.push(`Advance #${advance.number} is already used.`);
+
+  const expectedRank = getAdvanceRankFromCount(Math.max(0, Number(advance.number) - 1));
+  if (
+    advance.rank &&
+    ADVANCE_RANKS.includes(advance.rank) &&
+    advance.rank !== expectedRank
+  )
+    warnings.push(`Selected rank differs from expected rank ${expectedRank}.`);
+
+  return warnings;
+}
+
+function upsertAdvance(currentCharacter, advance) {
+  const normalized = normalizeAdvanceEntry(advance);
+  const index = currentCharacter.advances.findIndex(
+    (item) => item.id === normalized.id,
+  );
+  if (index >= 0) currentCharacter.advances[index] = normalized;
+  else currentCharacter.advances.push(normalized);
+  currentCharacter.advances = normalizeAdvances(currentCharacter.advances);
+}
+
+function removeAdvance(currentCharacter, advanceId) {
+  currentCharacter.advances = currentCharacter.advances.filter(
+    (advance) => advance.id !== advanceId,
+  );
+}
+
 function normalizeEdgeEntry(entry) {
   if (typeof entry === "string") {
     return {
@@ -945,6 +1151,7 @@ function normalize(data) {
         }
       : normalized.arcaneBackground;
   }
+  normalized.advances = normalizeAdvances(normalized.advances);
 
   normalized.ammo =
     normalized.ammo && typeof normalized.ammo === "object"
@@ -959,11 +1166,6 @@ function normalize(data) {
     },
     {},
   );
-  Object.entries(defaults.ammo || {}).forEach(([key, ammo]) => {
-    const migrated = migrateAmmoEntry(key, clone(ammo));
-    if (!normalized.ammo[migrated.key])
-      normalized.ammo[migrated.key] = { ...migrated.ammo, count: 0 };
-  });
   Object.values(normalized.ammo).forEach((ammo) => {
     ammo.label ||= "Ammo";
     ammo.count = Math.max(0, Math.floor(Number(ammo.count) || 0));
@@ -1321,6 +1523,7 @@ function render() {
   els.moneyDisplay.textContent = money(character.moneyCents);
 
   renderCharacterSummary();
+  renderAdvancement();
   renderArmor();
   renderWeapons();
   renderAmmo();
@@ -1501,6 +1704,105 @@ function renderCharacterSummary() {
 
   els.characterEquippedSummary.innerHTML = `<div class="equipment-group"><h3>Weapons</h3>${equippedWeaponSummaryMarkup()}</div><div class="equipment-group"><h3>Armor</h3>${equippedArmorSummaryMarkup()}</div><div class="equipment-line secondary"><strong>Cash</strong><span>${money(character.moneyCents)} • Inventory tracks money and gear details.</span></div>`;
   els.characterBackgroundSummary.innerHTML = characterNotesSummaryMarkup();
+}
+
+function sortedAdvances() {
+  return [...(character.advances || [])].sort(
+    (left, right) =>
+      Number(left.number) - Number(right.number) ||
+      String(left.dateAdded || "").localeCompare(String(right.dateAdded || "")),
+  );
+}
+
+function nextAdvanceNumber() {
+  return (
+    Math.max(0, ...((character.advances || []).map((advance) => Number(advance.number) || 0))) +
+    1
+  );
+}
+
+function targetTypeForAdvanceType(type) {
+  if (type === "New Edge") return "edge";
+  if (type === "Increase Skill" || type === "Increase Two Skills") return "skill";
+  if (type === "Increase Attribute") return "attribute";
+  if (type === "New Powers") return "power";
+  if (type === "Power Points") return "power-points";
+  return "custom";
+}
+
+function advanceCardMarkup(advance) {
+  const warnings = advanceWarnings(character, advance, advance.id);
+  const target = [
+    advance.targetType ? displayNameFromKey(advance.targetType) : "",
+    advance.targetName,
+  ]
+    .filter(Boolean)
+    .join(": ");
+  const source = [advance.source, advance.dateAdded].filter(Boolean).join(" • ");
+  return tagCardMarkup(
+    {
+      id: advance.id,
+      name: `Advance #${advance.number}`,
+      meta: [advance.rank, advance.type].filter(Boolean).join(" • "),
+      summary: advanceDisplaySummary(advance),
+      note: [
+        target ? `Target: ${target}` : "",
+        advance.notes,
+        warnings.length ? `Warning: ${warnings.join(" ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      sourceMeta: source,
+    },
+    "advancement",
+  );
+}
+
+function renderAdvancement() {
+  const summary = getCharacterAdvanceSummary(character);
+  els.advanceSummaryList.innerHTML = [
+    ["Current Rank", summary.derivedRank, "Based on recorded advances"],
+    ["Recorded Rank", summary.recordedRank, "Character sheet value"],
+    ["Total Advances", summary.count, "History entries"],
+    [
+      "Next Advance",
+      nextAdvanceNumber(),
+      getAdvanceRankFromCount(summary.count),
+    ],
+  ]
+    .map(
+      ([label, value, note]) =>
+        `<div class="derived-scan-card"><span>${esc(label)}</span><strong>${esc(value ?? "—")}</strong>${note ? `<small>${esc(note)}</small>` : ""}</div>`,
+    )
+    .join("");
+
+  const warnings = [];
+  if (summary.rankMismatch) {
+    warnings.push(
+      `Character rank is ${summary.recordedRank}, but ${summary.count} recorded advances derive ${summary.derivedRank}.`,
+    );
+  }
+  const duplicateNumbers = new Set();
+  const seenNumbers = new Set();
+  (character.advances || []).forEach((advance) => {
+    const number = Number(advance.number);
+    if (!number) return;
+    if (seenNumbers.has(number)) duplicateNumbers.add(number);
+    seenNumbers.add(number);
+  });
+  duplicateNumbers.forEach((number) =>
+    warnings.push(`Advance #${number} appears more than once.`),
+  );
+  els.advanceWarningList.innerHTML = warnings.length
+    ? warnings
+        .map((warning) => `<p class="entry-warning">${esc(warning)}</p>`)
+        .join("")
+    : "";
+
+  const advances = sortedAdvances();
+  els.advancesList.innerHTML = advances.length
+    ? advances.map(advanceCardMarkup).join("")
+    : emptyState("No advances recorded yet.");
 }
 
 function renderKeyConditions() {
@@ -2426,10 +2728,17 @@ function renderWeapons() {
 
 function renderAmmo() {
   els.ammoReserves.innerHTML = "";
+  if (!Object.keys(character.ammo).length) {
+    els.ammoReserves.innerHTML = emptyState("No ammo categories recorded.");
+    els.weaponAmmoTypeSelect.innerHTML = ammoOptions(
+      els.weaponAmmoTypeSelect.value,
+    );
+    return;
+  }
   Object.entries(character.ammo).forEach(([key, ammo]) => {
     const row = document.createElement("div");
     row.className = "row";
-    row.innerHTML = `<div><strong>${ammo.count}</strong><span>${esc(ammo.label)}</span></div><div class="controls"><button>&minus;</button><button>+</button></div>`;
+    row.innerHTML = `<div><strong>${ammo.count}</strong><span>${esc(ammo.label)}</span></div><div class="controls"><button type="button">&minus;</button><button type="button">+</button><button class="delete-small" type="button" title="Remove ammo category">×</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
       ammo.count = Math.max(0, ammo.count - 1);
@@ -2441,11 +2750,35 @@ function renderAmmo() {
       render();
       save();
     };
+    buttons[2].onclick = () => removeAmmoCategory(key);
     els.ammoReserves.appendChild(row);
   });
   els.weaponAmmoTypeSelect.innerHTML = ammoOptions(
     els.weaponAmmoTypeSelect.value,
   );
+}
+
+function removeAmmoCategory(key) {
+  const ammo = character.ammo[key];
+  if (!ammo) return;
+  const linkedWeapons = character.weapons.filter(
+    (weapon) => weapon.ammoType === key,
+  );
+  const linkedText = linkedWeapons.length
+    ? `\n\nThis ammo is assigned to ${linkedWeapons.length} weapon(s): ${linkedWeapons
+        .map((weapon) => weapon.name || "Unnamed weapon")
+        .join(", ")}.\nRemoving it will clear ammo tracking for those weapons.`
+    : "";
+  if (!confirm(`Remove ammo category "${ammo.label || key}"?${linkedText}`))
+    return;
+  linkedWeapons.forEach((weapon) => {
+    weapon.ammoType = null;
+    weapon.shotsMax = null;
+    weapon.shotsLoaded = null;
+  });
+  delete character.ammo[key];
+  render();
+  save();
 }
 
 function renderResources() {
@@ -3339,6 +3672,89 @@ function saveHindranceEditor() {
   save();
 }
 
+function resetAdvanceEditor(advance = null) {
+  const number = advance?.number || nextAdvanceNumber();
+  advanceEditingId = advance?.id || "";
+  els.advanceEditorTitle.textContent = advance ? "Edit Advance" : "Add Advance";
+  els.saveAdvanceBtn.textContent = advance ? "Save Advance" : "Add Advance";
+  els.advanceNumberInput.value = number;
+  selectKnownValue(
+    els.advanceRankInput,
+    advance?.rank || getAdvanceRankFromCount(Math.max(0, Number(number) - 1)),
+    "Novice",
+  );
+  selectKnownValue(els.advanceTypeInput, advance?.type || "New Edge", "New Edge");
+  els.advanceSummaryInput.value = advance?.summary || "";
+  els.advanceTargetNameInput.value = advance?.targetName || "";
+  selectKnownValue(
+    els.advanceTargetTypeInput,
+    advance?.targetType || targetTypeForAdvanceType(els.advanceTypeInput.value),
+    "",
+  );
+  els.advanceNotesInput.value = advance?.notes || "";
+  selectKnownValue(els.advanceSourceInput, advance?.source || "manual", "manual");
+  setEntryWarning(els.advanceWarningText, []);
+}
+
+function openAdvanceEditor(advance = null) {
+  resetAdvanceEditor(advance);
+  els.advanceEditorPanel.classList.remove("hidden");
+  els.advanceNumberInput.focus();
+}
+
+function closeAdvanceEditor() {
+  advanceEditingId = "";
+  els.advanceEditorPanel.classList.add("hidden");
+  setEntryWarning(els.advanceWarningText, []);
+}
+
+function advanceDraftFromForm() {
+  const existing = character.advances.find(
+    (advance) => advance.id === advanceEditingId,
+  );
+  const number = Math.max(
+    1,
+    Math.floor(Number(els.advanceNumberInput.value) || nextAdvanceNumber()),
+  );
+  const type = els.advanceTypeInput.value || "";
+  const targetName = els.advanceTargetNameInput.value.trim();
+  const summary = els.advanceSummaryInput.value.trim();
+  const id = advanceEditingId || uniqueEntryId(
+    generateAdvanceId(number, type, targetName || summary),
+    new Set(character.advances.map((advance) => advance.id)),
+  );
+
+  return {
+    ...(existing || {}),
+    id,
+    number,
+    rank: els.advanceRankInput.value || "",
+    type,
+    summary,
+    targetName,
+    targetType:
+      els.advanceTargetTypeInput.value || targetTypeForAdvanceType(type),
+    notes: els.advanceNotesInput.value.trim(),
+    dateAdded: existing?.dateAdded || new Date().toISOString(),
+    source: els.advanceSourceInput.value || "manual",
+  };
+}
+
+function saveAdvanceEditor() {
+  const draft = advanceDraftFromForm();
+  const warnings = advanceWarnings(character, draft, advanceEditingId);
+  setEntryWarning(els.advanceWarningText, warnings);
+  if (
+    warnings.length &&
+    !confirm(`${warnings.join("\n")}\n\nSave this advance anyway?`)
+  )
+    return;
+  upsertAdvance(character, draft);
+  closeAdvanceEditor();
+  render();
+  save();
+}
+
 function handleEntryAction(target) {
   const actionName = target.dataset.entryAction;
   const type = target.dataset.entryType;
@@ -3365,6 +3781,19 @@ function handleEntryAction(target) {
       confirm(`Remove Hindrance "${hindrance.name || "Unnamed Hindrance"}"?`)
     ) {
       removeHindrance(character, id);
+      render();
+      save();
+    }
+  }
+  if (type === "advancement") {
+    const advance = character.advances.find((item) => item.id === id);
+    if (!advance) return;
+    if (actionName === "edit") openAdvanceEditor(advance);
+    if (
+      actionName === "remove" &&
+      confirm(`Remove Advance #${advance.number || "?"}?`)
+    ) {
+      removeAdvance(character, id);
       render();
       save();
     }
@@ -3546,6 +3975,16 @@ els.showHindranceFormBtn.onclick = () => openHindranceEditor();
 els.hindranceCatalogSelect.onchange = chooseHindranceCatalogEntry;
 els.saveHindranceBtn.onclick = saveHindranceEditor;
 els.cancelHindranceEditBtn.onclick = closeHindranceEditor;
+els.showAdvanceFormBtn.onclick = () => openAdvanceEditor();
+els.advanceTypeInput.onchange = () => {
+  if (!els.advanceTargetTypeInput.value) {
+    els.advanceTargetTypeInput.value = targetTypeForAdvanceType(
+      els.advanceTypeInput.value,
+    );
+  }
+};
+els.saveAdvanceBtn.onclick = saveAdvanceEditor;
+els.cancelAdvanceEditBtn.onclick = closeAdvanceEditor;
 [
   els.gearSelect,
   els.ammoGearSelect,

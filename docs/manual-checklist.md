@@ -106,3 +106,38 @@ Manual test checklist for the Deadlands power catalog, Arcane Background power s
 Use this section during testing.
 
 -
+
+# Advancement Tests
+
+## Basic behavior
+
+- [ ] App loads without console errors.
+- [ ] Existing character with no advances still loads.
+- [ ] Character tab shows Advancement section.
+- [ ] Total Advances count displays.
+- [ ] Derived Rank displays from advance count.
+
+## Add/edit/remove
+
+- [ ] Add an advance.
+- [ ] Edit an advance.
+- [ ] Remove an advance.
+- [ ] Removing an advance does not remove the Edge/Power/Skill from the character.
+- [ ] Duplicate advance numbers show a warning.
+- [ ] Missing type shows a warning.
+- [ ] Missing target name for relevant advance types shows a warning.
+
+## Persistence
+
+- [ ] Save/reload preserves advances.
+- [ ] JSON export/import preserves advances.
+- [ ] Existing JSON with no advances imports as `advances: []`.
+- [ ] JSON with two advances imports both advances exactly once.
+- [ ] Imported advances with missing IDs receive generated IDs.
+- [ ] Imported advances with unknown fields preserve those fields.
+
+## Non-goals
+
+- [ ] Adding an advance does not automatically modify skills.
+- [ ] Adding an advance does not automatically add Edges.
+- [ ] Adding an advance does not automatically add powers.

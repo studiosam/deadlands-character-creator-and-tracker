@@ -571,6 +571,7 @@ function fromSavagedUs(data) {
       : null,
     resources,
     powers,
+    advances: Array.isArray(data.advances) ? data.advances : [],
     hucksterDeal: arcaneConfig?.key === "huckster" ? makeHucksterDeal() : null,
     conditions: clone(defaultCharacter.conditions),
     temporaryConditions: clone(defaultCharacter.temporaryConditions),

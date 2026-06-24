@@ -1537,6 +1537,24 @@ h3 {
   border-left: 4px solid var(--dossier-accent);
 }
 
+.dossier-tag.advancement {
+  border-left: 4px solid #6f4f28;
+}
+
+.advancement-warnings {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.65rem 0;
+}
+
+.advancement-warnings:empty {
+  display: none;
+}
+
+.advancement-list {
+  margin-top: 0.65rem;
+}
+
 .derived-scan-grid,
 .arcane-snapshot-grid {
   display: grid;

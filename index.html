@@ -261,6 +261,65 @@
 
             <section class="card dossier-card">
               <div class="dossier-section-title">
+                <h2>Advancement</h2>
+                <button id="showAdvanceFormBtn" class="ghost small-action" type="button">
+                  Add Advance
+                </button>
+              </div>
+              <div id="advanceSummaryList" class="derived-scan-grid"></div>
+              <div id="advanceWarningList" class="advancement-warnings"></div>
+              <div id="advancesList" class="dossier-tag-list advancement-list"></div>
+              <div id="advanceEditorPanel" class="add-panel dossier-editor hidden">
+                <h3 id="advanceEditorTitle">Add Advance</h3>
+                <div class="form">
+                  <label>Advance #<input id="advanceNumberInput" class="tiny" type="number" min="1" step="1" /></label>
+                  <label>Rank<select id="advanceRankInput">
+                      <option>Novice</option>
+                      <option>Seasoned</option>
+                      <option>Veteran</option>
+                      <option>Heroic</option>
+                      <option>Legendary</option>
+                    </select></label>
+                  <label>Type<select id="advanceTypeInput">
+                      <option>New Edge</option>
+                      <option>Increase Skill</option>
+                      <option>Increase Two Skills</option>
+                      <option>Increase Attribute</option>
+                      <option>New Powers</option>
+                      <option>Power Points</option>
+                      <option>Other / Marshal-approved</option>
+                    </select></label>
+                  <label>Target type<select id="advanceTargetTypeInput">
+                      <option value="">None</option>
+                      <option value="edge">edge</option>
+                      <option value="hindrance">hindrance</option>
+                      <option value="skill">skill</option>
+                      <option value="attribute">attribute</option>
+                      <option value="power">power</option>
+                      <option value="power-points">power-points</option>
+                      <option value="resource">resource</option>
+                      <option value="custom">custom</option>
+                    </select></label>
+                  <label class="full">Summary<input id="advanceSummaryInput" placeholder="Quick Draw, Shooting d8, +5 Power Points..." /></label>
+                  <label class="full">Target name<input id="advanceTargetNameInput" placeholder="Edge, skill, attribute, power, or resource name" /></label>
+                  <label>Source<select id="advanceSourceInput">
+                      <option value="manual">manual</option>
+                      <option value="imported">imported</option>
+                      <option value="marshal-override">marshal-override</option>
+                      <option value="advancement">advancement</option>
+                    </select></label>
+                  <label class="full">Notes<textarea id="advanceNotesInput" rows="3"></textarea></label>
+                </div>
+                <p id="advanceWarningText" class="entry-warning hidden"></p>
+                <div class="controls editor-actions">
+                  <button id="saveAdvanceBtn" type="button">Save Advance</button>
+                  <button id="cancelAdvanceEditBtn" class="ghost" type="button">Cancel</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="card dossier-card">
+              <div class="dossier-section-title">
                 <h2>Edges</h2>
                 <button id="showEdgeFormBtn" class="ghost small-action" type="button">
                   Add Edge

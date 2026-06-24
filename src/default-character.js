@@ -12,6 +12,7 @@ const defaultCharacter = {
   selectedArmorLocation: "best",
   arcaneBackground: null,
   powers: [],
+  advances: [],
   hucksterDeal: null,
   moneyCents: 2122,
   ammo: {
