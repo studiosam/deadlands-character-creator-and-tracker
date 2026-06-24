@@ -332,6 +332,7 @@ function normalizePowerRecord(power, index = 0, fallbackSource = "") {
         ? power.powerModifiers
         : [],
     activeTargets: Array.isArray(power.activeTargets) ? power.activeTargets : [],
+    createdByAdvanceId: power.createdByAdvanceId || "",
     addedReason:
       power.addedReason || (catalogEntry ? "imported" : "custom-homebrew"),
     isCustom: Boolean(power.isCustom || !catalogEntry),

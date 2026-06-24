@@ -141,3 +141,49 @@ Use this section during testing.
 - [ ] Adding an advance does not automatically modify skills.
 - [ ] Adding an advance does not automatically add Edges.
 - [ ] Adding an advance does not automatically add powers.
+
+# Advancement Application Tests
+
+## Apply behavior
+
+- [ ] Add New Edge advance with Apply to character checked.
+- [ ] Confirm the Edge appears in the character’s Edge list.
+- [ ] Confirm the advance shows as applied.
+- [ ] Add New Powers advance with Apply to character checked.
+- [ ] Confirm the selected powers appear in Known Powers.
+- [ ] Add Power Points advance with Apply to character checked.
+- [ ] Confirm max Power Points increases.
+- [ ] Add Increase Skill advance with Apply to character checked.
+- [ ] Confirm the selected skill increases one die step.
+- [ ] Add Increase Two Skills advance with Apply to character checked.
+- [ ] Confirm both selected skills increase one die step.
+- [ ] Add Increase Attribute advance with Apply to character checked.
+- [ ] Confirm the selected attribute increases one die step.
+
+## Remove behavior
+
+- [ ] Remove unapplied advance removes only the advance record.
+- [ ] Remove app-applied New Edge advance offers remove-only or remove-and-undo.
+- [ ] Remove-and-undo for New Edge removes the app-created Edge.
+- [ ] Remove app-applied New Powers advance offers remove-only or remove-and-undo.
+- [ ] Remove-and-undo for New Powers removes the app-created powers.
+- [ ] Remove app-applied skill increase reverts only if the current skill still equals the recorded after value.
+- [ ] Remove app-applied attribute increase reverts only if the current attribute still equals the recorded after value.
+- [ ] Remove app-applied Power Points increase reverts only if the current max Power Points still equals the recorded after value.
+- [ ] Imported advance without appliedChanges removes history only and does not alter the character sheet.
+
+## Persistence
+
+- [ ] Save/reload preserves applied advances.
+- [ ] Save/reload preserves appliedChanges.
+- [ ] JSON export/import preserves applied advances.
+- [ ] JSON export/import preserves appliedChanges.
+- [ ] Existing characters without applied fields still load.
+- [ ] Imported advances without appliedChanges still load.
+
+## Non-goals
+
+- [ ] The app does not perform full Edge prerequisite validation.
+- [ ] The app does not perform full power legality validation.
+- [ ] The app does not perform full character creation economy validation.
+- [ ] The app does not silently undo imported advances.

@@ -308,8 +308,14 @@
                       <option value="marshal-override">marshal-override</option>
                       <option value="advancement">advancement</option>
                     </select></label>
+                  <label>Power Point amount<input id="advancePowerPointAmountInput" class="tiny" type="number" min="1" step="1" placeholder="5" /></label>
+                  <label class="checkline full">
+                    <input id="advanceApplyInput" type="checkbox" />
+                    Apply to character
+                  </label>
                   <label class="full">Notes<textarea id="advanceNotesInput" rows="3"></textarea></label>
                 </div>
+                <p id="advanceAppliedNote" class="entry-warning hidden"></p>
                 <p id="advanceWarningText" class="entry-warning hidden"></p>
                 <div class="controls editor-actions">
                   <button id="saveAdvanceBtn" type="button">Save Advance</button>
