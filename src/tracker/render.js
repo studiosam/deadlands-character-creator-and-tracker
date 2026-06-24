@@ -61,6 +61,7 @@ function render() {
   renderConditions();
   renderCombatPenalties();
   renderConsumables();
+  renderEncumbrance();
   renderInventory();
   renderVehicles();
   renderReminders();
@@ -70,6 +71,35 @@ function render() {
 
   if (document.activeElement !== els.notesArea)
     els.notesArea.value = character.notes || "";
+}
+
+function renderEncumbrance() {
+  const info = calculateEncumbrance(character);
+  const warning = encumbranceWarningText(info);
+
+  els.encumbranceSummaryPill.textContent = info.overloaded
+    ? "Overloaded"
+    : info.encumbered
+      ? encumbranceText(info)
+      : "No encumbrance";
+  els.encumbranceDetails.innerHTML = [
+    ["Active Load", formatWeightPounds(info.carriedWeight)],
+    ["Container Load", formatWeightPounds(info.inventoryTotals.containerLoad)],
+    ["Dropped Load", formatWeightPounds(info.inventoryTotals.droppedLoad)],
+    ["Stored Load", formatWeightPounds(info.inventoryTotals.storedLoad)],
+    ["Owned Gear", formatWeightPounds(info.inventoryTotals.ownedWeight)],
+    ["Load Limit", formatWeightPounds(info.loadLimit)],
+    ["Effective Strength", info.effectiveStrength],
+    ["Encumbrance", encumbranceText(info)],
+    ["Next Threshold", nextEncumbranceText(info)],
+  ]
+    .map(
+      ([label, value]) =>
+        `<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`,
+    )
+    .join("");
+  els.encumbranceWarning.textContent = warning;
+  els.encumbranceWarning.classList.toggle("hidden", !warning);
 }
 
 function renderCharacterSummary() {

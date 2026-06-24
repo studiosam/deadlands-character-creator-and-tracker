@@ -86,6 +86,26 @@ function flattenSavagedGear(items, path = "", output = []) {
   return output;
 }
 
+function savagedInventoryItem(item) {
+  const count = Math.max(1, Math.floor(Number(item.quantity) || 1));
+  const contents = arr(item?.contains?.gear).map(savagedInventoryItem);
+  return {
+    id: slugify(item.uuid || item.name),
+    uuid: item.uuid,
+    source: "savaged.us",
+    name: item.name || "Gear",
+    count,
+    location: "carried",
+    note: item.notes || item.summary || "",
+    weight: item.weight,
+    totalWeight: parseWeight(item.weight),
+    costCents: cents(item.costBuy ?? item.cost),
+    book: savagedBook(item),
+    isContainer: Boolean(item.container || contents.length),
+    contents,
+  };
+}
+
 function savagedReminder(type, item) {
   return {
     type,
@@ -341,20 +361,18 @@ function fromSavagedUs(data) {
   const strength =
     arr(data.attributes).find((attribute) => attribute.name === "strength")
       ?.value || "d4";
-  const gear = flattenSavagedGear(data.gear);
   const ammo = {};
   const inventory = [];
   const consumables = [];
 
-  gear.forEach((item) => {
+  arr(data.gear).forEach((item) => {
     const count = Math.max(1, Math.floor(Number(item.quantity) || 1));
-    const note = [
-      item.notes || item.summary || "",
-      item.containerPath ? `Inside: ${item.containerPath}` : "",
-      item.container ? "Container." : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    const isContainer = Boolean(item.container || arr(item?.contains?.gear).length);
+
+    if (isContainer) {
+      inventory.push(savagedInventoryItem(item));
+      return;
+    }
 
     if (isSavagedAmmo(item)) {
       const key = savagedAmmoKey(item);
@@ -362,7 +380,7 @@ function fromSavagedUs(data) {
         ammo[key] = {
           label: ammoReserveForKey(key, { label: item.name || "Ammo" }).label,
           count: 0,
-          weight: item.weight,
+          weight: parseWeight(item.weight) / count,
           costCents: cents(item.costBuy ?? item.cost),
         };
       ammo[key].count += count;
@@ -372,20 +390,28 @@ function fromSavagedUs(data) {
     if (/ration/i.test(item.name))
       consumables.push({
         id: slugify(item.uuid || item.name),
+        uuid: item.uuid,
+        source: "savaged.us",
         name: item.name,
         count,
         unit: "days",
+        weight: parseWeight(item.weight) / count,
       });
     else if (/match/i.test(item.name))
       consumables.push({
         id: slugify(item.uuid || item.name),
+        uuid: item.uuid,
+        source: "savaged.us",
         name: "Matches",
         count: count * (/100/.test(item.name) ? 100 : 1),
         unit: "matches",
+        weight: parseWeight(item.weight) / (count * (/100/.test(item.name) ? 100 : 1)),
       });
     else if (/elixir|oil|tobacco/i.test(item.name))
       consumables.push({
         id: slugify(item.uuid || item.name),
+        uuid: item.uuid,
+        source: "savaged.us",
         name: item.name,
         count,
         unit: /oil/i.test(item.name)
@@ -393,14 +419,19 @@ function fromSavagedUs(data) {
           : /tobacco/i.test(item.name)
             ? "pouch"
             : "dose",
+        weight: parseWeight(item.weight) / count,
       });
     else
       inventory.push({
         id: slugify(item.uuid || item.name),
+        uuid: item.uuid,
+        source: "savaged.us",
         name: item.name || "Gear",
         count,
-        note,
+        location: item.equipped ? "equipped" : "carried",
+        note: item.notes || item.summary || "",
         weight: item.weight,
+        totalWeight: parseWeight(item.weight),
         costCents: cents(item.costBuy ?? item.cost),
         book: savagedBook(item),
       });

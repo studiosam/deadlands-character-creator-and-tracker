@@ -19,10 +19,45 @@ function money(cents) {
   return `$${((Number(cents) || 0) / 100).toFixed(2)}`;
 }
 
+function parseWeightNumber(weight) {
+  if (typeof weight === "number")
+    return Number.isFinite(weight) ? Math.max(0, weight) : null;
+
+  const text = String(weight ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/,/g, "")
+    .replace(/\b(pounds?|lbs?\.?)\b/g, "")
+    .trim();
+
+  if (!text || /^[-—–]+$/.test(text)) return null;
+
+  const normalized = text.replace(/^\+/, "");
+  const fractionMatch = normalized.match(
+    /^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/,
+  );
+  if (fractionMatch) {
+    const numerator = Number(fractionMatch[1]);
+    const denominator = Number(fractionMatch[2]);
+    if (Number.isFinite(numerator) && Number.isFinite(denominator) && denominator)
+      return Math.max(0, numerator / denominator);
+  }
+
+  const decimalMatch = normalized.match(/^\d*\.?\d+$/);
+  if (!decimalMatch) return null;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : null;
+}
+
+function parseWeight(weight) {
+  return parseWeightNumber(weight) ?? 0;
+}
+
 function wt(weight) {
-  if (weight === undefined || weight === null || Number.isNaN(Number(weight)))
-    return "—";
-  return Number(weight).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const parsed = parseWeightNumber(weight);
+  if (parsed === null) return "—";
+  return parsed.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 function esc(value) {

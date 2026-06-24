@@ -163,6 +163,7 @@
                 </div>
                 <p id="combatPenaltySummary" class="muted"></p>
                 <div id="combatPenaltyBreakdown" class="penalty-breakdown"></div>
+                <div id="combatEncumbranceSummary" class="encumbrance-combat"></div>
               </div>
 
               <div id="combatStatusResources" class="grid combat-inline"></div>
@@ -465,6 +466,18 @@
         <section class="card wide">
           <div class="section-title">
             <div>
+              <h2>Carrying Capacity</h2>
+              <p>Load Limit and SWADE encumbrance.</p>
+            </div>
+            <span id="encumbranceSummaryPill" class="pill"></span>
+          </div>
+          <div id="encumbranceDetails" class="encumbrance-grid"></div>
+          <p id="encumbranceWarning" class="weapon-warning hidden"></p>
+        </section>
+
+        <section class="card wide">
+          <div class="section-title">
+            <div>
               <h2>Gear</h2>
               <p>Purchased gear, loot, clues, and carried items.</p>
             </div>
@@ -492,6 +505,10 @@
                 <input id="inventoryUnitsInput" class="tiny" type="number" min="1" step="1" placeholder="100" />
               </label>
               <label>
+                Location
+                <select id="inventoryLocationSelect"></select>
+              </label>
+              <label>
                 Note
                 <input id="inventoryNoteInput" placeholder="Optional note" />
               </label>
@@ -503,6 +520,20 @@
             </div>
           </div>
           <div id="inventoryList" class="list"></div>
+        </section>
+
+        <section class="card wide">
+          <div class="section-title">
+            <div>
+              <h2>Storage Locations</h2>
+              <p>Owned gear that is not currently carried.</p>
+            </div>
+          </div>
+          <div class="inline-form">
+            <input id="storageLocationInput" placeholder="Cart, Horse, Camp, Safehouse" />
+            <button id="addStorageLocationBtn" type="button">Add</button>
+          </div>
+          <div id="storageLocationList" class="list storage-location-list"></div>
         </section>
 
         <section class="card wide">
@@ -891,6 +922,8 @@
   <script src="src/tracker/state-dom.js"></script>
   <script src="src/tracker/utils.js"></script>
   <script src="src/tracker/equipment-helpers.js"></script>
+  <script src="src/tracker/inventory-model.js"></script>
+  <script src="src/tracker/encumbrance.js"></script>
   <script src="src/tracker/render-helpers.js"></script>
   <script src="src/tracker/advancement-core.js"></script>
   <script src="src/tracker/entries.js"></script>

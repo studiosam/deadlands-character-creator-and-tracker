@@ -135,6 +135,7 @@ function combatPenaltyInfo() {
 
 function renderCombatPenalties() {
   const { total, traitPenalties, modifiers } = combatPenaltyInfo();
+  const encumbrance = calculateEncumbrance(character);
   const entries = [
     ...traitPenalties.map(
       (penalty) => `${penalty.label} ${penalty.value}`,
@@ -151,6 +152,11 @@ function renderCombatPenalties() {
         .map((entry) => `<span>${esc(entry)}</span>`)
         .join("")
     : '<span>No active penalty causes.</span>';
+  els.combatEncumbranceSummary.innerHTML = encumbrance.overloaded
+    ? `<strong>Encumbrance: Overloaded</strong><span>${esc(encumbranceWarningText(encumbrance))}</span>`
+    : encumbrance.encumbered
+      ? `<strong>Encumbrance: ${esc(encumbranceText(encumbrance))}</strong><span>${esc(encumbranceWarningText(encumbrance))}</span>`
+      : `<strong>Encumbrance: None</strong><span>${esc(formatWeightPounds(encumbrance.carriedWeight))} active / ${esc(formatWeightPounds(encumbrance.loadLimit))} Load Limit.</span>`;
 }
 
 function renderCombatPowerPoints() {
@@ -556,23 +562,32 @@ function consumableConversionForGear(item) {
 function addConsumableFromGear(item, packageCount, unitsPerPackage) {
   const conversion = consumableConversionForGear(item);
   if (!conversion) return false;
+  const safeUnitsPerPackage = Math.max(
+    1,
+    Math.floor(Number(unitsPerPackage) || conversion.multiplier || 1),
+  );
   const count =
     Math.max(1, Math.floor(Number(packageCount) || 1)) *
-    Math.max(
-      1,
-      Math.floor(Number(unitsPerPackage) || conversion.multiplier || 1),
-    );
+    safeUnitsPerPackage;
   addConsumableCount(
     conversion.id,
     conversion.name,
     conversion.unit,
     count,
     `Converted from ${item.name}.`,
+    parseWeight(item.weight) / safeUnitsPerPackage,
   );
   return true;
 }
 
-function addConsumableCount(id, name, unit, amount, note = "") {
+function addConsumableCount(
+  id,
+  name,
+  unit,
+  amount,
+  note = "",
+  weight = undefined,
+) {
   const existing = character.consumables.find(
     (consumable) =>
       consumable.id === id ||
@@ -584,6 +599,11 @@ function addConsumableCount(id, name, unit, amount, note = "") {
       Math.max(1, Math.floor(Number(amount) || 1));
     existing.unit = unit;
     if (note && !existing.note) existing.note = note;
+    if (
+      parseWeightNumber(existing.weight) === null &&
+      parseWeightNumber(weight) !== null
+    )
+      existing.weight = weight;
   } else {
     character.consumables.push({
       id,
@@ -591,6 +611,7 @@ function addConsumableCount(id, name, unit, amount, note = "") {
       count: Math.max(1, Math.floor(Number(amount) || 1)),
       unit,
       note,
+      weight,
     });
   }
 }

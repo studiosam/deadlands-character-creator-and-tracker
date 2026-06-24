@@ -821,6 +821,39 @@ h3 {
   padding: 0;
 }
 
+.inventory-row {
+  align-items: stretch;
+}
+
+.inventory-item-main {
+  padding-left: calc(var(--depth, 0) * 1.1rem);
+}
+
+.inventory-item-main strong::before {
+  content: "";
+  display: inline-block;
+  width: calc(var(--depth, 0) * 0.75rem);
+}
+
+.inventory-actions {
+  gap: 0.4rem;
+}
+
+.inventory-actions select,
+.storage-location-list input {
+  min-height: 2.2rem;
+  max-width: 12rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.94);
+  color: #271b13;
+  padding: 0.4rem 0.55rem;
+}
+
+.storage-location-list .controls {
+  gap: 0.45rem;
+}
+
 .step {
   align-items: center;
   display: grid;
@@ -869,6 +902,44 @@ h3 {
   font-size: 2.25rem;
   font-weight: 950;
   letter-spacing: -0.04em;
+}
+
+.encumbrance-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.encumbrance-grid div,
+.encumbrance-combat {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+}
+
+.encumbrance-grid span,
+.encumbrance-combat span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.encumbrance-grid strong,
+.encumbrance-combat strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text);
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.encumbrance-combat {
+  margin-top: 0.75rem;
 }
 
 .inline-form,
@@ -1778,6 +1849,7 @@ h3 {
   .powers,
   .ammo,
   .conditions,
+  .encumbrance-grid,
   .armor-locs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1837,6 +1909,7 @@ h3 {
   .ammo,
   .conditions,
   .derived,
+  .encumbrance-grid,
   .armor-locs,
   .form,
   .creator-grid {

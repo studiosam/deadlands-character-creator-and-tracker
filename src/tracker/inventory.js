@@ -103,13 +103,150 @@ function renderConsumables() {
 }
 
 function renderInventory() {
-  counterList(
-    els.inventoryList,
-    character.inventory,
-    (item) =>
-      `<span>${item.book ? `Book ${esc(item.book)} • ` : ""}Weight ${wt(item.weight)} each • Cost ${item.costCents !== undefined ? money(item.costCents) : "—"} each</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}`,
-    "No inventory tracked yet.",
+  renderInventoryLocationOptions();
+  renderStorageLocations();
+  els.inventoryList.innerHTML = "";
+  if (!character.inventory.length) {
+    els.inventoryList.innerHTML = emptyState("No inventory tracked yet.");
+    return;
+  }
+  character.inventory.forEach((item) => renderInventoryItemRow(item));
+}
+
+function inventoryMoveOptions(currentItem) {
+  const containers = flattenInventory()
+    .map(({ item }) => item)
+    .filter((item) => item.id !== currentItem.id && item.isContainer);
+  const storageOptions = allStorageLocations()
+    .map(
+      (location) =>
+        `<option value="stored:${esc(location.id)}">Store: ${esc(location.name)}</option>`,
+    )
+    .join("");
+  const containerOptions = containers
+    .map(
+      (container) =>
+        `<option value="container:${esc(container.id)}">Inside: ${esc(container.name)}</option>`,
+    )
+    .join("");
+  return [
+    '<option value="">Move...</option>',
+    '<option value="carried">On Body</option>',
+    '<option value="equipped">Equipped / Worn</option>',
+    '<option value="dropped">Dropped</option>',
+    storageOptions,
+    containerOptions,
+  ].join("");
+}
+
+function renderInventoryItemRow(item, depth = 0, parent = null) {
+  const row = document.createElement("div");
+  row.className = `row inventory-row depth-${Math.min(depth, 4)}`;
+  const ownWeight = inventoryItemOwnWeight(item);
+  const contentsWeight = inventoryItemContentsWeight(item);
+  const totalWeight = inventoryItemTotalWeight(item);
+  const location = parent
+    ? `Inside ${parent.name}`
+    : locationLabel(item.location, item.storageId);
+  const contentSummary = item.isContainer
+    ? ` • Empty ${formatWeightPounds(ownWeight)} • Contents ${formatWeightPounds(contentsWeight)} • Total ${formatWeightPounds(totalWeight)}`
+    : ` • Weight ${formatWeightPounds(totalWeight)}`;
+  row.innerHTML = `<div class="inventory-item-main" style="--depth:${depth}"><strong>${esc(item.name)}</strong><span>${esc(location)} • Qty ${item.count}${contentSummary}${item.book ? ` • Book ${esc(item.book)}` : ""}${item.costCents !== undefined ? ` • Cost ${money(item.costCents)}` : ""}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls inventory-actions"><button type="button">&minus;</button><strong>${item.count}</strong><button type="button">+</button><select aria-label="Move ${esc(item.name)}">${inventoryMoveOptions(item)}</select>${parent ? '<button type="button">Out</button>' : ""}<button class="delete-small" type="button">×</button></div>`;
+
+  const buttons = row.querySelectorAll("button");
+  buttons[0].onclick = () => {
+    item.count = Math.max(0, item.count - 1);
+    render();
+    save();
+  };
+  buttons[1].onclick = () => {
+    item.count += 1;
+    render();
+    save();
+  };
+  const moveSelect = row.querySelector("select");
+  moveSelect.onchange = () => {
+    const [destination, destinationId = ""] = moveSelect.value.split(":");
+    if (!destination) return;
+    moveInventoryItem(item.id, destination, destinationId);
+    render();
+    save();
+  };
+  let deleteIndex = 2;
+  if (parent) {
+    buttons[2].onclick = () => {
+      moveInventoryItem(item.id, parent.location || "carried", parent.storageId || "");
+      render();
+      save();
+    };
+    deleteIndex = 3;
+  }
+  buttons[deleteIndex].onclick = () => {
+    removeInventoryItem(item.id);
+    render();
+    save();
+  };
+  els.inventoryList.appendChild(row);
+  (item.contents || []).forEach((child) =>
+    renderInventoryItemRow(child, depth + 1, item),
   );
+}
+
+function renderInventoryLocationOptions() {
+  if (!els.inventoryLocationSelect) return;
+  els.inventoryLocationSelect.innerHTML = [
+    '<option value="carried">On Body</option>',
+    '<option value="equipped">Equipped / Worn</option>',
+    '<option value="dropped">Dropped</option>',
+    ...allStorageLocations().map(
+      (location) =>
+        `<option value="stored:${esc(location.id)}">Store: ${esc(location.name)}</option>`,
+    ),
+    ...flattenInventory()
+      .map(({ item }) => item)
+      .filter((item) => item.isContainer)
+      .map(
+        (item) =>
+          `<option value="container:${esc(item.id)}">Inside: ${esc(item.name)}</option>`,
+      ),
+  ].join("");
+}
+
+function renderStorageLocations() {
+  if (!els.storageLocationList) return;
+  const custom = character.storageLocations || [];
+  const builtin = BUILT_IN_STORAGE_LOCATIONS.map((location) => ({
+    ...location,
+    builtin: true,
+  }));
+  const locations = [...builtin, ...custom.map((location) => ({ ...location }))];
+  els.storageLocationList.innerHTML = "";
+  locations.forEach((location) => {
+    const weight = (character.inventory || [])
+      .filter((item) => item.location === "stored" && item.storageId === location.id)
+      .reduce((sum, item) => sum + inventoryItemTotalWeight(item), 0);
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<div><strong>${esc(location.name)}</strong><span>${formatWeightPounds(weight)} stored here</span></div><div class="controls">${location.builtin ? "" : `<input value="${esc(location.name)}" aria-label="Rename ${esc(location.name)}"><button type="button">Rename</button><button class="delete-small" type="button">×</button>`}</div>`;
+    if (!location.builtin) {
+      const input = row.querySelector("input");
+      const buttons = row.querySelectorAll("button");
+      buttons[0].onclick = () => {
+        renameStorageLocation(location.id, input.value);
+        render();
+        save();
+      };
+      buttons[1].onclick = () => {
+        if (!deleteStorageLocation(location.id)) {
+          alert("Storage location must be empty before deleting it.");
+          return;
+        }
+        render();
+        save();
+      };
+    }
+    els.storageLocationList.appendChild(row);
+  });
 }
 
 function renderVehicles() {
@@ -170,8 +307,9 @@ function addInventory() {
     (item) => item.id === id || item.name.toLowerCase() === name.toLowerCase(),
   );
   if (existing) existing.count += count;
-  else
-    character.inventory.push({
+  else {
+    const item = normalizeInventoryItem(
+      {
       id,
       name,
       count,
@@ -179,11 +317,26 @@ function addInventory() {
       weight: catalogItem?.weight,
       costCents: catalogItem?.costCents,
       book: catalogItem?.book,
-    });
+      },
+      character.inventory.length,
+      new Set(flattenInventory().map(({ item }) => item.id)),
+    );
+    const [destination, destinationId = ""] = (
+      els.inventoryLocationSelect.value || "carried"
+    ).split(":");
+    if (destination === "container") {
+      character.inventory.push(item);
+      moveInventoryItem(item.id, "container", destinationId);
+    } else {
+      setInventoryItemLocation(item, destination || "carried", destinationId);
+      character.inventory.push(item);
+    }
+  }
   els.gearSelect.value = "";
   els.inventoryNameInput.value = "";
   els.inventoryCountInput.value = "";
   els.inventoryUnitsInput.value = "";
+  els.inventoryLocationSelect.value = "carried";
   els.inventoryNoteInput.value = "";
   els.gearAddForm.classList.add("hidden");
   updatePreviews();

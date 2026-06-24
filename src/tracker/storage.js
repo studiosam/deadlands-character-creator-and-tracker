@@ -154,6 +154,7 @@ function normalize(data) {
   normalized.inventory = Array.isArray(normalized.inventory)
     ? normalized.inventory
     : [];
+  normalizeInventoryState(normalized);
   normalized.vehicles = Array.isArray(normalized.vehicles)
     ? normalized.vehicles
     : [];

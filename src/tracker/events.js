@@ -136,6 +136,12 @@ els.cancelInventoryAddBtn.onclick = () => {
   updatePreviews();
   els.gearAddForm.classList.add("hidden");
 };
+els.addStorageLocationBtn.onclick = () => {
+  addStorageLocation(els.storageLocationInput.value);
+  els.storageLocationInput.value = "";
+  render();
+  save();
+};
 els.addVehicleBtn.onclick = addVehicle;
 els.cancelVehicleAddBtn.onclick = () => {
   els.vehicleAddForm.classList.add("hidden");

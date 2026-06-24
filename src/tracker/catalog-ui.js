@@ -90,6 +90,8 @@ function chosen(items, id) {
 }
 
 function updatePreviews() {
+  if (typeof renderInventoryLocationOptions === "function")
+    renderInventoryLocationOptions();
   const gear = chosen(GEAR_CATALOG, els.gearSelect.value);
   const consumableConversion = consumableConversionForGear(gear);
   els.inventoryUnitsField.classList.toggle(
