@@ -1,7 +1,11 @@
 function normalize(data) {
   const defaults = clone(defaultCharacter);
-  const normalized = data && typeof data === "object" ? data : defaults;
+  const normalized =
+    data && typeof data === "object"
+      ? migrateCharacterPayload(data)
+      : migrateCharacterPayload(defaults);
 
+  normalized.schemaVersion = APP_SCHEMA_VERSION;
   normalized.name ||= defaults.name;
   normalized.rank ||= defaults.rank;
   normalized.ancestry ||= defaults.ancestry;
@@ -171,13 +175,7 @@ function normalize(data) {
 }
 
 function loadCharacter() {
-  try {
-    return normalize(
-      JSON.parse(localStorage.getItem(STORAGE_KEY)) || clone(defaultCharacter),
-    );
-  } catch {
-    return normalize(clone(defaultCharacter));
-  }
+  return normalize(storageAdapter.readJson(STORAGE_KEY, clone(defaultCharacter)));
 }
 
 function save() {
@@ -185,7 +183,7 @@ function save() {
   els.saveState.textContent = "Saving…";
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(character));
+    storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
     els.saveState.textContent = "Saved";
   }, 120);
 }

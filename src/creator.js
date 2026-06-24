@@ -1,4 +1,3 @@
-const CREATION_KEY = "deadlands-creation-draft-v1";
 const DICE = [4, 6, 8, 10, 12];
 const CONCEPTS = [
   "Blessed",
@@ -96,6 +95,20 @@ const SKILL_DEFS = [
   ["Trade", "smarts"],
   ["Weird Science", "smarts"],
 ];
+const SAMPLE_CHARACTERS = [
+  {
+    id: "dusty-mccaw",
+    name: "Dusty McCaw",
+    summary: "Built-in drifter sample with weapons, armor, gear, reminders, and table-ready combat state.",
+    source: "built-in",
+  },
+  {
+    id: "lehi-larson",
+    name: "Lehi Larson",
+    summary: "Savaged.us Blessed import sample for arcane tools, powers, import warnings, and resources.",
+    source: "docs/Sample Characters/savaged-us-json-export-character-Lehi Larson.json",
+  },
+];
 
 var creationDraft = loadCreationDraft();
 
@@ -186,7 +199,11 @@ function emptyDraft() {
 
 function normalizeDraft(data) {
   const defaults = emptyDraft();
-  const draft = { ...defaults, ...(data || {}) };
+  const draft = {
+    ...defaults,
+    ...migrateCreationDraftPayload(data || defaults),
+  };
+  draft.schemaVersion = APP_SCHEMA_VERSION;
   draft.attributes = { ...defaults.attributes, ...(draft.attributes || {}) };
   draft.creation = { ...defaults.creation, ...(draft.creation || {}) };
   [
@@ -234,17 +251,14 @@ function normalizeDraft(data) {
 }
 
 function loadCreationDraft() {
-  try {
-    return normalizeDraft(
-      JSON.parse(localStorage.getItem(CREATION_KEY)) || emptyDraft(),
-    );
-  } catch {
-    return normalizeDraft(emptyDraft());
-  }
+  return normalizeDraft(storageAdapter.readJson(CREATION_KEY, emptyDraft()));
 }
 
 function saveCreationDraft() {
-  localStorage.setItem(CREATION_KEY, JSON.stringify(creationDraft));
+  storageAdapter.writeJson(
+    CREATION_KEY,
+    serializeCreationDraftForStorage(creationDraft),
+  );
 }
 
 function hindranceStats() {
@@ -491,6 +505,83 @@ function setAppTab(tabName) {
 
 function setCreatorMode(on) {
   setAppTab(on ? "creation" : "play");
+}
+
+function populateSampleCharacterSelect() {
+  const select = $("#sampleCharacterSelect");
+  if (!select) return;
+  select.innerHTML = SAMPLE_CHARACTERS.map(
+    (sample) => `<option value="${esc(sample.id)}">${esc(sample.name)}</option>`,
+  ).join("");
+}
+
+function sampleById(id) {
+  return (
+    SAMPLE_CHARACTERS.find((sample) => sample.id === id) ||
+    SAMPLE_CHARACTERS[0]
+  );
+}
+
+function renderDemoExperience(forceShow = false) {
+  populateSampleCharacterSelect();
+  const welcome = $("#demoWelcomePanel");
+  const banner = $("#demoModeBanner");
+  const isDemoMode = storageAdapter.readFlag(DEMO_MODE_KEY);
+  if (banner) banner.classList.toggle("hidden", !isDemoMode);
+  if (!welcome) return;
+
+  const shouldShow =
+    forceShow ||
+    welcome.dataset.manualOpen === "true" ||
+    (!storageAdapter.has(STORAGE_KEY) &&
+      !storageAdapter.readFlag(WELCOME_DISMISSED_KEY));
+  welcome.classList.toggle("hidden", !shouldShow);
+}
+
+async function loadSampleCharacter(sample) {
+  if (sample.source === "built-in") return normalize(clone(defaultCharacter));
+
+  const response = await fetch(encodeURI(sample.source));
+  if (!response.ok) throw new Error(`Could not load ${sample.name}.`);
+  const data = await response.json();
+  return normalize(isSavagedUsExport(data) ? fromSavagedUs(data) : data);
+}
+
+async function loadSelectedSampleCharacter() {
+  const select = $("#sampleCharacterSelect");
+  const sample = sampleById(select?.value);
+  const hasLocalSave = storageAdapter.has(STORAGE_KEY);
+  if (
+    hasLocalSave &&
+    !(await appConfirm(
+      "This replaces the current local tracker state. Export first if this is a real campaign save.",
+      {
+        title: `Load ${sample.name}?`,
+        confirmText: "Load Sample",
+        danger: true,
+      },
+    ))
+  )
+    return;
+
+  try {
+    character = await loadSampleCharacter(sample);
+    storageAdapter.writeFlag(DEMO_MODE_KEY, true);
+    storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
+    $("#demoWelcomePanel")?.classList.add("hidden");
+    if ($("#demoWelcomePanel")) $("#demoWelcomePanel").dataset.manualOpen = "false";
+    render();
+    save();
+    setCreatorMode(false);
+    renderDemoExperience();
+    appToast(`${sample.name} loaded in demo mode.`, "success");
+  } catch (error) {
+    appToast(
+      error?.message ||
+        "Could not load that sample. Use Import JSON if you opened the app directly from disk.",
+      "danger",
+    );
+  }
 }
 
 function statusPill(ok, warn = false) {
@@ -960,11 +1051,13 @@ function bindCreatorInputs() {
       reader.onload = () => {
         try {
           const data = JSON.parse(reader.result);
-          creationDraft = normalizeDraft(data.creationDraft || data);
+          const payload = unwrapImportPayload(data);
+          creationDraft = normalizeDraft(payload.creationDraft || data);
           saveCreationDraft();
           renderCreator();
+          appToast("Character creation draft imported.", "success");
         } catch {
-          alert("That file was not valid character creation JSON.");
+          appToast("That file was not valid character creation JSON.", "danger");
         }
       };
       reader.readAsText(imported);
@@ -1063,8 +1156,9 @@ function creatorBuy() {
 function finalizeCreation() {
   const checks = creationChecks();
   if (!checks.valid && !creationDraft.creation.allowIncomplete) {
-    alert(
+    appToast(
       "Character is not valid yet. Check the final review or enable incomplete finalization.",
+      "danger",
     );
     return;
   }
@@ -1164,33 +1258,43 @@ function finalizeCreation() {
     reminders,
     notes,
   });
+  storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   save();
   render();
   setCreatorMode(false);
+  renderDemoExperience();
+  appToast("Character finalized into the tracker.", "success");
 }
 
-function creatorAction(actionName, target) {
+async function creatorAction(actionName, target) {
   if (actionName === "saveDraft") {
     saveCreationDraft();
-    alert("Character creation draft saved.");
+    appToast("Character creation draft saved.", "success");
   } else if (actionName === "finalize") {
     finalizeCreation();
   } else if (actionName === "resetDraft") {
-    if (confirm("Reset character creation draft?")) {
+    if (
+      await appConfirm("This clears the current creator draft only.", {
+        title: "Reset character creation draft?",
+        confirmText: "Reset Draft",
+        danger: true,
+      })
+    ) {
       creationDraft = emptyDraft();
       saveCreationDraft();
       renderCreator();
+      appToast("Character creation draft reset.", "success");
     }
   } else if (actionName === "exportDraft") {
     exportJson(
       `${slugify(creationDraft.name || "character")}-creation-draft.json`,
-      creationDraft,
+      serializeCreationDraftExport(creationDraft),
     );
   } else if (actionName === "exportFull") {
-    exportJson("deadlands-tracker-full-state.json", {
-      activeCharacter: character,
-      creationDraft,
-    });
+    exportJson(
+      "deadlands-tracker-full-state.json",
+      serializeFullStateExport(character, creationDraft),
+    );
   } else if (actionName === "addHindrance") {
     const severity = $("#ccHindranceSeverity").value;
     creationDraft.hindrances.push({
@@ -1259,7 +1363,7 @@ function creatorAction(actionName, target) {
       isArcaneBackgroundEdge(name) &&
       creationDraft.edges.some((edge) => isArcaneBackgroundEdge(edge.name))
     ) {
-      alert("Only one Arcane Background can be selected.");
+      appToast("Only one Arcane Background can be selected.", "danger");
       return;
     }
     if (isArcaneBackgroundEdge(name)) {
@@ -1313,11 +1417,35 @@ document.querySelectorAll("[data-app-tab]").forEach((button) => {
   button.onclick = () => setAppTab(button.dataset.appTab);
 });
 $("#loadSampleBtn").onclick = () => {
-  if (confirm("Load Dusty McCaw sample into the tracker?")) {
-    character = normalize(clone(defaultCharacter));
-    localStorage.removeItem(STORAGE_KEY);
-    render();
-    save();
-    setCreatorMode(false);
+  const panel = $("#demoWelcomePanel");
+  if (panel) {
+    panel.dataset.manualOpen = "true";
+    renderDemoExperience(true);
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+};
+$("#loadSelectedSampleBtn").onclick = loadSelectedSampleCharacter;
+$("#startCreatorWelcomeBtn").onclick = () => {
+  storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
+  $("#demoWelcomePanel")?.classList.add("hidden");
+  setCreatorMode(true);
+};
+$("#importWelcomeBtn").onclick = () => {
+  storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
+  $("#demoWelcomePanel")?.classList.add("hidden");
+  $("#pasteImportPanel")?.classList.remove("hidden");
+  $("#importJsonText")?.focus();
+};
+$("#dismissWelcomeBtn").onclick = () => {
+  storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
+  const panel = $("#demoWelcomePanel");
+  if (panel) {
+    panel.dataset.manualOpen = "false";
+    panel.classList.add("hidden");
+  }
+};
+$("#exitDemoModeBtn").onclick = () => {
+  storageAdapter.writeFlag(DEMO_MODE_KEY, false);
+  renderDemoExperience();
+  appToast("Demo mode banner dismissed. Current character data remains saved.", "success");
 };

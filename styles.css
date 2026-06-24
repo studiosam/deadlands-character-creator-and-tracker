@@ -217,6 +217,50 @@ h3 {
   min-width: 0;
 }
 
+.demo-welcome,
+.demo-mode-banner {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  background: rgba(18, 22, 31, 0.78);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.demo-welcome {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.45fr);
+  align-items: end;
+  padding: clamp(1rem, 2.4vw, 1.4rem);
+  border-radius: var(--radius-lg);
+}
+
+.demo-welcome h2 {
+  max-width: 44rem;
+  margin-bottom: 0.45rem;
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+}
+
+.demo-welcome p {
+  max-width: 58rem;
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.demo-welcome-actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.demo-mode-banner {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-color: rgba(131, 209, 140, 0.38);
+  border-radius: var(--radius-md);
+  color: #ecfff0;
+}
+
 .eyebrow {
   margin: 0 0 0.5rem;
   color: var(--accent-strong);
@@ -231,6 +275,84 @@ h3 {
 .section-title p {
   color: var(--muted);
   margin-bottom: 0;
+}
+
+.toast-region {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 90;
+  display: grid;
+  gap: 0.65rem;
+  width: min(24rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.toast {
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: rgba(18, 22, 31, 0.94);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(0.35rem);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.success {
+  border-color: rgba(131, 209, 140, 0.52);
+}
+
+.toast.danger {
+  border-color: rgba(255, 113, 95, 0.58);
+}
+
+.app-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: rgba(18, 22, 31, 0.98);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  padding: 0;
+}
+
+.app-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.66);
+  backdrop-filter: blur(3px);
+}
+
+.app-dialog form {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.2rem;
+}
+
+.app-dialog h2 {
+  margin-bottom: 0;
+  font-size: 1.2rem;
+}
+
+.app-dialog p {
+  margin-bottom: 0;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.dialog-choices,
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: flex-end;
 }
 
 .header-actions,
@@ -1872,8 +1994,14 @@ h3 {
 
   .hero,
   .card,
-  .creator-section {
+  .creator-section,
+  .demo-welcome {
     border-radius: 18px;
+  }
+
+  .demo-welcome,
+  .demo-mode-banner {
+    grid-template-columns: 1fr;
   }
 
   .creator-tabs {
@@ -1969,7 +2097,9 @@ h3 {
   }
 
   .controls,
-  .creator-actions {
+  .creator-actions,
+  .dialog-actions,
+  .dialog-choices {
     justify-content: stretch;
   }
 
@@ -1980,7 +2110,9 @@ h3 {
   }
 
   .controls button,
-  .creator-actions button {
+  .creator-actions button,
+  .dialog-actions button,
+  .dialog-choices button {
     flex: 1 1 auto;
   }
 }
@@ -1994,6 +2126,16 @@ h3 {
   .hero {
     gap: 0.85rem;
     padding: 1rem;
+  }
+
+  .demo-welcome,
+  .demo-mode-banner {
+    margin-top: 0.75rem;
+    padding: 0.85rem;
+  }
+
+  .demo-welcome h2 {
+    font-size: 1.2rem;
   }
 
   h1 {
@@ -2020,7 +2162,9 @@ h3 {
   }
 
   .header-actions button,
-  .header-actions .file-label {
+  .header-actions .file-label,
+  .demo-welcome-actions button,
+  .demo-mode-banner button {
     justify-content: center;
     width: 100%;
   }
@@ -2148,6 +2292,11 @@ h3 {
     padding: 0.45rem 0.7rem;
   }
 
+  .dialog-actions button,
+  .dialog-choices button {
+    min-height: 2.55rem;
+  }
+
   .form,
   .inline-form,
   .creator-grid {
@@ -2165,7 +2314,9 @@ h3 {
 @media (max-width: 380px) {
   .header-actions,
   .weapon-actions,
-  .resource-recovery-actions {
+  .resource-recovery-actions,
+  .dialog-actions,
+  .dialog-choices {
     grid-template-columns: 1fr;
   }
 

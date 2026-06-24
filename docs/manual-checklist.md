@@ -1,5 +1,13 @@
 # Power Catalog Workflow Test Checklist
 
+## Automated coverage note
+
+The core browser smoke tests now live in `tests/browser/app.spec.js` and cover
+app load, tab switching, sample loading, Savaged.us paste import, export/import
+round trip, persistence, and core combat controls across desktop and mobile
+viewports. Keep this checklist for rules-heavy validation and table workflow
+checks that are not yet practical to automate.
+
 ## Purpose
 
 Manual test checklist for the Deadlands power catalog, Arcane Background power selection, and variable Power Point spending workflow.

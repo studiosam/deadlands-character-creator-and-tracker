@@ -1,0 +1,20 @@
+{
+  "name": "deadlands-character-creator-and-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Unofficial local-first Deadlands/SWADE character creator and table tracker.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "lint": "node tests/static/lint.cjs",
+    "test:static": "node tests/static/parse-js.cjs && node tests/static/lint.cjs",
+    "test:browser": "playwright test",
+    "test": "npm run test:static && npm run test:browser",
+    "format": "prettier --write README.md NOTICE.md PRIVACY.md docs/case-study.md package.json playwright.config.cjs \"tests/**/*.{js,cjs}\" src/persistence.js src/app-ui.js",
+    "format:check": "prettier --check README.md NOTICE.md PRIVACY.md docs/case-study.md package.json playwright.config.cjs \"tests/**/*.{js,cjs}\" src/persistence.js src/app-ui.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.0",
+    "prettier": "^3.6.0",
+    "vite": "^7.0.0"
+  }
+}

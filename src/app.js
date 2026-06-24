@@ -1,4 +1,4 @@
 catalogs();
 updatePreviews();
 render();
-save();
+renderDemoExperience();

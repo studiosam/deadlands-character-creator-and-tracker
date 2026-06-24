@@ -49,7 +49,7 @@ function addPower() {
   save();
 }
 
-function addCatalogPower(power = selectedCatalogPower(), options = {}) {
+async function addCatalogPower(power = selectedCatalogPower(), options = {}) {
   if (!hasPowerCatalog() || !power) return;
   const warnings = getKnownPowerWarnings(character, power);
   const duplicate = character.powers.some(
@@ -59,12 +59,19 @@ function addCatalogPower(power = selectedCatalogPower(), options = {}) {
   if (
     duplicate &&
     !marshalOverride &&
-    !confirm(`${power.name} is already known. Add another copy anyway?`)
+    !(await appConfirm(`${power.name} is already known.`, {
+      title: "Add another copy anyway?",
+      confirmText: "Add Copy",
+    }))
   )
     return;
   if (warnings.length && !marshalOverride) {
-    const proceed = confirm(
-      `${warnings.join("\n")}\n\nAdd anyway as a Marshal override?`,
+    const proceed = await appConfirm(
+      warnings.join("\n"),
+      {
+        title: "Add anyway as a Marshal override?",
+        confirmText: "Add Override",
+      },
     );
     if (!proceed) return;
     marshalOverride = true;
@@ -84,9 +91,9 @@ function addCatalogPower(power = selectedCatalogPower(), options = {}) {
   save();
 }
 
-function addRequiredPower() {
+async function addRequiredPower() {
   const missing = missingRequiredPower(getArcaneBackgroundProfile(character));
-  if (missing) addCatalogPower(missing, { addedReason: "starting-power" });
+  if (missing) await addCatalogPower(missing, { addedReason: "starting-power" });
 }
 
 function openPowerEditor(power) {
@@ -103,12 +110,16 @@ function openPowerEditor(power) {
   els.powerNameInput.focus();
 }
 
-function addManualPowerPoints() {
+async function addManualPowerPoints() {
   if (powerPointResource()) return;
-  const max = Math.max(
-    0,
-    Math.floor(Number(prompt("Maximum Power Points?", "15")) || 0),
-  );
+  const value = await appPrompt("Maximum Power Points?", "15", {
+    title: "Enable Manual Power Points",
+    inputLabel: "Maximum Power Points",
+    inputType: "number",
+    confirmText: "Enable",
+  });
+  if (value === null) return;
+  const max = Math.max(0, Math.floor(Number(value) || 0));
   character.resources.push(
     makePowerPointResource(null, {
       current: max,

@@ -195,7 +195,7 @@ function renderAmmo() {
   );
 }
 
-function removeAmmoCategory(key) {
+async function removeAmmoCategory(key) {
   const ammo = character.ammo[key];
   if (!ammo) return;
   const linkedWeapons = character.weapons.filter(
@@ -206,7 +206,13 @@ function removeAmmoCategory(key) {
         .map((weapon) => weapon.name || "Unnamed weapon")
         .join(", ")}.\nRemoving it will clear ammo tracking for those weapons.`
     : "";
-  if (!confirm(`Remove ammo category "${ammo.label || key}"?${linkedText}`))
+  if (
+    !(await appConfirm(linkedText.trim(), {
+      title: `Remove ammo category "${ammo.label || key}"?`,
+      confirmText: "Remove Ammo",
+      danger: true,
+    }))
+  )
     return;
   linkedWeapons.forEach((weapon) => {
     weapon.ammoType = null;

@@ -58,6 +58,32 @@
       </div>
     </header>
 
+    <section id="demoWelcomePanel" class="demo-welcome hidden" aria-label="Demo and import options">
+      <div class="demo-welcome-copy">
+        <p class="eyebrow">Portfolio Demo</p>
+        <h2>Start with a table-ready character or bring your own JSON.</h2>
+        <p>
+          Sample characters run in demo mode so you can explore combat, inventory, arcane tools, notes,
+          and import/export behavior without treating the bundled data as your campaign save.
+        </p>
+      </div>
+      <div class="demo-welcome-actions">
+        <label>
+          Sample character
+          <select id="sampleCharacterSelect"></select>
+        </label>
+        <button id="loadSelectedSampleBtn" type="button">Load Sample</button>
+        <button id="startCreatorWelcomeBtn" class="ghost" type="button">Create Character</button>
+        <button id="importWelcomeBtn" class="ghost" type="button">Import JSON</button>
+        <button id="dismissWelcomeBtn" class="ghost" type="button">Continue</button>
+      </div>
+    </section>
+
+    <section id="demoModeBanner" class="demo-mode-banner hidden" aria-live="polite">
+      <span>Demo mode: a sample character is loaded. Export changes before replacing this save.</span>
+      <button id="exitDemoModeBtn" class="ghost" type="button">Exit Demo Mode</button>
+    </section>
+
     <nav class="creator-tabs app-tabs" aria-label="Primary mode">
       <button id="trackerModeBtn" class="active" type="button" data-app-tab="play">
         Combat
@@ -894,6 +920,24 @@
     <section id="creationPanel" class="creator tab-panel hidden"></section>
   </div>
 
+  <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <dialog id="appDialog" class="app-dialog">
+    <form method="dialog">
+      <h2 id="appDialogTitle"></h2>
+      <p id="appDialogMessage"></p>
+      <label id="appDialogInputLabel" class="hidden">
+        <span id="appDialogInputText"></span>
+        <input id="appDialogInput" />
+      </label>
+      <div id="appDialogChoices" class="dialog-choices hidden"></div>
+      <div class="controls dialog-actions">
+        <button id="appDialogCancelBtn" class="ghost" value="cancel" type="button">Cancel</button>
+        <button id="appDialogConfirmBtn" value="confirm" type="submit">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
   <template id="weaponTemplate">
     <article class="weapon-card">
       <div class="topline">
@@ -916,12 +960,14 @@
   </template>
 
   <script src="src/config.js"></script>
+  <script src="src/persistence.js"></script>
   <script src="src/catalogs.js"></script>
   <script src="src/power-catalog.js"></script>
   <script src="src/arcane.js"></script>
   <script src="src/default-character.js"></script>
   <script src="src/tracker/constants.js"></script>
   <script src="src/tracker/state-dom.js"></script>
+  <script src="src/app-ui.js"></script>
   <script src="src/tracker/utils.js"></script>
   <script src="src/tracker/equipment-helpers.js"></script>
   <script src="src/tracker/inventory-model.js"></script>

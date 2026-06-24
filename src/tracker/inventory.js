@@ -304,7 +304,7 @@ function renderStorageLocations() {
       };
       buttons[1].onclick = () => {
         if (!deleteStorageLocation(location.id)) {
-          alert("Storage location must be empty before deleting it.");
+          appToast("Storage location must be empty before deleting it.", "danger");
           return;
         }
         render();

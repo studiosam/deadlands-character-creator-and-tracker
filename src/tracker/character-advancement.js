@@ -92,13 +92,16 @@ function edgeDraftFromForm() {
   };
 }
 
-function saveEdgeEditor() {
+async function saveEdgeEditor() {
   const draft = edgeDraftFromForm();
   const warnings = getEdgeWarnings(character, draft, edgeEditingId);
   setEntryWarning(els.edgeWarningText, warnings);
   if (
     warnings.length &&
-    !confirm(`${warnings.join("\n")}\n\nSave this Edge anyway?`)
+    !(await appConfirm(warnings.join("\n"), {
+      title: "Save this Edge anyway?",
+      confirmText: "Save Edge",
+    }))
   )
     return;
   upsertEdge(character, draft);
@@ -163,13 +166,16 @@ function hindranceDraftFromForm() {
   };
 }
 
-function saveHindranceEditor() {
+async function saveHindranceEditor() {
   const draft = hindranceDraftFromForm();
   const warnings = getHindranceWarnings(character, draft, hindranceEditingId);
   setEntryWarning(els.hindranceWarningText, warnings);
   if (
     warnings.length &&
-    !confirm(`${warnings.join("\n")}\n\nSave this Hindrance anyway?`)
+    !(await appConfirm(warnings.join("\n"), {
+      title: "Save this Hindrance anyway?",
+      confirmText: "Save Hindrance",
+    }))
   )
     return;
   upsertHindrance(character, draft);
@@ -699,7 +705,7 @@ function saveAdvanceEditor() {
   save();
 }
 
-function handleEntryAction(target) {
+async function handleEntryAction(target) {
   const actionName = target.dataset.entryAction;
   const type = target.dataset.entryType;
   const id = target.dataset.entryId;
@@ -709,7 +715,11 @@ function handleEntryAction(target) {
     if (actionName === "edit") openEdgeEditor(edge);
     if (
       actionName === "remove" &&
-      confirm(`Remove Edge "${edge.name || "Unnamed Edge"}"?`)
+      (await appConfirm("", {
+        title: `Remove Edge "${edge.name || "Unnamed Edge"}"?`,
+        confirmText: "Remove Edge",
+        danger: true,
+      }))
     ) {
       removeEdge(character, id);
       render();
@@ -722,7 +732,11 @@ function handleEntryAction(target) {
     if (actionName === "edit") openHindranceEditor(hindrance);
     if (
       actionName === "remove" &&
-      confirm(`Remove Hindrance "${hindrance.name || "Unnamed Hindrance"}"?`)
+      (await appConfirm("", {
+        title: `Remove Hindrance "${hindrance.name || "Unnamed Hindrance"}"?`,
+        confirmText: "Remove Hindrance",
+        danger: true,
+      }))
     ) {
       removeHindrance(character, id);
       render();
@@ -733,11 +747,11 @@ function handleEntryAction(target) {
     const advance = character.advances.find((item) => item.id === id);
     if (!advance) return;
     if (actionName === "edit") openAdvanceEditor(advance);
-    if (actionName === "remove") removeAdvanceWithPrompt(advance);
+    if (actionName === "remove") await removeAdvanceWithPrompt(advance);
   }
 }
 
-function removeAdvanceWithPrompt(advance) {
+async function removeAdvanceWithPrompt(advance) {
   const label = `Advance #${advance.number || "?"}`;
   const changes = Array.isArray(advance.appliedChanges)
     ? advance.appliedChanges
@@ -748,7 +762,14 @@ function removeAdvanceWithPrompt(advance) {
       advance.applied && !changes.length
         ? "\n\nThis advance has no reliable appliedChanges data, so only the history record can be removed."
         : "";
-    if (!confirm(`Remove ${label}?${note}`)) return;
+    if (
+      !(await appConfirm(note.trim(), {
+        title: `Remove ${label}?`,
+        confirmText: "Remove Advance",
+        danger: true,
+      }))
+    )
+      return;
     removeAdvance(character, advance.id);
     render();
     save();
@@ -758,9 +779,14 @@ function removeAdvanceWithPrompt(advance) {
   const undoPlan = getAdvanceUndoPlan(advance);
   if (!undoPlan.safe) {
     if (
-      !confirm(
-        `Applied changes cannot be safely undone.\n\n${undoPlan.messages.join("\n")}\n\nRemove ${label} history only?`,
-      )
+      !(await appConfirm(
+        `Applied changes cannot be safely undone.\n\n${undoPlan.messages.join("\n")}`,
+        {
+          title: `Remove ${label} history only?`,
+          confirmText: "Remove History",
+          danger: true,
+        },
+      ))
     )
       return;
     removeAdvance(character, advance.id);
@@ -769,12 +795,16 @@ function removeAdvanceWithPrompt(advance) {
     return;
   }
 
-  const choice = prompt(
-    `Remove ${label}?\n\nType "undo" to remove the advance and undo applied changes.\nType "remove" to remove only the advance history.\nLeave blank to cancel.\n\n${undoPlan.messages.join("\n")}`,
-    "remove",
+  const choice = await appChoice(
+    undoPlan.messages.join("\n"),
+    [
+      { value: "remove", label: "Remove History", danger: true },
+      { value: "undo", label: "Remove and Undo", danger: true },
+    ],
+    { title: `Remove ${label}?` },
   );
   if (!choice) return;
-  const normalizedChoice = choice.trim().toLowerCase();
+  const normalizedChoice = String(choice).trim().toLowerCase();
   if (normalizedChoice === "undo") undoAdvanceChanges(advance);
   else if (normalizedChoice !== "remove") return;
   removeAdvance(character, advance.id);

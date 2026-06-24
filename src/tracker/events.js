@@ -55,39 +55,40 @@ function action(type) {
 }
 
 function exportJson(name, data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  downloadJsonFile(name, data);
+  appToast(`Exported ${name}.`, "success");
 }
 
 function importJsonText(text) {
   const data = JSON.parse(text);
-  if (data.activeCharacter) {
-    character = normalize(data.activeCharacter);
-    if (data.creationDraft) {
-      creationDraft = normalizeDraft(data.creationDraft);
+  const payload = unwrapImportPayload(data);
+  if (payload.type === "full-state") {
+    character = normalize(payload.activeCharacter);
+    if (payload.creationDraft) {
+      creationDraft = normalizeDraft(payload.creationDraft);
       saveCreationDraft();
     }
-  } else if (data.creationDraft) {
-    creationDraft = normalizeDraft(data.creationDraft);
+    storageAdapter.writeFlag(DEMO_MODE_KEY, false);
+  } else if (payload.type === "creation-draft") {
+    creationDraft = normalizeDraft(payload.creationDraft);
     saveCreationDraft();
     setCreatorMode(true);
   } else {
-    character = isSavagedUsExport(data) ? fromSavagedUs(data) : normalize(data);
+    character = isSavagedUsExport(data)
+      ? fromSavagedUs(data)
+      : normalize(payload.activeCharacter);
+    storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   }
   render();
+  renderDemoExperience();
   save();
+  appToast("Import complete.", "success");
 }
 
 function alertInvalidImport() {
-  alert(
+  appToast(
     "That was not valid tracker, full app state, creation draft, or Savaged.us character JSON.",
+    "danger",
   );
 }
 
@@ -253,11 +254,15 @@ els.clearTempConditionsBtn.onclick = () => {
     updateHucksterDealField(field, els[elementKey].checked);
   };
 });
-els.newSessionBtn.onclick = () => {
+els.newSessionBtn.onclick = async () => {
   if (
-    !confirm(
-      "Start a new play session? This resets bennies to starting, clears conviction, refills resources, and clears temporary conditions.",
-    )
+    !(await appConfirm(
+      "This resets bennies to starting, clears conviction, refills resources, and clears temporary conditions.",
+      {
+        title: "Start a new play session?",
+        confirmText: "Start Session",
+      },
+    ))
   )
     return;
   character.bennies.current = character.bennies.starting;
@@ -269,18 +274,26 @@ els.newSessionBtn.onclick = () => {
   render();
   save();
 };
-els.resetBtn.onclick = () => {
-  if (confirm("Reset tracker to defaults?")) {
+els.resetBtn.onclick = async () => {
+  if (
+    await appConfirm("This replaces the current local tracker state.", {
+      title: "Reset tracker to defaults?",
+      confirmText: "Reset",
+      danger: true,
+    })
+  ) {
     character = normalize(clone(defaultCharacter));
-    localStorage.removeItem(STORAGE_KEY);
+    storageAdapter.remove(STORAGE_KEY);
+    storageAdapter.writeFlag(DEMO_MODE_KEY, false);
     render();
+    renderDemoExperience();
     save();
   }
 };
 els.exportBtn.onclick = () => {
   exportJson(
     `${slugify(character.name || "character")}-tracker.json`,
-    character,
+    serializeTrackerExport(character),
   );
 };
 els.importFile.onchange = (event) => {

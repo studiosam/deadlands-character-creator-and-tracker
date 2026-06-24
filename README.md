@@ -1,81 +1,176 @@
-# Deadlands Tracker
+# Deadlands Character Creator and Tracker
 
-A browser-based Deadlands/SWADE character tracker built for table use. It tracks wounds, fatigue, Bennies, Conviction, money, resources, armor, weapons, ammunition, gear, vehicles, notes, Savaged.us imports, and character creation data while storing saves locally in the browser.
+An unofficial browser-based table companion for Deadlands: The Weird West and
+SWADE play. It combines a character tracker, character creation draft, combat
+dashboard, inventory manager, arcane tools, notes, and Savaged.us JSON import
+support in a static web app that can run from GitHub Pages or directly from the
+project folder.
 
-## Current Features
+This project is portfolio-first: it demonstrates product thinking, stateful
+front-end architecture without a framework, import normalization, local data
+persistence, responsive table-use UX, and practical test coverage around a
+rules-heavy hobby tool.
 
-- Tracker for wounds, fatigue, Bennies, Conviction, money, and derived stats
-- Armor tracking by body location
-- Weapon tracking with loaded rounds and reserve ammunition
-- Gear, armor, weapon, ammunition, and vehicle catalogs
-- Character creation workflow for Deadlands/SWADE characters
-- Arcane Background and Power Points support
-- Powers tracking with cost, duration, trapping, active status, and notes
-- Huckster Dealing with the Devil helper
-- Savaged.us JSON import support
-- Local browser saves using `localStorage`
-- JSON export and import for app data
+## Problem and Audience
 
-## How to Use
+Deadlands/SWADE character sheets collect a lot of short-lived table state:
+wounds, fatigue, Bennies, Conviction, loaded rounds, ammo reserves, armor
+locations, active powers, Power Points, carried gear, notes, and reminders. A
+paper sheet or static PDF can track the permanent character, but live play often
+needs a faster cockpit.
 
-Open `index.html` in a browser, or publish the folder with GitHub Pages. No build step, server, or package installation is required.
+This app targets players who already own and use the official rulebooks and
+want a local, private, session-focused tracker at the table.
 
-The app saves data locally in the browser. That means saves are tied to the browser and device being used unless you export your data manually.
+## Current Workflows
+
+- Track wounds, fatigue, Bennies, Conviction, penalties, defenses, conditions,
+  combat resources, powers, consumables, and reminders.
+- Manage weapons, loaded rounds, reserve ammunition, armor by location, gear,
+  vehicles, storage locations, carrying capacity, and encumbrance.
+- Build a Deadlands/SWADE character draft, save it locally, export it, and
+  finalize it into the tracker.
+- Track Arcane Backgrounds, Power Points, known powers, active powers, and
+  Huckster Dealing with the Devil helper state.
+- Import Savaged.us JSON exports and preserve app-owned tracker data through
+  localStorage and JSON export/import.
+- Load demo/sample characters from the first-run panel without treating the
+  bundled samples as a real campaign save.
+
+## Demo and Screenshots
+
+Open `index.html` directly in a browser, or serve the folder locally:
+
+```sh
+npm install
+npm run dev
+```
+
+The app is ready for GitHub Pages from the repository root. Once published, add
+the hosted demo URL here:
+
+```text
+Demo: TBD
+```
+
+Recommended portfolio screenshots/GIFs:
+
+- Combat tab during live play with wounds, Bennies, weapons, ammo, and
+  conditions visible.
+- Inventory tab showing storage locations and encumbrance.
+- Arcane tab showing Power Points and known powers.
+- Character creation final review.
+- Savaged.us import flow with import warnings.
+
+## Technical Highlights
+
+- Static HTML/CSS/JavaScript app with no runtime backend.
+- Split tracker modules under `src/tracker/` for rendering, storage, inventory,
+  combat, advancement, arcane powers, and event handling.
+- Explicit exported JSON `schemaVersion` with migration helpers for old raw
+  saves, full app state, creation drafts, and tracker-character exports.
+- Local-first persistence through `localStorage`; JSON export/import remains the
+  portability and backup mechanism.
+- App-styled dialogs and toasts replace native browser alerts/confirms.
+- Playwright smoke tests cover load, responsive tabs, sample loading, imports,
+  export/import round trips, persistence, and core combat controls.
+
+## Import and Export Formats
+
+Supported imports:
+
+- Tracker character JSON exported by this app.
+- Full app state JSON exported by this app.
+- Character creation draft JSON exported by this app.
+- Older raw tracker or creator JSON from before `schemaVersion`.
+- Savaged.us character JSON exports.
+
+New app exports include:
+
+- `schemaVersion`: current app schema version.
+- `exportType`: `tracker-character`, `creation-draft`, or `full-state`.
+- `exportedAt`: ISO timestamp for exported files.
+
+The existing browser save key remains `deadlands-tracker-v2` for backward
+compatibility.
+
+## Privacy
+
+All character data is stored locally in the browser unless the user exports a
+JSON file. Exported files may contain player names, campaign notes, secrets,
+session notes, or other private table information. There is no backend sync,
+analytics, account system, or remote storage in the current app.
+
+See [PRIVACY.md](PRIVACY.md) for the short public privacy note.
+
+## Legal and IP Posture
+
+This is an unofficial fan tool and portfolio project. It is not affiliated with,
+endorsed by, sponsored by, or approved by Pinnacle Entertainment Group. Users
+need the official books to play. The app should avoid reproducing long rules
+text and should treat catalog summaries as practical app metadata, not a
+replacement for the rulebooks.
+
+See [NOTICE.md](NOTICE.md). Do not sell bundled Deadlands-specific rules/catalog
+content unless licensing or written permission is resolved.
 
 ## Project Structure
 
 ```text
-deadlands-tracker/
+deadlands-character-creator-and-tracker/
   index.html
   styles.css
   src/
-    app.js
-    arcane.js
-    catalogs.js
     config.js
+    persistence.js
+    app-ui.js
+    app.js
     creator.js
-    default-character.js
     savaged-import.js
-    tracker.js              # Compatibility note; tracker implementation is split below
     tracker/
-      core.js               # Compatibility note for the split tracker implementation
-      constants.js          # Shared tracker constants and rule lookup tables
-      state-dom.js          # Mutable tracker state and DOM element references
-      utils.js              # Generic formatting, escaping, and small utility helpers
-      equipment-helpers.js  # Ammo, armor, weapon, and strength helper functions
-      render-helpers.js     # Shared card/list markup helper functions
-      advancement-core.js   # Advancement normalization, validation, apply, and undo helpers
-      entries.js            # Edge and Hindrance normalization, warnings, and updates
-      storage.js            # Character normalization, localStorage load, and save behavior
-      catalog-ui.js         # Catalog option lists and add-form preview updates
-      render.js             # Main render pipeline and character overview rendering
-      combat.js             # Play tab, combat controls, resources, powers in play
-      notes.js              # Arcane and notes summary panels
-      equipment.js          # Armor, weapons, ammo rendering and equipment controls
-      arcane-powers.js      # Resource and power catalog rendering
-      inventory.js          # Inventory, consumables, vehicles, and add-item workflows
-      power-editing.js      # Known power editing and manual Power Point setup
-      character-advancement.js # Edge, Hindrance, and Advancement editors
-      events.js             # Event binding, actions, import/export glue
+      storage.js
+      events.js
+      render.js
+      combat.js
+      inventory.js
+      equipment.js
+      character-advancement.js
+      ...
   docs/
+    case-study.md
+    manual-checklist.md
     Sample Characters/
-    deadlands-power-points-arcane-backgrounds.md
+  tests/
+    browser/
+    static/
 ```
 
-## GitHub Pages
+## Development
 
-For GitHub Pages, publish from the `main` branch and the root folder `/`. The main page is `index.html`, so GitHub Pages should open the tracker automatically after deployment.
+```sh
+npm install
+npm run dev
+npm run lint
+npm test
+npm run format:check
+```
 
-## Data and Privacy
+Scripts:
 
-Character data is stored in browser `localStorage`. Exported character files may contain private character notes, player names, session notes, or campaign information.
+- `npm run dev`: serve the static app with Vite.
+- `npm run lint`: run static project checks.
+- `npm test`: run static checks and Playwright smoke tests.
+- `npm run format`: format project files with Prettier.
 
-The files in `docs/Sample Characters/` are intended as sample imports. Personal character exports should generally stay out of the repository unless they are meant to be shared.
+## Roadmap
 
-## Rules and Copyright Note
+- Add final screenshots/GIFs and a GitHub Pages demo URL.
+- Continue converting manual rules-heavy checklist items into automated tests.
+- Harden schema migrations as real breaking data changes appear.
+- Improve onboarding copy and empty states from actual table feedback.
+- If monetization becomes serious, split a generic tracker core from
+  user-provided setting data and resolve licensing first.
 
-This project is a personal table tool for tracking Deadlands/SWADE character state. It is not a replacement for the official rulebooks, and it should avoid copying long rules text.
+## License
 
-## Status
-
-This is an active MVP. The tracker is usable for play, while some Deadlands-specific tools may still be expanded over time.
+Code is available under the MIT License. See [LICENSE](LICENSE).
