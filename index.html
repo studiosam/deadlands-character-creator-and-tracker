@@ -12,7 +12,38 @@
 </head>
 
 <body>
-  <div class="shell">
+  <section id="landingPage" class="landing-page" aria-label="Deadlands tracker landing page">
+    <div class="landing-shade" aria-hidden="true"></div>
+    <div class="landing-content">
+      <p class="eyebrow">Unofficial / Local-First / Table-Ready</p>
+      <h1>Deadlands Character Creator and Tracker</h1>
+      <p class="landing-copy">
+        Run combat, inventory, arcane resources, session notes, creation drafts, and
+        Savaged.us imports from one private browser app.
+      </p>
+      <div class="landing-actions">
+        <button id="landingContinueBtn" type="button">
+          <span id="landingContinueLabel">Launch Tracker</span>
+        </button>
+        <button id="landingLoadSampleBtn" class="ghost" type="button">Load Sample</button>
+        <button id="landingCreateBtn" class="ghost" type="button">Create Character</button>
+        <button id="landingImportBtn" class="ghost" type="button">Import JSON</button>
+      </div>
+      <div class="landing-notes" aria-label="App promises">
+        <span>Local browser saves</span>
+        <span>JSON backup and restore</span>
+        <span>Requires official books</span>
+      </div>
+    </div>
+    <div class="landing-feature-rail" aria-label="Feature overview">
+      <div><span>Combat</span><strong>Wounds, Bennies, ammo, conditions</strong></div>
+      <div><span>Character</span><strong>Traits, Edges, Hindrances, advances</strong></div>
+      <div><span>Inventory</span><strong>Gear, armor, storage, encumbrance</strong></div>
+      <div><span>Arcane</span><strong>Power Points, powers, Huckster tools</strong></div>
+    </div>
+  </section>
+
+  <div class="shell hidden">
     <header class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Deadlands / SWADE Table Tracker</p>
@@ -23,23 +54,43 @@
         <details id="headerToolsMenu" class="header-menu">
           <summary>Manage</summary>
           <div class="header-actions" aria-label="Session and file actions">
-            <button class="ghost" id="newSessionBtn" type="button"
-              title="Reset bennies, conviction, resources, and temporary conditions for a new play session.">
-              Start Session
-            </button>
-            <button class="ghost" id="loadSampleBtn" type="button">
-              Load Sample
-            </button>
-            <button class="ghost" id="creatorModeBtn" type="button" data-app-tab="creation">
-              Creation
-            </button>
-            <button class="ghost" id="exportBtn" type="button">Export</button>
-            <label class="ghost file-label" for="importFile">Import File</label>
-            <input id="importFile" type="file" accept="application/json" />
-            <button class="ghost" id="pasteImportBtn" type="button">
-              Paste JSON
-            </button>
-            <button class="danger" id="resetBtn" type="button">Reset</button>
+            <section class="menu-group">
+              <h2>Session</h2>
+              <button id="newSessionBtn" type="button"
+                title="Reset bennies, conviction, resources, and temporary conditions for a new play session.">
+                Start Session
+              </button>
+              <button class="ghost" id="characterLibraryMenuBtn" type="button" data-app-tab="library">
+                Characters
+              </button>
+              <button class="ghost" id="loadSampleBtn" type="button">
+                Load Sample
+              </button>
+              <button class="ghost" id="creatorModeBtn" type="button" data-app-tab="creation">
+                Character Creation
+              </button>
+            </section>
+
+            <section class="menu-group">
+              <h2>Data</h2>
+              <button class="ghost" id="exportBtn" type="button">Export Character</button>
+              <label class="ghost file-label" for="importFile">Import File</label>
+              <input id="importFile" type="file" accept="application/json" />
+              <button class="ghost" id="pasteImportBtn" type="button">
+                Paste JSON
+              </button>
+            </section>
+
+            <section class="menu-group">
+              <h2>App</h2>
+              <button class="ghost" id="mainMenuBtn" type="button">
+                Main Menu
+              </button>
+              <button class="ghost" id="settingsMenuBtn" type="button" data-app-tab="settings">
+                Settings
+              </button>
+              <button class="danger" id="resetBtn" type="button">Reset Tracker</button>
+            </section>
           </div>
         </details>
         <div id="pasteImportPanel" class="paste-import-panel hidden">
@@ -92,7 +143,6 @@
       <button type="button" data-app-tab="inventory">Inventory</button>
       <button type="button" data-app-tab="arcane">Arcane</button>
       <button type="button" data-app-tab="notes">Notes</button>
-      <button type="button" data-app-tab="settings">Settings</button>
     </nav>
 
     <main id="trackerDashboard">
@@ -1014,6 +1064,34 @@
             <button id="settingsClearDemoFlagBtn" class="ghost" type="button">Exit Demo Mode</button>
             <button id="settingsClearAllBtn" class="danger" type="button">Clear Local Data</button>
           </div>
+        </section>
+      </section>
+
+      <section id="libraryPanel" class="dashboard tab-panel hidden character-library-panel">
+        <section class="card wide library-hero">
+          <div>
+            <p class="eyebrow">Character Library</p>
+            <h2>Local Character Save Slots</h2>
+            <p class="muted">
+              Keep multiple characters in this browser, switch active saves, duplicate builds,
+              and export individual character files.
+            </p>
+          </div>
+          <div class="library-actions">
+            <button id="librarySaveCurrentBtn" type="button">Save Current</button>
+            <button id="libraryDuplicateActiveBtn" class="ghost" type="button">Duplicate Active</button>
+          </div>
+        </section>
+
+        <section class="card wide">
+          <div class="section-title">
+            <div>
+              <h2>Saved Characters</h2>
+              <p>Switching saves preserves the current active character first.</p>
+            </div>
+            <span id="librarySummaryPill" class="pill"></span>
+          </div>
+          <div id="characterLibraryList" class="character-library-list"></div>
         </section>
       </section>
     </main>

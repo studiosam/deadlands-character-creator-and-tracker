@@ -1,4 +1,5 @@
 let character = null;
+let characterLibrary = null;
 let saveTimer = null;
 let edgeEditingId = "";
 let hindranceEditingId = "";
@@ -253,4 +254,8 @@ const els = {
   settingsClearDraftBtn: $("#settingsClearDraftBtn"),
   settingsClearDemoFlagBtn: $("#settingsClearDemoFlagBtn"),
   settingsClearAllBtn: $("#settingsClearAllBtn"),
+  librarySummaryPill: $("#librarySummaryPill"),
+  characterLibraryList: $("#characterLibraryList"),
+  librarySaveCurrentBtn: $("#librarySaveCurrentBtn"),
+  libraryDuplicateActiveBtn: $("#libraryDuplicateActiveBtn"),
 };

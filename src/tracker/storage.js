@@ -174,8 +174,219 @@ function normalize(data) {
   return normalized;
 }
 
+function emptyCharacterLibrary() {
+  return {
+    schemaVersion: APP_SCHEMA_VERSION,
+    activeCharacterId: "",
+    charactersById: {},
+  };
+}
+
+function characterLibraryEntries() {
+  return Object.values(characterLibrary?.charactersById || {}).sort(
+    (left, right) =>
+      String(right.updatedAt || "").localeCompare(String(left.updatedAt || "")),
+  );
+}
+
+function uniqueCharacterSlotId(
+  name,
+  preferredId = "",
+  charactersById = characterLibrary?.charactersById || {},
+) {
+  const base = slugify(preferredId || name || "character") || "character";
+  let id = base;
+  let suffix = 2;
+  while (charactersById[id]) {
+    id = `${base}-${suffix}`;
+    suffix += 1;
+  }
+  return id;
+}
+
+function characterSlotFromCharacter(data, existing = {}, metadata = {}) {
+  const now = new Date().toISOString();
+  const storedCharacter = serializeCharacterForStorage(data);
+  const id =
+    existing.id ||
+    metadata.id ||
+    uniqueCharacterSlotId(storedCharacter.name, metadata.preferredId);
+  return {
+    id,
+    name: metadata.name || storedCharacter.name || "Unnamed Character",
+    rank: storedCharacter.rank || "",
+    archetype: storedCharacter.archetype || "",
+    source: metadata.source || storedCharacter.source || existing.source || "local",
+    isDemo: Boolean(metadata.isDemo ?? existing.isDemo),
+    sampleId: metadata.sampleId || existing.sampleId || "",
+    createdAt: existing.createdAt || metadata.createdAt || now,
+    updatedAt: metadata.updatedAt || now,
+    character: storedCharacter,
+  };
+}
+
+function normalizeCharacterLibrary(raw) {
+  const library = emptyCharacterLibrary();
+  const sourceEntries = raw?.charactersById
+    ? Object.values(raw.charactersById)
+    : Array.isArray(raw?.characters)
+      ? raw.characters
+      : [];
+
+  sourceEntries.forEach((entry) => {
+    const payload = entry?.character || entry?.activeCharacter || entry;
+    if (!payload || typeof payload !== "object") return;
+    const normalizedCharacter = normalize(payload);
+    const id = uniqueCharacterSlotId(
+      normalizedCharacter.name,
+      entry.id || "",
+      library.charactersById,
+    );
+    library.charactersById[id] = characterSlotFromCharacter(
+      normalizedCharacter,
+      {
+        ...entry,
+        id,
+      },
+      {
+        source: entry.source,
+        isDemo: entry.isDemo,
+        sampleId: entry.sampleId,
+        createdAt: entry.createdAt,
+        updatedAt: entry.updatedAt,
+      },
+    );
+  });
+
+  library.activeCharacterId =
+    raw?.activeCharacterId && library.charactersById[raw.activeCharacterId]
+      ? raw.activeCharacterId
+      : Object.keys(library.charactersById)[0] || "";
+  return library;
+}
+
+function persistCharacterLibrary() {
+  if (!characterLibrary) return;
+  characterLibrary.schemaVersion = APP_SCHEMA_VERSION;
+  storageAdapter.writeJson(CHARACTER_LIBRARY_KEY, characterLibrary);
+}
+
+function loadCharacterLibrary() {
+  const stored = storageAdapter.readJson(CHARACTER_LIBRARY_KEY, null);
+  if (stored) return normalizeCharacterLibrary(stored);
+
+  const legacy = storageAdapter.readJson(STORAGE_KEY, null);
+  if (!legacy) return emptyCharacterLibrary();
+
+  const migratedCharacter = normalize(legacy);
+  const library = emptyCharacterLibrary();
+  const entry = characterSlotFromCharacter(migratedCharacter, {}, {
+    source: migratedCharacter.source || "migrated",
+  });
+  library.charactersById[entry.id] = entry;
+  library.activeCharacterId = entry.id;
+  characterLibrary = library;
+  persistCharacterLibrary();
+  return library;
+}
+
+function activeCharacterSlot() {
+  return (
+    characterLibrary?.charactersById?.[characterLibrary.activeCharacterId] || null
+  );
+}
+
+function saveCharacterSlot(data = character, metadata = {}) {
+  if (!data) return null;
+  if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
+  const activeId = metadata.id || characterLibrary.activeCharacterId;
+  const existing = activeId ? characterLibrary.charactersById[activeId] : null;
+  const entry = characterSlotFromCharacter(data, existing || {}, {
+    ...metadata,
+    id: existing?.id || metadata.id,
+  });
+  characterLibrary.charactersById[entry.id] = entry;
+  characterLibrary.activeCharacterId = entry.id;
+  persistCharacterLibrary();
+  storageAdapter.writeJson(STORAGE_KEY, entry.character);
+  return entry;
+}
+
+function addCharacterSlot(data, metadata = {}) {
+  if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
+  const preferredId = metadata.preferredId || "";
+  const existingId = metadata.replacePreferred
+    ? Object.values(characterLibrary.charactersById).find(
+        (entry) => entry.sampleId && entry.sampleId === metadata.sampleId,
+      )?.id || ""
+    : "";
+  const id = existingId || uniqueCharacterSlotId(data?.name, preferredId);
+  const existing = existingId ? characterLibrary.charactersById[existingId] : {};
+  const entry = characterSlotFromCharacter(normalize(data), existing, {
+    ...metadata,
+    id,
+  });
+  characterLibrary.charactersById[entry.id] = entry;
+  characterLibrary.activeCharacterId = entry.id;
+  persistCharacterLibrary();
+  storageAdapter.writeJson(STORAGE_KEY, entry.character);
+  return entry;
+}
+
+function activateCharacterSlot(id) {
+  const entry = characterLibrary?.charactersById?.[id];
+  if (!entry) return false;
+  characterLibrary.activeCharacterId = id;
+  character = normalize(entry.character);
+  persistCharacterLibrary();
+  storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
+  return true;
+}
+
+function removeCharacterSlot(id) {
+  if (!characterLibrary?.charactersById?.[id]) return false;
+  delete characterLibrary.charactersById[id];
+  if (characterLibrary.activeCharacterId === id) {
+    const next = characterLibraryEntries()[0];
+    characterLibrary.activeCharacterId = next?.id || "";
+    character = next ? normalize(next.character) : normalize(clone(defaultCharacter));
+  }
+  persistCharacterLibrary();
+  if (characterLibrary.activeCharacterId)
+    storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
+  else storageAdapter.remove(STORAGE_KEY);
+  return true;
+}
+
+function renameCharacterSlot(id, name) {
+  const entry = characterLibrary?.charactersById?.[id];
+  const nextName = String(name || "").trim();
+  if (!entry || !nextName) return false;
+  entry.name = nextName;
+  entry.character.name = nextName;
+  entry.updatedAt = new Date().toISOString();
+  if (characterLibrary.activeCharacterId === id) character.name = nextName;
+  persistCharacterLibrary();
+  if (characterLibrary.activeCharacterId === id)
+    storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
+  return true;
+}
+
+function duplicateCharacterSlot(id) {
+  const entry = characterLibrary?.charactersById?.[id];
+  if (!entry) return null;
+  const copy = normalize({
+    ...clone(entry.character),
+    name: `${entry.name || "Character"} Copy`,
+    source: "duplicated",
+  });
+  return addCharacterSlot(copy, { source: "duplicated" });
+}
+
 function loadCharacter() {
-  return normalize(storageAdapter.readJson(STORAGE_KEY, clone(defaultCharacter)));
+  characterLibrary = loadCharacterLibrary();
+  const active = activeCharacterSlot();
+  return active ? normalize(active.character) : normalize(clone(defaultCharacter));
 }
 
 function save() {
@@ -183,7 +394,7 @@ function save() {
   els.saveState.textContent = "Saving…";
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
+    saveCharacterSlot(character);
     els.saveState.textContent = "Saved";
   }, 120);
 }

@@ -486,6 +486,7 @@ function setAppTab(tabName) {
     arcane: "#arcanePanel",
     notes: "#notesPanel",
     settings: "#settingsPanel",
+    library: "#libraryPanel",
     creation: "#creationPanel",
   };
   const nextTab = panelMap[tabName] ? tabName : "play";
@@ -506,6 +507,35 @@ function setAppTab(tabName) {
 
 function setCreatorMode(on) {
   setAppTab(on ? "creation" : "play");
+}
+
+function setLandingVisible(visible) {
+  $("#landingPage")?.classList.toggle("hidden", !visible);
+  $(".shell")?.classList.toggle("hidden", visible);
+}
+
+function renderLandingPage() {
+  const landing = $("#landingPage");
+  if (!landing) return;
+  setLandingVisible(true);
+
+  const label = $("#landingContinueLabel");
+  if (label) {
+    label.textContent = characterLibraryEntries().length || storageAdapter.has(STORAGE_KEY)
+      ? `Continue ${character?.name || "Character"}`
+      : "Launch Tracker";
+  }
+}
+
+function closeLandingPage(tabName = "play") {
+  setLandingVisible(false);
+  setAppTab(tabName);
+  $(".shell")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openLandingPage() {
+  renderLandingPage();
+  $("#landingPage")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function populateSampleCharacterSelect() {
@@ -530,11 +560,14 @@ function renderDemoExperience(forceShow = false) {
   const isDemoMode = storageAdapter.readFlag(DEMO_MODE_KEY);
   if (banner) banner.classList.toggle("hidden", !isDemoMode);
   if (!welcome) return;
+  const landingVisible = !$("#landingPage")?.classList.contains("hidden");
 
   const shouldShow =
     forceShow ||
     welcome.dataset.manualOpen === "true" ||
-    (!storageAdapter.has(STORAGE_KEY) &&
+    (!landingVisible &&
+      !characterLibraryEntries().length &&
+      !storageAdapter.has(STORAGE_KEY) &&
       !storageAdapter.readFlag(WELCOME_DISMISSED_KEY));
   welcome.classList.toggle("hidden", !shouldShow);
 }
@@ -551,28 +584,23 @@ async function loadSampleCharacter(sample) {
 async function loadSelectedSampleCharacter() {
   const select = $("#sampleCharacterSelect");
   const sample = sampleById(select?.value);
-  const hasLocalSave = storageAdapter.has(STORAGE_KEY);
-  if (
-    hasLocalSave &&
-    !(await appConfirm(
-      "This replaces the current local tracker state. Export first if this is a real campaign save.",
-      {
-        title: `Load ${sample.name}?`,
-        confirmText: "Load Sample",
-        danger: true,
-      },
-    ))
-  )
-    return;
 
   try {
-    character = await loadSampleCharacter(sample);
+    const sampleCharacter = await loadSampleCharacter(sample);
+    const entry = addCharacterSlot(sampleCharacter, {
+      source: "sample",
+      isDemo: true,
+      sampleId: sample.id,
+      preferredId: `sample-${sample.id}`,
+      replacePreferred: true,
+    });
+    character = normalize(entry.character);
     storageAdapter.writeFlag(DEMO_MODE_KEY, true);
     storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
+    setLandingVisible(false);
     $("#demoWelcomePanel")?.classList.add("hidden");
     if ($("#demoWelcomePanel")) $("#demoWelcomePanel").dataset.manualOpen = "false";
     render();
-    save();
     setCreatorMode(false);
     renderDemoExperience();
     appToast(`${sample.name} loaded in demo mode.`, "success");
@@ -1260,7 +1288,7 @@ function finalizeCreation() {
     notes,
   });
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
-  save();
+  addCharacterSlot(character, { source: "created" });
   render();
   setCreatorMode(false);
   renderDemoExperience();
@@ -1292,9 +1320,10 @@ async function creatorAction(actionName, target) {
       serializeCreationDraftExport(creationDraft),
     );
   } else if (actionName === "exportFull") {
+    saveCharacterSlot(character);
     exportJson(
       "deadlands-tracker-full-state.json",
-      serializeFullStateExport(character, creationDraft),
+      serializeFullStateExport(character, creationDraft, characterLibrary),
     );
   } else if (actionName === "addHindrance") {
     const severity = $("#ccHindranceSeverity").value;
@@ -1450,3 +1479,11 @@ $("#exitDemoModeBtn").onclick = () => {
   renderDemoExperience();
   appToast("Demo mode banner dismissed. Current character data remains saved.", "success");
 };
+$("#landingContinueBtn").onclick = () => closeLandingPage("play");
+$("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
+$("#landingCreateBtn").onclick = () => closeLandingPage("creation");
+$("#landingImportBtn").onclick = () => {
+  closeLandingPage("play");
+  openPasteImportPanel();
+};
+$("#mainMenuBtn").onclick = openLandingPage;

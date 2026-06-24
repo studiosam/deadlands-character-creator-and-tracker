@@ -63,10 +63,20 @@ function importJsonText(text) {
   const data = JSON.parse(text);
   const payload = unwrapImportPayload(data);
   if (payload.type === "full-state") {
+    characterLibrary = payload.characterLibrary
+      ? normalizeCharacterLibrary(payload.characterLibrary)
+      : emptyCharacterLibrary();
     character = normalize(payload.activeCharacter);
+    saveCharacterSlot(character, {
+      id: characterLibrary.activeCharacterId || undefined,
+      source: activeCharacterSlot()?.source || character.source || "imported",
+    });
     if (payload.creationDraft) {
       creationDraft = normalizeDraft(payload.creationDraft);
       saveCreationDraft();
+    } else {
+      creationDraft = emptyDraft();
+      storageAdapter.remove(CREATION_KEY);
     }
     storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   } else if (payload.type === "creation-draft") {
@@ -74,14 +84,19 @@ function importJsonText(text) {
     saveCreationDraft();
     setCreatorMode(true);
   } else {
-    character = isSavagedUsExport(data)
+    const importedCharacter = isSavagedUsExport(data)
       ? fromSavagedUs(data)
       : normalize(payload.activeCharacter);
+    const entry = addCharacterSlot(importedCharacter, {
+      source:
+        importedCharacter.source ||
+        (isSavagedUsExport(data) ? "savaged.us" : "imported"),
+    });
+    character = normalize(entry.character);
     storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   }
   render();
   renderDemoExperience();
-  save();
   appToast("Import complete.", "success");
 }
 
@@ -104,9 +119,10 @@ function exportTrackerCharacter() {
 }
 
 function exportFullState() {
+  saveCharacterSlot(character);
   exportJson(
     "deadlands-tracker-full-state.json",
-    serializeFullStateExport(character, creationDraft),
+    serializeFullStateExport(character, creationDraft, characterLibrary),
   );
 }
 
@@ -120,6 +136,8 @@ document.addEventListener("click", (event) => {
   if (event.target?.dataset?.action) action(event.target.dataset.action);
   const entryAction = event.target?.closest?.("[data-entry-action]");
   if (entryAction) handleEntryAction(entryAction);
+  const libraryAction = event.target?.closest?.("[data-library-action]");
+  if (libraryAction) handleLibraryAction(libraryAction);
   if (event.target?.dataset?.toggleForm) {
     const form = document.getElementById(event.target.dataset.toggleForm);
     form?.classList.toggle("hidden");
@@ -127,6 +145,64 @@ document.addEventListener("click", (event) => {
   if (event.target?.closest?.(".header-actions button")) closeHeaderMenu();
   if (!event.target?.closest?.(".header-tools")) closeHeaderMenu();
 });
+
+async function handleLibraryAction(target) {
+  const id = target.dataset.libraryId;
+  const entry = characterLibrary?.charactersById?.[id];
+  if (!entry) return;
+
+  if (target.dataset.libraryAction === "switch") {
+    saveCharacterSlot(character);
+    if (activateCharacterSlot(id)) {
+      render();
+      renderDemoExperience();
+      appToast(`Switched to ${entry.name}.`, "success");
+    }
+  } else if (target.dataset.libraryAction === "rename") {
+    const nextName = await appPrompt(
+      "Choose the saved character name shown in the library.",
+      entry.name,
+      {
+        title: "Rename character slot",
+        confirmText: "Rename",
+        inputLabel: "Character name",
+      },
+    );
+    if (nextName === null) return;
+    if (renameCharacterSlot(id, nextName)) {
+      render();
+      appToast("Character slot renamed.", "success");
+    }
+  } else if (target.dataset.libraryAction === "duplicate") {
+    saveCharacterSlot(character);
+    const copy = duplicateCharacterSlot(id);
+    if (copy) {
+      character = normalize(copy.character);
+      render();
+      renderDemoExperience();
+      appToast(`${copy.name} created.`, "success");
+    }
+  } else if (target.dataset.libraryAction === "export") {
+    exportJson(
+      `${slugify(entry.name || "character")}-tracker.json`,
+      serializeTrackerExport(entry.character),
+    );
+  } else if (target.dataset.libraryAction === "delete") {
+    if (
+      !(await appConfirm(`Delete the saved slot for ${entry.name}?`, {
+        title: "Delete character slot?",
+        confirmText: "Delete",
+        danger: true,
+      }))
+    )
+      return;
+    if (removeCharacterSlot(id)) {
+      render();
+      renderDemoExperience();
+      appToast("Character slot deleted.", "success");
+    }
+  }
+}
 
 els.armorSelect.onchange = () => {
   character.selectedArmorLocation = els.armorSelect.value;
@@ -303,11 +379,10 @@ els.resetBtn.onclick = async () => {
     })
   ) {
     character = normalize(clone(defaultCharacter));
-    storageAdapter.remove(STORAGE_KEY);
     storageAdapter.writeFlag(DEMO_MODE_KEY, false);
+    saveCharacterSlot(character, { source: "reset" });
     render();
     renderDemoExperience();
-    save();
   }
 };
 els.exportBtn.onclick = () => {
@@ -350,6 +425,20 @@ els.confirmPasteImportBtn.onclick = () => {
 els.settingsExportTrackerBtn.onclick = exportTrackerCharacter;
 els.settingsExportFullBtn.onclick = exportFullState;
 els.settingsOpenImportBtn.onclick = openPasteImportPanel;
+els.librarySaveCurrentBtn.onclick = () => {
+  saveCharacterSlot(character);
+  render();
+  appToast("Current character saved to the library.", "success");
+};
+els.libraryDuplicateActiveBtn.onclick = () => {
+  saveCharacterSlot(character);
+  const copy = duplicateCharacterSlot(characterLibrary?.activeCharacterId);
+  if (!copy) return;
+  character = normalize(copy.character);
+  render();
+  renderDemoExperience();
+  appToast(`${copy.name} created.`, "success");
+};
 els.settingsShowWelcomeBtn.onclick = () => {
   const panel = $("#demoWelcomePanel");
   if (panel) {
@@ -382,7 +471,7 @@ els.settingsClearDraftBtn.onclick = async () => {
 els.settingsClearAllBtn.onclick = async () => {
   if (
     !(await appConfirm(
-      "This removes the tracker save, creator draft, demo flags, and welcome preference from this browser. Export a full backup first if this data matters.",
+      "This removes all character slots, the active tracker save, creator draft, demo flags, and welcome preference from this browser. Export a full backup first if this data matters.",
       {
         title: "Clear all local data?",
         confirmText: "Clear Local Data",
@@ -393,12 +482,15 @@ els.settingsClearAllBtn.onclick = async () => {
     return;
   clearTimeout(saveTimer);
   storageAdapter.remove(STORAGE_KEY);
+  storageAdapter.remove(CHARACTER_LIBRARY_KEY);
   storageAdapter.remove(CREATION_KEY);
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, false);
   character = normalize(clone(defaultCharacter));
+  characterLibrary = emptyCharacterLibrary();
   creationDraft = emptyDraft();
   render();
-  renderDemoExperience(true);
+  renderLandingPage();
+  renderDemoExperience();
   appToast("Local app data cleared from this browser.", "success");
 };

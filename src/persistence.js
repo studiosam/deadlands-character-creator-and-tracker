@@ -88,7 +88,11 @@ function serializeCreationDraftExport(data) {
   };
 }
 
-function serializeFullStateExport(activeCharacter, creationDraft) {
+function serializeFullStateExport(
+  activeCharacter,
+  creationDraft,
+  characterLibrary = null,
+) {
   return {
     app: APP_EXPORT_NAME,
     exportType: "full-state",
@@ -96,6 +100,7 @@ function serializeFullStateExport(activeCharacter, creationDraft) {
     exportedAt: new Date().toISOString(),
     activeCharacter: migrateCharacterPayload(activeCharacter),
     creationDraft: migrateCreationDraftPayload(creationDraft),
+    characterLibrary: characterLibrary ? plainClone(characterLibrary) : null,
   };
 }
 
@@ -107,6 +112,7 @@ function unwrapImportPayload(data) {
       creationDraft: data.creationDraft
         ? migrateCreationDraftPayload(data.creationDraft)
         : null,
+      characterLibrary: data.characterLibrary || null,
     };
   }
   if (data?.creationDraft) {

@@ -20,10 +20,12 @@ server, or database concerns before the product needs them.
 
 ## Data Model and Persistence
 
-The app keeps one active tracker character and one creator draft in
-`localStorage`. JSON export/import is the portability layer. New exports include
-`schemaVersion`, `exportType`, and `exportedAt`, while old raw JSON still imports
-through migration helpers.
+The app keeps a local character library, one active tracker character, and one
+creator draft in `localStorage`. The legacy `deadlands-tracker-v2` key still
+mirrors the active character, while the multiple-character library lives behind
+`deadlands-character-library-v1`. JSON export/import is the portability layer.
+New exports include `schemaVersion`, `exportType`, `exportedAt`, and full-state
+exports include the character library.
 
 The persistence layer is deliberately small:
 
@@ -31,6 +33,8 @@ The persistence layer is deliberately small:
 - Migration helpers stamp or upgrade tracker and creator payloads.
 - Export helpers produce tracker-character, creation-draft, and full-state
   envelopes.
+- Character library helpers save, switch, duplicate, rename, delete, and migrate
+  local character slots without leaking storage details into the UI.
 
 That structure leaves room for future cloud sync or shareable URLs without
 rewriting feature modules around a new storage backend.

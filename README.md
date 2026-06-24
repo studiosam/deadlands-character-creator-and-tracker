@@ -34,8 +34,12 @@ want a local, private, session-focused tracker at the table.
   Huckster Dealing with the Devil helper state.
 - Import Savaged.us JSON exports and preserve app-owned tracker data through
   localStorage and JSON export/import.
+- Save, switch, rename, duplicate, delete, and export multiple local character
+  slots from the Manage > Characters panel.
 - Load demo/sample characters from the first-run panel without treating the
   bundled samples as a real campaign save.
+- Use a public landing screen with direct launch, sample, creation, and import
+  actions for first-time visitors.
 - Review app version, schema version, privacy/legal notes, backup actions, and
   local data controls from the Settings tab.
 
@@ -75,7 +79,11 @@ Recommended portfolio screenshots/GIFs:
   saves, full app state, creation drafts, and tracker-character exports.
 - Local-first persistence through `localStorage`; JSON export/import remains the
   portability and backup mechanism.
+- Character library state is stored separately from the legacy active tracker
+  save, so older browser saves can migrate without losing the existing key.
 - App-styled dialogs and toasts replace native browser alerts/confirms.
+- Image-backed landing page introduces the hosted demo without blocking
+  returning users from continuing into the tracker.
 - About/Settings panel centralizes app status, backup/export actions, privacy
   posture, and local data controls.
 - Playwright smoke tests cover load, responsive tabs, sample loading, imports,
@@ -99,6 +107,9 @@ New app exports include:
 
 The existing browser save key remains `deadlands-tracker-v2` for backward
 compatibility.
+Multiple-character library saves use `deadlands-character-library-v1`, while
+the legacy key continues to mirror the active character for older exports and
+existing persistence paths.
 
 ## Privacy
 

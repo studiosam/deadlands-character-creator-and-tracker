@@ -1,6 +1,7 @@
 const { test, expect } = require("@playwright/test");
 
 const STORAGE_KEY = "deadlands-tracker-v2";
+const CHARACTER_LIBRARY_KEY = "deadlands-character-library-v1";
 
 async function clearAppStorage(page) {
   await page.goto("/");
@@ -15,13 +16,30 @@ test.beforeEach(async ({ page }) => {
 test("loads the app and switches primary tabs", async ({ page }) => {
   await expect(page).toHaveTitle(/Deadlands Character Tracker/);
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
-  await expect(page.locator("#demoWelcomePanel")).toBeVisible();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator(".shell")).toBeHidden();
+  await expect(page.locator(".app-tabs [data-app-tab='settings']")).toHaveCount(
+    0,
+  );
 
-  for (const tab of ["Character", "Inventory", "Arcane", "Notes", "Settings"]) {
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  await page.reload();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator(".shell")).toBeHidden();
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  for (const tab of ["Character", "Inventory", "Arcane", "Notes"]) {
     await page.getByRole("button", { name: tab, exact: true }).click();
     await expect(page.locator(".tab-panel.active")).toBeVisible();
   }
 
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#settingsMenuBtn").click();
   await expect(page.locator("#settingsPanel")).toContainText(
     "About and Settings",
   );
@@ -31,12 +49,19 @@ test("loads the app and switches primary tabs", async ({ page }) => {
 
   await page.getByRole("button", { name: "Combat", exact: true }).click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#mainMenuBtn").click();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator(".shell")).toBeHidden();
 });
 
 test("settings panel exposes backup and local data controls", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.locator("#landingContinueBtn").click();
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#settingsMenuBtn").click();
 
   await expect(page.locator("#settingsStatusBadges")).toContainText("Version");
   await expect(page.locator("#settingsStorageDetails")).toContainText(
@@ -52,19 +77,50 @@ test("settings panel exposes backup and local data controls", async ({
 });
 
 test("loads a bundled sample in demo mode", async ({ page }) => {
-  await page.locator("#sampleCharacterSelect").selectOption("dusty-mccaw");
-  await page.locator("#loadSelectedSampleBtn").click();
+  await page.locator("#landingLoadSampleBtn").click();
 
   await expect(page.locator("#demoModeBanner")).toBeVisible();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
   const stored = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)),
     STORAGE_KEY,
   );
   expect(stored.schemaVersion).toBe(1);
+  const library = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    CHARACTER_LIBRARY_KEY,
+  );
+  expect(Object.keys(library.charactersById)).toHaveLength(1);
+  expect(library.charactersById[library.activeCharacterId].isDemo).toBe(true);
+});
+
+test("manages multiple local character save slots", async ({ page }) => {
+  await page.locator("#landingLoadSampleBtn").click();
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await expect(page.locator("#librarySummaryPill")).toContainText("1 saved");
+  await expect(page.locator(".library-character")).toHaveCount(1);
+
+  await page.locator("#libraryDuplicateActiveBtn").click();
+  await expect(page.locator("#librarySummaryPill")).toContainText("2 saved");
+  await expect(page.locator(".library-character")).toHaveCount(2);
+
+  const library = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    CHARACTER_LIBRARY_KEY,
+  );
+  expect(Object.keys(library.charactersById)).toHaveLength(2);
+  expect(library.charactersById[library.activeCharacterId].name).toContain(
+    "Copy",
+  );
 });
 
 test("persists core combat controls across reload", async ({ page }) => {
+  await page.locator("#landingContinueBtn").click();
   await page.getByRole("button", { name: "+", exact: true }).first().click();
   await expect(page.locator("#woundsValue")).toHaveText("1");
   await page.reload();
@@ -72,6 +128,7 @@ test("persists core combat controls across reload", async ({ page }) => {
 });
 
 test("imports a Savaged.us sample through paste import", async ({ page }) => {
+  await page.locator("#landingContinueBtn").click();
   const sample = await page.request.get(
     "/docs/Sample%20Characters/savaged-us-json-export-character-Lehi%20Larson.json",
   );
@@ -88,6 +145,7 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
 });
 
 test("round-trips exported tracker JSON through import", async ({ page }) => {
+  await page.locator("#landingContinueBtn").click();
   await page.getByRole("button", { name: "+", exact: true }).first().click();
   await page.getByRole("button", { name: "Notes" }).click();
   await page.locator("#notesArea").fill("Round trip smoke note");

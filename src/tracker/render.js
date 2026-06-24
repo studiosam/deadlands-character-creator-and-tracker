@@ -69,9 +69,64 @@ function render() {
   renderArcaneSummary();
   renderNotesSummary();
   renderSettingsSummary();
+  renderCharacterLibrary();
 
   if (document.activeElement !== els.notesArea)
     els.notesArea.value = character.notes || "";
+}
+
+function characterSlotMeta(entry) {
+  return [
+    entry.rank,
+    entry.archetype,
+    entry.source ? characterSlotSourceLabel(entry.source) : "",
+    entry.isDemo ? "Demo" : "",
+  ]
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function characterSlotSourceLabel(sourceValue) {
+  const source = compactText(sourceValue || "local", "local");
+  if (source.toLowerCase() === "savaged.us") return "Savaged.us import";
+  if (source.toLowerCase() === "created") return "Created in tracker";
+  if (source.toLowerCase() === "migrated") return "Migrated save";
+  return source;
+}
+
+function renderCharacterLibrary() {
+  if (!els.characterLibraryList) return;
+  const entries = characterLibraryEntries();
+  const activeId = characterLibrary?.activeCharacterId || "";
+  els.librarySummaryPill.textContent = entries.length
+    ? `${entries.length} saved`
+    : "No saved slots";
+
+  els.characterLibraryList.innerHTML = entries.length
+    ? entries
+        .map((entry) => {
+          const active = entry.id === activeId;
+          const updated = entry.updatedAt
+            ? new Date(entry.updatedAt).toLocaleString()
+            : "Not saved";
+          return `<article class="library-character ${active ? "active" : ""}">
+            <div class="library-character-main">
+              <span class="pill">${active ? "Active" : "Saved"}</span>
+              <h3>${esc(entry.name || "Unnamed Character")}</h3>
+              <p class="muted">${esc(characterSlotMeta(entry) || "Local character")}</p>
+              <small>Updated ${esc(updated)}</small>
+            </div>
+            <div class="library-character-actions">
+              <button class="ghost" type="button" data-library-action="switch" data-library-id="${esc(entry.id)}" ${active ? "disabled" : ""}>Switch</button>
+              <button class="ghost" type="button" data-library-action="rename" data-library-id="${esc(entry.id)}">Rename</button>
+              <button class="ghost" type="button" data-library-action="duplicate" data-library-id="${esc(entry.id)}">Duplicate</button>
+              <button class="ghost" type="button" data-library-action="export" data-library-id="${esc(entry.id)}">Export</button>
+              <button class="delete-small" type="button" data-library-action="delete" data-library-id="${esc(entry.id)}">Delete</button>
+            </div>
+          </article>`;
+        })
+        .join("")
+    : emptyState("No saved character slots yet. Save the current character, load a sample, import JSON, or finalize a creator draft.");
 }
 
 function localJsonSize(key) {
@@ -113,6 +168,12 @@ function renderSettingsSummary() {
 
   els.settingsStorageDetails.innerHTML = [
     ["Tracker Save", hasTrackerSave ? localJsonSize(STORAGE_KEY) : "Not saved yet"],
+    [
+      "Character Library",
+      characterLibraryEntries().length
+        ? `${characterLibraryEntries().length} slot(s), ${localJsonSize(CHARACTER_LIBRARY_KEY)}`
+        : "No library saved",
+    ],
     ["Creator Draft", hasDraft ? localJsonSize(CREATION_KEY) : "No draft saved"],
     ["Demo Mode", isDemoMode ? "On" : "Off"],
     ["Export Reminder", hasTrackerSave ? "Use full backup before clearing local data" : "Load, import, or create a character first"],

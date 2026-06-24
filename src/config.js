@@ -1,4 +1,5 @@
 const STORAGE_KEY = "deadlands-tracker-v2";
+const CHARACTER_LIBRARY_KEY = "deadlands-character-library-v1";
 const APP_VERSION = "0.1.0";
 const APP_SCHEMA_VERSION = 1;
 const CREATION_KEY = "deadlands-creation-draft-v1";
