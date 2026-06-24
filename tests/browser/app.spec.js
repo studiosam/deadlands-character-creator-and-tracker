@@ -17,13 +17,38 @@ test("loads the app and switches primary tabs", async ({ page }) => {
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
   await expect(page.locator("#demoWelcomePanel")).toBeVisible();
 
-  for (const tab of ["Character", "Inventory", "Arcane", "Notes"]) {
+  for (const tab of ["Character", "Inventory", "Arcane", "Notes", "Settings"]) {
     await page.getByRole("button", { name: tab, exact: true }).click();
     await expect(page.locator(".tab-panel.active")).toBeVisible();
   }
 
+  await expect(page.locator("#settingsPanel")).toContainText(
+    "About and Settings",
+  );
+  await expect(page.locator("#settingsAppDetails")).toContainText(
+    "Schema Version",
+  );
+
   await page.getByRole("button", { name: "Combat", exact: true }).click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
+});
+
+test("settings panel exposes backup and local data controls", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+
+  await expect(page.locator("#settingsStatusBadges")).toContainText("Version");
+  await expect(page.locator("#settingsStorageDetails")).toContainText(
+    "Tracker Save",
+  );
+  await expect(page.locator("#settingsDemoLink")).toHaveAttribute(
+    "href",
+    /studiosam\.github\.io/,
+  );
+
+  await page.locator("#settingsShowWelcomeBtn").click();
+  await expect(page.locator("#demoWelcomePanel")).toBeVisible();
 });
 
 test("loads a bundled sample in demo mode", async ({ page }) => {

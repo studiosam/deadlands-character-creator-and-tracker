@@ -60,13 +60,13 @@ function knownEmptyContainerWeight(item) {
   return parseWeightNumber(catalog?.weight);
 }
 
-function normalizeItemWeightFields(item, count, children) {
+function normalizeItemWeightFields(item, count, children, currentCharacter) {
   const source = String(item.source || "").toLowerCase();
   const importedTotal = parseWeightNumber(item.totalWeight ?? item.weight);
   const explicitUnit = parseWeightNumber(item.unitWeight);
   const explicitOwn = parseWeightNumber(item.containerOwnWeight);
   const childTotal = children.reduce(
-    (sum, child) => sum + inventoryItemTotalWeight(child),
+    (sum, child) => sum + inventoryItemTotalWeight(child, currentCharacter),
     0,
   );
 
@@ -114,7 +114,13 @@ function normalizeItemWeightFields(item, count, children) {
   };
 }
 
-function normalizeInventoryItem(item, index, usedIds, parentLocation = "") {
+function normalizeInventoryItem(
+  item,
+  index,
+  usedIds,
+  parentLocation = "",
+  currentCharacter = character,
+) {
   const source = item && typeof item === "object" ? { ...item } : {};
   const count = Math.max(
     0,
@@ -126,7 +132,13 @@ function normalizeInventoryItem(item, index, usedIds, parentLocation = "") {
       ? source.contains.gear
       : []
   ).map((child, childIndex) =>
-    normalizeInventoryItem(child, childIndex, usedIds, "container"),
+    normalizeInventoryItem(
+      child,
+      childIndex,
+      usedIds,
+      "container",
+      currentCharacter,
+    ),
   );
   const idBase = source.id || source.uuid || source.name || `item-${index}`;
   let id = slugify(idBase);
@@ -137,7 +149,12 @@ function normalizeInventoryItem(item, index, usedIds, parentLocation = "") {
   }
   usedIds.add(id);
 
-  const weightFields = normalizeItemWeightFields(source, count, children);
+  const weightFields = normalizeItemWeightFields(
+    source,
+    count,
+    children,
+    currentCharacter,
+  );
   const location = parentLocation
     ? "container"
     : normalizeInventoryLocation(source.location);
@@ -187,7 +204,9 @@ function normalizeInventoryState(currentCharacter) {
   currentCharacter.inventory = (Array.isArray(currentCharacter.inventory)
     ? currentCharacter.inventory
     : []
-  ).map((item, index) => normalizeInventoryItem(item, index, usedIds));
+  ).map((item, index) =>
+    normalizeInventoryItem(item, index, usedIds, "", currentCharacter),
+  );
 }
 
 function normalizePhysicalInventoryState(currentCharacter) {

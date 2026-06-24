@@ -36,6 +36,8 @@ want a local, private, session-focused tracker at the table.
   localStorage and JSON export/import.
 - Load demo/sample characters from the first-run panel without treating the
   bundled samples as a real campaign save.
+- Review app version, schema version, privacy/legal notes, backup actions, and
+  local data controls from the Settings tab.
 
 ## Demo and Screenshots
 
@@ -74,6 +76,8 @@ Recommended portfolio screenshots/GIFs:
 - Local-first persistence through `localStorage`; JSON export/import remains the
   portability and backup mechanism.
 - App-styled dialogs and toasts replace native browser alerts/confirms.
+- About/Settings panel centralizes app status, backup/export actions, privacy
+  posture, and local data controls.
 - Playwright smoke tests cover load, responsive tabs, sample loading, imports,
   export/import round trips, persistence, and core combat controls.
 

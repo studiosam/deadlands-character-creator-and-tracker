@@ -1,11 +1,12 @@
 function ammoOptions(selected = "") {
-  const selectedMissing = selected && !character.ammo[selected];
+  const ammoMap = character?.ammo || {};
+  const selectedMissing = selected && !ammoMap[selected];
   return [
     `<option value=""${!selected ? " selected" : ""}>No ammunition tracking</option>`,
     selectedMissing
       ? `<option value="${esc(selected)}" selected>${esc(ammoReserveForKey(selected).label)} (no reserve)</option>`
       : "",
-    ...Object.entries(character.ammo).map(
+    ...Object.entries(ammoMap).map(
       ([key, ammo]) =>
         `<option value="${esc(key)}"${key === selected ? " selected" : ""}>${esc(ammo.label)}</option>`,
     ),

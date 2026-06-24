@@ -68,9 +68,57 @@ function render() {
   renderPlaySummary();
   renderArcaneSummary();
   renderNotesSummary();
+  renderSettingsSummary();
 
   if (document.activeElement !== els.notesArea)
     els.notesArea.value = character.notes || "";
+}
+
+function localJsonSize(key) {
+  const value = storageAdapter.readText(key);
+  return value ? `${Math.ceil(value.length / 1024)} KB` : "Not saved";
+}
+
+function settingsDetail(label, value) {
+  return `<div><span>${esc(label)}</span><strong>${esc(value || "—")}</strong></div>`;
+}
+
+function renderSettingsSummary() {
+  if (!els.settingsAppDetails) return;
+  const powerPoints = powerPointResource();
+  const isDemoMode = storageAdapter.readFlag(DEMO_MODE_KEY);
+  const hasDraft = storageAdapter.has(CREATION_KEY);
+  const hasTrackerSave = storageAdapter.has(STORAGE_KEY);
+  const source = sourceLabel();
+
+  els.settingsDemoLink.href = DEMO_URL;
+  els.settingsStatusBadges.innerHTML = [
+    `<span class="pill">Version ${esc(APP_VERSION)}</span>`,
+    `<span class="pill">Schema ${APP_SCHEMA_VERSION}</span>`,
+    `<span class="pill">${isDemoMode ? "Demo mode" : "Local save"}</span>`,
+  ].join("");
+
+  els.settingsAppDetails.innerHTML = [
+    ["Current Character", character.name],
+    ["Rank / Archetype", [character.rank, character.archetype].filter(Boolean).join(" / ")],
+    ["Source", source],
+    ["App Version", APP_VERSION],
+    ["Schema Version", APP_SCHEMA_VERSION],
+    ["Browser Save Key", STORAGE_KEY],
+    ["Power Points", powerPoints ? `${powerPoints.current} / ${powerPoints.max}` : "Not enabled"],
+    ["Hosted Demo", DEMO_URL],
+  ]
+    .map(([label, value]) => settingsDetail(label, value))
+    .join("");
+
+  els.settingsStorageDetails.innerHTML = [
+    ["Tracker Save", hasTrackerSave ? localJsonSize(STORAGE_KEY) : "Not saved yet"],
+    ["Creator Draft", hasDraft ? localJsonSize(CREATION_KEY) : "No draft saved"],
+    ["Demo Mode", isDemoMode ? "On" : "Off"],
+    ["Export Reminder", hasTrackerSave ? "Use full backup before clearing local data" : "Load, import, or create a character first"],
+  ]
+    .map(([label, value]) => settingsDetail(label, value))
+    .join("");
 }
 
 function renderEncumbrance() {

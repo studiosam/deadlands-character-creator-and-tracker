@@ -485,6 +485,7 @@ function setAppTab(tabName) {
     inventory: "#inventoryPanel",
     arcane: "#arcanePanel",
     notes: "#notesPanel",
+    settings: "#settingsPanel",
     creation: "#creationPanel",
   };
   const nextTab = panelMap[tabName] ? tabName : "play";

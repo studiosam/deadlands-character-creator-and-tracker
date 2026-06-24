@@ -92,6 +92,7 @@
       <button type="button" data-app-tab="inventory">Inventory</button>
       <button type="button" data-app-tab="arcane">Arcane</button>
       <button type="button" data-app-tab="notes">Notes</button>
+      <button type="button" data-app-tab="settings">Settings</button>
     </nav>
 
     <main id="trackerDashboard">
@@ -913,6 +914,106 @@
         <section class="card wide">
           <h2>Background and Long-Form Text</h2>
           <div id="longFormNotesList" class="list"></div>
+        </section>
+      </section>
+
+      <section id="settingsPanel" class="dashboard tab-panel hidden settings-panel">
+        <section class="card wide settings-hero">
+          <div>
+            <p class="eyebrow">About and Settings</p>
+            <h2>Deadlands Character Creator and Tracker</h2>
+            <p class="muted">
+              A local-first, unofficial table companion for active character state, imports,
+              backups, and portfolio demo review.
+            </p>
+          </div>
+          <div id="settingsStatusBadges" class="settings-badges"></div>
+        </section>
+
+        <section class="card settings-card">
+          <div class="section-title">
+            <div>
+              <h2>App Status</h2>
+              <p>Version, schema, and current local save state.</p>
+            </div>
+          </div>
+          <div id="settingsAppDetails" class="settings-detail-grid"></div>
+        </section>
+
+        <section class="card settings-card">
+          <div class="section-title">
+            <div>
+              <h2>Backups and Data</h2>
+              <p>Exports are the backup and portability path for this local app.</p>
+            </div>
+          </div>
+          <div class="settings-action-grid">
+            <button id="settingsExportTrackerBtn" type="button">Export Character</button>
+            <button id="settingsExportFullBtn" class="ghost" type="button">Export Full Backup</button>
+            <button id="settingsOpenImportBtn" class="ghost" type="button">Import JSON</button>
+            <button id="settingsShowWelcomeBtn" class="ghost" type="button">Show Demo Start</button>
+          </div>
+          <div id="settingsStorageDetails" class="settings-storage-list"></div>
+        </section>
+
+        <section class="card settings-card">
+          <div class="section-title">
+            <div>
+              <h2>Supported Formats</h2>
+              <p>Files this app knows how to import and export.</p>
+            </div>
+          </div>
+          <div class="settings-format-list">
+            <span>Tracker character JSON</span>
+            <span>Full app backup JSON</span>
+            <span>Creation draft JSON</span>
+            <span>Savaged.us character JSON</span>
+            <span>Older raw app JSON</span>
+          </div>
+        </section>
+
+        <section class="card settings-card">
+          <div class="section-title">
+            <div>
+              <h2>Privacy and Notice</h2>
+              <p>Local data, unofficial status, and rulebook boundaries.</p>
+            </div>
+          </div>
+          <div class="settings-copy-list">
+            <p>
+              Character data stays in this browser unless you export JSON. There is no account,
+              backend sync, analytics, or remote storage in the current app.
+            </p>
+            <p>
+              This is an unofficial fan tool and portfolio project. It is not affiliated with,
+              endorsed by, sponsored by, or approved by Pinnacle Entertainment Group.
+            </p>
+            <p>
+              Use the official books for rules. The app should support table workflow without
+              replacing the source material.
+            </p>
+          </div>
+          <div class="settings-link-row">
+            <a href="README.md">README</a>
+            <a href="NOTICE.md">Notice</a>
+            <a href="PRIVACY.md">Privacy</a>
+            <a href="LICENSE">License</a>
+            <a id="settingsDemoLink" href="https://studiosam.github.io/deadlands-character-creator-and-tracker/">Hosted Demo</a>
+          </div>
+        </section>
+
+        <section class="card settings-card danger-zone">
+          <div class="section-title">
+            <div>
+              <h2>Local Data Controls</h2>
+              <p>These only affect this browser.</p>
+            </div>
+          </div>
+          <div class="settings-action-grid">
+            <button id="settingsClearDraftBtn" class="ghost" type="button">Clear Creator Draft</button>
+            <button id="settingsClearDemoFlagBtn" class="ghost" type="button">Exit Demo Mode</button>
+            <button id="settingsClearAllBtn" class="danger" type="button">Clear Local Data</button>
+          </div>
         </section>
       </section>
     </main>

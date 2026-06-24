@@ -96,6 +96,26 @@ function closeHeaderMenu() {
   els.headerToolsMenu.open = false;
 }
 
+function exportTrackerCharacter() {
+  exportJson(
+    `${slugify(character.name || "character")}-tracker.json`,
+    serializeTrackerExport(character),
+  );
+}
+
+function exportFullState() {
+  exportJson(
+    "deadlands-tracker-full-state.json",
+    serializeFullStateExport(character, creationDraft),
+  );
+}
+
+function openPasteImportPanel() {
+  els.pasteImportPanel.classList.remove("hidden");
+  els.importJsonText.focus();
+  els.pasteImportPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 document.addEventListener("click", (event) => {
   if (event.target?.dataset?.action) action(event.target.dataset.action);
   const entryAction = event.target?.closest?.("[data-entry-action]");
@@ -291,10 +311,7 @@ els.resetBtn.onclick = async () => {
   }
 };
 els.exportBtn.onclick = () => {
-  exportJson(
-    `${slugify(character.name || "character")}-tracker.json`,
-    serializeTrackerExport(character),
-  );
+  exportTrackerCharacter();
 };
 els.importFile.onchange = (event) => {
   const file = event.target.files[0];
@@ -328,4 +345,60 @@ els.confirmPasteImportBtn.onclick = () => {
   } catch {
     alertInvalidImport();
   }
+};
+
+els.settingsExportTrackerBtn.onclick = exportTrackerCharacter;
+els.settingsExportFullBtn.onclick = exportFullState;
+els.settingsOpenImportBtn.onclick = openPasteImportPanel;
+els.settingsShowWelcomeBtn.onclick = () => {
+  const panel = $("#demoWelcomePanel");
+  if (panel) {
+    panel.dataset.manualOpen = "true";
+    renderDemoExperience(true);
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+};
+els.settingsClearDemoFlagBtn.onclick = () => {
+  storageAdapter.writeFlag(DEMO_MODE_KEY, false);
+  renderDemoExperience();
+  renderSettingsSummary();
+  appToast("Demo mode flag cleared. Current character data remains saved.", "success");
+};
+els.settingsClearDraftBtn.onclick = async () => {
+  if (
+    !(await appConfirm("This removes only the saved character creation draft.", {
+      title: "Clear creator draft?",
+      confirmText: "Clear Draft",
+      danger: true,
+    }))
+  )
+    return;
+  creationDraft = emptyDraft();
+  storageAdapter.remove(CREATION_KEY);
+  if ($("#creationPanel")?.classList.contains("active")) renderCreator();
+  renderSettingsSummary();
+  appToast("Creator draft cleared.", "success");
+};
+els.settingsClearAllBtn.onclick = async () => {
+  if (
+    !(await appConfirm(
+      "This removes the tracker save, creator draft, demo flags, and welcome preference from this browser. Export a full backup first if this data matters.",
+      {
+        title: "Clear all local data?",
+        confirmText: "Clear Local Data",
+        danger: true,
+      },
+    ))
+  )
+    return;
+  clearTimeout(saveTimer);
+  storageAdapter.remove(STORAGE_KEY);
+  storageAdapter.remove(CREATION_KEY);
+  storageAdapter.writeFlag(DEMO_MODE_KEY, false);
+  storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, false);
+  character = normalize(clone(defaultCharacter));
+  creationDraft = emptyDraft();
+  render();
+  renderDemoExperience(true);
+  appToast("Local app data cleared from this browser.", "success");
 };
