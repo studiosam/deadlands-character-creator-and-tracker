@@ -39,7 +39,7 @@ const ARCANE_BACKGROUND_POWER_PROFILES = {
       "power-stun",
       "power-warrior-s-gift"
     ],
-    "notes": "Blessed requires Holy Symbol and two more starting powers.",
+    "notes": "Blessed requires Holy Symbol and two more starting powers. Critical Failure on Faith causes Fatigue and ends active powers. Sinnin’ can penalize or remove powers temporarily.",
     "restrictions": {
       "power-detect-conceal-arcana": "Detect only; conceal is not available.",
       "power-light-darkness": "Light only; darkness is not available."
@@ -75,7 +75,7 @@ const ARCANE_BACKGROUND_POWER_PROFILES = {
       "power-wall-walker",
       "power-warrior-s-gift"
     ],
-    "notes": "Chi Master requires Deflection and two more starting powers. Beneficial powers become Self range; detrimental powers become Touch range.",
+    "notes": "Chi Master requires Deflection and two more starting powers. Beneficial powers become Self range; detrimental powers become Touch range. These range reductions do not grant Limitation discounts.",
     "restrictions": {
       "power-detect-conceal-arcana": "Detect only; conceal is not available.",
       "power-smite": "Hands and feet count as weapons for this power."
@@ -131,7 +131,7 @@ const ARCANE_BACKGROUND_POWER_PROFILES = {
       "power-trinkets",
       "power-wall-walker"
     ],
-    "notes": "Huckster chooses three starting powers. Deal with the Devil can use available powers that are not known powers.",
+    "notes": "Huckster chooses three starting powers. Deal with the Devil can use available powers that are not known powers. Hucksters cannot Short or spend Bennies for Power Points.",
     "restrictions": {}
   },
   "madScientist": {
@@ -191,7 +191,7 @@ const ARCANE_BACKGROUND_POWER_PROFILES = {
       "power-warrior-s-gift",
       "power-zombie"
     ],
-    "notes": "Mad Scientist chooses two starting powers. Name powers as devices, gizmos, elixirs, or inventions.",
+    "notes": "Mad Scientist chooses two starting powers. Name powers as devices, gizmos, elixirs, or inventions. Critical Failure triggers Infernal Device Malfunction.",
     "restrictions": {
       "power-growth-shrink": "Shrink only; growth is not available."
     }
@@ -247,7 +247,7 @@ const ARCANE_BACKGROUND_POWER_PROFILES = {
       "power-warrior-s-gift",
       "power-wilderness-walk"
     ],
-    "notes": "Shaman chooses two starting powers.",
+    "notes": "Shaman chooses two starting powers. If silenced, subtract 2 from Faith rolls.",
     "restrictions": {
       "power-growth-shrink": "Growth only; shrink is not available."
     }
@@ -272,15 +272,20 @@ const POWER_CATALOG = [
       "Huckster": "Requires Hexslinging Edge."
     },
     "shortSummary": "Hexslinger empowers shots from a hex gun with special shot effects.",
-    "variableCostNotes": "Requires Huckster + Hexslinging. Special shot effects are selected per shot; raise can allow two effects.",
+    "variableCostNotes": "Requires Huckster + Hexslinging. Special shot effects are selected per shot; raise can allow two effects. This is effect selection, not variable PP spending.",
     "tags": [
-      "variable-cost"
+      "huckster",
+      "hexslinging",
+      "weapon-buff",
+      "effect-selection",
+      "active-duration"
     ],
     "supportsVariableSpend": false,
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "Special shot effects are selected per shot. Raise may allow two effects. This is effect selection, not variable PP spending.",
+    "manualVariableSpend": false
   },
   {
     "id": "power-arcane-protection",
@@ -317,7 +322,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-banish",
@@ -341,7 +347,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-barrier",
@@ -360,16 +367,20 @@ const POWER_CATALOG = [
     "requiredForBackgrounds": [],
     "restrictionsByBackground": {},
     "shortSummary": "Creates a short Hardness 10 wall or barrier.",
-    "variableCostNotes": "Damage, Hardened, Shaped, Size.",
+    "variableCostNotes": "Has power modifiers such as Damage, Hardened, Shaped, and Size, but exact calculator options need manual table verification.",
     "tags": [
-      "attack",
-      "utility"
+      "defense",
+      "utility",
+      "barrier",
+      "manual-cost",
+      "active-duration"
     ],
     "supportsVariableSpend": false,
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "Manual variable spend: verify modifier costs at the table before deducting PP.",
+    "manualVariableSpend": true
   },
   {
     "id": "power-beast-friend",
@@ -389,23 +400,19 @@ const POWER_CATALOG = [
     "requiredForBackgrounds": [],
     "restrictionsByBackground": {},
     "shortSummary": "Communicate with and guide natural animals; cost depends on controlled creatures’ Size.",
-    "variableCostNotes": "Variable cost by creature Size and count.",
+    "variableCostNotes": "Variable cost by creature Size and count. Manual table-choice cost; do not use calculator-style variable spend until exact cost options are implemented.",
     "tags": [
       "utility",
-      "variable-cost"
+      "animal",
+      "manual-cost",
+      "active-duration"
     ],
-    "supportsVariableSpend": true,
+    "supportsVariableSpend": false,
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
-    "variableSpendOptions": [
-      {
-        "id": "variable-cost",
-        "label": "Variable Cost",
-        "costPer": null,
-        "quantityLabel": "table choice"
-      }
-    ],
-    "notes": ""
+    "variableSpendOptions": [],
+    "notes": "Manual variable spend: choose final PP cost from the rulebook/table.",
+    "manualVariableSpend": true
   },
   {
     "id": "power-blast",
@@ -443,7 +450,8 @@ const POWER_CATALOG = [
         "quantityLabel": "damage boost"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-blind",
@@ -476,7 +484,8 @@ const POWER_CATALOG = [
         "quantityLabel": "use"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-bolt",
@@ -509,7 +518,8 @@ const POWER_CATALOG = [
         "quantityLabel": "damage boost"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-boost-lower-trait",
@@ -533,7 +543,10 @@ const POWER_CATALOG = [
     "variableCostNotes": "Additional Recipients for boost; Strong for lower.",
     "tags": [
       "buff",
-      "additional-recipients"
+      "debuff",
+      "trait",
+      "additional-recipients",
+      "active-duration"
     ],
     "supportsVariableSpend": true,
     "supportsActiveToggle": false,
@@ -552,7 +565,8 @@ const POWER_CATALOG = [
         "quantityLabel": "use"
       }
     ],
-    "notes": ""
+    "notes": "Paired power: Boost has duration 5 and Additional Recipients; Lower is hostile/instant and may use Strong.",
+    "manualVariableSpend": false
   },
   {
     "id": "power-burrow",
@@ -586,7 +600,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-burst",
@@ -619,7 +634,8 @@ const POWER_CATALOG = [
         "quantityLabel": "damage boost"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-confusion",
@@ -652,7 +668,8 @@ const POWER_CATALOG = [
         "quantityLabel": "use"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-curse",
@@ -672,13 +689,18 @@ const POWER_CATALOG = [
     "shortSummary": "Opposed roll; victim suffers recurring Fatigue and possible death unless curse is lifted.",
     "variableCostNotes": "Dispel can remove, but each helper gets only one attempt.",
     "tags": [
-      "healing"
+      "curse",
+      "debuff",
+      "fatigue",
+      "hostile",
+      "permanent"
     ],
     "supportsVariableSpend": false,
     "supportsActiveToggle": true,
-    "supportsMaintenance": true,
+    "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "Permanent hostile curse. Track as an active effect if needed, but it does not use normal maintenance.",
+    "manualVariableSpend": false
   },
   {
     "id": "power-damage-field",
@@ -699,7 +721,9 @@ const POWER_CATALOG = [
     "variableCostNotes": "Damage +2.",
     "tags": [
       "attack",
-      "utility"
+      "damage",
+      "aura",
+      "active-duration"
     ],
     "supportsVariableSpend": true,
     "supportsActiveToggle": true,
@@ -712,7 +736,8 @@ const POWER_CATALOG = [
         "quantityLabel": "damage boost"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-darksight",
@@ -747,7 +772,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-deflection",
@@ -770,11 +796,12 @@ const POWER_CATALOG = [
     ],
     "restrictionsByBackground": {},
     "shortSummary": "Foes subtract from attacks against the protected target; raise improves the penalty.",
-    "variableCostNotes": "Additional Recipients +1. Main target-count UI test case. Verify PP cost if your table’s book printing differs.",
+    "variableCostNotes": "Additional Recipients +1. Main target-count UI test case. Catalog keeps base PP at 3 per the local powers reference; verify at the table if using a different printing or house rule.",
     "tags": [
       "defense",
-      "attack",
-      "additional-recipients"
+      "buff",
+      "additional-recipients",
+      "active-duration"
     ],
     "supportsVariableSpend": true,
     "supportsActiveToggle": true,
@@ -787,7 +814,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-detect-conceal-arcana",
@@ -813,8 +841,11 @@ const POWER_CATALOG = [
     "shortSummary": "Detect reveals supernatural beings, objects, and effects. Conceal hides arcane nature.",
     "variableCostNotes": "Additional Recipients +1; Conceal Area Effect and Strong. Blessed and Chi Master are detect-only.",
     "tags": [
+      "detection",
+      "stealth",
       "utility",
-      "additional-recipients"
+      "additional-recipients",
+      "active-duration"
     ],
     "supportsVariableSpend": true,
     "supportsActiveToggle": true,
@@ -839,7 +870,8 @@ const POWER_CATALOG = [
         "quantityLabel": "use"
       }
     ],
-    "notes": ""
+    "notes": "Paired power. Blessed and Chi Master are Detect-only in Deadlands.",
+    "manualVariableSpend": false
   },
   {
     "id": "power-disguise",
@@ -873,7 +905,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-dispel",
@@ -899,7 +932,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-divination",
@@ -924,7 +958,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-drain-power-points",
@@ -948,7 +983,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-elemental-manipulation",
@@ -974,7 +1010,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-empathy",
@@ -1003,7 +1040,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-entangle",
@@ -1028,7 +1066,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-environmental-protection",
@@ -1066,7 +1105,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-farsight",
@@ -1101,7 +1141,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-fear",
@@ -1133,7 +1174,8 @@ const POWER_CATALOG = [
         "quantityLabel": "template step"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-fly",
@@ -1165,7 +1207,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-growth-shrink",
@@ -1186,23 +1229,19 @@ const POWER_CATALOG = [
       "Shaman": "Growth only; shrink is not available."
     },
     "shortSummary": "Increase or reduce Size by spending Power Points.",
-    "variableCostNotes": "Variable cost by Size change. Mad Scientist is shrink-only; Shaman is growth-only.",
+    "variableCostNotes": "Variable cost by Size change. Mad Scientist is shrink-only; Shaman is growth-only. Manual table-choice cost; do not use calculator-style variable spend until exact cost options are implemented.",
     "tags": [
       "buff",
-      "variable-cost"
+      "size-change",
+      "manual-cost",
+      "active-duration"
     ],
-    "supportsVariableSpend": true,
+    "supportsVariableSpend": false,
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
-    "variableSpendOptions": [
-      {
-        "id": "variable-cost",
-        "label": "Variable Cost",
-        "costPer": null,
-        "quantityLabel": "table choice"
-      }
-    ],
-    "notes": ""
+    "variableSpendOptions": [],
+    "notes": "Manual variable spend: choose final PP cost from the rulebook/table. Mad Scientist is Shrink-only; Shaman is Growth-only in Deadlands.",
+    "manualVariableSpend": true
   },
   {
     "id": "power-havoc",
@@ -1228,7 +1267,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-healing",
@@ -1250,13 +1290,16 @@ const POWER_CATALOG = [
     "shortSummary": "Restores recent Wounds and may handle other recovery with modifiers/timing.",
     "variableCostNotes": "Connect to wound tracker later.",
     "tags": [
-      "healing"
+      "healing",
+      "wounds",
+      "recovery"
     ],
     "supportsVariableSpend": false,
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-holy-symbol",
@@ -1278,7 +1321,12 @@ const POWER_CATALOG = [
     "shortSummary": "Supernaturally evil creatures must pass Spirit to directly physically attack the bearer.",
     "variableCostNotes": "Area Effect +2/+3; Strong +1. Blessed required starting power.",
     "tags": [
-      "attack"
+      "defense",
+      "ward",
+      "blessed",
+      "area-effect",
+      "strong",
+      "active-duration"
     ],
     "supportsVariableSpend": true,
     "supportsActiveToggle": true,
@@ -1297,7 +1345,8 @@ const POWER_CATALOG = [
         "quantityLabel": "use"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-illusion",
@@ -1323,7 +1372,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-intangibility",
@@ -1348,7 +1398,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-invisibility",
@@ -1382,7 +1433,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-light-darkness",
@@ -1405,13 +1457,17 @@ const POWER_CATALOG = [
     "shortSummary": "Creates or dispels illumination or darkness.",
     "variableCostNotes": "Blessed is light-only.",
     "tags": [
-      "utility"
+      "utility",
+      "light",
+      "darkness",
+      "active-duration"
     ],
     "supportsVariableSpend": false,
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "Paired power. Blessed is Light-only in Deadlands.",
+    "manualVariableSpend": false
   },
   {
     "id": "power-mind-wipe",
@@ -1434,7 +1490,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-numb",
@@ -1456,13 +1513,17 @@ const POWER_CATALOG = [
     "shortSummary": "Caster and nearby allies ignore some Wound or Fatigue penalties; raise improves amount and suppresses temporary injuries.",
     "variableCostNotes": "Area is based on caster Spirit in tabletop inches.",
     "tags": [
-      "healing"
+      "buff",
+      "wound-penalty",
+      "fatigue",
+      "active-duration"
     ],
     "supportsVariableSpend": false,
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-object-reading",
@@ -1487,7 +1548,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-protection",
@@ -1511,8 +1573,10 @@ const POWER_CATALOG = [
     "variableCostNotes": "Additional Recipients +1; More Armor may apply depending on source.",
     "tags": [
       "defense",
+      "armor",
       "buff",
-      "additional-recipients"
+      "additional-recipients",
+      "active-duration"
     ],
     "supportsVariableSpend": true,
     "supportsActiveToggle": true,
@@ -1525,7 +1589,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-puppet",
@@ -1549,7 +1614,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-relief",
@@ -1572,6 +1638,9 @@ const POWER_CATALOG = [
     "variableCostNotes": "Additional Recipients +1.",
     "tags": [
       "healing",
+      "fatigue",
+      "shaken",
+      "stunned",
       "additional-recipients"
     ],
     "supportsVariableSpend": true,
@@ -1585,7 +1654,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-resurrection",
@@ -1609,7 +1679,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-sanctify",
@@ -1635,7 +1706,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-shape-change",
@@ -1652,22 +1724,19 @@ const POWER_CATALOG = [
     "requiredForBackgrounds": [],
     "restrictionsByBackground": {},
     "shortSummary": "Caster takes on animal or creature form depending on cost and Rank.",
-    "variableCostNotes": "Variable cost by form.",
+    "variableCostNotes": "Variable cost by form. Manual table-choice cost; do not use calculator-style variable spend until exact cost options are implemented.",
     "tags": [
-      "variable-cost"
+      "utility",
+      "transformation",
+      "manual-cost",
+      "active-duration"
     ],
-    "supportsVariableSpend": true,
+    "supportsVariableSpend": false,
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
-    "variableSpendOptions": [
-      {
-        "id": "variable-cost",
-        "label": "Variable Cost",
-        "costPer": null,
-        "quantityLabel": "table choice"
-      }
-    ],
-    "notes": ""
+    "variableSpendOptions": [],
+    "notes": "Manual variable spend: choose final PP cost from the rulebook/table.",
+    "manualVariableSpend": true
   },
   {
     "id": "power-sloth-speed",
@@ -1690,13 +1759,17 @@ const POWER_CATALOG = [
     "shortSummary": "Sloth reduces movement/actions; Speed increases movement/actions.",
     "variableCostNotes": "Track chosen mode.",
     "tags": [
-      "buff"
+      "buff",
+      "debuff",
+      "movement",
+      "mode-selection"
     ],
     "supportsVariableSpend": false,
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "Paired power. Track whether Sloth or Speed is being cast.",
+    "manualVariableSpend": false
   },
   {
     "id": "power-slumber",
@@ -1728,7 +1801,8 @@ const POWER_CATALOG = [
         "quantityLabel": "use"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-smite",
@@ -1753,8 +1827,10 @@ const POWER_CATALOG = [
     "variableCostNotes": "Additional Recipients +1. Chi Master hands/feet count as weapons.",
     "tags": [
       "buff",
-      "attack",
-      "additional-recipients"
+      "weapon-buff",
+      "damage",
+      "additional-recipients",
+      "active-duration"
     ],
     "supportsVariableSpend": true,
     "supportsActiveToggle": true,
@@ -1767,7 +1843,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-sound-silence",
@@ -1787,13 +1864,17 @@ const POWER_CATALOG = [
     "shortSummary": "Creates sound or mutes sound in an area or target.",
     "variableCostNotes": "Track chosen mode.",
     "tags": [
-      "utility"
+      "utility",
+      "sound",
+      "silence",
+      "mode-selection"
     ],
     "supportsVariableSpend": false,
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "Paired power. Track whether Sound or Silence is being cast.",
+    "manualVariableSpend": false
   },
   {
     "id": "power-speak-language",
@@ -1829,7 +1910,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-stun",
@@ -1861,7 +1943,8 @@ const POWER_CATALOG = [
         "quantityLabel": "template step"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-summon-ally",
@@ -1879,22 +1962,19 @@ const POWER_CATALOG = [
     "requiredForBackgrounds": [],
     "restrictionsByBackground": {},
     "shortSummary": "Conjures an allied creature; cost depends on ally strength.",
-    "variableCostNotes": "Variable cost by ally type.",
+    "variableCostNotes": "Variable cost by ally type. Manual table-choice cost; do not use calculator-style variable spend until exact cost options are implemented.",
     "tags": [
-      "variable-cost"
+      "summoning",
+      "ally",
+      "manual-cost",
+      "active-duration"
     ],
-    "supportsVariableSpend": true,
+    "supportsVariableSpend": false,
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
-    "variableSpendOptions": [
-      {
-        "id": "variable-cost",
-        "label": "Variable Cost",
-        "costPer": null,
-        "quantityLabel": "table choice"
-      }
-    ],
-    "notes": ""
+    "variableSpendOptions": [],
+    "notes": "Manual variable spend: choose final PP cost from the rulebook/table.",
+    "manualVariableSpend": true
   },
   {
     "id": "power-telekinesis",
@@ -1918,7 +1998,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-teleport",
@@ -1945,7 +2026,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": false,
     "supportsMaintenance": false,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-trinkets",
@@ -1983,7 +2065,8 @@ const POWER_CATALOG = [
         "quantityLabel": "use"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-wall-walker",
@@ -2018,7 +2101,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-warrior-s-gift",
@@ -2046,7 +2130,8 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-wilderness-walk",
@@ -2078,7 +2163,8 @@ const POWER_CATALOG = [
         "quantityLabel": "extra target"
       }
     ],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   },
   {
     "id": "power-zombie",
@@ -2103,11 +2189,10 @@ const POWER_CATALOG = [
     "supportsActiveToggle": true,
     "supportsMaintenance": true,
     "variableSpendOptions": [],
-    "notes": ""
+    "notes": "",
+    "manualVariableSpend": false
   }
 ];
-
-const RANK_ORDER = { Novice: 0, Seasoned: 1, Veteran: 2, Heroic: 3, Legendary: 4 };
 
 function normalizePowerCatalogText(value) {
   return String(value || "")
