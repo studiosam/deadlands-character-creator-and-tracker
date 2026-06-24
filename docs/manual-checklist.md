@@ -255,3 +255,46 @@ Use this section during testing.
 - [ ] Existing advances without `targets` still load.
 - [ ] Existing imported advances still load.
 - [ ] Applied advances still preserve `appliedChanges`.
+
+# Advancement Form Cleanup Tests
+
+## UI cleanup
+
+- [ ] Non-critical browser alerts have been replaced with inline messages.
+- [ ] Apply-to-character control is clearly labeled and positioned inside the form.
+- [ ] Notes are hidden by default on the add form.
+- [ ] Manual target and summary fields are hidden for supported adaptive advance types.
+- [ ] Generated summary preview appears for supported adaptive advance types.
+- [ ] Custom skill fields are not shown by default.
+
+## Increase Skill rules
+
+- [ ] A skill equal to its linked attribute is valid for Increase Skill.
+- [ ] A skill higher than its linked attribute is valid for Increase Skill.
+- [ ] A skill lower than its linked attribute is not valid for Increase Skill.
+- [ ] A skill at d12 cannot be increased.
+- [ ] Invalid Increase Skill choices show an inline warning.
+- [ ] Invalid Increase Skill choices cannot be applied.
+
+## Increase Two Skills rules
+
+- [ ] Two different skills below their linked attributes are valid.
+- [ ] Selecting the same skill twice shows an inline warning.
+- [ ] A skill equal to its linked attribute is not valid for Increase Two Skills.
+- [ ] A skill higher than its linked attribute is not valid for Increase Two Skills.
+- [ ] If either selected skill is invalid, neither skill is applied.
+- [ ] Invalid Increase Two Skills choices show an inline warning.
+- [ ] Invalid Increase Two Skills choices cannot be applied.
+
+## Attribute rules
+
+- [ ] Attribute dropdown still appears for Increase Attribute.
+- [ ] Attribute before/after preview displays.
+- [ ] Attribute at d12 cannot be increased.
+
+## Persistence
+
+- [ ] Save/reload preserves cleaned adaptive advance entries.
+- [ ] JSON export/import preserves cleaned adaptive advance entries.
+- [ ] Existing old advances still load.
+- [ ] Existing applied advances still preserve `appliedChanges`.

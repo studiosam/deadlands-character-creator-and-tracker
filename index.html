@@ -310,14 +310,20 @@
                       <option value="advancement">advancement</option>
                     </select></label>
                   <label id="advancePowerPointAmountField">Power Point amount<input id="advancePowerPointAmountInput" class="tiny" type="number" min="1" step="1" placeholder="5" /></label>
-                  <label class="checkline full">
-                    <input id="advanceApplyInput" type="checkbox" />
-                    Apply to character
-                  </label>
-                  <label class="full">Notes<textarea id="advanceNotesInput" rows="3"></textarea></label>
+                  <button id="showAdvanceNotesBtn" class="ghost small-action" type="button">
+                    Add notes
+                  </button>
+                  <label id="advanceNotesField" class="full hidden">Notes<textarea id="advanceNotesInput" rows="3"></textarea></label>
                 </div>
                 <p id="advanceAppliedNote" class="entry-warning hidden"></p>
                 <p id="advanceWarningText" class="entry-warning hidden"></p>
+                <div id="advanceApplyPanel" class="advance-apply-panel hidden">
+                  <label class="checkline">
+                    <input id="advanceApplyInput" type="checkbox" />
+                    <span>Apply this advance to the character sheet</span>
+                  </label>
+                  <p>When checked, this advance updates the sheet now and records what changed.</p>
+                </div>
                 <div class="controls editor-actions">
                   <button id="saveAdvanceBtn" type="button">Save Advance</button>
                   <button id="cancelAdvanceEditBtn" class="ghost" type="button">Cancel</button>

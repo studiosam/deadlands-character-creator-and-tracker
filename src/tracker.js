@@ -88,6 +88,40 @@ const ADVANCE_APPLY_TYPES = [
   "Power Points",
 ];
 const DIE_STEPS = ["d4", "d6", "d8", "d10", "d12"];
+const SKILL_LINKED_ATTRIBUTES = {
+  Academics: "Smarts",
+  Athletics: "Agility",
+  Battle: "Smarts",
+  Boating: "Agility",
+  "Common Knowledge": "Smarts",
+  Driving: "Agility",
+  Electronics: "Smarts",
+  Faith: "Spirit",
+  Fighting: "Agility",
+  Focus: "Spirit",
+  Gambling: "Smarts",
+  Hacking: "Smarts",
+  Healing: "Smarts",
+  Intimidation: "Spirit",
+  Language: "Smarts",
+  Notice: "Smarts",
+  Occult: "Smarts",
+  Performance: "Spirit",
+  Persuasion: "Spirit",
+  Piloting: "Agility",
+  Psionics: "Smarts",
+  Repair: "Smarts",
+  Research: "Smarts",
+  Riding: "Agility",
+  Science: "Smarts",
+  Shooting: "Agility",
+  Spellcasting: "Smarts",
+  Stealth: "Agility",
+  Survival: "Smarts",
+  Taunt: "Smarts",
+  Thievery: "Agility",
+  "Weird Science": "Smarts",
+};
 
 const CONSUMABLE_GEAR_CONVERSIONS = {
   "matches-box-100": {
@@ -142,6 +176,7 @@ let hindranceEditingId = "";
 let powerEditingId = "";
 let advanceEditingId = "";
 let advancePowerTargetIds = [];
+let advanceManualEdgeMode = false;
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -218,6 +253,9 @@ const els = {
   advanceSourceInput: $("#advanceSourceInput"),
   advancePowerPointAmountInput: $("#advancePowerPointAmountInput"),
   advancePowerPointAmountField: $("#advancePowerPointAmountField"),
+  showAdvanceNotesBtn: $("#showAdvanceNotesBtn"),
+  advanceNotesField: $("#advanceNotesField"),
+  advanceApplyPanel: $("#advanceApplyPanel"),
   advanceApplyInput: $("#advanceApplyInput"),
   advanceAppliedNote: $("#advanceAppliedNote"),
   advanceWarningText: $("#advanceWarningText"),
@@ -808,11 +846,94 @@ function getAdvanceRankFromCount(count) {
   return "Novice";
 }
 
-function getNextDieStep(value) {
+function getDieStepIndex(value) {
   const text = String(value || "").trim().toLowerCase();
-  const index = DIE_STEPS.indexOf(text);
+  return DIE_STEPS.indexOf(text);
+}
+
+function compareDieSteps(left, right) {
+  return getDieStepIndex(left) - getDieStepIndex(right);
+}
+
+function getNextDieStep(value) {
+  const index = getDieStepIndex(value);
   if (index < 0) return "";
   return DIE_STEPS[Math.min(index + 1, DIE_STEPS.length - 1)];
+}
+
+function getLinkedAttributeForSkill(skillName) {
+  const skill = findSkillByName(skillName);
+  const linked = skill?.linkedAttribute || skill?.attribute || "";
+  if (linked) return displayNameFromKey(plainEntryName(linked));
+  const text = plainEntryName(skillName);
+  const match = Object.entries(SKILL_LINKED_ATTRIBUTES).find(
+    ([name]) => plainEntryName(name) === text,
+  );
+  return match?.[1] || "";
+}
+
+function getAttributeDie(currentCharacter, attributeName) {
+  const text = plainEntryName(attributeName);
+  const key = ATTRIBUTE_ORDER.find(
+    (attribute) => attribute === text || plainEntryName(displayNameFromKey(attribute)) === text,
+  );
+  return key ? currentCharacter.attributes?.[key] || "d4" : "";
+}
+
+function getSkillDie(currentCharacter, skillName) {
+  const text = plainEntryName(skillName);
+  const skill = (currentCharacter.skills || []).find(
+    (item) => plainEntryName(item.name) === text,
+  );
+  return skill?.die || skill?.value || "";
+}
+
+function canUseSingleSkillAdvance(currentCharacter, skillName) {
+  const skillDie = getSkillDie(currentCharacter, skillName);
+  const linkedAttribute = getLinkedAttributeForSkill(skillName);
+  const attributeDie = getAttributeDie(currentCharacter, linkedAttribute);
+  const skillIndex = getDieStepIndex(skillDie);
+  const attributeIndex = getDieStepIndex(attributeDie);
+  return {
+    ok:
+      skillIndex >= 0 &&
+      attributeIndex >= 0 &&
+      skillIndex < DIE_STEPS.length - 1 &&
+      skillIndex >= attributeIndex,
+    skillDie,
+    linkedAttribute,
+    attributeDie,
+    reason:
+      skillIndex === DIE_STEPS.length - 1
+        ? "This skill is already at d12."
+        : skillIndex >= 0 && attributeIndex >= 0 && skillIndex < attributeIndex
+          ? "This skill is below its linked attribute, so use Increase Two Skills instead."
+          : "",
+  };
+}
+
+function canUseTwoSkillAdvance(currentCharacter, skillName) {
+  const skillDie = getSkillDie(currentCharacter, skillName);
+  const linkedAttribute = getLinkedAttributeForSkill(skillName);
+  const attributeDie = getAttributeDie(currentCharacter, linkedAttribute);
+  const skillIndex = getDieStepIndex(skillDie);
+  const attributeIndex = getDieStepIndex(attributeDie);
+  return {
+    ok:
+      skillIndex >= 0 &&
+      attributeIndex >= 0 &&
+      skillIndex < DIE_STEPS.length - 1 &&
+      skillIndex < attributeIndex,
+    skillDie,
+    linkedAttribute,
+    attributeDie,
+    reason:
+      skillIndex === DIE_STEPS.length - 1
+        ? "This skill is already at d12."
+        : skillIndex >= 0 && attributeIndex >= 0 && skillIndex >= attributeIndex
+          ? `This skill is not below ${linkedAttribute} ${attributeDie}.`
+          : "",
+  };
 }
 
 function isSupportedAppliedAdvance(type) {
@@ -950,10 +1071,22 @@ function advanceWarnings(currentCharacter, advance, editingId = "") {
     targets.some((target) => target.before === "d12" || target.after === "d12" && target.before === target.after)
   )
     warnings.push("Selected skill is already at d12 and cannot increase.");
+  if (type === "Increase Skill" && targets[0]?.targetName) {
+    const check = canUseSingleSkillAdvance(currentCharacter, targets[0].targetName);
+    if (!check.ok) warnings.push(check.reason || "Selected skill cannot use Increase Skill.");
+  }
   if (type === "Increase Two Skills") {
     const names = targets.map((target) => plainEntryName(target.targetName)).filter(Boolean);
     if (names.length === 2 && names[0] === names[1])
       warnings.push("Select two different skills.");
+    targets.forEach((target) => {
+      if (!target.targetName) return;
+      const check = canUseTwoSkillAdvance(currentCharacter, target.targetName);
+      if (!check.ok)
+        warnings.push(
+          `${target.targetName} cannot be selected for Increase Two Skills because ${check.reason || "it is not eligible"}`,
+        );
+    });
   }
   if (
     type === "Increase Attribute" &&
@@ -974,6 +1107,51 @@ function advanceWarnings(currentCharacter, advance, editingId = "") {
   )
     warnings.push(`Selected rank differs from expected rank ${expectedRank}.`);
 
+  return warnings;
+}
+
+function getAdvanceApplicationWarnings(currentCharacter, advance) {
+  if (!isSupportedAppliedAdvance(advance.type)) return [];
+  const targets = advanceTargetsForLegacy(advance);
+  const warnings = [];
+
+  if (advance.type === "New Edge" && !targets[0]?.targetName)
+    warnings.push("Select an Edge before applying.");
+  if (advance.type === "New Powers" && !targets.length)
+    warnings.push("Select at least one power before applying.");
+  if (advance.type === "Power Points" && parsePowerPointAdvanceAmount(advance) < 1)
+    warnings.push("Power Point increase must be at least 1.");
+  if (advance.type === "Increase Skill") {
+    const target = targets[0];
+    if (!target?.targetName) warnings.push("Select a skill before applying.");
+    else {
+      const check = canUseSingleSkillAdvance(currentCharacter, target.targetName);
+      if (!check.ok)
+        warnings.push(
+          check.reason || "This skill is not eligible for Increase Skill.",
+        );
+    }
+  }
+  if (advance.type === "Increase Two Skills") {
+    if (targets.length !== 2) warnings.push("Select two skills before applying.");
+    const names = targets.map((target) => plainEntryName(target.targetName)).filter(Boolean);
+    if (names.length === 2 && names[0] === names[1])
+      warnings.push("Select two different skills.");
+    targets.forEach((target) => {
+      if (!target.targetName) return;
+      const check = canUseTwoSkillAdvance(currentCharacter, target.targetName);
+      if (!check.ok)
+        warnings.push(
+          `${target.targetName} cannot be selected for Increase Two Skills because ${check.reason || "it is not eligible"}`,
+        );
+    });
+  }
+  if (advance.type === "Increase Attribute") {
+    const target = targets[0];
+    if (!target?.targetName) warnings.push("Select an attribute before applying.");
+    else if (target.before === "d12" || target.after === target.before)
+      warnings.push("Selected attribute is already at d12 and cannot increase.");
+  }
   return warnings;
 }
 
@@ -1042,12 +1220,20 @@ function skillTargetForName(name) {
   const skill = findSkillByName(name);
   const before = skillValue(skill);
   const after = before ? getNextDieStep(before) : "d4";
+  const linkedAttribute = getLinkedAttributeForSkill(name);
+  const linkedAttributeDie = getAttributeDie(character, linkedAttribute);
+  const single = canUseSingleSkillAdvance(character, name);
+  const two = canUseTwoSkillAdvance(character, name);
   return {
     targetType: "skill",
     targetName: name,
     targetId: slugify(name),
     before,
     after,
+    linkedAttribute,
+    linkedAttributeDie,
+    eligibleForSingleSkillAdvance: single.ok,
+    eligibleForTwoSkillAdvance: two.ok,
   };
 }
 
@@ -1254,6 +1440,8 @@ function applyAdvanceToCharacter(advance) {
   if (!isSupportedAppliedAdvance(advance.type)) return advance;
   const normalized = normalizeAdvanceEntry(advance);
   const targets = advanceTargetsForLegacy(normalized);
+  const applicationWarnings = getAdvanceApplicationWarnings(character, normalized);
+  if (applicationWarnings.length) throw new Error(applicationWarnings.join(" "));
   const changes = [];
 
   if (normalized.type === "New Edge") {
@@ -4218,7 +4406,7 @@ function skillSelectMarkup(id, label, selectedName = "") {
     .map((skill) =>
       optionMarkup(skill.name, `${skill.name} (${skillValue(skill) || "untrained"})`, skill.name === selectedName),
     )
-    .join("")}</select></label><label>Custom skill<input id="${esc(id)}Custom" placeholder="Custom skill name" value="${skills.some((skill) => skill.name === selectedName) ? "" : esc(selectedName)}" /></label>`;
+    .join("")}</select></label>`;
 }
 
 function advanceGeneratedValues() {
@@ -4226,7 +4414,9 @@ function advanceGeneratedValues() {
   if (type === "New Edge") {
     const edgeId = $("#advanceEdgeSelect")?.value || "";
     const catalogEntry = chosen(EDGE_CATALOG, edgeId);
-    const custom = $("#advanceEdgeCustomInput")?.value.trim() || "";
+    const custom = advanceManualEdgeMode
+      ? $("#advanceEdgeCustomInput")?.value.trim() || ""
+      : "";
     const name = catalogEntry?.name || custom;
     const target = name
       ? {
@@ -4242,28 +4432,32 @@ function advanceGeneratedValues() {
       targetId: target?.targetId || "",
       catalogId: target?.catalogId || "",
       summary: name ? `New Edge: ${name}` : "",
+      preview: name ? `New Edge: ${name}` : "Select an Edge before applying.",
       targets: target ? [target] : [],
     };
   }
 
   if (type === "Increase Skill") {
     const selected = $("#advanceSkillSelect")?.value || "";
-    const custom = $("#advanceSkillSelectCustom")?.value.trim() || "";
-    const name = selected || custom;
+    const name = selected;
     const target = name ? skillTargetForName(name) : null;
+    const check = name ? canUseSingleSkillAdvance(character, name) : null;
     return {
       targetType: "skill",
       targetName: name,
       summary: target
         ? `Increase Skill: ${name} ${target.before || "untrained"} → ${target.after}`
         : "",
+      preview: target
+        ? `Increase Skill: ${name} ${target.before || "untrained"} -> ${target.after}\nLinked Attribute: ${target.linkedAttribute || "Unknown"} ${target.linkedAttributeDie || "-"}\nEligible: ${check?.ok ? "yes" : `no - ${check?.reason || "not eligible"}`}`
+        : "Select a skill. Add missing skills to the character sheet first, then return here to advance it.",
       targets: target ? [target] : [],
     };
   }
 
   if (type === "Increase Two Skills") {
-    const first = $("#advanceSkillOneSelect")?.value || $("#advanceSkillOneSelectCustom")?.value.trim() || "";
-    const second = $("#advanceSkillTwoSelect")?.value || $("#advanceSkillTwoSelectCustom")?.value.trim() || "";
+    const first = $("#advanceSkillOneSelect")?.value || "";
+    const second = $("#advanceSkillTwoSelect")?.value || "";
     const targets = [first, second].filter(Boolean).map(skillTargetForName);
     return {
       targetType: "skill",
@@ -4273,6 +4467,14 @@ function advanceGeneratedValues() {
             .map((target) => `${target.targetName} ${target.before || "untrained"} → ${target.after}`)
             .join(", ")}`
         : "",
+      preview: targets.length
+        ? `Increase Two Skills:\n${targets
+            .map((target) => {
+              const check = canUseTwoSkillAdvance(character, target.targetName);
+              return `${target.targetName} ${target.before || "untrained"} -> ${target.after}, linked ${target.linkedAttribute || "Unknown"} ${target.linkedAttributeDie || "-"}, ${check.ok ? "eligible" : `not eligible - ${check.reason || "not eligible"}`}`;
+            })
+            .join("\n")}`
+        : "Select two skills. Add missing skills to the character sheet first, then return here to advance them.",
       targets,
     };
   }
@@ -4350,25 +4552,36 @@ function syncAdvanceGeneratedFields() {
   const preview = $("#advanceGeneratedSummary");
   if (preview) {
     preview.textContent =
-      generated.summary || "Choose a target to generate the advance summary.";
+      generated.preview || generated.summary || "Choose a target to generate the advance summary.";
   }
   const warning = $("#advanceDynamicWarning");
   if (warning) {
-    const warnings = advanceWarnings(character, {
+    const warningAdvance = {
       type,
       number: Number(els.advanceNumberInput.value) || nextAdvanceNumber(),
       targetName: generated.targetName,
       targets: generated.targets,
       rank: els.advanceRankInput.value,
-    }, advanceEditingId);
+      powerPointAmount: generated.powerPointAmount,
+    };
+    const warnings = [
+      ...advanceWarnings(character, warningAdvance, advanceEditingId),
+      ...(els.advanceApplyInput.checked
+        ? getAdvanceApplicationWarnings(character, warningAdvance)
+        : []),
+    ];
     warning.textContent = warnings.join(" ");
     warning.classList.toggle("hidden", !warnings.length);
+    els.saveAdvanceBtn.disabled =
+      els.advanceApplyInput.checked &&
+      getAdvanceApplicationWarnings(character, warningAdvance).length > 0;
   }
 }
 
 function renderAdvanceDynamicFields(advance = null) {
   const type = els.advanceTypeInput.value;
   const applied = Boolean(advance?.applied);
+  els.saveAdvanceBtn.disabled = false;
   const targets = advanceTargetsForLegacy(advance || {
     type,
     targetName: els.advanceTargetNameInput.value,
@@ -4382,7 +4595,8 @@ function renderAdvanceDynamicFields(advance = null) {
   if (type === "New Edge") {
     const selected = targets[0]?.catalogId || targets[0]?.targetId || "";
     const custom = selected ? "" : targets[0]?.targetName || "";
-    els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid"><label>Edge<select id="advanceEdgeSelect">${optionMarkup("", "Custom / choose Edge", !selected)}${EDGE_CATALOG.map((edge) => optionMarkup(edge.id, `${edge.name} • ${edge.rank || "Unknown"}`, edge.id === selected)).join("")}</select></label><label>Custom Edge<input id="advanceEdgeCustomInput" value="${esc(custom)}" placeholder="Custom Edge name" /></label><p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
+    if (custom && !selected) advanceManualEdgeMode = true;
+    els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid"><label>Edge<select id="advanceEdgeSelect">${optionMarkup("", "Choose Edge", !selected)}${EDGE_CATALOG.map((edge) => optionMarkup(edge.id, `${edge.name} ? ${edge.rank || "Unknown"}`, edge.id === selected)).join("")}</select></label><button id="advanceManualEdgeToggle" class="ghost small-action" type="button">${advanceManualEdgeMode ? "Use Edge dropdown" : "Use manual entry"}</button><label id="advanceManualEdgeField" class="${advanceManualEdgeMode ? "" : "hidden"}">Manual Edge<input id="advanceEdgeCustomInput" value="${esc(custom)}" placeholder="Custom Edge name" /></label><p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
   } else if (type === "Increase Skill") {
     const selected = targets[0]?.targetName || "";
     els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid">${skillSelectMarkup("advanceSkillSelect", "Skill", selected)}<p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
@@ -4412,6 +4626,11 @@ function renderAdvanceDynamicFields(advance = null) {
       input.oninput = syncAdvanceGeneratedFields;
       input.onchange = syncAdvanceGeneratedFields;
     });
+  $("#advanceManualEdgeToggle")?.addEventListener("click", () => {
+    advanceManualEdgeMode = !advanceManualEdgeMode;
+    if (advanceManualEdgeMode) $("#advanceEdgeSelect").value = "";
+    renderAdvanceDynamicFields(advance);
+  });
   $("#advanceAddPowerTargetBtn")?.addEventListener("click", () => {
     const id = $("#advancePowerSelect")?.value || "";
     if (id && !advancePowerTargetIds.includes(id)) advancePowerTargetIds.push(id);
@@ -4453,6 +4672,11 @@ function resetAdvanceEditor(advance = null) {
   );
   els.advancePowerPointAmountInput.value =
     advance?.powerPointAmount || (els.advanceTypeInput.value === "Power Points" ? 5 : "");
+  advanceManualEdgeMode =
+    els.advanceTypeInput.value === "New Edge" &&
+    Boolean(advanceTargetsForLegacy(advance || { type: "New Edge" })[0]?.targetName) &&
+    !advanceTargetsForLegacy(advance || { type: "New Edge" })[0]?.catalogId &&
+    !advanceTargetsForLegacy(advance || { type: "New Edge" })[0]?.targetId;
   advancePowerTargetIds =
     els.advanceTypeInput.value === "New Powers"
       ? advanceTargetsForLegacy(advance || { type: "New Powers" })
@@ -4463,7 +4687,14 @@ function resetAdvanceEditor(advance = null) {
     !existing && isSupportedAppliedAdvance(els.advanceTypeInput.value);
   els.advanceApplyInput.disabled =
     alreadyApplied || !isSupportedAppliedAdvance(els.advanceTypeInput.value);
+  els.advanceApplyPanel.classList.toggle(
+    "hidden",
+    alreadyApplied || !isSupportedAppliedAdvance(els.advanceTypeInput.value),
+  );
   els.advanceNotesInput.value = advance?.notes || "";
+  const showNotes = Boolean(existing && advance?.notes);
+  els.advanceNotesField.classList.toggle("hidden", !showNotes);
+  els.showAdvanceNotesBtn.classList.toggle("hidden", showNotes);
   selectKnownValue(
     els.advanceSourceInput,
     advance?.source || "advancement",
@@ -4485,6 +4716,7 @@ function resetAdvanceEditor(advance = null) {
   els.advanceAppliedNote.classList.toggle("hidden", !alreadyApplied);
   renderAdvanceDynamicFields(advance);
   setEntryWarning(els.advanceWarningText, []);
+  els.saveAdvanceBtn.disabled = false;
 }
 
 function openAdvanceEditor(advance = null) {
@@ -4496,6 +4728,7 @@ function openAdvanceEditor(advance = null) {
 function closeAdvanceEditor() {
   advanceEditingId = "";
   els.advanceEditorPanel.classList.add("hidden");
+  els.saveAdvanceBtn.disabled = false;
   setEntryWarning(els.advanceWarningText, []);
 }
 
@@ -4549,13 +4782,13 @@ function saveAdvanceEditor() {
   const draft = advanceDraftFromForm();
   const warnings = advanceWarnings(character, draft, advanceEditingId);
   setEntryWarning(els.advanceWarningText, warnings);
-  if (
-    warnings.length &&
-    !confirm(`${warnings.join("\n")}\n\nSave this advance anyway?`)
-  )
-    return;
   let savedAdvance = draft;
   if (els.advanceApplyInput.checked && !draft.applied) {
+    const applicationWarnings = getAdvanceApplicationWarnings(character, draft);
+    if (applicationWarnings.length) {
+      setEntryWarning(els.advanceWarningText, applicationWarnings);
+      return;
+    }
     try {
       savedAdvance = applyAdvanceToCharacter(draft);
     } catch (error) {
@@ -4637,10 +4870,12 @@ function removeAdvanceWithPrompt(advance) {
 
   const undoPlan = getAdvanceUndoPlan(advance);
   if (!undoPlan.safe) {
-    alert(
-      `Applied changes cannot be safely undone.\n\n${undoPlan.messages.join("\n")}`,
-    );
-    if (!confirm(`Remove ${label} history only?`)) return;
+    if (
+      !confirm(
+        `Applied changes cannot be safely undone.\n\n${undoPlan.messages.join("\n")}\n\nRemove ${label} history only?`,
+      )
+    )
+      return;
     removeAdvance(character, advance.id);
     render();
     save();
@@ -4841,12 +5076,20 @@ els.advanceTypeInput.onchange = () => {
   els.advanceTargetTypeInput.value = targetTypeForAdvanceType(type);
   els.advanceApplyInput.disabled = !isSupportedAppliedAdvance(type);
   els.advanceApplyInput.checked = isSupportedAppliedAdvance(type);
+  els.advanceApplyPanel.classList.toggle("hidden", !isSupportedAppliedAdvance(type));
   if (type === "Power Points" && !els.advancePowerPointAmountInput.value)
     els.advancePowerPointAmountInput.value = 5;
   advancePowerTargetIds = [];
+  advanceManualEdgeMode = false;
   renderAdvanceDynamicFields();
 };
 els.advancePowerPointAmountInput.oninput = syncAdvanceGeneratedFields;
+els.advanceApplyInput.onchange = syncAdvanceGeneratedFields;
+els.showAdvanceNotesBtn.onclick = () => {
+  els.advanceNotesField.classList.remove("hidden");
+  els.showAdvanceNotesBtn.classList.add("hidden");
+  els.advanceNotesInput.focus();
+};
 els.saveAdvanceBtn.onclick = saveAdvanceEditor;
 els.cancelAdvanceEditBtn.onclick = closeAdvanceEditor;
 [
