@@ -289,7 +289,8 @@
                       <option>Power Points</option>
                       <option>Other / Marshal-approved</option>
                     </select></label>
-                  <label>Target type<select id="advanceTargetTypeInput">
+                  <div id="advanceDynamicFields" class="full"></div>
+                  <label id="advanceTargetTypeField">Target type<select id="advanceTargetTypeInput">
                       <option value="">None</option>
                       <option value="edge">edge</option>
                       <option value="hindrance">hindrance</option>
@@ -300,15 +301,15 @@
                       <option value="resource">resource</option>
                       <option value="custom">custom</option>
                     </select></label>
-                  <label class="full">Summary<input id="advanceSummaryInput" placeholder="Quick Draw, Shooting d8, +5 Power Points..." /></label>
-                  <label class="full">Target name<input id="advanceTargetNameInput" placeholder="Edge, skill, attribute, power, or resource name" /></label>
+                  <label id="advanceSummaryField" class="full">Summary<input id="advanceSummaryInput" placeholder="Quick Draw, Shooting d8, +5 Power Points..." /></label>
+                  <label id="advanceTargetNameField" class="full">Target name<input id="advanceTargetNameInput" placeholder="Edge, skill, attribute, power, or resource name" /></label>
                   <label>Source<select id="advanceSourceInput">
                       <option value="manual">manual</option>
                       <option value="imported">imported</option>
                       <option value="marshal-override">marshal-override</option>
                       <option value="advancement">advancement</option>
                     </select></label>
-                  <label>Power Point amount<input id="advancePowerPointAmountInput" class="tiny" type="number" min="1" step="1" placeholder="5" /></label>
+                  <label id="advancePowerPointAmountField">Power Point amount<input id="advancePowerPointAmountInput" class="tiny" type="number" min="1" step="1" placeholder="5" /></label>
                   <label class="checkline full">
                     <input id="advanceApplyInput" type="checkbox" />
                     Apply to character

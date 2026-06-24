@@ -187,3 +187,71 @@ Use this section during testing.
 - [ ] The app does not perform full power legality validation.
 - [ ] The app does not perform full character creation economy validation.
 - [ ] The app does not silently undo imported advances.
+
+# Advancement Adaptive Form Tests
+
+## New Edge
+
+- [ ] Select `New Edge`.
+- [ ] Edge dropdown appears.
+- [ ] Selecting an Edge fills the generated summary.
+- [ ] Applying the advance adds the selected Edge.
+- [ ] Removing with undo removes the app-created Edge.
+
+## Increase Skill
+
+- [ ] Select `Increase Skill`.
+- [ ] Skill dropdown appears.
+- [ ] Current and after die values display.
+- [ ] Applying the advance increases the selected skill by one die step.
+- [ ] Skill at d12 shows a warning and does not increase.
+
+## Increase Two Skills
+
+- [ ] Select `Increase Two Skills`.
+- [ ] Two skill dropdowns appear.
+- [ ] Current and after die values display for both.
+- [ ] Selecting the same skill twice shows a warning.
+- [ ] Applying the advance increases both selected skills by one die step.
+- [ ] If one selected skill cannot increase, neither skill is partially applied.
+
+## Increase Attribute
+
+- [ ] Select `Increase Attribute`.
+- [ ] Attribute dropdown appears.
+- [ ] Current and after die values display.
+- [ ] Applying the advance increases the selected attribute by one die step.
+- [ ] Attribute at d12 shows a warning and does not increase.
+
+## New Powers
+
+- [ ] Select `New Powers`.
+- [ ] Power selector appears.
+- [ ] User can select one or more powers.
+- [ ] Selected powers appear in a selected powers list.
+- [ ] Generated summary lists selected powers.
+- [ ] Applying the advance adds selected powers to Known Powers.
+- [ ] Removing with undo removes the app-created Known Powers.
+
+## Power Points
+
+- [ ] Select `Power Points`.
+- [ ] Power Point amount field appears.
+- [ ] Default amount is +5.
+- [ ] Generated summary shows the amount.
+- [ ] Applying the advance increases max Power Points.
+
+## Other / Marshal-approved
+
+- [ ] Select `Other / Marshal-approved`.
+- [ ] Manual summary and target fields remain available.
+- [ ] Apply-to-character is disabled or ignored.
+- [ ] Saving records history only.
+
+## Persistence
+
+- [ ] Save/reload preserves structured `targets`.
+- [ ] JSON export/import preserves structured `targets`.
+- [ ] Existing advances without `targets` still load.
+- [ ] Existing imported advances still load.
+- [ ] Applied advances still preserve `appliedChanges`.

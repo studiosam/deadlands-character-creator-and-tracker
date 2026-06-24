@@ -1555,6 +1555,45 @@ h3 {
   margin-top: 0.65rem;
 }
 
+.advancement-dynamic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.selected-target-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.selected-target-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--dossier-rule);
+  border-radius: 999px;
+  background: rgba(255, 250, 239, 0.58);
+  color: var(--dossier-ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.selected-target-pill button {
+  width: auto;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  padding: 0;
+  border-radius: 999px;
+}
+
+@media (max-width: 720px) {
+  .advancement-dynamic-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .derived-scan-grid,
 .arcane-snapshot-grid {
   display: grid;
