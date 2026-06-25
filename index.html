@@ -82,6 +82,9 @@
               <button class="ghost" id="settingsMenuBtn" type="button" data-app-tab="settings">
                 Settings
               </button>
+              <button class="ghost" id="sourcesRulesetsMenuBtn" type="button" data-app-tab="sourcesRulesets">
+                Sources & Rulesets
+              </button>
               <button class="danger" id="resetBtn" type="button">Reset Tracker</button>
             </section>
           </div>
@@ -1044,6 +1047,91 @@
             <button id="settingsClearDemoFlagBtn" class="ghost" type="button">Exit Demo Mode</button>
             <button id="settingsClearAllBtn" class="danger" type="button">Clear Local Data</button>
           </div>
+        </section>
+      </section>
+
+      <section id="sourcesRulesetsPanel" class="dashboard tab-panel hidden settings-panel sources-rulesets-panel"
+        aria-labelledby="sourcesRulesetsHeading">
+        <section class="card wide settings-hero">
+          <div>
+            <p class="eyebrow">Campaign Profile</p>
+            <h2 id="sourcesRulesetsHeading">Sources & Rulesets</h2>
+            <p class="muted">
+              This app currently assumes a Deadlands: The Weird West campaign using the listed books.
+              Use the listed sources for character options unless the app marks an option as unsupported,
+              forbidden, or not yet implemented.
+            </p>
+          </div>
+        </section>
+
+        <section class="card settings-card">
+          <div class="section-title">
+            <div>
+              <h2>Profile</h2>
+            </div>
+          </div>
+          <ul class="sources-rulesets-list">
+            <li>Browning Private Security & Detective Agency</li>
+            <li>Deadlands: The Weird West focused profile</li>
+          </ul>
+        </section>
+
+        <section class="card settings-card">
+          <div class="section-title">
+            <div>
+              <h2>Books Used</h2>
+            </div>
+          </div>
+          <ul class="sources-rulesets-list">
+            <li>Savage Worlds: Adventure Edition</li>
+            <li>Deadlands: The Weird West</li>
+            <li>Deadlands Weird West Companion</li>
+          </ul>
+        </section>
+
+        <section class="card settings-card">
+          <div class="section-title">
+            <div>
+              <h2>Rules Assumptions</h2>
+            </div>
+          </div>
+          <ul class="sources-rulesets-list">
+            <li>Encumbrance is used</li>
+            <li>Minimum Strength is used</li>
+            <li>Wealth is tracked</li>
+            <li>Starting Wealth: $250</li>
+            <li>Starting Attribute Points: 5</li>
+            <li>Starting Skill Points: 12</li>
+            <li>Extra Perk Points: 0</li>
+          </ul>
+        </section>
+
+        <section class="card settings-card">
+          <div class="section-title">
+            <div>
+              <h2>Character Creation Scope</h2>
+            </div>
+          </div>
+          <ul class="sources-rulesets-list">
+            <li>Human is the only supported ancestry or race in the first implementation slice</li>
+            <li>Core skills include Athletics, Common Knowledge, Notice, Persuasion, and Stealth</li>
+            <li>Electronics and Hacking are not used for this profile</li>
+            <li>Trade based on Smarts is part of the campaign profile</li>
+            <li>Gear, Powers, Vehicles, Allies, and full campaign customization are later slices</li>
+          </ul>
+        </section>
+
+        <section class="card wide settings-card">
+          <div class="section-title">
+            <div>
+              <h2>Current Limitation</h2>
+            </div>
+          </div>
+          <ul class="sources-rulesets-list">
+            <li>This page is informational for now</li>
+            <li>The app does not currently support changing source books or campaign settings</li>
+            <li>Future versions may make this profile data-driven or editable</li>
+          </ul>
         </section>
       </section>
 

@@ -642,6 +642,35 @@ h3 {
   color: var(--muted);
 }
 
+.sources-rulesets-panel .settings-hero {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sources-rulesets-panel .settings-hero p {
+  max-width: 68rem;
+}
+
+.sources-rulesets-panel .settings-card {
+  align-content: start;
+}
+
+.sources-rulesets-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sources-rulesets-list li {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.045);
+  overflow-wrap: anywhere;
+}
+
 .settings-format-list span,
 .settings-link-row a {
   display: inline-flex;

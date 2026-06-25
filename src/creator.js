@@ -489,6 +489,7 @@ function setAppTab(tabName) {
     arcane: "#arcanePanel",
     notes: "#notesPanel",
     settings: "#settingsPanel",
+    sourcesRulesets: "#sourcesRulesetsPanel",
     library: "#libraryPanel",
     creation: "#creationPanel",
   };
