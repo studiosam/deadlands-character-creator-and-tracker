@@ -147,6 +147,121 @@ function removeSetupHindrance(id) {
   appToast("Hindrance removed.", "success");
 }
 
+function ensureSetupTraitsEditable() {
+  if (setupTraitsEditable()) return true;
+  appToast("Trait editing is only available for created characters with no Advances.", "danger");
+  return false;
+}
+
+function setupTraitDieFromIndex(index) {
+  return DIE_STEPS[clamp(index, 0, DIE_STEPS.length - 1)] || "d4";
+}
+
+function setupFindSkill(name) {
+  return (character.skills || []).find((skill) => skill.name === name);
+}
+
+function setupSkillDefinition(name) {
+  const referenceName = skillReferenceName(name);
+  return {
+    name: referenceName,
+    linkedAttribute: setupSkillAttributeKey(
+      SKILL_LINKED_ATTRIBUTES[referenceName] || "smarts",
+    ),
+    core: setupSkillIsCoreName(referenceName),
+  };
+}
+
+function updateSetupCreationBaseline() {
+  character.creation = {
+    normalAttributePointsAvailable: 5,
+    normalSkillPointsAvailable: 12,
+    ...(character.creation || {}),
+  };
+  character.creationBaseline = {
+    attributes: clone(character.attributes || {}),
+    skills: clone(character.skills || []),
+  };
+}
+
+function recalculateSetupTraitDerivedStats() {
+  const fighting = setupFindSkill("Fighting");
+  const fightingIndex = getDieStepIndex(fighting?.die || fighting?.value);
+  const fightingSides =
+    fightingIndex >= 0 ? Number(DIE_STEPS[fightingIndex].replace("d", "")) : 0;
+  const vigorIndex = getDieStepIndex(character.attributes?.vigor || "d4");
+  const vigorSides =
+    vigorIndex >= 0 ? Number(DIE_STEPS[vigorIndex].replace("d", "")) : 4;
+  const armor = armorValue("best");
+
+  character.derived = {
+    ...(character.derived || {}),
+    pace: Number(character.derived?.pace) || 6,
+    parry: 2 + Math.floor(fightingSides / 2),
+    baseToughness: 2 + Math.floor(vigorSides / 2),
+    toughness: 2 + Math.floor(vigorSides / 2) + armor,
+    armor,
+  };
+  character.armorStrength = character.attributes?.strength || "d4";
+  character.weaponStrength = character.attributes?.strength || "d4";
+}
+
+function commitSetupTraitChange() {
+  updateSetupCreationBaseline();
+  recalculateSetupTraitDerivedStats();
+  render();
+  save();
+}
+
+function changeSetupAttribute(name, direction) {
+  if (!ensureSetupTraitsEditable()) return;
+  const key = setupSkillAttributeKey(name);
+  if (!ATTRIBUTE_ORDER.includes(key)) return;
+  if (!character.attributes) character.attributes = {};
+  const currentIndex = Math.max(0, getDieStepIndex(character.attributes[key] || "d4"));
+  if (direction > 0) {
+    const stats = setupAttributePointStats();
+    if (currentIndex >= DIE_STEPS.length - 1 || stats.spent >= stats.available)
+      return;
+    character.attributes[key] = setupTraitDieFromIndex(currentIndex + 1);
+  } else if (currentIndex > 0) {
+    character.attributes[key] = setupTraitDieFromIndex(currentIndex - 1);
+  }
+  commitSetupTraitChange();
+}
+
+function changeSetupSkill(name, direction) {
+  if (!ensureSetupTraitsEditable()) return;
+  if (!Array.isArray(character.skills)) character.skills = [];
+  const existing = setupFindSkill(name);
+
+  if (!existing && direction > 0) {
+    const definition = setupSkillDefinition(name);
+    character.skills.push({
+      name,
+      die: "d4",
+      linkedAttribute: definition.linkedAttribute,
+      notes: "",
+      core: definition.core,
+    });
+    commitSetupTraitChange();
+    return;
+  }
+  if (!existing) return;
+
+  const currentIndex = getDieStepIndex(existing.die || existing.value);
+  if (direction > 0 && currentIndex >= 0 && currentIndex < DIE_STEPS.length - 1) {
+    existing.die = setupTraitDieFromIndex(currentIndex + 1);
+  } else if (direction < 0 && currentIndex > 0) {
+    existing.die = setupTraitDieFromIndex(currentIndex - 1);
+  } else if (direction < 0 && currentIndex <= 0 && !existing.core && !setupSkillIsCoreName(existing.name)) {
+    character.skills = character.skills.filter((skill) => skill !== existing);
+  } else {
+    return;
+  }
+  commitSetupTraitChange();
+}
+
 function syncSetupHindranceSeverity() {
   const catalogSelect = $("#setupHindranceCatalogSelect");
   const severityInput = $("#setupHindranceSeverityInput");
@@ -377,6 +492,14 @@ document.addEventListener("click", (event) => {
     addSetupHindrance();
   } else if (setupAction?.dataset.setupAction === "removeHindrance") {
     removeSetupHindrance(setupAction.dataset.hindranceId || "");
+  } else if (setupAction?.dataset.setupAction === "incAttribute") {
+    changeSetupAttribute(setupAction.dataset.traitName || "", 1);
+  } else if (setupAction?.dataset.setupAction === "decAttribute") {
+    changeSetupAttribute(setupAction.dataset.traitName || "", -1);
+  } else if (setupAction?.dataset.setupAction === "incSkill") {
+    changeSetupSkill(setupAction.dataset.traitName || "", 1);
+  } else if (setupAction?.dataset.setupAction === "decSkill") {
+    changeSetupSkill(setupAction.dataset.traitName || "", -1);
   }
   const entryAction = event.target?.closest?.("[data-entry-action]");
   if (entryAction) handleEntryAction(entryAction);

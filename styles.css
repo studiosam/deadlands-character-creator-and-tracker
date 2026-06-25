@@ -2370,6 +2370,67 @@ h3 {
   font-weight: 800;
 }
 
+.setup-trait-editor-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.setup-trait-editor-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--dossier-rule);
+  border-left: 4px solid rgba(121, 73, 24, 0.58);
+  border-radius: 8px;
+  background: rgba(255, 250, 239, 0.58);
+}
+
+.setup-trait-editor-row.skill-row.unskilled {
+  border-style: dashed;
+  border-left-style: solid;
+  background: rgba(255, 250, 239, 0.34);
+}
+
+.setup-trait-editor-row strong,
+.setup-trait-editor-row span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.setup-trait-editor-row strong {
+  color: var(--dossier-ink);
+  font-size: 0.95rem;
+}
+
+.setup-trait-editor-row span {
+  margin-top: 0.16rem;
+  color: var(--dossier-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.setup-trait-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.setup-trait-controls .tag-action {
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  justify-content: center;
+}
+
+.setup-trait-controls .tag-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .dossier-heading,
 .dossier-section-title {
   display: flex;
@@ -3216,6 +3277,14 @@ h3 {
 
   .setup-hindrance-row {
     grid-template-columns: 1fr;
+  }
+
+  .setup-trait-editor-row {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-trait-controls {
+    justify-content: flex-start;
   }
 
   .dossier-header-actions,

@@ -215,9 +215,14 @@ function characterSetupStatus(stepId) {
     return stats.unknownCount ? "Needs review" : "Complete";
   }
   if (stepId === "attributesSkills") {
-    return ATTRIBUTE_ORDER.every((key) => character.attributes?.[key])
-      ? "Complete"
-      : "Incomplete";
+    if (!ATTRIBUTE_ORDER.every((key) => character.attributes?.[key]))
+      return "Incomplete";
+    if (!setupTraitsEditable()) return "Complete";
+    const attributes = setupAttributePointStats();
+    const skills = setupSkillPointStats();
+    if (attributes.spent > attributes.available || skills.spent > skills.available)
+      return "Needs review";
+    return attributes.spent === attributes.available ? "Complete" : "Incomplete";
   }
   if (stepId === "edges") {
     const edges = character.edges || [];
@@ -302,6 +307,87 @@ function setupGearAuditCounts() {
     counts.ammo +
     counts.vehicles;
   return counts;
+}
+
+function setupCharacterIsCreated() {
+  return String(character.source || "").toLowerCase() === "created";
+}
+
+function setupTraitsEditable() {
+  return setupCharacterIsCreated() && !(character.advances || []).length;
+}
+
+function setupCreationRules() {
+  const creation = character.creation || {};
+  return {
+    normalAttributePoints: Math.max(
+      0,
+      Number(creation.normalAttributePointsAvailable) || 5,
+    ),
+    extraAttributeRaises: Math.max(
+      0,
+      Number(creation.extraAttributeRaisesFromHindrances) || 0,
+    ),
+    normalSkillPoints: Math.max(
+      0,
+      Number(creation.normalSkillPointsAvailable) || 12,
+    ),
+    extraSkillPoints: Math.max(
+      0,
+      Number(creation.extraSkillPointsFromHindrances) || 0,
+    ),
+  };
+}
+
+function setupAttributePointStats() {
+  const rules = setupCreationRules();
+  const spent = ATTRIBUTE_ORDER.reduce(
+    (sum, key) => sum + Math.max(0, getDieStepIndex(character.attributes?.[key])),
+    0,
+  );
+  const available = rules.normalAttributePoints + rules.extraAttributeRaises;
+  return {
+    ...rules,
+    spent,
+    available,
+    remaining: available - spent,
+  };
+}
+
+function setupSkillIsCoreName(name) {
+  return ["Athletics", "Common Knowledge", "Notice", "Persuasion", "Stealth"].includes(
+    skillReferenceName(name),
+  );
+}
+
+function setupSkillPointCost(skill) {
+  const skillIndex = getDieStepIndex(skill?.die || skill?.value);
+  if (skillIndex < 0) return 0;
+  const linkedAttribute = setupSkillAttributeKey(skillLinkedAttribute(skill));
+  const attributeIndex = Math.max(
+    0,
+    getDieStepIndex(character.attributes?.[linkedAttribute] || "d4"),
+  );
+  const baseIndex = skill?.core || setupSkillIsCoreName(skill?.name) ? 0 : -1;
+  let cost = 0;
+  for (let index = baseIndex + 1; index <= skillIndex; index += 1)
+    cost += index > attributeIndex ? 2 : 1;
+  return Math.max(0, cost);
+}
+
+function setupSkillPointStats() {
+  const rules = setupCreationRules();
+  const spent = (character.skills || []).reduce(
+    (sum, skill) => sum + setupSkillPointCost(skill),
+    0,
+  );
+  const available = rules.normalSkillPoints + rules.extraSkillPoints;
+  return {
+    ...rules,
+    spent,
+    available,
+    remaining: available - spent,
+  };
 }
 
 function sortedAttributeEntries() {
@@ -670,18 +756,142 @@ function renderSetupAncestry() {
   </section>`;
 }
 
+function setupTraitPointDetails(attributeStats, skillStats) {
+  return [
+    setupDetail(
+      "Attribute Points",
+      `${attributeStats.spent} / ${attributeStats.available}`,
+    ),
+    setupDetail(
+      "Attribute Normal / Extra",
+      `${attributeStats.normalAttributePoints} / ${attributeStats.extraAttributeRaises}`,
+    ),
+    setupDetail("Skill Points", `${skillStats.spent} / ${skillStats.available}`),
+    setupDetail("Skill Points Remaining", `${skillStats.remaining}`),
+    setupDetail(
+      "Skill Normal / Extra",
+      `${skillStats.normalSkillPoints} / ${skillStats.extraSkillPoints}`,
+    ),
+  ].join("");
+}
+
+function setupTraitControls(actionBase, name, decreaseDisabled, increaseDisabled) {
+  return `<div class="setup-trait-controls">
+    <button class="ghost tag-action" type="button" data-setup-action="dec${actionBase}" data-trait-name="${esc(name)}"${decreaseDisabled ? " disabled" : ""}>−</button>
+    <button class="ghost tag-action" type="button" data-setup-action="inc${actionBase}" data-trait-name="${esc(name)}"${increaseDisabled ? " disabled" : ""}>+</button>
+  </div>`;
+}
+
+function setupAttributeEditorRow(key, attributeStats) {
+  const die = character.attributes?.[key] || "d4";
+  const index = getDieStepIndex(die);
+  const label = displayNameFromKey(key);
+  const note = attributeUseNote(key);
+  return `<article class="setup-trait-editor-row trait-help-target" tabindex="0" title="${esc([label, note].filter(Boolean).join(". "))}">
+    <div>
+      <strong>${esc(label)}</strong>
+      <span>${esc(die)} • 1 point per step above d4</span>
+      ${note ? `<small class="trait-help" role="tooltip">${esc(note)}</small>` : ""}
+    </div>
+    ${setupTraitControls("Attribute", key, index <= 0, index >= DIE_STEPS.length - 1 || attributeStats.spent >= attributeStats.available)}
+  </article>`;
+}
+
+function setupSkillEditorRow(skill) {
+  const linkedAttribute = setupSkillAttributeKey(skill.linkedAttribute);
+  const attributeDie = character.attributes?.[linkedAttribute] || "d4";
+  const referenceName = skillReferenceName(skill.name);
+  const useNote = skillUseNote(skill.name);
+  const displayDie = skill.isUnskilled ? "d4-2" : skill.die || skill.value || "—";
+  const index = getDieStepIndex(skill.die || skill.value);
+  const cost = skill.isUnskilled ? 0 : setupSkillPointCost(skill);
+  const core = skill.core || setupSkillIsCoreName(skill.name);
+  const decreaseDisabled = skill.isUnskilled || (core && index <= 0);
+  const increaseDisabled = !skill.isUnskilled && index >= DIE_STEPS.length - 1;
+  const meta = [
+    displayDie,
+    `Linked ${displayNameFromKey(linkedAttribute) || linkedAttribute} ${attributeDie}`,
+    skill.isUnskilled ? "Unskilled" : `Cost ${cost}`,
+    core ? "Core" : "",
+  ].filter(Boolean);
+  const help = [
+    useNote,
+    `Linked attribute: ${displayNameFromKey(linkedAttribute) || linkedAttribute}.`,
+    skill.isUnskilled ? "Unskilled roll: d4-2." : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return `<article class="setup-trait-editor-row skill-row${skill.isUnskilled ? " unskilled" : ""} trait-help-target" tabindex="0" title="${esc([referenceName, help].filter(Boolean).join(". "))}">
+    <div>
+      <strong>${esc(skill.name || "Skill")}</strong>
+      <span>${esc(meta.join(" • "))}</span>
+      ${help ? `<small class="trait-help" role="tooltip">${esc(help)}</small>` : ""}
+    </div>
+    ${setupTraitControls("Skill", skill.name, decreaseDisabled, increaseDisabled)}
+  </article>`;
+}
+
+function renderSetupTraitAttributeGroup(attributeStats) {
+  if (setupTraitsEditable()) {
+    return `<div class="setup-trait-editor-list">
+      ${ATTRIBUTE_ORDER.map((key) => setupAttributeEditorRow(key, attributeStats)).join("")}
+    </div>`;
+  }
+
+  const attributeEntries = sortedAttributeEntries();
+  return `<div class="attribute-dice-grid">
+    ${
+      attributeEntries.length
+        ? attributeEntries.map(([name, die]) => attributeCardMarkup(name, die)).join("")
+        : emptyState("No attributes recorded.")
+    }
+  </div>`;
+}
+
+function renderSetupTraitSkillGroup(setupSkills) {
+  const editable = setupTraitsEditable();
+  return `<div class="setup-skill-attribute-groups">
+    ${ATTRIBUTE_ORDER.map((attributeKey) => {
+      const attributeSkills = setupSkills.filter(
+        (skill) => setupSkillAttributeKey(skill.linkedAttribute) === attributeKey,
+      );
+      return `<section class="setup-skill-attribute-group" aria-label="${esc(displayNameFromKey(attributeKey))} skills">
+        <div class="setup-skill-attribute-heading">
+          <h5>${esc(displayNameFromKey(attributeKey))}</h5>
+          <span>Attribute ${esc(character.attributes?.[attributeKey] || "—")}</span>
+        </div>
+        <div class="${editable ? "setup-trait-editor-list" : "skill-chip-grid"}">
+          ${
+            attributeSkills.length
+              ? attributeSkills
+                  .map((skill) =>
+                    editable ? setupSkillEditorRow(skill) : skillChipMarkup(skill),
+                  )
+                  .join("")
+              : emptyState("No linked skills in this profile.")
+          }
+        </div>
+      </section>`;
+    }).join("")}
+  </div>`;
+}
+
 function renderSetupTraits() {
   const attributeEntries = sortedAttributeEntries();
   const skills = sortedSkills();
   const setupSkills = setupSkillCatalogEntries();
   const unskilledCount = setupSkills.filter((skill) => skill.isUnskilled).length;
+  const editable = setupTraitsEditable();
   const hasAdvances = (character.advances || []).length > 0;
+  const attributeStats = setupAttributePointStats();
+  const skillPointStats = setupSkillPointStats();
 
   return `<section id="setupTraitsPanel" class="setup-step-panel" aria-labelledby="setupTraitsHeading">
     <div class="section-title">
       <div>
         <h3 id="setupTraitsHeading">Traits</h3>
-        <p>Read-only view of recorded Attributes and the full skill list. Trait editing and starting-trait audit rules come in a later setup slice.</p>
+        <p>${editable ? "Edit starting Attributes and Skills for this created character. Changes update the current character and its creation baseline." : "Read-only view of recorded Attributes and the full skill list."}</p>
       </div>
       ${setupStatusMarkup(characterSetupStatus("attributesSkills"))}
     </div>
@@ -692,49 +902,32 @@ function renderSetupTraits() {
       ${setupDetail("Unskilled Skills", `${unskilledCount}`)}
       ${setupDetail("Unskilled Value", "d4-2")}
       ${setupDetail("Recorded Advances", `${(character.advances || []).length}`)}
+      ${editable ? setupTraitPointDetails(attributeStats, skillPointStats) : ""}
     </div>
     ${
+      editable
+        ? '<p class="creator-note">Attribute raises cost 1 point per step above d4. Non-core skills cost 1 point at or below their linked Attribute and 2 points per step above it. Core skills start at d4 for free.</p>'
+        : ""
+    }
+    ${
       hasAdvances
-        ? '<p class="entry-advisory"><strong>Advanced character:</strong> this view shows recorded trait values. A later setup editor should separate starting traits from changes gained through Advances.</p>'
+        ? '<p class="entry-advisory"><strong>Advanced character:</strong> this view shows recorded trait values. Trait editing is locked here; use the Advances tab for current trait increases.</p>'
+        : ""
+    }
+    ${
+      !editable && !hasAdvances && !setupCharacterIsCreated()
+        ? '<p class="entry-advisory"><strong>Audit only:</strong> imported or sample characters do not expose editable starting Traits until import reconstruction exists.</p>'
         : ""
     }
     <div class="setup-trait-groups">
       <section class="setup-trait-group" aria-labelledby="setupAttributesHeading">
         <h4 id="setupAttributesHeading">Attributes</h4>
-        <div class="attribute-dice-grid">
-          ${
-            attributeEntries.length
-              ? attributeEntries
-                  .map(([name, die]) => attributeCardMarkup(name, die))
-                  .join("")
-              : emptyState("No attributes recorded.")
-          }
-        </div>
+        ${renderSetupTraitAttributeGroup(attributeStats)}
       </section>
       <section class="setup-trait-group" aria-labelledby="setupSkillsHeading">
         <h4 id="setupSkillsHeading">Skills</h4>
         <p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown as unskilled d4-2.</p>
-        <div class="setup-skill-attribute-groups">
-          ${ATTRIBUTE_ORDER.map((attributeKey) => {
-            const attributeSkills = setupSkills.filter(
-              (skill) =>
-                setupSkillAttributeKey(skill.linkedAttribute) === attributeKey,
-            );
-            return `<section class="setup-skill-attribute-group" aria-label="${esc(displayNameFromKey(attributeKey))} skills">
-              <div class="setup-skill-attribute-heading">
-                <h5>${esc(displayNameFromKey(attributeKey))}</h5>
-                <span>Attribute ${esc(character.attributes?.[attributeKey] || "—")}</span>
-              </div>
-              <div class="skill-chip-grid">
-                ${
-                  attributeSkills.length
-                    ? attributeSkills.map(skillChipMarkup).join("")
-                    : emptyState("No linked skills in this profile.")
-                }
-              </div>
-            </section>`;
-          }).join("")}
-        </div>
+        ${renderSetupTraitSkillGroup(setupSkills)}
       </section>
     </div>
   </section>`;

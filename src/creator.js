@@ -1314,6 +1314,10 @@ function finalizeCreation() {
     worstNightmare: creationDraft.worstNightmare,
     attributes: clone(creationDraft.attributes),
     skills: clone(creationDraft.skills),
+    creationBaseline: {
+      attributes: clone(creationDraft.attributes),
+      skills: clone(creationDraft.skills),
+    },
     hindrances: clone(creationDraft.hindrances),
     edges: clone(creationDraft.edges),
     creation: { ...clone(creationDraft.creation), finalized: true },

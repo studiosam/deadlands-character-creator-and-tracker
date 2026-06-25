@@ -23,6 +23,14 @@ function normalize(data) {
       ? normalized.attributes
       : {};
   normalized.skills = Array.isArray(normalized.skills) ? normalized.skills : [];
+  normalized.creation =
+    normalized.creation && typeof normalized.creation === "object"
+      ? normalized.creation
+      : null;
+  normalized.creationBaseline =
+    normalized.creationBaseline && typeof normalized.creationBaseline === "object"
+      ? normalized.creationBaseline
+      : null;
   normalized.conditions = {
     ...defaults.conditions,
     ...(normalized.conditions || {}),
@@ -53,6 +61,28 @@ function normalize(data) {
       : normalized.arcaneBackground;
   }
   normalized.advances = normalizeAdvances(normalized.advances);
+  if (
+    normalized.source === "created" &&
+    !normalized.creationBaseline &&
+    !normalized.advances.length
+  ) {
+    normalized.creationBaseline = {
+      attributes: clone(normalized.attributes),
+      skills: clone(normalized.skills),
+    };
+  }
+  if (normalized.creationBaseline) {
+    normalized.creationBaseline.attributes =
+      normalized.creationBaseline.attributes &&
+      typeof normalized.creationBaseline.attributes === "object"
+        ? normalized.creationBaseline.attributes
+        : {};
+    normalized.creationBaseline.skills = Array.isArray(
+      normalized.creationBaseline.skills,
+    )
+      ? normalized.creationBaseline.skills
+      : [];
+  }
 
   normalized.ammo =
     normalized.ammo && typeof normalized.ammo === "object"

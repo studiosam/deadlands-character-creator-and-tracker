@@ -576,6 +576,9 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   await expect(setupTraitsPanel).toContainText("Unskilled Value");
   await expect(setupTraitsPanel).toContainText("d4-2");
   await expect(
+    setupTraitsPanel.locator("[data-setup-action='incAttribute']"),
+  ).toHaveCount(0);
+  await expect(
     page
       .locator("#setupTraitsPanel .skill-chip")
       .filter({ hasText: "Healing" }),
@@ -648,6 +651,117 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   );
   await expect(page.locator("#setupReviewPanel")).toContainText("Known Powers");
   await expect(page.locator("#setupReviewPanel")).toContainText("Gear Items");
+});
+
+test("edits setup traits for created characters and stores the creation baseline", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  const createdCharacter = {
+    source: "created",
+    name: "Setup Trait Editor",
+    rank: "Novice",
+    ancestry: "Human",
+    archetype: "Drifter",
+    attributes: {
+      agility: "d4",
+      smarts: "d4",
+      spirit: "d4",
+      strength: "d4",
+      vigor: "d4",
+    },
+    skills: [
+      { name: "Athletics", die: "d4", linkedAttribute: "agility", core: true },
+      {
+        name: "Common Knowledge",
+        die: "d4",
+        linkedAttribute: "smarts",
+        core: true,
+      },
+      { name: "Notice", die: "d4", linkedAttribute: "smarts", core: true },
+      {
+        name: "Persuasion",
+        die: "d4",
+        linkedAttribute: "spirit",
+        core: true,
+      },
+      { name: "Stealth", die: "d4", linkedAttribute: "agility", core: true },
+    ],
+    hindrances: [],
+    edges: [],
+    advances: [],
+    creation: {
+      normalAttributePointsAvailable: 5,
+      normalSkillPointsAvailable: 12,
+      extraAttributeRaisesFromHindrances: 0,
+      extraSkillPointsFromHindrances: 0,
+      finalized: true,
+    },
+    creationBaseline: {
+      attributes: {
+        agility: "d4",
+        smarts: "d4",
+        spirit: "d4",
+        strength: "d4",
+        vigor: "d4",
+      },
+      skills: [],
+    },
+    moneyCents: 0,
+    ammo: {},
+    weapons: [],
+    armorInventory: [],
+    inventory: [],
+    consumables: [],
+    vehicles: [],
+    resources: [],
+    powers: [],
+  };
+
+  await openHeaderMenu(page);
+  await page.locator("#pasteImportBtn").click();
+  await page.locator("#importJsonText").fill(JSON.stringify(createdCharacter));
+  await page.locator("#confirmPasteImportBtn").click();
+  await expect(page.locator("#characterName")).toContainText(
+    "Setup Trait Editor",
+  );
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("[data-setup-step='attributesSkills']"),
+  ).toContainText("Incomplete");
+  await page.locator("[data-setup-step='attributesSkills']").click();
+  const setupTraitsPanel = page.locator("#setupTraitsPanel");
+  await expect(setupTraitsPanel).toContainText("Edit starting Attributes");
+  await expect(setupTraitsPanel).toContainText("Attribute Points");
+  await expect(setupTraitsPanel).toContainText("0 / 5");
+
+  const agilityRow = setupTraitsPanel
+    .locator(".setup-trait-editor-row:not(.skill-row)")
+    .filter({ hasText: "Agility" });
+  await agilityRow.locator("[data-setup-action='incAttribute']").click();
+  await expect(agilityRow).toContainText("d6");
+  await expect(setupTraitsPanel).toContainText("1 / 5");
+
+  const shootingRow = setupTraitsPanel
+    .locator(".setup-trait-editor-row.skill-row")
+    .filter({ hasText: "Shooting" });
+  await expect(shootingRow).toContainText("d4-2");
+  await shootingRow.locator("[data-setup-action='incSkill']").click();
+  await expect(shootingRow).toContainText("d4");
+  await expect(shootingRow).toContainText("Cost 1");
+
+  const stored = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    STORAGE_KEY,
+  );
+  expect(stored.creationBaseline.attributes.agility).toBe("d6");
+  expect(stored.attributes.agility).toBe("d6");
+  expect(
+    stored.creationBaseline.skills.some(
+      (skill) => skill.name === "Shooting" && skill.die === "d4",
+    ),
+  ).toBe(true);
 });
 
 test("manages multiple local character save slots", async ({ page }) => {

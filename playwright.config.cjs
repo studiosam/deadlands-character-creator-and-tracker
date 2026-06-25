@@ -1,5 +1,10 @@
 const { defineConfig, devices } = require("@playwright/test");
 
+// Some shells and automation environments set NO_COLOR while Playwright forces
+// color in child Node processes. Unset it here so workers and the web server do
+// not emit Node's NO_COLOR/FORCE_COLOR warning.
+delete process.env.NO_COLOR;
+
 module.exports = defineConfig({
   testDir: "./tests/browser",
   timeout: 30_000,
