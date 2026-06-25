@@ -68,9 +68,12 @@ async function switchToCharacter(page, name) {
   await openCharacterLibrary(page);
   const row = characterRow(page, name);
   await expect(row).toHaveCount(1);
-  if (!(await row.evaluate((element) => element.classList.contains("active")))) {
+  if (
+    !(await row.evaluate((element) => element.classList.contains("active")))
+  ) {
     await row.getByRole("button", { name: "Switch" }).click();
   }
+  await expect(row).toHaveClass(/active/);
   await expect(page.locator("#characterName")).toContainText(name);
 }
 
@@ -234,7 +237,9 @@ test("manages multiple local character save slots", async ({ page }) => {
   );
 });
 
-test("keeps character slots in stable order when switching", async ({ page }) => {
+test("keeps character slots in stable order when switching", async ({
+  page,
+}) => {
   await page.locator("#landingLoadSampleBtn").click();
   await page.locator("#headerToolsMenu summary").click();
   await page.locator("#characterLibraryMenuBtn").click();
@@ -243,9 +248,13 @@ test("keeps character slots in stable order when switching", async ({ page }) =>
   const namesBefore = await page
     .locator(".library-character h3")
     .allTextContents();
-  await page.locator(".library-character").first().getByRole("button", {
-    name: "Switch",
-  }).click();
+  await page
+    .locator(".library-character")
+    .first()
+    .getByRole("button", {
+      name: "Switch",
+    })
+    .click();
   const namesAfter = await page
     .locator(".library-character h3")
     .allTextContents();
@@ -284,56 +293,64 @@ test("keeps duplicated character state independent across switching and reload",
   await openCombat(page);
   await expectWounds(page, 2);
 
-  await expect.poll(async () =>
-    page.evaluate(
-      ({ libraryKey, storageKey, originalName, duplicateName }) => {
-        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
-        const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
-        const entries = Object.values(library?.charactersById || {});
-        const original = entries.find((entry) => entry.name === originalName);
-        const duplicate = entries.find((entry) => entry.name === duplicateName);
-        return {
-          count: entries.length,
-          originalEntryName: original?.name || "",
-          originalCharacterName: original?.character?.name || "",
-          originalWounds: original?.character?.damage?.wounds ?? null,
-          duplicateEntryName: duplicate?.name || "",
-          duplicateCharacterName: duplicate?.character?.name || "",
-          duplicateWounds: duplicate?.character?.damage?.wounds ?? null,
-          distinctIds:
-            Boolean(original?.id) &&
-            Boolean(duplicate?.id) &&
-            original.id !== duplicate.id,
-          activeName:
-            library?.charactersById?.[library.activeCharacterId]?.name || "",
-          activeCharacterName:
-            library?.charactersById?.[library.activeCharacterId]?.character
-              ?.name || "",
-          trackerName: tracker?.name || "",
-          trackerWounds: tracker?.damage?.wounds ?? null,
-        };
-      },
-      {
-        libraryKey: CHARACTER_LIBRARY_KEY,
-        storageKey: STORAGE_KEY,
-        originalName,
-        duplicateName,
-      },
-    ),
-  ).toEqual({
-    count: 2,
-    originalEntryName: originalName,
-    originalCharacterName: originalName,
-    originalWounds: 1,
-    duplicateEntryName: duplicateName,
-    duplicateCharacterName: duplicateName,
-    duplicateWounds: 2,
-    distinctIds: true,
-    activeName: duplicateName,
-    activeCharacterName: duplicateName,
-    trackerName: duplicateName,
-    trackerWounds: 2,
-  });
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ libraryKey, storageKey, originalName, duplicateName }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const entries = Object.values(library?.charactersById || {});
+          const original = entries.find((entry) => entry.name === originalName);
+          const duplicate = entries.find(
+            (entry) => entry.name === duplicateName,
+          );
+          return {
+            count: entries.length,
+            originalEntryName: original?.name || "",
+            originalCharacterName: original?.character?.name || "",
+            originalWounds: original?.character?.damage?.wounds ?? null,
+            duplicateEntryName: duplicate?.name || "",
+            duplicateCharacterName: duplicate?.character?.name || "",
+            duplicateWounds: duplicate?.character?.damage?.wounds ?? null,
+            distinctIds:
+              Boolean(original?.id) &&
+              Boolean(duplicate?.id) &&
+              original.id !== duplicate.id,
+            activeName:
+              library?.charactersById?.[library.activeCharacterId]?.name || "",
+            activeCharacterName:
+              library?.charactersById?.[library.activeCharacterId]?.character
+                ?.name || "",
+            trackerName: tracker?.name || "",
+            trackerWounds: tracker?.damage?.wounds ?? null,
+          };
+        },
+        {
+          libraryKey: CHARACTER_LIBRARY_KEY,
+          storageKey: STORAGE_KEY,
+          originalName,
+          duplicateName,
+        },
+      ),
+    )
+    .toEqual({
+      count: 2,
+      originalEntryName: originalName,
+      originalCharacterName: originalName,
+      originalWounds: 1,
+      duplicateEntryName: duplicateName,
+      duplicateCharacterName: duplicateName,
+      duplicateWounds: 2,
+      distinctIds: true,
+      activeName: duplicateName,
+      activeCharacterName: duplicateName,
+      trackerName: duplicateName,
+      trackerWounds: 2,
+    });
 
   await reloadIntoTracker(page);
   await expect(page.locator("#characterName")).toContainText(duplicateName);
@@ -416,37 +433,44 @@ test("deletes only the selected character and preserves the remaining character"
   );
   await expect(page.locator("#characterName")).toContainText(keepName);
 
-  await expect.poll(async () =>
-    page.evaluate(
-      ({ libraryKey, storageKey, deleteName, keepName }) => {
-        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
-        const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
-        const entries = Object.values(library?.charactersById || {});
-        return {
-          count: entries.length,
-          hasDeleted: entries.some((entry) => entry.name === deleteName),
-          hasKeep: entries.some(
-            (entry) => entry.name === keepName && entry.character?.name === keepName,
-          ),
-          activeName:
-            library?.charactersById?.[library.activeCharacterId]?.name || "",
-          trackerName: tracker?.name || "",
-        };
-      },
-      {
-        libraryKey: CHARACTER_LIBRARY_KEY,
-        storageKey: STORAGE_KEY,
-        deleteName,
-        keepName,
-      },
-    ),
-  ).toEqual({
-    count: 1,
-    hasDeleted: false,
-    hasKeep: true,
-    activeName: keepName,
-    trackerName: keepName,
-  });
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ libraryKey, storageKey, deleteName, keepName }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const entries = Object.values(library?.charactersById || {});
+          return {
+            count: entries.length,
+            hasDeleted: entries.some((entry) => entry.name === deleteName),
+            hasKeep: entries.some(
+              (entry) =>
+                entry.name === keepName && entry.character?.name === keepName,
+            ),
+            activeName:
+              library?.charactersById?.[library.activeCharacterId]?.name || "",
+            trackerName: tracker?.name || "",
+          };
+        },
+        {
+          libraryKey: CHARACTER_LIBRARY_KEY,
+          storageKey: STORAGE_KEY,
+          deleteName,
+          keepName,
+        },
+      ),
+    )
+    .toEqual({
+      count: 1,
+      hasDeleted: false,
+      hasKeep: true,
+      activeName: keepName,
+      trackerName: keepName,
+    });
 
   await page.reload();
   if (await page.locator("#landingPage").isVisible()) {
@@ -475,10 +499,12 @@ test("persists wounds for an unsaved active character across reload", async ({
   page,
 }) => {
   await enterTracker(page);
+  await openCombat(page);
   await increaseWounds(page);
   await expectWounds(page, 1);
 
   await reloadIntoTracker(page);
+  await openCombat(page);
   await expectWounds(page, 1);
 });
 
@@ -512,65 +538,71 @@ test("adds and deletes gear while preserving remaining inventory across reload",
   await expect(gearRow(page, keepName)).toContainText("Qty 4");
   await expect(gearRow(page, keepName)).toContainText(keepNote);
 
-  await expect.poll(async () =>
-    page.evaluate(
-      ({ libraryKey, storageKey, deleteName, keepName }) => {
-        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
-        const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
-        const active =
-          library?.charactersById?.[library.activeCharacterId] || null;
-        const libraryInventory = active?.character?.inventory || [];
-        const trackerInventory = tracker?.inventory || [];
-        const libraryDelete = libraryInventory.filter(
-          (item) => item.name === deleteName,
-        );
-        const libraryKeep = libraryInventory.filter(
-          (item) => item.name === keepName,
-        );
-        const trackerDelete = trackerInventory.filter(
-          (item) => item.name === deleteName,
-        );
-        const trackerKeep = trackerInventory.filter(
-          (item) => item.name === keepName,
-        );
-        return {
-          libraryDeleteCount: libraryDelete.length,
-          libraryDeleteQuantity: libraryDelete[0]?.count ?? null,
-          libraryDeleteNote: libraryDelete[0]?.note || "",
-          libraryKeepCount: libraryKeep.length,
-          libraryKeepQuantity: libraryKeep[0]?.count ?? null,
-          libraryKeepNote: libraryKeep[0]?.note || "",
-          trackerDeleteCount: trackerDelete.length,
-          trackerDeleteQuantity: trackerDelete[0]?.count ?? null,
-          trackerDeleteNote: trackerDelete[0]?.note || "",
-          trackerKeepCount: trackerKeep.length,
-          trackerKeepQuantity: trackerKeep[0]?.count ?? null,
-          trackerKeepNote: trackerKeep[0]?.note || "",
-          trackerMatchesActive: tracker?.name === active?.character?.name,
-        };
-      },
-      {
-        libraryKey: CHARACTER_LIBRARY_KEY,
-        storageKey: STORAGE_KEY,
-        deleteName,
-        keepName,
-      },
-    ),
-  ).toEqual({
-    libraryDeleteCount: 1,
-    libraryDeleteQuantity: 2,
-    libraryDeleteNote: deleteNote,
-    libraryKeepCount: 1,
-    libraryKeepQuantity: 4,
-    libraryKeepNote: keepNote,
-    trackerDeleteCount: 1,
-    trackerDeleteQuantity: 2,
-    trackerDeleteNote: deleteNote,
-    trackerKeepCount: 1,
-    trackerKeepQuantity: 4,
-    trackerKeepNote: keepNote,
-    trackerMatchesActive: true,
-  });
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ libraryKey, storageKey, deleteName, keepName }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active =
+            library?.charactersById?.[library.activeCharacterId] || null;
+          const libraryInventory = active?.character?.inventory || [];
+          const trackerInventory = tracker?.inventory || [];
+          const libraryDelete = libraryInventory.filter(
+            (item) => item.name === deleteName,
+          );
+          const libraryKeep = libraryInventory.filter(
+            (item) => item.name === keepName,
+          );
+          const trackerDelete = trackerInventory.filter(
+            (item) => item.name === deleteName,
+          );
+          const trackerKeep = trackerInventory.filter(
+            (item) => item.name === keepName,
+          );
+          return {
+            libraryDeleteCount: libraryDelete.length,
+            libraryDeleteQuantity: libraryDelete[0]?.count ?? null,
+            libraryDeleteNote: libraryDelete[0]?.note || "",
+            libraryKeepCount: libraryKeep.length,
+            libraryKeepQuantity: libraryKeep[0]?.count ?? null,
+            libraryKeepNote: libraryKeep[0]?.note || "",
+            trackerDeleteCount: trackerDelete.length,
+            trackerDeleteQuantity: trackerDelete[0]?.count ?? null,
+            trackerDeleteNote: trackerDelete[0]?.note || "",
+            trackerKeepCount: trackerKeep.length,
+            trackerKeepQuantity: trackerKeep[0]?.count ?? null,
+            trackerKeepNote: trackerKeep[0]?.note || "",
+            trackerMatchesActive: tracker?.name === active?.character?.name,
+          };
+        },
+        {
+          libraryKey: CHARACTER_LIBRARY_KEY,
+          storageKey: STORAGE_KEY,
+          deleteName,
+          keepName,
+        },
+      ),
+    )
+    .toEqual({
+      libraryDeleteCount: 1,
+      libraryDeleteQuantity: 2,
+      libraryDeleteNote: deleteNote,
+      libraryKeepCount: 1,
+      libraryKeepQuantity: 4,
+      libraryKeepNote: keepNote,
+      trackerDeleteCount: 1,
+      trackerDeleteQuantity: 2,
+      trackerDeleteNote: deleteNote,
+      trackerKeepCount: 1,
+      trackerKeepQuantity: 4,
+      trackerKeepNote: keepNote,
+      trackerMatchesActive: true,
+    });
 
   await gearRow(page, deleteName).locator("button.delete-small").click();
   if (await page.locator("#appDialog").isVisible()) {
@@ -582,55 +614,61 @@ test("adds and deletes gear while preserving remaining inventory across reload",
   await expect(gearRow(page, keepName)).toContainText("Qty 4");
   await expect(gearRow(page, keepName)).toContainText(keepNote);
 
-  await expect.poll(async () =>
-    page.evaluate(
-      ({ libraryKey, storageKey, keepName, deleteName }) => {
-        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
-        const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
-        const active =
-          library?.charactersById?.[library.activeCharacterId] || null;
-        const libraryInventory = active?.character?.inventory || [];
-        const trackerInventory = tracker?.inventory || [];
-        const libraryDelete = libraryInventory.filter(
-          (item) => item.name === deleteName,
-        );
-        const libraryKeep = libraryInventory.filter(
-          (item) => item.name === keepName,
-        );
-        const trackerDelete = trackerInventory.filter(
-          (item) => item.name === deleteName,
-        );
-        const trackerKeep = trackerInventory.filter(
-          (item) => item.name === keepName,
-        );
-        return {
-          libraryDeleteCount: libraryDelete.length,
-          libraryKeepCount: libraryKeep.length,
-          libraryKeepQuantity: libraryKeep[0]?.count ?? null,
-          libraryKeepNote: libraryKeep[0]?.note || "",
-          trackerDeleteCount: trackerDelete.length,
-          trackerKeepCount: trackerKeep.length,
-          trackerKeepQuantity: trackerKeep[0]?.count ?? null,
-          trackerKeepNote: trackerKeep[0]?.note || "",
-        };
-      },
-      {
-        libraryKey: CHARACTER_LIBRARY_KEY,
-        storageKey: STORAGE_KEY,
-        keepName,
-        deleteName,
-      },
-    ),
-  ).toEqual({
-    libraryDeleteCount: 0,
-    libraryKeepCount: 1,
-    libraryKeepQuantity: 4,
-    libraryKeepNote: keepNote,
-    trackerDeleteCount: 0,
-    trackerKeepCount: 1,
-    trackerKeepQuantity: 4,
-    trackerKeepNote: keepNote,
-  });
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ libraryKey, storageKey, keepName, deleteName }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active =
+            library?.charactersById?.[library.activeCharacterId] || null;
+          const libraryInventory = active?.character?.inventory || [];
+          const trackerInventory = tracker?.inventory || [];
+          const libraryDelete = libraryInventory.filter(
+            (item) => item.name === deleteName,
+          );
+          const libraryKeep = libraryInventory.filter(
+            (item) => item.name === keepName,
+          );
+          const trackerDelete = trackerInventory.filter(
+            (item) => item.name === deleteName,
+          );
+          const trackerKeep = trackerInventory.filter(
+            (item) => item.name === keepName,
+          );
+          return {
+            libraryDeleteCount: libraryDelete.length,
+            libraryKeepCount: libraryKeep.length,
+            libraryKeepQuantity: libraryKeep[0]?.count ?? null,
+            libraryKeepNote: libraryKeep[0]?.note || "",
+            trackerDeleteCount: trackerDelete.length,
+            trackerKeepCount: trackerKeep.length,
+            trackerKeepQuantity: trackerKeep[0]?.count ?? null,
+            trackerKeepNote: trackerKeep[0]?.note || "",
+          };
+        },
+        {
+          libraryKey: CHARACTER_LIBRARY_KEY,
+          storageKey: STORAGE_KEY,
+          keepName,
+          deleteName,
+        },
+      ),
+    )
+    .toEqual({
+      libraryDeleteCount: 0,
+      libraryKeepCount: 1,
+      libraryKeepQuantity: 4,
+      libraryKeepNote: keepNote,
+      trackerDeleteCount: 0,
+      trackerKeepCount: 1,
+      trackerKeepQuantity: 4,
+      trackerKeepNote: keepNote,
+    });
 
   await reloadIntoTracker(page);
   await openInventory(page);
@@ -677,30 +715,32 @@ test("round-trips exported tracker JSON through import", async ({
   await page.locator("#appDialogConfirmBtn").click();
   await expect(page.locator("#characterName")).toContainText(characterName);
 
-  await page.getByRole("button", { name: "Combat", exact: true }).click();
-  await page.getByRole("button", { name: "+", exact: true }).first().click();
+  await openCombat(page);
+  await increaseWounds(page);
   await page.getByRole("button", { name: "Notes" }).click();
   await page.locator("#notesArea").fill(noteText);
 
-  await expect.poll(async () =>
-    page.evaluate(
-      ({ storageKey }) => {
-        const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
-        return {
-          name: saved?.name || "",
-          wounds: saved?.damage?.wounds ?? null,
-          notes: saved?.notes || "",
-        };
-      },
-      {
-        storageKey: STORAGE_KEY,
-      },
-    ),
-  ).toEqual({
-    name: characterName,
-    wounds: 1,
-    notes: noteText,
-  });
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ storageKey }) => {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+          return {
+            name: saved?.name || "",
+            wounds: saved?.damage?.wounds ?? null,
+            notes: saved?.notes || "",
+          };
+        },
+        {
+          storageKey: STORAGE_KEY,
+        },
+      ),
+    )
+    .toEqual({
+      name: characterName,
+      wounds: 1,
+      notes: noteText,
+    });
 
   await page.locator("#headerToolsMenu summary").click();
   const [download] = await Promise.all([
