@@ -567,7 +567,9 @@ function landingCharacterName(entry) {
 
 function selectedLandingCharacterSlot() {
   const id =
-    els.landingCharacterSelect?.value || characterLibrary?.activeCharacterId || "";
+    els.landingCharacterSelect?.value ||
+    characterLibrary?.activeCharacterId ||
+    "";
   return characterLibrary?.charactersById?.[id] || null;
 }
 
@@ -1523,8 +1525,7 @@ $("#startCreatorWelcomeBtn").onclick = () => {
 $("#importWelcomeBtn").onclick = () => {
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
   $("#demoWelcomePanel")?.classList.add("hidden");
-  $("#pasteImportPanel")?.classList.remove("hidden");
-  $("#importJsonText")?.focus();
+  openPasteImportPanel();
 };
 $("#dismissWelcomeBtn").onclick = () => {
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
@@ -1547,8 +1548,5 @@ if (els.landingCharacterSelect)
   els.landingCharacterSelect.onchange = updateLandingPrimaryLabel;
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#landingCreateBtn").onclick = () => closeLandingPage("creation");
-$("#landingImportBtn").onclick = () => {
-  closeLandingPage("play");
-  openPasteImportPanel();
-};
+$("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
 $("#mainMenuBtn").onclick = openLandingPage;

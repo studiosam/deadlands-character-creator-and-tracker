@@ -69,7 +69,6 @@
               <h2>Data</h2>
               <button class="ghost" id="exportBtn" type="button">Export Character</button>
               <label class="ghost file-label" for="importFile">Import File</label>
-              <input id="importFile" type="file" accept="application/json" />
               <button class="ghost" id="pasteImportBtn" type="button">
                 Paste JSON
               </button>
@@ -87,19 +86,6 @@
             </section>
           </div>
         </details>
-        <div id="pasteImportPanel" class="paste-import-panel hidden">
-          <label for="importJsonText">Import JSON</label>
-          <textarea id="importJsonText" rows="6"
-            placeholder="Paste tracker, full app state, creation draft, or Savaged.us JSON here"></textarea>
-          <div class="controls">
-            <button id="confirmPasteImportBtn" type="button">
-              Import JSON
-            </button>
-            <button class="ghost" id="cancelPasteImportBtn" type="button">
-              Cancel
-            </button>
-          </div>
-        </div>
       </div>
     </header>
 
@@ -1091,6 +1077,26 @@
     </main>
 
     <section id="creationPanel" class="creator tab-panel hidden"></section>
+  </div>
+
+  <input id="importFile" type="file" accept="application/json" />
+
+  <div id="pasteImportPanel" class="paste-import-panel hidden">
+    <label for="importJsonText">Paste JSON</label>
+    <textarea id="importJsonText" rows="6"
+      placeholder="Paste tracker, full app state, creation draft, or Savaged.us JSON here"></textarea>
+    <div class="import-file-option">
+      <span>Or upload a JSON file</span>
+      <label class="ghost file-label" for="importFile">Select File</label>
+    </div>
+    <div class="controls">
+      <button id="confirmPasteImportBtn" type="button">
+        Import JSON
+      </button>
+      <button class="ghost" id="cancelPasteImportBtn" type="button">
+        Cancel
+      </button>
+    </div>
   </div>
 
   <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>

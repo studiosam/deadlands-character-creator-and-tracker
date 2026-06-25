@@ -410,6 +410,37 @@ test("selects and opens a saved character from the minimal landing page", async 
   await expect(characterSelect.locator("option:checked")).toHaveText(firstName);
 });
 
+test("imports JSON from the landing page only after confirmation", async ({
+  page,
+}) => {
+  const sample = await page.request.get(
+    "/docs/Sample%20Characters/savaged-us-json-export-character-Lehi%20Larson.json",
+  );
+  expect(sample.ok()).toBeTruthy();
+
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator(".shell")).toBeHidden();
+
+  await page.locator("#landingImportBtn").click();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator(".shell")).toBeHidden();
+  await expect(page.locator("#pasteImportPanel")).toBeVisible();
+  await expect(page.locator("#importJsonText")).toBeVisible();
+  await expect(page.getByText("Or upload a JSON file")).toBeVisible();
+  await expect(page.locator(".import-file-option .file-label")).toBeVisible();
+
+  await page.locator("#importFile").setInputFiles({
+    name: "landing-import.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(await sample.text()),
+  });
+
+  await expect(page.locator("#pasteImportPanel")).toBeHidden();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+  await expect(page.locator("#characterName")).toContainText("Lehi Larson");
+});
+
 test("keeps duplicated character state independent across switching and reload", async ({
   page,
 }) => {
