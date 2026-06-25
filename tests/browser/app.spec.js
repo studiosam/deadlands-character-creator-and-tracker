@@ -284,6 +284,241 @@ test("preserves separate character data across switching and reload", async ({
   await expect(page.locator("#characterName")).toContainText(firstName);
 });
 
+test("duplicates a character without linking the original and copy", async ({
+  page,
+}) => {
+  const originalName = "Original Character";
+  const duplicateName = "Duplicated Character";
+  const originalRow = () =>
+    page.locator(".library-character").filter({
+      has: page.getByRole("heading", { name: /^Original Character$/ }),
+    });
+  const duplicateRow = () =>
+    page.locator(".library-character").filter({
+      has: page.getByRole("heading", { name: /^Duplicated Character$/ }),
+    });
+
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await page.locator("#librarySaveCurrentBtn").click();
+
+  await page
+    .locator(".library-character.active")
+    .getByRole("button", { name: "Rename" })
+    .click();
+  await page.locator("#appDialogInput").fill(originalName);
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(originalName);
+
+  await page.locator("#libraryDuplicateActiveBtn").click();
+  await expect(page.locator(".library-character")).toHaveCount(2);
+
+  await page
+    .locator(".library-character.active")
+    .getByRole("button", { name: "Rename" })
+    .click();
+  await page.locator("#appDialogInput").fill(duplicateName);
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(duplicateName);
+
+  await expect(originalRow()).toHaveCount(1);
+  await expect(duplicateRow()).toHaveCount(1);
+
+  await originalRow().getByRole("button", { name: "Switch" }).click();
+  await expect(page.locator("#characterName")).toContainText(originalName);
+
+  await duplicateRow().getByRole("button", { name: "Switch" }).click();
+  await expect(page.locator("#characterName")).toContainText(duplicateName);
+
+  await expect.poll(async () =>
+    page.evaluate(
+      ({ libraryKey, storageKey, originalName, duplicateName }) => {
+        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+        const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
+        const entries = Object.values(library?.charactersById || {});
+        const original = entries.find((entry) => entry.name === originalName);
+        const duplicate = entries.find((entry) => entry.name === duplicateName);
+        const ids = entries.map((entry) => entry.id).filter(Boolean);
+        return {
+          count: entries.length,
+          originalName: original?.character?.name || "",
+          duplicateName: duplicate?.character?.name || "",
+          activeName:
+            library?.charactersById?.[library.activeCharacterId]?.name || "",
+          trackerName: tracker?.name || "",
+          uniqueIdCount: new Set(ids).size,
+          idsAreDistinct:
+            Boolean(original?.id) &&
+            Boolean(duplicate?.id) &&
+            original.id !== duplicate.id,
+        };
+      },
+      {
+        libraryKey: CHARACTER_LIBRARY_KEY,
+        storageKey: STORAGE_KEY,
+        originalName,
+        duplicateName,
+      },
+    ),
+  ).toEqual({
+    count: 2,
+    originalName,
+    duplicateName,
+    activeName: duplicateName,
+    trackerName: duplicateName,
+    uniqueIdCount: 2,
+    idsAreDistinct: true,
+  });
+
+  await page.reload();
+  if (await page.locator("#landingPage").isVisible()) {
+    await page.locator("#landingContinueBtn").click();
+  }
+  await expect(page.locator("#characterName")).toContainText(duplicateName);
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(originalRow()).toHaveCount(1);
+  await expect(duplicateRow()).toHaveCount(1);
+  await expect(page.locator(".library-character.active")).toContainText(
+    duplicateName,
+  );
+
+  await originalRow().getByRole("button", { name: "Switch" }).click();
+  await expect(page.locator("#characterName")).toContainText(originalName);
+
+  await duplicateRow().getByRole("button", { name: "Switch" }).click();
+  await expect(page.locator("#characterName")).toContainText(duplicateName);
+});
+
+test("deletes only the selected character and preserves the remaining character", async ({
+  page,
+}) => {
+  const deleteName = "Character To Delete";
+  const keepName = "Character To Keep";
+
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await page.locator("#librarySaveCurrentBtn").click();
+
+  await page
+    .locator(".library-character.active")
+    .getByRole("button", { name: "Rename" })
+    .click();
+  await page.locator("#appDialogInput").fill(deleteName);
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(deleteName);
+
+  await page.locator("#libraryDuplicateActiveBtn").click();
+  await expect(page.locator(".library-character")).toHaveCount(2);
+  await page
+    .locator(".library-character.active")
+    .getByRole("button", { name: "Rename" })
+    .click();
+  await page.locator("#appDialogInput").fill(keepName);
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(keepName);
+
+  await expect(page.locator(".library-character h3")).toContainText([
+    deleteName,
+    keepName,
+  ]);
+
+  await page
+    .locator(".library-character")
+    .filter({ has: page.getByRole("heading", { name: deleteName }) })
+    .getByRole("button", { name: "Switch" })
+    .click();
+  await expect(page.locator("#characterName")).toContainText(deleteName);
+
+  await page
+    .locator(".library-character")
+    .filter({ has: page.getByRole("heading", { name: deleteName }) })
+    .getByRole("button", { name: "Delete" })
+    .click();
+  await expect(page.locator("#appDialog")).toBeVisible();
+  await page.locator("#appDialogConfirmBtn").click();
+
+  await expect(
+    page
+      .locator(".library-character")
+      .filter({ has: page.getByRole("heading", { name: deleteName }) }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .locator(".library-character")
+      .filter({ has: page.getByRole("heading", { name: keepName }) }),
+  ).toHaveCount(1);
+  await expect(page.locator(".library-character.active")).toContainText(
+    keepName,
+  );
+  await expect(page.locator("#characterName")).toContainText(keepName);
+
+  await expect.poll(async () =>
+    page.evaluate(
+      ({ libraryKey, storageKey, deleteName, keepName }) => {
+        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+        const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
+        const entries = Object.values(library?.charactersById || {});
+        return {
+          count: entries.length,
+          hasDeleted: entries.some((entry) => entry.name === deleteName),
+          hasKeep: entries.some(
+            (entry) => entry.name === keepName && entry.character?.name === keepName,
+          ),
+          activeName:
+            library?.charactersById?.[library.activeCharacterId]?.name || "",
+          trackerName: tracker?.name || "",
+        };
+      },
+      {
+        libraryKey: CHARACTER_LIBRARY_KEY,
+        storageKey: STORAGE_KEY,
+        deleteName,
+        keepName,
+      },
+    ),
+  ).toEqual({
+    count: 1,
+    hasDeleted: false,
+    hasKeep: true,
+    activeName: keepName,
+    trackerName: keepName,
+  });
+
+  await page.reload();
+  if (await page.locator("#landingPage").isVisible()) {
+    await page.locator("#landingContinueBtn").click();
+  }
+  await expect(page.locator("#characterName")).toContainText(keepName);
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(
+    page
+      .locator(".library-character")
+      .filter({ has: page.getByRole("heading", { name: deleteName }) }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .locator(".library-character")
+      .filter({ has: page.getByRole("heading", { name: keepName }) }),
+  ).toHaveCount(1);
+  await expect(page.locator(".library-character.active")).toContainText(
+    keepName,
+  );
+});
+
 test("persists core combat controls across reload", async ({ page }) => {
   await page.locator("#landingContinueBtn").click();
   await page.getByRole("button", { name: "+", exact: true }).first().click();
