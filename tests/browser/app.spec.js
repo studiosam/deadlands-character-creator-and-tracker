@@ -2,6 +2,61 @@ const { test, expect } = require("@playwright/test");
 
 const STORAGE_KEY = "deadlands-tracker-v2";
 const CHARACTER_LIBRARY_KEY = "deadlands-character-library-v1";
+const runtimeErrorsByPage = new WeakMap();
+
+function installRuntimeErrorCollectors(page) {
+  const runtimeErrors = {
+    pageErrors: [],
+    consoleErrors: [],
+  };
+
+  runtimeErrorsByPage.set(page, runtimeErrors);
+
+  page.on("pageerror", (error) => {
+    runtimeErrors.pageErrors.push({
+      message: error?.message || String(error),
+      stack: error?.stack || "",
+    });
+  });
+
+  page.on("console", (message) => {
+    if (message.type() !== "error") return;
+
+    const location = message.location();
+    runtimeErrors.consoleErrors.push({
+      text: message.text(),
+      url: location.url || "",
+      lineNumber: location.lineNumber,
+      columnNumber: location.columnNumber,
+    });
+  });
+}
+
+function formatConsoleLocation(error) {
+  if (!error.url && error.lineNumber === undefined) return "unknown location";
+
+  const lineNumber = error.lineNumber ?? "?";
+  const columnNumber = error.columnNumber ?? "?";
+  return `${error.url || "unknown URL"}:${lineNumber}:${columnNumber}`;
+}
+
+function runtimeErrorFailures(page) {
+  const runtimeErrors = runtimeErrorsByPage.get(page) || {
+    pageErrors: [],
+    consoleErrors: [],
+  };
+
+  return [
+    ...runtimeErrors.pageErrors.map((error, index) => {
+      const stack = error.stack ? `\n${error.stack}` : "";
+      return `Page error ${index + 1}: ${error.message}${stack}`;
+    }),
+    ...runtimeErrors.consoleErrors.map(
+      (error, index) =>
+        `Console error ${index + 1}: ${error.text}\nLocation: ${formatConsoleLocation(error)}`,
+    ),
+  ];
+}
 
 async function clearAppStorage(page) {
   await page.goto("/");
@@ -128,7 +183,18 @@ async function addCustomGear(page, { name, quantity, note }) {
 }
 
 test.beforeEach(async ({ page }) => {
+  installRuntimeErrorCollectors(page);
   await clearAppStorage(page);
+});
+
+test.afterEach(async ({ page }) => {
+  const failures = runtimeErrorFailures(page);
+  runtimeErrorsByPage.delete(page);
+
+  expect(
+    failures,
+    `Unexpected browser runtime errors:\n${failures.join("\n\n")}`,
+  ).toEqual([]);
 });
 
 test("loads the app and switches primary tabs", async ({ page }) => {
