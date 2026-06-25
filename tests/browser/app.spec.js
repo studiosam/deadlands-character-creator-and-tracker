@@ -650,6 +650,95 @@ test("persists core combat controls across reload", async ({ page }) => {
   await expect(page.locator("#woundsValue")).toHaveText("1");
 });
 
+test("adds a custom gear item and preserves it across reload", async ({
+  page,
+}) => {
+  const itemName = "Inventory Persistence Item";
+  const itemNote = "Playwright inventory persistence test";
+  const gearSection = page.locator("section.card").filter({
+    has: page.getByRole("heading", { name: /^Gear$/ }),
+  });
+  const addGearForm = page.locator("#gearAddForm");
+  const gearItemRow = () =>
+    page.locator("#inventoryList .inventory-row").filter({
+      has: page.getByText(itemName, { exact: true }),
+    });
+
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await page.locator("#librarySaveCurrentBtn").click();
+
+  await page.getByRole("button", { name: "Inventory", exact: true }).click();
+  await expect(page.locator("#inventoryPanel")).toHaveClass(/active/);
+
+  await gearSection.locator("[data-toggle-form='gearAddForm']").click();
+  await expect(addGearForm).toBeVisible();
+  await addGearForm.locator("#inventoryNameInput").fill(itemName);
+  await addGearForm.locator("#inventoryCountInput").fill("3");
+  await addGearForm.locator("#inventoryNoteInput").fill(itemNote);
+  await addGearForm.locator("#addInventoryBtn").click();
+
+  await expect(gearItemRow()).toHaveCount(1);
+  await expect(gearItemRow()).toContainText(itemName);
+  await expect(gearItemRow()).toContainText("Qty 3");
+  await expect(gearItemRow()).toContainText(itemNote);
+
+  await expect.poll(async () =>
+    page.evaluate(
+      ({ libraryKey, storageKey, itemName, itemNote }) => {
+        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+        const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
+        const active =
+          library?.charactersById?.[library.activeCharacterId] || null;
+        const activeItem = active?.character?.inventory?.find(
+          (item) => item.name === itemName,
+        );
+        const trackerItem = tracker?.inventory?.find(
+          (item) => item.name === itemName,
+        );
+        return {
+          activeName: active?.character?.name || "",
+          activeItemCount: activeItem?.count ?? null,
+          activeItemNote: activeItem?.note || "",
+          trackerItemCount: trackerItem?.count ?? null,
+          trackerItemNote: trackerItem?.note || "",
+          matchesActiveCharacter: tracker?.name === active?.character?.name,
+        };
+      },
+      {
+        libraryKey: CHARACTER_LIBRARY_KEY,
+        storageKey: STORAGE_KEY,
+        itemName,
+        itemNote,
+      },
+    ),
+  ).toEqual({
+    activeName: "Dusty McCaw",
+    activeItemCount: 3,
+    activeItemNote: itemNote,
+    trackerItemCount: 3,
+    trackerItemNote: itemNote,
+    matchesActiveCharacter: true,
+  });
+
+  await page.reload();
+  if (await page.locator("#landingPage").isVisible()) {
+    await page.locator("#landingContinueBtn").click();
+  }
+  await page.getByRole("button", { name: "Inventory", exact: true }).click();
+  await expect(page.locator("#inventoryPanel")).toHaveClass(/active/);
+
+  await expect(gearItemRow()).toHaveCount(1);
+  await expect(gearItemRow()).toContainText(itemName);
+  await expect(gearItemRow()).toContainText("Qty 3");
+  await expect(gearItemRow()).toContainText(itemNote);
+});
+
 test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await page.locator("#landingContinueBtn").click();
   const sample = await page.request.get(
