@@ -15,40 +15,25 @@
   <section id="landingPage" class="landing-page" aria-label="Deadlands tracker landing page">
     <div class="landing-shade" aria-hidden="true"></div>
     <div class="landing-content">
-      <p class="eyebrow">Unofficial / Local-First / Table-Ready</p>
-      <h1>Deadlands Character Creator and Tracker</h1>
+      <h1>Deadlands Character Tracker</h1>
       <p class="landing-copy">
-        Run combat, inventory, arcane resources, session notes, creation drafts, and
-        Savaged.us imports from one private browser app.
+        Local-first character management for Deadlands and SWADE.
       </p>
+      <div id="landingCharacterPicker" class="landing-character-picker hidden">
+        <label for="landingCharacterSelect">Character</label>
+        <select id="landingCharacterSelect"></select>
+      </div>
       <div class="landing-actions">
-        <button id="landingContinueBtn" type="button">
-          <span id="landingContinueLabel">Launch Tracker</span>
+        <button id="landingContinueBtn" class="landing-primary" type="button">
+          <span id="landingContinueLabel">Open Tracker</span>
         </button>
-        <button id="landingLoadSampleBtn" class="ghost" type="button">Load Sample</button>
-        <button id="landingCreateBtn" class="ghost" type="button">Create Character</button>
-        <button id="landingImportBtn" class="ghost" type="button">Import JSON</button>
-      </div>
-      <div class="landing-notes" aria-label="App promises">
-        <span>Local browser saves</span>
-        <span>JSON backup and restore</span>
-        <span>Requires official books</span>
-      </div>
-      <section id="landingSavedCharacters" class="landing-saved hidden" aria-labelledby="landingSavedTitle">
-        <div class="landing-saved-header">
-          <div>
-            <p class="eyebrow">Saved Characters</p>
-            <h2 id="landingSavedTitle">Pick up where you left off</h2>
-          </div>
+        <div class="landing-secondary-actions">
+          <button id="landingCreateBtn" class="ghost" type="button">Create Character</button>
+          <button id="landingImportBtn" class="ghost" type="button">Import JSON</button>
         </div>
-        <div id="landingSavedCharacterList" class="landing-saved-list"></div>
-      </section>
-    </div>
-    <div class="landing-feature-rail" aria-label="Feature overview">
-      <div><span>Combat</span><strong>Wounds, Bennies, ammo, conditions</strong></div>
-      <div><span>Character</span><strong>Traits, Edges, Hindrances, advances</strong></div>
-      <div><span>Inventory</span><strong>Gear, armor, storage, encumbrance</strong></div>
-      <div><span>Arcane</span><strong>Power Points, powers, Huckster tools</strong></div>
+        <button id="landingLoadSampleBtn" class="landing-sample-link" type="button">Try sample</button>
+      </div>
+      <p class="landing-footer-note">Unofficial fan tool. Saves stay in this browser.</p>
     </div>
   </section>
 

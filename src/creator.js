@@ -524,33 +524,30 @@ function renderLandingPage() {
 
   const entries = characterLibraryEntries();
   const activeId = characterLibrary?.activeCharacterId || "";
-  const active = activeCharacterSlot();
-  const label = $("#landingContinueLabel");
-  if (label) {
-    label.textContent = active
-      ? `Continue as ${active.name || active.character?.name || "Character"}`
-      : "Launch Tracker";
+  const hasSavedCharacters = Boolean(entries.length);
+
+  els.landingCharacterPicker?.classList.toggle("hidden", !hasSavedCharacters);
+  $("#landingLoadSampleBtn")?.classList.toggle("hidden", hasSavedCharacters);
+
+  if (els.landingCharacterSelect) {
+    const options = entries.map((entry) => {
+      const option = document.createElement("option");
+      option.value = entry.id;
+      option.textContent =
+        entry.name || entry.character?.name || "Unnamed Character";
+      return option;
+    });
+    els.landingCharacterSelect.replaceChildren(...options);
+    if (hasSavedCharacters) {
+      els.landingCharacterSelect.value = entries.some(
+        (entry) => entry.id === activeId,
+      )
+        ? activeId
+        : entries[0].id;
+    }
   }
 
-  if (els.landingSavedCharacters)
-    els.landingSavedCharacters.classList.toggle("hidden", !entries.length);
-  if (!els.landingSavedCharacterList) return;
-
-  els.landingSavedCharacterList.innerHTML = entries
-    .map((entry) => {
-      const isActive = entry.id === activeId;
-      const name = entry.name || entry.character?.name || "Unnamed Character";
-      const meta = [entry.rank, entry.archetype].filter(Boolean).join(" • ");
-      return `<article class="landing-saved-character ${isActive ? "active" : ""}" ${isActive ? 'aria-current="true"' : ""}>
-        <div class="landing-saved-main">
-          <span class="pill">${isActive ? "Active" : "Saved"}</span>
-          <h3>${esc(name)}</h3>
-          ${meta ? `<p>${esc(meta)}</p>` : ""}
-        </div>
-        <button type="button" data-landing-character-id="${esc(entry.id)}" aria-label="Open ${esc(name)}">Open</button>
-      </article>`;
-    })
-    .join("");
+  updateLandingPrimaryLabel();
 }
 
 function closeLandingPage(tabName = "play") {
@@ -564,12 +561,37 @@ function openLandingPage() {
   $("#landingPage")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function landingCharacterName(entry) {
+  return entry?.name || entry?.character?.name || "Character";
+}
+
+function selectedLandingCharacterSlot() {
+  const id =
+    els.landingCharacterSelect?.value || characterLibrary?.activeCharacterId || "";
+  return characterLibrary?.charactersById?.[id] || null;
+}
+
+function updateLandingPrimaryLabel() {
+  const label = $("#landingContinueLabel");
+  if (!label) return;
+  const selected = selectedLandingCharacterSlot();
+  label.textContent = selected
+    ? `Continue as ${landingCharacterName(selected)}`
+    : "Open Tracker";
+}
+
 function openLandingCharacter(id) {
   if (!characterLibrary?.charactersById?.[id]) return;
   if (activeCharacterSlot()) saveCharacterSlot(character);
   if (!activateCharacterSlot(id)) return;
   render();
   closeLandingPage("play");
+}
+
+function continueFromLandingPage() {
+  const selected = selectedLandingCharacterSlot();
+  if (selected) openLandingCharacter(selected.id);
+  else closeLandingPage("play");
 }
 
 function populateSampleCharacterSelect() {
@@ -1520,16 +1542,13 @@ $("#exitDemoModeBtn").onclick = () => {
     "success",
   );
 };
-$("#landingContinueBtn").onclick = () => closeLandingPage("play");
+$("#landingContinueBtn").onclick = continueFromLandingPage;
+if (els.landingCharacterSelect)
+  els.landingCharacterSelect.onchange = updateLandingPrimaryLabel;
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#landingCreateBtn").onclick = () => closeLandingPage("creation");
 $("#landingImportBtn").onclick = () => {
   closeLandingPage("play");
   openPasteImportPanel();
 };
-document.addEventListener("click", (event) => {
-  const button = event.target?.closest?.("[data-landing-character-id]");
-  if (!button) return;
-  openLandingCharacter(button.dataset.landingCharacterId);
-});
 $("#mainMenuBtn").onclick = openLandingPage;

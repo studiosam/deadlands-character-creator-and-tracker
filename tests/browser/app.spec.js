@@ -328,15 +328,12 @@ test("keeps character slots in stable order when switching", async ({
   expect(namesAfter).toEqual(namesBefore);
 });
 
-test("opens a selected saved character from the landing page", async ({
+test("selects and opens a saved character from the minimal landing page", async ({
   page,
 }) => {
-  const firstName = "Landing First Character";
-  const secondName = "Landing Second Character";
-  const landingCard = (name) =>
-    page.locator("#landingSavedCharacterList .landing-saved-character").filter({
-      has: page.getByRole("heading", { name }),
-    });
+  const firstName = "Landing Character One";
+  const secondName = "Landing Character Two";
+  const characterSelect = page.locator("#landingCharacterSelect");
 
   await enterTracker(page);
   await saveCurrentCharacter(page);
@@ -349,15 +346,24 @@ test("opens a selected saved character from the landing page", async ({
   await openHeaderMenu(page);
   await page.locator("#mainMenuBtn").click();
   await expect(page.locator("#landingPage")).toBeVisible();
-  await expect(page.locator("#landingSavedCharacters")).toBeVisible();
-  await expect(landingCard(firstName)).toHaveCount(1);
-  await expect(landingCard(secondName)).toHaveCount(1);
-  await expect(landingCard(secondName)).toHaveClass(/active/);
-  await expect(landingCard(secondName)).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#landingCharacterPicker")).toBeVisible();
+  await expect(characterSelect.locator("option")).toHaveText([
+    firstName,
+    secondName,
+  ]);
+  await expect(characterSelect.locator("option:checked")).toHaveText(
+    secondName,
+  );
+  await expect(page.locator("#landingContinueLabel")).toHaveText(
+    `Continue as ${secondName}`,
+  );
 
-  await landingCard(firstName)
-    .getByRole("button", { name: `Open ${firstName}` })
-    .click();
+  await characterSelect.selectOption({ label: firstName });
+  await expect(page.locator("#landingContinueLabel")).toHaveText(
+    `Continue as ${firstName}`,
+  );
+
+  await page.locator("#landingContinueBtn").click();
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator("#characterName")).toContainText(firstName);
 
@@ -397,20 +403,11 @@ test("opens a selected saved character from the landing page", async ({
   await openHeaderMenu(page);
   await page.locator("#mainMenuBtn").click();
   await expect(page.locator("#landingPage")).toBeVisible();
-  await expect(landingCard(firstName)).toHaveClass(/active/);
-  await expect(landingCard(firstName)).toHaveAttribute("aria-current", "true");
-  await expect(page.locator("#landingContinueLabel")).toHaveText(
-    `Continue as ${firstName}`,
-  );
+  await expect(characterSelect.locator("option:checked")).toHaveText(firstName);
 
   await page.reload();
   await expect(page.locator("#landingPage")).toBeVisible();
-  await expect(landingCard(firstName)).toHaveClass(/active/);
-  await expect(landingCard(firstName)).toHaveAttribute("aria-current", "true");
-
-  await page.locator("#landingContinueBtn").click();
-  await expect(page.locator("#landingPage")).toBeHidden();
-  await expect(page.locator("#characterName")).toContainText(firstName);
+  await expect(characterSelect.locator("option:checked")).toHaveText(firstName);
 });
 
 test("keeps duplicated character state independent across switching and reload", async ({
