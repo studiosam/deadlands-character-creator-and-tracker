@@ -4,7 +4,9 @@
 
 The first Character Setup implementation creates the shared setup and review shell, with these visible first-slice steps: Concept, Race / Ancestry, Hindrances, Traits, Edges, Powers, Gear, and Review.
 
-Only Concept is fully functional in this slice. Concept edits map to the active character's `name`, `gender`, `age`, `archetype`, `player`, `description`, and `background` fields and save through the normal tracker persistence path. Rank is not edited in Concept; it is shown as recorded or derived advancement context elsewhere.
+The normal `Create Character` entry points now create a new `source: "created"` character slot and route directly to Character Setup at Concept. The older all-in-one creator screen is no longer exposed through normal navigation; it remains only as legacy fallback code for older creation-draft imports until that compatibility path is removed or migrated.
+
+Concept edits map to the active character's `name`, `gender`, `age`, `archetype`, `player`, `description`, and `background` fields and save through the normal tracker persistence path. Rank is not edited in Concept; it is shown as recorded or derived advancement context elsewhere. Hindrances and Traits now have functional setup controls for eligible characters. Edges, Powers, Gear, and Review are still audit-first slices.
 
 Race / Ancestry is read-only for the current Deadlands-focused profile. It records Human as the supported race or ancestry and flags imported non-Human values for review instead of offering editing controls.
 

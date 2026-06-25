@@ -205,6 +205,9 @@ test("loads the app and switches primary tabs", async ({ page }) => {
   await expect(page.locator(".app-tabs [data-app-tab='settings']")).toHaveCount(
     0,
   );
+  await expect(page.locator(".app-tabs [data-app-tab='creation']")).toHaveCount(
+    0,
+  );
 
   await page.locator("#landingContinueBtn").click();
   await expect(page.locator("#landingPage")).toBeHidden();
@@ -238,6 +241,140 @@ test("loads the app and switches primary tabs", async ({ page }) => {
   await page.locator("#mainMenuBtn").click();
   await expect(page.locator("#landingPage")).toBeVisible();
   await expect(page.locator(".shell")).toBeHidden();
+});
+
+test("starts new characters directly in character setup", async ({ page }) => {
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await page.locator("#landingCreateBtn").click();
+
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
+  await expect(page.locator("#creationPanel")).toBeHidden();
+  await expect(page.locator("#characterName")).toContainText(
+    "Untitled Character",
+  );
+  await expect(page.locator(".setup-persistence-panel.unsaved")).toContainText(
+    "Unsaved setup draft",
+  );
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+  await expect(page.locator("[data-setup-step='concept']")).toHaveAttribute(
+    "aria-current",
+    "step",
+  );
+
+  await page.locator("[data-setup-step='attributesSkills']").click();
+  await expect(page.locator("#setupTraitsPanel")).toContainText(
+    "Edit starting Attributes",
+  );
+  await expect(
+    page.locator("#setupTraitsPanel [data-setup-action='incAttribute']"),
+  ).not.toHaveCount(0);
+
+  const stored = await page.evaluate(
+    ({ libraryKey, storageKey }) => {
+      const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+      const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
+      return {
+        slotCount: Object.keys(library?.charactersById || {}).length,
+        activeSource:
+          library?.charactersById?.[library.activeCharacterId]?.source || "",
+        trackerSource: tracker?.source || "",
+        hasBaseline: Boolean(tracker?.creationBaseline),
+      };
+    },
+    { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+  );
+  expect(stored).toEqual({
+    slotCount: 0,
+    activeSource: "",
+    trackerSource: "",
+    hasBaseline: false,
+  });
+
+  await page.locator("[data-setup-action='saveDraftCharacter']").click();
+  await expect(page.locator("#appDialog")).toBeVisible();
+  await page.locator("#appDialogInput").fill("Saved Draft Prospect");
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(
+    "Saved Draft Prospect",
+  );
+  await expect(page.locator(".setup-persistence-panel")).toContainText(
+    "Saved character slot",
+  );
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ libraryKey, storageKey }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          return {
+            slotCount: Object.keys(library?.charactersById || {}).length,
+            activeSource:
+              library?.charactersById?.[library.activeCharacterId]?.source ||
+              "",
+            trackerSource: tracker?.source || "",
+            hasBaseline: Boolean(tracker?.creationBaseline),
+          };
+        },
+        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+      ),
+    )
+    .toEqual({
+      slotCount: 1,
+      activeSource: "created",
+      trackerSource: "created",
+      hasBaseline: true,
+    });
+
+  await openHeaderMenu(page);
+  await expect(page.locator("#creatorModeBtn")).toHaveText("New Character");
+  await page.locator("#creatorModeBtn").click();
+  await expect(page.locator("#characterName")).toContainText(
+    "Untitled Character",
+  );
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+  await expect(page.locator("#creationPanel")).toBeHidden();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          Object.keys(
+            JSON.parse(localStorage.getItem(key) || "null")?.charactersById ||
+              {},
+          ).length,
+        CHARACTER_LIBRARY_KEY,
+      ),
+    )
+    .toBe(1);
+
+  await page.locator("[data-setup-action='discardDraftCharacter']").click();
+  await expect(page.locator("#appDialog")).toBeVisible();
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(
+    "Saved Draft Prospect",
+  );
+
+  await page.locator("[data-setup-action='deleteCharacterSlot']").click();
+  await expect(page.locator("#appDialog")).toBeVisible();
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          Object.keys(
+            JSON.parse(localStorage.getItem(key) || "null")?.charactersById ||
+              {},
+          ).length,
+        CHARACTER_LIBRARY_KEY,
+      ),
+    )
+    .toBe(0);
 });
 
 test("settings panel exposes backup and local data controls", async ({

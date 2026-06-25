@@ -336,8 +336,29 @@ function activeCharacterSlot() {
   );
 }
 
+function isUnsavedCharacterDraft() {
+  return Boolean(characterDraftMode);
+}
+
+function placeholderSetupCharacterName(name = character?.name || "") {
+  return String(name || "").trim().toLowerCase() === "untitled character";
+}
+
+function draftCharacterSaveName() {
+  const name = String(character?.name || "").trim();
+  return name && !placeholderSetupCharacterName(name) ? name : "";
+}
+
+function setSaveState(message) {
+  if (!els.saveState) return;
+  els.saveState.textContent = message;
+}
+
 function saveCharacterSlot(data = character, metadata = {}) {
   if (!data) return null;
+  if (isUnsavedCharacterDraft() && data === character && !metadata.forceDraftSave)
+    return null;
+  if (data === character) characterDraftMode = false;
   if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
   const activeId = metadata.id || characterLibrary.activeCharacterId;
   const existing = activeId ? characterLibrary.charactersById[activeId] : null;
@@ -352,7 +373,82 @@ function saveCharacterSlot(data = character, metadata = {}) {
   return entry;
 }
 
+async function saveUnsavedCharacterDraft() {
+  if (!isUnsavedCharacterDraft()) {
+    saveCharacterSlot(character);
+    return activeCharacterSlot();
+  }
+
+  let name = draftCharacterSaveName();
+  if (!name) {
+    const prompted = await appPrompt(
+      "Name this character before saving the draft to your local character library.",
+      "",
+      {
+        title: "Save Character Draft",
+        confirmText: "Save Draft",
+        inputLabel: "Character name",
+      },
+    );
+    if (prompted === null) return null;
+    name = prompted.trim();
+  }
+
+  if (!name || placeholderSetupCharacterName(name)) {
+    appToast("A character name is required before saving this draft.", "danger");
+    return null;
+  }
+
+  character.name = name;
+  const entry = addCharacterSlot(character, {
+    source: "created",
+    forceDraftSave: true,
+  });
+  character = normalize(entry.character);
+  characterDraftMode = false;
+  setSaveState("Saved");
+  return entry;
+}
+
+function discardUnsavedCharacterDraft() {
+  if (!isUnsavedCharacterDraft()) return false;
+  characterDraftMode = false;
+  const active = activeCharacterSlot();
+  if (active) {
+    activateCharacterSlot(active.id);
+    return true;
+  }
+  character = normalize(clone(defaultCharacter));
+  storageAdapter.remove(STORAGE_KEY);
+  return false;
+}
+
+async function resolveUnsavedCharacterDraft(message) {
+  if (!isUnsavedCharacterDraft()) return true;
+  const choice = await appChoice(
+    message ||
+      "This character draft has not been saved to your local character library.",
+    [
+      { value: "save", label: "Save Draft" },
+      { value: "discard", label: "Discard Draft", danger: true },
+      { value: "cancel", label: "Stay Here", ghost: true },
+    ],
+    {
+      title: "Unsaved Character Draft",
+      cancelText: "Stay Here",
+    },
+  );
+
+  if (choice === "save") return Boolean(await saveUnsavedCharacterDraft());
+  if (choice === "discard") {
+    discardUnsavedCharacterDraft();
+    return true;
+  }
+  return false;
+}
+
 function addCharacterSlot(data, metadata = {}) {
+  characterDraftMode = false;
   if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
   const preferredId = metadata.preferredId || "";
   const existingId = metadata.replacePreferred
@@ -376,6 +472,7 @@ function addCharacterSlot(data, metadata = {}) {
 function activateCharacterSlot(id) {
   const entry = characterLibrary?.charactersById?.[id];
   if (!entry) return false;
+  characterDraftMode = false;
   characterLibrary.activeCharacterId = id;
   character = normalize(entry.character);
   persistCharacterLibrary();
@@ -385,16 +482,18 @@ function activateCharacterSlot(id) {
 
 function removeCharacterSlot(id) {
   if (!characterLibrary?.charactersById?.[id]) return false;
+  const removingActive = characterLibrary.activeCharacterId === id;
   delete characterLibrary.charactersById[id];
-  if (characterLibrary.activeCharacterId === id) {
+  if (removingActive) {
     const next = characterLibraryEntries()[0];
     characterLibrary.activeCharacterId = next?.id || "";
-    character = next ? normalize(next.character) : normalize(clone(defaultCharacter));
+    if (!isUnsavedCharacterDraft())
+      character = next ? normalize(next.character) : normalize(clone(defaultCharacter));
   }
   persistCharacterLibrary();
-  if (characterLibrary.activeCharacterId)
+  if (characterLibrary.activeCharacterId && !isUnsavedCharacterDraft())
     storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
-  else storageAdapter.remove(STORAGE_KEY);
+  else if (!isUnsavedCharacterDraft()) storageAdapter.remove(STORAGE_KEY);
   return true;
 }
 
@@ -430,6 +529,10 @@ function loadCharacter() {
 }
 
 function save() {
+  if (isUnsavedCharacterDraft()) {
+    setSaveState("Draft not saved");
+    return;
+  }
   saveCharacterSlot(character);
   if (!els.saveState) return;
   els.saveState.textContent = "Saving…";

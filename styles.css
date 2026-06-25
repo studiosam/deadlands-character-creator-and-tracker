@@ -1975,6 +1975,39 @@ h3 {
   min-width: 0;
 }
 
+.setup-persistence-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.85rem;
+  align-items: center;
+  margin-top: 0.9rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(65, 36, 16, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 250, 239, 0.66);
+  color: var(--dossier-ink);
+}
+
+.setup-persistence-panel.unsaved {
+  border-color: rgba(143, 84, 0, 0.5);
+  background: #fff0ca;
+}
+
+.setup-persistence-panel strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.setup-persistence-panel p {
+  margin: 0.25rem 0 0;
+  color: var(--dossier-muted);
+}
+
+.setup-persistence-panel .creator-actions {
+  justify-content: flex-end;
+  margin: 0;
+}
+
 .setup-step-panel {
   display: grid;
   gap: 0.85rem;
@@ -3186,6 +3219,15 @@ h3 {
   .settings-badges,
   .library-actions,
   .library-character-actions {
+    justify-content: flex-start;
+  }
+
+  .setup-persistence-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .setup-persistence-panel .creator-actions {
     justify-content: flex-start;
   }
 

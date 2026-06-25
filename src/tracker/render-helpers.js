@@ -19,6 +19,7 @@ function compactText(value, fallback = "—") {
 }
 
 function sourceLabel() {
+  if (isUnsavedCharacterDraft()) return "Unsaved draft";
   const source = compactText(character.source || "Tracker", "Tracker");
   if (source.toLowerCase() === "savaged.us") return "Savaged.us import";
   if (source.toLowerCase() === "created") return "Created in tracker";

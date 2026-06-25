@@ -1,5 +1,6 @@
 let character = null;
 let characterLibrary = null;
+let characterDraftMode = false;
 let saveTimer = null;
 let edgeEditingId = "";
 let hindranceEditingId = "";

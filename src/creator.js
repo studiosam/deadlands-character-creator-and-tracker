@@ -513,6 +513,125 @@ function setCreatorMode(on) {
   setAppTab(on ? "creation" : "play");
 }
 
+function coreSetupSkills() {
+  return ["Athletics", "Common Knowledge", "Notice", "Persuasion", "Stealth"].map(
+    (name) => ({
+      name,
+      die: "d4",
+      linkedAttribute: setupSkillAttributeKey(
+        SKILL_LINKED_ATTRIBUTES[name] || "smarts",
+      ),
+      notes: "",
+      core: true,
+    }),
+  );
+}
+
+function newSetupCharacterPayload() {
+  const attributes = {
+    agility: "d4",
+    smarts: "d4",
+    spirit: "d4",
+    strength: "d4",
+    vigor: "d4",
+  };
+  const skills = coreSetupSkills();
+  const creation = {
+    normalAttributePointsAvailable: 5,
+    normalSkillPointsAvailable: 12,
+    extraSkillPointsFromHindrances: 0,
+    extraMoneyFromHindrances: 0,
+    extraAttributeRaisesFromHindrances: 0,
+    extraEdgesFromHindrances: 0,
+    finalized: false,
+    allowIncomplete: false,
+    allowDebt: false,
+  };
+
+  return {
+    source: "created",
+    name: "Untitled Character",
+    rank: "Novice",
+    ancestry: "Human",
+    archetype: "",
+    gender: "",
+    age: "",
+    player: "",
+    description: "",
+    background: "",
+    worstNightmare: "",
+    attributes,
+    skills,
+    creation,
+    creationBaseline: {
+      attributes: clone(attributes),
+      skills: clone(skills),
+    },
+    hindrances: [],
+    edges: [],
+    advances: [],
+    arcaneBackground: null,
+    powers: [],
+    resources: [],
+    hucksterDeal: null,
+    moneyCents: 25000,
+    ammo: {},
+    weapons: [],
+    armorInventory: [],
+    inventory: [
+      {
+        id: "clothing",
+        name: "Clothing",
+        count: 1,
+        note: "Starting clothing.",
+        weight: 0,
+        costCents: 0,
+        book: "Deadlands",
+      },
+    ],
+    consumables: [],
+    vehicles: [],
+    damage: { wounds: 0, maxWounds: 3, fatigue: 0, maxFatigue: 2 },
+    bennies: { current: 3, starting: 3, normalStarting: 3 },
+    conviction: 0,
+    derived: {
+      pace: 6,
+      parry: 2,
+      baseToughness: 4,
+      toughness: 4,
+      armor: 0,
+    },
+    armorStrength: "d4",
+    weaponStrength: "d4",
+    selectedArmorLocation: "best",
+    reminders: [],
+    notes: "",
+  };
+}
+
+async function startCharacterSetupCreation() {
+  if (
+    !(await resolveUnsavedCharacterDraft(
+      "Save or discard the current character draft before starting another one.",
+    ))
+  )
+    return;
+  if (activeCharacterSlot()) saveCharacterSlot(character);
+  character = normalize(newSetupCharacterPayload());
+  characterDraftMode = true;
+  characterSetupStep = "concept";
+  storageAdapter.writeFlag(DEMO_MODE_KEY, false);
+  storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
+  $("#demoWelcomePanel")?.classList.add("hidden");
+  setLandingVisible(false);
+  render();
+  setAppTab("character");
+  renderDemoExperience();
+  $("#characterSetupPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  setSaveState("Draft not saved");
+  appToast("Unsaved character draft started in Character Setup.", "success");
+}
+
 function setLandingVisible(visible) {
   $("#landingPage")?.classList.toggle("hidden", !visible);
   $(".shell")?.classList.toggle("hidden", visible);
@@ -557,7 +676,13 @@ function closeLandingPage(tabName = "play") {
   $(".shell")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function openLandingPage() {
+async function openLandingPage() {
+  if (
+    !(await resolveUnsavedCharacterDraft(
+      "Save this character draft before returning to the main menu?",
+    ))
+  )
+    return;
   renderLandingPage();
   $("#landingPage")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -583,17 +708,23 @@ function updateLandingPrimaryLabel() {
     : "Open Tracker";
 }
 
-function openLandingCharacter(id) {
+async function openLandingCharacter(id) {
   if (!characterLibrary?.charactersById?.[id]) return;
+  if (
+    !(await resolveUnsavedCharacterDraft(
+      "Save this character draft before opening another saved character?",
+    ))
+  )
+    return;
   if (activeCharacterSlot()) saveCharacterSlot(character);
   if (!activateCharacterSlot(id)) return;
   render();
   closeLandingPage("play");
 }
 
-function continueFromLandingPage() {
+async function continueFromLandingPage() {
   const selected = selectedLandingCharacterSlot();
-  if (selected) openLandingCharacter(selected.id);
+  if (selected) await openLandingCharacter(selected.id);
   else closeLandingPage("play");
 }
 
@@ -641,6 +772,12 @@ async function loadSampleCharacter(sample) {
 }
 
 async function loadSelectedSampleCharacter() {
+  if (
+    !(await resolveUnsavedCharacterDraft(
+      "Save this character draft before loading a sample character?",
+    ))
+  )
+    return;
   const select = $("#sampleCharacterSelect");
   const sample = sampleById(select?.value);
 
@@ -1387,7 +1524,7 @@ async function creatorAction(actionName, target) {
       serializeCreationDraftExport(creationDraft),
     );
   } else if (actionName === "exportFull") {
-    saveCharacterSlot(character);
+    if (!isUnsavedCharacterDraft()) saveCharacterSlot(character);
     exportJson(
       "deadlands-tracker-full-state.json",
       serializeFullStateExport(character, creationDraft, characterLibrary),
@@ -1523,9 +1660,7 @@ $("#loadSampleBtn").onclick = () => {
 };
 $("#loadSelectedSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#startCreatorWelcomeBtn").onclick = () => {
-  storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
-  $("#demoWelcomePanel")?.classList.add("hidden");
-  setCreatorMode(true);
+  startCharacterSetupCreation();
 };
 $("#importWelcomeBtn").onclick = () => {
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
@@ -1552,8 +1687,9 @@ $("#landingContinueBtn").onclick = continueFromLandingPage;
 if (els.landingCharacterSelect)
   els.landingCharacterSelect.onchange = updateLandingPrimaryLabel;
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
-$("#landingCreateBtn").onclick = () => closeLandingPage("creation");
+$("#landingCreateBtn").onclick = startCharacterSetupCreation;
 $("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
 $("#landingSourcesRulesetsBtn").onclick = () =>
   closeLandingPage("sourcesRulesets");
 $("#mainMenuBtn").onclick = openLandingPage;
+$("#creatorModeBtn").onclick = startCharacterSetupCreation;

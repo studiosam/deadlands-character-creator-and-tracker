@@ -273,6 +273,73 @@ function syncSetupHindranceSeverity() {
   );
 }
 
+async function saveDraftCharacterFromSetup() {
+  const entry = await saveUnsavedCharacterDraft();
+  if (!entry) return false;
+  render();
+  renderDemoExperience();
+  appToast(`${entry.name} saved to Characters.`, "success");
+  return true;
+}
+
+async function discardDraftCharacterFromSetup() {
+  if (!isUnsavedCharacterDraft()) return false;
+  if (
+    !(await appConfirm(
+      "This draft has not been saved to your local character library.",
+      {
+        title: "Discard character draft?",
+        confirmText: "Discard Draft",
+        danger: true,
+      },
+    ))
+  )
+    return false;
+
+  const restoredSavedCharacter = discardUnsavedCharacterDraft();
+  render();
+  renderDemoExperience();
+  if (!restoredSavedCharacter && !characterLibraryEntries().length)
+    renderLandingPage();
+  else setAppTab("character");
+  appToast("Character draft discarded.", "success");
+  return true;
+}
+
+async function deleteActiveCharacterSlotFromSetup() {
+  const entry = activeCharacterSlot();
+  if (!entry) return;
+  if (
+    !(await appConfirm(
+      `Delete ${entry.name || "this character"} from this browser? This removes the local saved slot.`,
+      {
+        title: "Delete character?",
+        confirmText: "Delete Character",
+        danger: true,
+      },
+    ))
+  )
+    return;
+
+  const deletedName = entry.name || "Character";
+  if (removeCharacterSlot(entry.id)) {
+    render();
+    renderDemoExperience();
+    if (!activeCharacterSlot()) renderLandingPage();
+    appToast(`${deletedName} deleted.`, "success");
+  }
+}
+
+async function saveCurrentCharacterToLibrary() {
+  if (isUnsavedCharacterDraft()) {
+    await saveDraftCharacterFromSetup();
+    return;
+  }
+  saveCharacterSlot(character);
+  render();
+  appToast("Current character saved to the library.", "success");
+}
+
 function exportJson(name, data) {
   downloadJsonFile(name, data);
   appToast(`Exported ${name}.`, "success");
@@ -281,6 +348,7 @@ function exportJson(name, data) {
 function importJsonText(text) {
   const data = JSON.parse(text);
   const payload = unwrapImportPayload(data);
+  characterDraftMode = false;
   if (payload.type === "full-state") {
     characterLibrary = payload.characterLibrary
       ? normalizeCharacterLibrary(payload.characterLibrary)
@@ -339,7 +407,7 @@ function exportTrackerCharacter() {
 }
 
 function exportFullState() {
-  saveCharacterSlot(character);
+  if (!isUnsavedCharacterDraft()) saveCharacterSlot(character);
   exportJson(
     "deadlands-tracker-full-state.json",
     serializeFullStateExport(character, creationDraft, characterLibrary),
@@ -477,7 +545,13 @@ window.visualViewport?.addEventListener(
   updateLandingImportPanelBounds,
 );
 
-document.addEventListener("click", (event) => {
+window.addEventListener("beforeunload", (event) => {
+  if (!isUnsavedCharacterDraft()) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
+
+document.addEventListener("click", async (event) => {
   if (event.target?.dataset?.action) action(event.target.dataset.action);
   const setupStep = event.target?.closest?.("[data-setup-step]");
   if (setupStep) {
@@ -487,7 +561,20 @@ document.addEventListener("click", (event) => {
   const setupAction = event.target?.closest?.("[data-setup-action]");
   if (setupAction?.dataset.setupAction === "saveConcept") {
     applyConceptInputs();
-    appToast("Concept saved.", "success");
+    appToast(
+      isUnsavedCharacterDraft()
+        ? "Concept updated. Save Draft when you want to keep it."
+        : "Concept saved.",
+      "success",
+    );
+  } else if (setupAction?.dataset.setupAction === "saveDraftCharacter") {
+    await saveDraftCharacterFromSetup();
+  } else if (setupAction?.dataset.setupAction === "discardDraftCharacter") {
+    await discardDraftCharacterFromSetup();
+  } else if (setupAction?.dataset.setupAction === "saveCharacterNow") {
+    await saveCurrentCharacterToLibrary();
+  } else if (setupAction?.dataset.setupAction === "deleteCharacterSlot") {
+    await deleteActiveCharacterSlotFromSetup();
   } else if (setupAction?.dataset.setupAction === "addHindrance") {
     addSetupHindrance();
   } else if (setupAction?.dataset.setupAction === "removeHindrance") {
@@ -531,6 +618,12 @@ async function handleLibraryAction(target) {
   if (!entry) return;
 
   if (target.dataset.libraryAction === "switch") {
+    if (
+      !(await resolveUnsavedCharacterDraft(
+        "Save this character draft before switching to another saved character?",
+      ))
+    )
+      return;
     saveCharacterSlot(character);
     if (activateCharacterSlot(id)) {
       render();
@@ -553,6 +646,12 @@ async function handleLibraryAction(target) {
       appToast("Character slot renamed.", "success");
     }
   } else if (target.dataset.libraryAction === "duplicate") {
+    if (
+      !(await resolveUnsavedCharacterDraft(
+        "Save this character draft before duplicating a saved character?",
+      ))
+    )
+      return;
     saveCharacterSlot(character);
     const copy = duplicateCharacterSlot(id);
     if (copy) {
@@ -578,6 +677,7 @@ async function handleLibraryAction(target) {
     if (removeCharacterSlot(id)) {
       render();
       renderDemoExperience();
+      if (!activeCharacterSlot()) renderLandingPage();
       appToast("Character slot deleted.", "success");
     }
   }
@@ -763,6 +863,7 @@ els.resetBtn.onclick = async () => {
       danger: true,
     })
   ) {
+    characterDraftMode = false;
     character = normalize(clone(defaultCharacter));
     storageAdapter.writeFlag(DEMO_MODE_KEY, false);
     saveCharacterSlot(character, { source: "reset" });
@@ -777,7 +878,22 @@ els.importFile.onchange = (event) => {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
+    try {
+      JSON.parse(reader.result);
+    } catch {
+      alertInvalidImport();
+      els.importFile.value = "";
+      return;
+    }
+    if (
+      !(await resolveUnsavedCharacterDraft(
+        "Save this character draft before importing another character?",
+      ))
+    ) {
+      els.importFile.value = "";
+      return;
+    }
     try {
       const importType = importJsonText(reader.result);
       completeImport(importType);
@@ -801,9 +917,22 @@ els.cancelPasteImportBtn.onclick = () => {
   els.pasteImportPanel.classList.add("hidden");
   resetLandingImportPanelBounds();
 };
-els.confirmPasteImportBtn.onclick = () => {
+els.confirmPasteImportBtn.onclick = async () => {
+  const text = els.importJsonText.value.trim();
   try {
-    const importType = importJsonText(els.importJsonText.value.trim());
+    JSON.parse(text);
+  } catch {
+    alertInvalidImport();
+    return;
+  }
+  if (
+    !(await resolveUnsavedCharacterDraft(
+      "Save this character draft before importing another character?",
+    ))
+  )
+    return;
+  try {
+    const importType = importJsonText(text);
     completeImport(importType);
   } catch {
     alertInvalidImport();
@@ -813,12 +942,14 @@ els.confirmPasteImportBtn.onclick = () => {
 els.settingsExportTrackerBtn.onclick = exportTrackerCharacter;
 els.settingsExportFullBtn.onclick = exportFullState;
 els.settingsOpenImportBtn.onclick = openPasteImportPanel;
-els.librarySaveCurrentBtn.onclick = () => {
-  saveCharacterSlot(character);
-  render();
-  appToast("Current character saved to the library.", "success");
-};
-els.libraryDuplicateActiveBtn.onclick = () => {
+els.librarySaveCurrentBtn.onclick = saveCurrentCharacterToLibrary;
+els.libraryDuplicateActiveBtn.onclick = async () => {
+  if (
+    !(await resolveUnsavedCharacterDraft(
+      "Save this character draft before duplicating the active saved character?",
+    ))
+  )
+    return;
   saveCharacterSlot(character);
   const copy = duplicateCharacterSlot(characterLibrary?.activeCharacterId);
   if (!copy) return;
@@ -880,6 +1011,7 @@ els.settingsClearAllBtn.onclick = async () => {
   storageAdapter.remove(CREATION_KEY);
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, false);
+  characterDraftMode = false;
   character = normalize(clone(defaultCharacter));
   characterLibrary = emptyCharacterLibrary();
   creationDraft = emptyDraft();

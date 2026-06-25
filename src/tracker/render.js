@@ -118,6 +118,10 @@ function renderCharacterLibrary() {
   if (!els.characterLibraryList) return;
   const entries = characterLibraryEntries();
   const activeId = characterLibrary?.activeCharacterId || "";
+  if (els.librarySaveCurrentBtn)
+    els.librarySaveCurrentBtn.textContent = isUnsavedCharacterDraft()
+      ? "Save Draft"
+      : "Save Current";
   els.librarySummaryPill.textContent = entries.length
     ? `${entries.length} saved`
     : "No saved slots";
@@ -170,7 +174,13 @@ function renderSettingsSummary() {
   els.settingsStatusBadges.innerHTML = [
     `<span class="pill">Version ${esc(APP_VERSION)}</span>`,
     `<span class="pill">Schema ${APP_SCHEMA_VERSION}</span>`,
-    `<span class="pill">${isDemoMode ? "Demo mode" : "Local save"}</span>`,
+    `<span class="pill">${
+      isUnsavedCharacterDraft()
+        ? "Unsaved draft"
+        : isDemoMode
+          ? "Demo mode"
+          : "Local save"
+    }</span>`,
   ].join("");
 
   els.settingsAppDetails.innerHTML = [
@@ -187,7 +197,14 @@ function renderSettingsSummary() {
     .join("");
 
   els.settingsStorageDetails.innerHTML = [
-    ["Tracker Save", hasTrackerSave ? localJsonSize(STORAGE_KEY) : "Not saved yet"],
+    [
+      "Tracker Save",
+      isUnsavedCharacterDraft()
+        ? "Draft not saved"
+        : hasTrackerSave
+          ? localJsonSize(STORAGE_KEY)
+          : "Not saved yet",
+    ],
     [
       "Character Library",
       characterLibraryEntries().length
@@ -635,7 +652,36 @@ function renderCharacterSetup() {
   };
 
   els.characterSetupContent.innerHTML =
-    renderers[characterSetupStep]?.() || renderSetupConcept();
+    renderSetupPersistencePanel() +
+    (renderers[characterSetupStep]?.() || renderSetupConcept());
+}
+
+function renderSetupPersistencePanel() {
+  if (isUnsavedCharacterDraft()) {
+    return `<div class="setup-persistence-panel unsaved">
+      <div>
+        <strong>Unsaved setup draft</strong>
+        <p>This character is only temporary until you save it to the local character library.</p>
+      </div>
+      <div class="creator-actions">
+        <button type="button" data-setup-action="saveDraftCharacter">Save Draft</button>
+        <button class="ghost danger-lite" type="button" data-setup-action="discardDraftCharacter">Discard Draft</button>
+      </div>
+    </div>`;
+  }
+
+  const active = activeCharacterSlot();
+  if (!active) return "";
+  return `<div class="setup-persistence-panel">
+    <div>
+      <strong>Saved character slot</strong>
+      <p>Changes autosave to this browser. You can also delete this local slot from here or the Characters library.</p>
+    </div>
+    <div class="creator-actions">
+      <button class="ghost" type="button" data-setup-action="saveCharacterNow">Save Now</button>
+      <button class="ghost danger-lite" type="button" data-setup-action="deleteCharacterSlot">Delete Character</button>
+    </div>
+  </div>`;
 }
 
 function renderSetupConcept() {
@@ -662,7 +708,11 @@ function renderSetupConcept() {
         <option value="Nonbinary"></option>
       </datalist>
     </div>
-    <p class="creator-note">Concept edits update the active tracker character and use the normal local save path.</p>
+    <p class="creator-note">${
+      isUnsavedCharacterDraft()
+        ? "Concept edits update this temporary draft. Use Save Draft when you want to keep it across sessions."
+        : "Concept edits update the active tracker character and use the normal local save path."
+    }</p>
     <div class="creator-actions">
       <button id="setupSaveConceptBtn" type="button" data-setup-action="saveConcept">Save Concept</button>
     </div>
