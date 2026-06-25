@@ -380,6 +380,11 @@ h3 {
 }
 
 .landing-footer-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
   position: fixed;
   bottom: clamp(0.75rem, 2vw, 1.25rem);
   left: 50%;
@@ -392,6 +397,31 @@ h3 {
   text-align: center;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.72);
   transform: translateX(-50%);
+}
+
+.landing-footer-link {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.18rem;
+  text-shadow: inherit;
+}
+
+.landing-footer-link:hover,
+.landing-footer-link:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  color: #ffe1ad;
+  outline: 2px solid rgba(242, 182, 95, 0.55);
+  outline-offset: 0.2rem;
+  transform: none;
 }
 
 .shell {

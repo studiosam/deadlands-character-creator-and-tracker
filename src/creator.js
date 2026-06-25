@@ -1550,4 +1550,6 @@ if (els.landingCharacterSelect)
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#landingCreateBtn").onclick = () => closeLandingPage("creation");
 $("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
+$("#landingSourcesRulesetsBtn").onclick = () =>
+  closeLandingPage("sourcesRulesets");
 $("#mainMenuBtn").onclick = openLandingPage;

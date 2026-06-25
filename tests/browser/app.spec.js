@@ -260,6 +260,25 @@ test("settings panel exposes backup and local data controls", async ({
   await expect(page.locator("#demoWelcomePanel")).toBeVisible();
 });
 
+test("opens sources and rulesets from the landing footer", async ({ page }) => {
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await page.locator("#landingSourcesRulesetsBtn").click();
+
+  const panel = page.locator("#sourcesRulesetsPanel");
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+  await expect(panel).toBeVisible();
+  await expect(
+    panel.getByRole("heading", { name: "Sources & Rulesets", exact: true }),
+  ).toBeVisible();
+  await expect(panel).toContainText(
+    "Browning Private Security & Detective Agency",
+  );
+  await expect(panel).toContainText("Savage Worlds: Adventure Edition");
+  await expect(panel).toContainText("This page is informational for now");
+  await expect(panel.locator("input, select, textarea, button")).toHaveCount(0);
+});
+
 test("shows the read-only sources and rulesets page from the global menu", async ({
   page,
 }) => {
