@@ -62,6 +62,8 @@ const els = {
   characterSourceBadge: $("#characterSourceBadge"),
   characterStatusStrip: $("#characterStatusStrip"),
   characterBasicsList: $("#characterBasicsList"),
+  characterSetupStepper: $("#characterSetupStepper"),
+  characterSetupContent: $("#characterSetupContent"),
   attributesList: $("#attributesList"),
   skillsList: $("#skillsList"),
   advanceSummaryList: $("#advanceSummaryList"),

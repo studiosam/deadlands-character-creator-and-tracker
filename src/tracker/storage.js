@@ -10,6 +10,11 @@ function normalize(data) {
   normalized.rank ||= defaults.rank;
   normalized.ancestry ||= defaults.ancestry;
   normalized.archetype ||= defaults.archetype;
+  normalized.gender ||= defaults.gender || "";
+  normalized.age ||= defaults.age || "";
+  normalized.player ||= defaults.player || "";
+  normalized.description ||= defaults.description || "";
+  normalized.background ||= defaults.background || "";
   normalized.bennies = { ...defaults.bennies, ...(normalized.bennies || {}) };
   normalized.damage = { ...defaults.damage, ...(normalized.damage || {}) };
   normalized.derived = { ...defaults.derived, ...(normalized.derived || {}) };

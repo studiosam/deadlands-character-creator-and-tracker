@@ -319,6 +319,108 @@ test("shows the read-only sources and rulesets page from the global menu", async
   }
 });
 
+test("edits concept information in character setup and preserves it across reload", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+
+  const setupPanel = page.locator("#characterSetupPanel");
+  await expect(setupPanel).toBeVisible();
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+  await expect(page.locator("[data-setup-step='concept']")).toHaveAttribute(
+    "aria-current",
+    "step",
+  );
+  await expect(page.locator("#setupRankInput")).toHaveCount(0);
+
+  await page.locator("#setupNameInput").fill("Concept Test Character");
+  await page.locator("#setupGenderInput").fill("Male");
+  await page.locator("#setupAgeInput").fill("61");
+  await page.locator("#setupArchetypeInput").fill("Rail Scout");
+  await page.locator("#setupPlayerInput").fill("Austin");
+  await page
+    .locator("#setupDescriptionInput")
+    .fill("A weathered scout with steady hands and a careful eye.");
+  await page
+    .locator("#setupBackgroundInput")
+    .fill("Dusty left Deseret after hard accusations and harder losses.");
+  await page.locator("#setupSaveConceptBtn").click();
+
+  await expect(page.locator("#characterName")).toContainText(
+    "Concept Test Character",
+  );
+  await expect(page.locator("#characterSubtitle")).toContainText("Rail Scout");
+
+  await page.locator("[data-setup-step='review']").click();
+  const reviewPanel = page.locator("#setupReviewPanel");
+  await expect(reviewPanel).toBeVisible();
+  await expect(reviewPanel).toContainText("Concept Test Character");
+  await expect(reviewPanel).toContainText("Male");
+  await expect(reviewPanel).toContainText("61");
+  await expect(reviewPanel).toContainText("Rail Scout");
+  await expect(reviewPanel).toContainText("Austin");
+  await expect(reviewPanel).toContainText(
+    "A weathered scout with steady hands and a careful eye.",
+  );
+  await expect(reviewPanel).toContainText(
+    "Dusty left Deseret after hard accusations and harder losses.",
+  );
+
+  await reloadIntoTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+
+  await expect(page.locator("#characterName")).toContainText(
+    "Concept Test Character",
+  );
+  await expect(page.locator("#characterSubtitle")).toContainText("Rail Scout");
+
+  await page.locator("[data-setup-step='review']").click();
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Concept Test Character",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText("Male");
+  await expect(page.locator("#setupReviewPanel")).toContainText("61");
+  await expect(page.locator("#setupReviewPanel")).toContainText("Rail Scout");
+  await expect(page.locator("#setupReviewPanel")).toContainText("Austin");
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "A weathered scout with steady hands and a careful eye.",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Dusty left Deseret after hard accusations and harder losses.",
+  );
+});
+
+test("shows human-only race ancestry setup as read-only", async ({ page }) => {
+  await enterTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+
+  await page.locator("[data-setup-step='ancestry']").click();
+  const ancestryPanel = page.locator("#setupRaceAncestryPanel");
+  await expect(ancestryPanel).toBeVisible();
+  await expect(
+    ancestryPanel.getByRole("heading", {
+      name: "Race / Ancestry",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.locator("[data-setup-step='ancestry']")).toContainText(
+    "Complete",
+  );
+  await expect(ancestryPanel).toContainText("Current Race / Ancestry");
+  await expect(ancestryPanel).toContainText("Human");
+  await expect(ancestryPanel).toContainText("This step is read-only for now.");
+  await expect(
+    ancestryPanel.locator("input, select, textarea, button"),
+  ).toHaveCount(0);
+
+  await page.locator("[data-setup-step='review']").click();
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Race / Ancestry",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText("Human");
+});
+
 test("loads a bundled sample in demo mode", async ({ page }) => {
   await page.locator("#landingLoadSampleBtn").click();
 
@@ -932,6 +1034,13 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await expect(page.locator("#characterName")).toContainText("Lehi Larson");
   await page.getByRole("button", { name: "Notes" }).click();
   await expect(page.locator("#importWarningsList")).toBeVisible();
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await page.locator("[data-setup-step='review']").click();
+  await expect(page.locator("#setupReviewPanel")).toContainText("Lehi Larson");
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Import Warnings",
+  );
 });
 
 test("round-trips exported tracker JSON through import", async ({

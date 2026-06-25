@@ -1,12 +1,29 @@
-function render() {
-  els.characterName.textContent = character.name;
-  els.characterSubtitle.textContent = [
-    character.rank,
-    character.ancestry,
-    character.archetype,
-  ]
+const CHARACTER_SETUP_STEPS = [
+  { id: "concept", label: "Concept" },
+  { id: "ancestry", label: "Race / Ancestry" },
+  { id: "hindrances", label: "Hindrances" },
+  { id: "attributesSkills", label: "Attributes and Skills" },
+  { id: "edges", label: "Edges" },
+  { id: "review", label: "Review" },
+];
+var characterSetupStep = "concept";
+
+function characterIdentitySubtitle(separator = " ") {
+  return [character.rank, character.ancestry, character.archetype]
     .filter(Boolean)
-    .join(" ");
+    .join(separator);
+}
+
+function renderCharacterIdentityDisplays() {
+  els.characterName.textContent = character.name;
+  els.characterSubtitle.textContent = characterIdentitySubtitle(" ");
+  if (els.characterSummaryName) els.characterSummaryName.textContent = character.name;
+  if (els.characterDossierSubtitle)
+    els.characterDossierSubtitle.textContent = characterIdentitySubtitle(" • ");
+}
+
+function render() {
+  renderCharacterIdentityDisplays();
   els.woundsValue.textContent = character.damage.wounds;
   const woundPenalty = Math.min(character.damage.wounds, character.damage.maxWounds);
   els.woundPenalty.textContent = woundPenalty ? `Penalty -${woundPenalty}` : "";
@@ -50,6 +67,7 @@ function render() {
   els.moneyDisplay.textContent = money(character.moneyCents);
 
   renderCharacterSummary();
+  renderCharacterSetup();
   renderAdvancement();
   renderArmor();
   renderWeapons();
@@ -182,6 +200,192 @@ function renderSettingsSummary() {
     .join("");
 }
 
+function characterSetupStatus(stepId) {
+  if (stepId === "concept") {
+    return character.name && character.archetype ? "Complete" : "Incomplete";
+  }
+  if (stepId === "ancestry") {
+    return isHumanAncestry(character.ancestry) ? "Complete" : "Needs review";
+  }
+  if (stepId === "review") return "Needs review";
+  return "Planned";
+}
+
+function setupStatusMarkup(status) {
+  const className = slugify(status);
+  return `<span class="setup-status ${className}">${esc(status)}</span>`;
+}
+
+function setupDetail(label, value) {
+  return `<div class="setup-detail"><span>${esc(label)}</span><strong>${esc(value || "—")}</strong></div>`;
+}
+
+function isHumanAncestry(value) {
+  return String(value || "").trim().toLowerCase() === "human";
+}
+
+function renderCharacterSetup() {
+  if (!els.characterSetupStepper || !els.characterSetupContent) return;
+  if (!CHARACTER_SETUP_STEPS.some((step) => step.id === characterSetupStep))
+    characterSetupStep = "concept";
+
+  els.characterSetupStepper.innerHTML = CHARACTER_SETUP_STEPS.map(
+    (step, index) => {
+      const active = step.id === characterSetupStep;
+      const status = characterSetupStatus(step.id);
+      return `<button class="setup-step ${active ? "active" : ""}" type="button" data-setup-step="${esc(step.id)}"${active ? ' aria-current="step"' : ""}>
+        <span>${index + 1}. ${esc(step.label)}</span>
+        ${setupStatusMarkup(status)}
+      </button>`;
+    },
+  ).join("");
+
+  const renderers = {
+    concept: renderSetupConcept,
+    ancestry: renderSetupAncestry,
+    hindrances: () =>
+      renderSetupPlaceholder(
+        "Hindrances",
+        "Hindrance selection and benefit spending are planned for a later implementation slice.",
+        [["Recorded Hindrances", `${character.hindrances.length}`]],
+      ),
+    attributesSkills: () =>
+      renderSetupPlaceholder(
+        "Attributes and Skills",
+        "Attribute and skill setup is scaffolded here but remains read-only in this first Concept-focused slice.",
+        [
+          ["Recorded Attributes", `${Object.keys(character.attributes || {}).length}`],
+          ["Recorded Skills", `${character.skills.length}`],
+        ],
+      ),
+    edges: () =>
+      renderSetupPlaceholder(
+        "Edges",
+        "Edge selection is planned for a later setup slice. Existing Edges remain visible in the dossier below.",
+        [["Recorded Edges", `${character.edges.length}`]],
+      ),
+    review: renderSetupReview,
+  };
+
+  els.characterSetupContent.innerHTML =
+    renderers[characterSetupStep]?.() || renderSetupConcept();
+}
+
+function renderSetupConcept() {
+  const status = characterSetupStatus("concept");
+  return `<section id="setupConceptPanel" class="setup-step-panel" aria-labelledby="setupConceptHeading">
+    <div class="section-title">
+      <div>
+        <h3 id="setupConceptHeading">Concept</h3>
+        <p>Edit the active character's core concept fields. Race and ancestry stay in the Race / Ancestry step.</p>
+      </div>
+      ${setupStatusMarkup(status)}
+    </div>
+    <div class="setup-form-grid">
+      <label>Character name<input id="setupNameInput" data-concept-field="name" value="${esc(character.name)}" autocomplete="off"></label>
+      <label>Gender<input id="setupGenderInput" data-concept-field="gender" value="${esc(character.gender || "")}" autocomplete="off" list="setupGenderOptions"></label>
+      <label>Age<input id="setupAgeInput" data-concept-field="age" value="${esc(character.age || "")}" autocomplete="off"></label>
+      <label>Profession or Title<input id="setupArchetypeInput" data-concept-field="archetype" value="${esc(character.archetype || "")}" autocomplete="off"></label>
+      <label>Player name<input id="setupPlayerInput" data-concept-field="player" value="${esc(character.player || "")}" autocomplete="off"></label>
+      <label class="setup-wide">Description<textarea id="setupDescriptionInput" data-concept-field="description" rows="5">${esc(character.description || "")}</textarea></label>
+      <label class="setup-wide">Background<textarea id="setupBackgroundInput" data-concept-field="background" rows="6">${esc(character.background || "")}</textarea></label>
+      <datalist id="setupGenderOptions">
+        <option value="Female"></option>
+        <option value="Male"></option>
+        <option value="Nonbinary"></option>
+      </datalist>
+    </div>
+    <p class="creator-note">Concept edits update the active tracker character and use the normal local save path.</p>
+    <div class="creator-actions">
+      <button id="setupSaveConceptBtn" type="button" data-setup-action="saveConcept">Save Concept</button>
+    </div>
+  </section>`;
+}
+
+function renderSetupAncestry() {
+  const status = characterSetupStatus("ancestry");
+  const supported = isHumanAncestry(character.ancestry);
+  return `<section id="setupRaceAncestryPanel" class="setup-step-panel" aria-labelledby="setupRaceAncestryHeading">
+    <div class="section-title">
+      <div>
+        <h3 id="setupRaceAncestryHeading">Race / Ancestry</h3>
+        <p>Deadlands: The Weird West uses Human characters for the current built-in profile.</p>
+      </div>
+      ${setupStatusMarkup(status)}
+    </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Current Race / Ancestry", character.ancestry)}
+      ${setupDetail("Supported by This Profile", "Human")}
+    </div>
+    <p class="creator-note">This step is read-only for now. Future SWADE-wide profile support may make race and ancestry configurable.</p>
+    ${
+      supported
+        ? ""
+        : '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
+    }
+  </section>`;
+}
+
+function renderSetupPlaceholder(title, body, details = []) {
+  return `<section class="setup-step-panel setup-placeholder" aria-labelledby="setup${slugify(title)}Heading">
+    <div class="section-title">
+      <div>
+        <h3 id="setup${slugify(title)}Heading">${esc(title)}</h3>
+        <p>${esc(body)}</p>
+      </div>
+      ${setupStatusMarkup("Planned")}
+    </div>
+    <div class="setup-review-grid">
+      ${details.map(([label, value]) => setupDetail(label, value)).join("")}
+    </div>
+  </section>`;
+}
+
+function renderSetupReview() {
+  const importWarnings = character.reminders.filter(
+    (reminder) => reminder.type === "Import Warning",
+  );
+  const ancestryNeedsReview = !isHumanAncestry(character.ancestry);
+  return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
+    <div class="section-title">
+      <div>
+        <h3 id="setupReviewHeading">Review</h3>
+        <p>Summary only. Full rules validation is not part of this slice.</p>
+      </div>
+      ${setupStatusMarkup("Needs review")}
+    </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Name", character.name)}
+      ${setupDetail("Gender", character.gender)}
+      ${setupDetail("Age", character.age)}
+      ${setupDetail("Profession or Title", character.archetype)}
+      ${setupDetail("Race / Ancestry", character.ancestry)}
+      ${setupDetail("Player Name", character.player)}
+      ${setupDetail("Recorded Rank", character.rank)}
+      ${setupDetail("Description", character.description)}
+      ${setupDetail("Background", character.background)}
+    </div>
+    ${
+      ancestryNeedsReview
+        ? '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
+        : ""
+    }
+    <div class="setup-review-warnings">
+      <h4>Import Warnings</h4>
+      ${
+        importWarnings.length
+          ? importWarnings
+              .map(
+                (warning) =>
+                  `<article class="dossier-note warning"><strong>${esc(warning.name)}</strong><p>${esc(warning.text)}</p></article>`,
+              )
+              .join("")
+          : emptyState("No import warnings.")
+      }
+    </div>
+  </section>`;
+}
+
 function renderEncumbrance() {
   const info = calculateEncumbrance(character);
   const warning = encumbranceWarningText(info);
@@ -224,7 +428,10 @@ function renderCharacterSummary() {
   els.characterBasicsList.innerHTML = [
     ["Rank", character.rank],
     ["Ancestry", character.ancestry],
-    ["Concept", character.archetype],
+    ["Gender", character.gender],
+    ["Age", character.age],
+    ["Profession or Title", character.archetype],
+    ["Player Name", character.player],
     ["Source", sourceLabel()],
   ]
     .map(

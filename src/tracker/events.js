@@ -54,6 +54,45 @@ function action(type) {
   save();
 }
 
+function applyConceptField(input) {
+  const field = input.dataset.conceptField;
+  if (
+    ![
+      "name",
+      "gender",
+      "age",
+      "archetype",
+      "player",
+      "description",
+      "background",
+    ].includes(field)
+  )
+    return;
+  character[field] = input.value.trim();
+  renderCharacterIdentityDisplays();
+  save();
+}
+
+function applyConceptInputs() {
+  document.querySelectorAll("[data-concept-field]").forEach((input) => {
+    const field = input.dataset.conceptField;
+    if (
+      [
+        "name",
+        "gender",
+        "age",
+        "archetype",
+        "player",
+        "description",
+        "background",
+      ].includes(field)
+    )
+      character[field] = input.value.trim();
+  });
+  render();
+  save();
+}
+
 function exportJson(name, data) {
   downloadJsonFile(name, data);
   appToast(`Exported ${name}.`, "success");
@@ -260,6 +299,16 @@ window.visualViewport?.addEventListener(
 
 document.addEventListener("click", (event) => {
   if (event.target?.dataset?.action) action(event.target.dataset.action);
+  const setupStep = event.target?.closest?.("[data-setup-step]");
+  if (setupStep) {
+    characterSetupStep = setupStep.dataset.setupStep;
+    renderCharacterSetup();
+  }
+  const setupAction = event.target?.closest?.("[data-setup-action]");
+  if (setupAction?.dataset.setupAction === "saveConcept") {
+    applyConceptInputs();
+    appToast("Concept saved.", "success");
+  }
   const entryAction = event.target?.closest?.("[data-entry-action]");
   if (entryAction) handleEntryAction(entryAction);
   const libraryAction = event.target?.closest?.("[data-library-action]");
@@ -270,6 +319,16 @@ document.addEventListener("click", (event) => {
   }
   if (event.target?.closest?.(".header-actions button")) closeHeaderMenu();
   if (!event.target?.closest?.(".header-tools")) closeHeaderMenu();
+});
+
+document.addEventListener("input", (event) => {
+  const conceptInput = event.target?.closest?.("[data-concept-field]");
+  if (conceptInput) applyConceptField(conceptInput);
+});
+
+document.addEventListener("change", (event) => {
+  const conceptInput = event.target?.closest?.("[data-concept-field]");
+  if (conceptInput) applyConceptField(conceptInput);
 });
 
 async function handleLibraryAction(target) {
