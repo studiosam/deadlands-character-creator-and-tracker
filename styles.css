@@ -189,17 +189,19 @@ h3 {
 .landing-page {
   position: relative;
   display: grid;
-  place-items: center;
+  align-items: center;
+  justify-items: start;
   min-height: 100vh;
   min-height: 100dvh;
   overflow: hidden;
-  padding: clamp(1.25rem, 3.4vw, 3rem);
+  padding: clamp(1.5rem, 6vw, 6rem) clamp(1.25rem, 4vw, 3rem)
+    clamp(1.5rem, 6vw, 6rem) clamp(1.5rem, 6vw, 6rem);
   background:
     linear-gradient(
       90deg,
-      rgba(5, 6, 9, 0.92) 0%,
-      rgba(5, 6, 9, 0.74) 34%,
-      rgba(5, 6, 9, 0.3) 72%
+      rgba(5, 6, 9, 0.94) 0%,
+      rgba(5, 6, 9, 0.78) 34%,
+      rgba(5, 6, 9, 0.28) 72%
     ),
     url("assets/landing-hero-weird-west-tabletop.png") center / cover no-repeat;
 }
@@ -214,55 +216,105 @@ h3 {
 }
 
 .landing-content {
+  --landing-rule-gap: 1rem;
+  --landing-rule-width: min(34rem, 72vw);
+  --landing-rule: linear-gradient(
+    90deg,
+    rgba(242, 182, 95, 0.76),
+    rgba(242, 182, 95, 0.18) 58%,
+    rgba(242, 182, 95, 0)
+  );
   position: relative;
   z-index: 2;
   display: grid;
-  gap: 1.05rem;
-  width: min(36rem, 100%);
-  padding: clamp(1.15rem, 3vw, 1.65rem);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-lg);
-  background: rgba(6, 8, 12, 0.78);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
+  gap: var(--landing-rule-gap);
+  width: min(56rem, 100%);
+  margin-top: -3vh;
+}
+
+.landing-content::before {
+  content: "";
+  width: var(--landing-rule-width);
+  height: 1px;
+  border-radius: 999px;
+  background: var(--landing-rule);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
 }
 
 .landing-content h1 {
-  font-size: clamp(2rem, 5vw, 3.1rem);
-  line-height: 0.96;
+  max-width: 11em;
+  margin: 0;
+  font-size: clamp(3.8rem, 7.7vw, 7.4rem);
+  line-height: 0.82;
+  letter-spacing: -0.055em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.72);
+}
+
+.landing-content h1::after {
+  content: "";
+  display: block;
+  width: var(--landing-rule-width);
+  height: 1px;
+  margin-top: var(--landing-rule-gap);
+  background: var(--landing-rule);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
 }
 
 .landing-copy {
+  max-width: 36rem;
+  margin: 0;
   color: #e8ded0;
-  font-size: 1rem;
+  font-size: clamp(1.02rem, 1.25vw, 1.16rem);
   line-height: 1.45;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.68);
+}
+
+.landing-copy::after {
+  content: "";
+  display: block;
+  width: var(--landing-rule-width);
+  height: 1px;
+  margin-top: var(--landing-rule-gap);
+  background: var(--landing-rule);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
 .landing-character-picker {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.4rem;
+  width: min(34rem, 100%);
+  margin: 0;
 }
 
 .landing-character-picker label {
+  margin: 0;
   color: var(--accent-strong);
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.08em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.72);
   text-transform: uppercase;
 }
 
 .landing-character-picker select {
   width: 100%;
   min-height: 2.75rem;
+  border-color: rgba(255, 255, 255, 0.16);
+  background-color: rgba(6, 8, 12, 0.68);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
 }
 
 .landing-actions {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.75rem;
+  width: min(34rem, 100%);
 }
 
 .landing-actions button {
   min-height: 2.75rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.2;
 }
 
 .landing-primary {
@@ -272,11 +324,48 @@ h3 {
 .landing-secondary-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
+  gap: 0.75rem;
+}
+
+.landing-content:has(.landing-character-picker:not(.hidden)) {
+  grid-template-columns: repeat(2, minmax(14rem, 17rem));
+  align-items: end;
+  column-gap: 0.75rem;
+}
+
+.landing-content:has(.landing-character-picker:not(.hidden))::before,
+.landing-content:has(.landing-character-picker:not(.hidden)) h1,
+.landing-content:has(.landing-character-picker:not(.hidden)) .landing-copy,
+.landing-content:has(.landing-character-picker:not(.hidden))
+  .landing-footer-note {
+  grid-column: 1 / -1;
+}
+
+.landing-content:has(.landing-character-picker:not(.hidden))
+  .landing-character-picker {
+  width: 100%;
+}
+
+.landing-content:has(.landing-character-picker:not(.hidden)) .landing-actions {
+  display: contents;
+  width: auto;
+}
+
+.landing-content:has(.landing-character-picker:not(.hidden))
+  .landing-actions
+  .landing-primary {
+  align-self: end;
+  grid-column: 2;
+}
+
+.landing-content:has(.landing-character-picker:not(.hidden))
+  .landing-secondary-actions {
+  grid-column: 1 / -1;
 }
 
 .landing-sample-link {
   justify-self: center;
+  margin-top: -0.2rem;
   min-height: 2.5rem;
   border-color: transparent;
   background: transparent;
@@ -291,8 +380,18 @@ h3 {
 }
 
 .landing-footer-note {
+  position: fixed;
+  bottom: clamp(0.75rem, 2vw, 1.25rem);
+  left: 50%;
+  z-index: 3;
+  width: max-content;
+  max-width: min(34rem, calc(100vw - 2rem));
+  margin: 0;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.72);
+  transform: translateX(-50%);
 }
 
 .shell {
@@ -2241,6 +2340,7 @@ h3 {
   .landing-page {
     min-height: 100vh;
     min-height: 100dvh;
+    padding: clamp(1.25rem, 4vw, 3rem);
     background-position: 58% center;
   }
 
@@ -2297,11 +2397,17 @@ h3 {
     min-height: 100vh;
     min-height: 100dvh;
     padding: 1rem;
+    justify-items: center;
     background-position: 66% center;
   }
 
   .landing-content {
     width: 100%;
+    margin-top: 0;
+  }
+
+  .landing-content:has(.landing-character-picker:not(.hidden)) {
+    grid-template-columns: 1fr;
   }
 
   .landing-content h1 {
@@ -2309,6 +2415,7 @@ h3 {
   }
 
   .landing-copy {
+    max-width: 30rem;
     font-size: 1rem;
   }
 
