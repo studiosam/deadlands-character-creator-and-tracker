@@ -254,6 +254,8 @@ const els = {
   settingsClearDraftBtn: $("#settingsClearDraftBtn"),
   settingsClearDemoFlagBtn: $("#settingsClearDemoFlagBtn"),
   settingsClearAllBtn: $("#settingsClearAllBtn"),
+  landingSavedCharacters: $("#landingSavedCharacters"),
+  landingSavedCharacterList: $("#landingSavedCharacterList"),
   librarySummaryPill: $("#librarySummaryPill"),
   characterLibraryList: $("#characterLibraryList"),
   librarySaveCurrentBtn: $("#librarySaveCurrentBtn"),

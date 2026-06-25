@@ -328,6 +328,91 @@ test("keeps character slots in stable order when switching", async ({
   expect(namesAfter).toEqual(namesBefore);
 });
 
+test("opens a selected saved character from the landing page", async ({
+  page,
+}) => {
+  const firstName = "Landing First Character";
+  const secondName = "Landing Second Character";
+  const landingCard = (name) =>
+    page.locator("#landingSavedCharacterList .landing-saved-character").filter({
+      has: page.getByRole("heading", { name }),
+    });
+
+  await enterTracker(page);
+  await saveCurrentCharacter(page);
+  await renameActiveCharacter(page, firstName);
+  await page.locator("#libraryDuplicateActiveBtn").click();
+  await expect(page.locator(".library-character")).toHaveCount(2);
+  await renameActiveCharacter(page, secondName);
+  await expect(page.locator("#characterName")).toContainText(secondName);
+
+  await openHeaderMenu(page);
+  await page.locator("#mainMenuBtn").click();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator("#landingSavedCharacters")).toBeVisible();
+  await expect(landingCard(firstName)).toHaveCount(1);
+  await expect(landingCard(secondName)).toHaveCount(1);
+  await expect(landingCard(secondName)).toHaveClass(/active/);
+  await expect(landingCard(secondName)).toHaveAttribute("aria-current", "true");
+
+  await landingCard(firstName)
+    .getByRole("button", { name: `Open ${firstName}` })
+    .click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator("#characterName")).toContainText(firstName);
+
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ libraryKey, storageKey, expectedName }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active =
+            library?.charactersById?.[library.activeCharacterId] || null;
+          return {
+            activeName: active?.name || "",
+            activeCharacterName: active?.character?.name || "",
+            trackerName: tracker?.name || "",
+            isExpectedActive: active?.name === expectedName,
+          };
+        },
+        {
+          libraryKey: CHARACTER_LIBRARY_KEY,
+          storageKey: STORAGE_KEY,
+          expectedName: firstName,
+        },
+      ),
+    )
+    .toEqual({
+      activeName: firstName,
+      activeCharacterName: firstName,
+      trackerName: firstName,
+      isExpectedActive: true,
+    });
+
+  await openHeaderMenu(page);
+  await page.locator("#mainMenuBtn").click();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(landingCard(firstName)).toHaveClass(/active/);
+  await expect(landingCard(firstName)).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#landingContinueLabel")).toHaveText(
+    `Continue as ${firstName}`,
+  );
+
+  await page.reload();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(landingCard(firstName)).toHaveClass(/active/);
+  await expect(landingCard(firstName)).toHaveAttribute("aria-current", "true");
+
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator("#characterName")).toContainText(firstName);
+});
+
 test("keeps duplicated character state independent across switching and reload", async ({
   page,
 }) => {

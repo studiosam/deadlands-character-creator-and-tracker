@@ -99,14 +99,17 @@ const SAMPLE_CHARACTERS = [
   {
     id: "dusty-mccaw",
     name: "Dusty McCaw",
-    summary: "Built-in drifter sample with weapons, armor, gear, reminders, and table-ready combat state.",
+    summary:
+      "Built-in drifter sample with weapons, armor, gear, reminders, and table-ready combat state.",
     source: "built-in",
   },
   {
     id: "lehi-larson",
     name: "Lehi Larson",
-    summary: "Savaged.us Blessed import sample for arcane tools, powers, import warnings, and resources.",
-    source: "docs/Sample Characters/savaged-us-json-export-character-Lehi Larson.json",
+    summary:
+      "Savaged.us Blessed import sample for arcane tools, powers, import warnings, and resources.",
+    source:
+      "docs/Sample Characters/savaged-us-json-export-character-Lehi Larson.json",
   },
 ];
 
@@ -519,12 +522,35 @@ function renderLandingPage() {
   if (!landing) return;
   setLandingVisible(true);
 
+  const entries = characterLibraryEntries();
+  const activeId = characterLibrary?.activeCharacterId || "";
+  const active = activeCharacterSlot();
   const label = $("#landingContinueLabel");
   if (label) {
-    label.textContent = characterLibraryEntries().length || storageAdapter.has(STORAGE_KEY)
-      ? `Continue ${character?.name || "Character"}`
+    label.textContent = active
+      ? `Continue as ${active.name || active.character?.name || "Character"}`
       : "Launch Tracker";
   }
+
+  if (els.landingSavedCharacters)
+    els.landingSavedCharacters.classList.toggle("hidden", !entries.length);
+  if (!els.landingSavedCharacterList) return;
+
+  els.landingSavedCharacterList.innerHTML = entries
+    .map((entry) => {
+      const isActive = entry.id === activeId;
+      const name = entry.name || entry.character?.name || "Unnamed Character";
+      const meta = [entry.rank, entry.archetype].filter(Boolean).join(" • ");
+      return `<article class="landing-saved-character ${isActive ? "active" : ""}" ${isActive ? 'aria-current="true"' : ""}>
+        <div class="landing-saved-main">
+          <span class="pill">${isActive ? "Active" : "Saved"}</span>
+          <h3>${esc(name)}</h3>
+          ${meta ? `<p>${esc(meta)}</p>` : ""}
+        </div>
+        <button type="button" data-landing-character-id="${esc(entry.id)}" aria-label="Open ${esc(name)}">Open</button>
+      </article>`;
+    })
+    .join("");
 }
 
 function closeLandingPage(tabName = "play") {
@@ -538,18 +564,26 @@ function openLandingPage() {
   $("#landingPage")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function openLandingCharacter(id) {
+  if (!characterLibrary?.charactersById?.[id]) return;
+  if (activeCharacterSlot()) saveCharacterSlot(character);
+  if (!activateCharacterSlot(id)) return;
+  render();
+  closeLandingPage("play");
+}
+
 function populateSampleCharacterSelect() {
   const select = $("#sampleCharacterSelect");
   if (!select) return;
   select.innerHTML = SAMPLE_CHARACTERS.map(
-    (sample) => `<option value="${esc(sample.id)}">${esc(sample.name)}</option>`,
+    (sample) =>
+      `<option value="${esc(sample.id)}">${esc(sample.name)}</option>`,
   ).join("");
 }
 
 function sampleById(id) {
   return (
-    SAMPLE_CHARACTERS.find((sample) => sample.id === id) ||
-    SAMPLE_CHARACTERS[0]
+    SAMPLE_CHARACTERS.find((sample) => sample.id === id) || SAMPLE_CHARACTERS[0]
   );
 }
 
@@ -599,7 +633,8 @@ async function loadSelectedSampleCharacter() {
     storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
     setLandingVisible(false);
     $("#demoWelcomePanel")?.classList.add("hidden");
-    if ($("#demoWelcomePanel")) $("#demoWelcomePanel").dataset.manualOpen = "false";
+    if ($("#demoWelcomePanel"))
+      $("#demoWelcomePanel").dataset.manualOpen = "false";
     render();
     setCreatorMode(false);
     renderDemoExperience();
@@ -1086,7 +1121,10 @@ function bindCreatorInputs() {
           renderCreator();
           appToast("Character creation draft imported.", "success");
         } catch {
-          appToast("That file was not valid character creation JSON.", "danger");
+          appToast(
+            "That file was not valid character creation JSON.",
+            "danger",
+          );
         }
       };
       reader.readAsText(imported);
@@ -1477,7 +1515,10 @@ $("#dismissWelcomeBtn").onclick = () => {
 $("#exitDemoModeBtn").onclick = () => {
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   renderDemoExperience();
-  appToast("Demo mode banner dismissed. Current character data remains saved.", "success");
+  appToast(
+    "Demo mode banner dismissed. Current character data remains saved.",
+    "success",
+  );
 };
 $("#landingContinueBtn").onclick = () => closeLandingPage("play");
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
@@ -1486,4 +1527,9 @@ $("#landingImportBtn").onclick = () => {
   closeLandingPage("play");
   openPasteImportPanel();
 };
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("[data-landing-character-id]");
+  if (!button) return;
+  openLandingCharacter(button.dataset.landingCharacterId);
+});
 $("#mainMenuBtn").onclick = openLandingPage;
