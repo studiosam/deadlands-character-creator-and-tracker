@@ -529,7 +529,9 @@ test("loads a bundled sample in demo mode", async ({ page }) => {
   expect(library.charactersById[library.activeCharacterId].isDemo).toBe(true);
 });
 
-test("shows usage notes for attributes and skills", async ({ page }) => {
+test("shows usage notes and audits setup traits, edges, powers, and gear", async ({
+  page,
+}) => {
   await enterTracker(page);
   const sample = await page.request.get(
     "/docs/Sample%20Characters/savaged-us-json-export-character-Dusty%20McCaw.json",
@@ -563,25 +565,89 @@ test("shows usage notes for attributes and skills", async ({ page }) => {
     "Linked attribute: Agility",
   );
 
+  await expect(
+    page.locator("[data-setup-step='attributesSkills']"),
+  ).toContainText("Complete");
   await page.locator("[data-setup-step='attributesSkills']").click();
   const setupTraitsPanel = page.locator("#setupTraitsPanel");
   await expect(setupTraitsPanel).toContainText("Traits");
   await expect(setupTraitsPanel).toContainText("Advanced character");
   await expect(setupTraitsPanel).toContainText("All Skills Shown");
-  await expect(setupTraitsPanel).toContainText("Untrained Value");
+  await expect(setupTraitsPanel).toContainText("Unskilled Value");
   await expect(setupTraitsPanel).toContainText("d4-2");
   await expect(
     page
       .locator("#setupTraitsPanel .skill-chip")
       .filter({ hasText: "Healing" }),
   ).toHaveAttribute("title", /Treating wounds/);
+  await expect(
+    page
+      .locator("#setupTraitsPanel .skill-chip:not(.unskilled)")
+      .filter({ hasText: "Healing" }),
+  ).toHaveCSS("border-style", "solid");
 
-  const untrainedAcademics = setupTraitsPanel
-    .locator(".skill-chip.untrained")
+  const unskilledAcademics = setupTraitsPanel
+    .locator(".skill-chip.unskilled")
     .filter({ hasText: "Academics" });
-  await expect(untrainedAcademics).toContainText("d4-2");
-  await expect(untrainedAcademics).toContainText("Untrained");
-  await expect(untrainedAcademics).toHaveAttribute("title", /Formal education/);
+  await expect(unskilledAcademics).toContainText("d4-2");
+  await expect(unskilledAcademics).toContainText("Unskilled");
+  await expect(unskilledAcademics).toHaveAttribute("title", /Formal education/);
+  await expect(unskilledAcademics).toHaveCSS("border-style", "dashed");
+
+  await expect(page.locator("[data-setup-step='edges']")).toContainText(
+    "Complete",
+  );
+  await page.locator("[data-setup-step='edges']").click();
+  const setupEdgesPanel = page.locator("#setupEdgesPanel");
+  await expect(setupEdgesPanel).toContainText("Recorded Edges");
+  await expect(setupEdgesPanel).toContainText("Catalog Matches");
+  await expect(setupEdgesPanel).toContainText("Arcane Background Edges");
+  await expect(setupEdgesPanel).toContainText("Arcane Background (Blessed)");
+  await expect(setupEdgesPanel).toContainText("Healer");
+  await expect(setupEdgesPanel).toContainText("Catalog matched");
+  await expect(setupEdgesPanel).toContainText("Imported Advance Edge");
+  await expect(setupEdgesPanel).toContainText("Imported selected Edge");
+  await expect(setupEdgesPanel).toContainText("Spirit d6+, Faith d4+");
+  await expect(setupEdgesPanel).not.toContainText(
+    "more than one Arcane Background Edge",
+  );
+
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Complete",
+  );
+  await page.locator("[data-setup-step='powers']").click();
+  const setupPowersPanel = page.locator("#setupPowersPanel");
+  await expect(setupPowersPanel).toContainText("Arcane Background");
+  await expect(setupPowersPanel).toContainText("Blessed");
+  await expect(setupPowersPanel).toContainText("Power Points");
+  await expect(setupPowersPanel).toContainText("15 / 15");
+  await expect(setupPowersPanel).toContainText("Starting Powers Expected");
+  await expect(setupPowersPanel).toContainText("Holy Symbol");
+  await expect(setupPowersPanel).toContainText("Barrier");
+  await expect(setupPowersPanel).toContainText("Protection");
+
+  await expect(page.locator("[data-setup-step='gear']")).toContainText(
+    "Complete",
+  );
+  await page.locator("[data-setup-step='gear']").click();
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await expect(setupGearPanel).toContainText("Money");
+  await expect(setupGearPanel).toContainText("Weapons");
+  await expect(setupGearPanel).toContainText("Armor");
+  await expect(setupGearPanel).toContainText("Active Load");
+  await expect(setupGearPanel).toContainText("Load Limit");
+  await expect(setupGearPanel).toContainText("Colt Army");
+  await expect(setupGearPanel).toContainText("Winchester");
+  await expect(setupGearPanel).toContainText("Native Armor");
+  await expect(setupGearPanel).toContainText("Ammunition");
+
+  await page.locator("[data-setup-step='review']").click();
+  await expect(page.locator("#setupReviewPanel")).toContainText("Edge Count");
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Arcane Background Edges",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText("Known Powers");
+  await expect(page.locator("#setupReviewPanel")).toContainText("Gear Items");
 });
 
 test("manages multiple local character save slots", async ({ page }) => {

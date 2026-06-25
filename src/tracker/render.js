@@ -4,6 +4,8 @@ const CHARACTER_SETUP_STEPS = [
   { id: "hindrances", label: "Hindrances" },
   { id: "attributesSkills", label: "Traits" },
   { id: "edges", label: "Edges" },
+  { id: "powers", label: "Powers" },
+  { id: "gear", label: "Gear" },
   { id: "review", label: "Review" },
 ];
 var characterSetupStep = "concept";
@@ -212,6 +214,33 @@ function characterSetupStatus(stepId) {
     if (!stats.count) return "Incomplete";
     return stats.unknownCount ? "Needs review" : "Complete";
   }
+  if (stepId === "attributesSkills") {
+    return ATTRIBUTE_ORDER.every((key) => character.attributes?.[key])
+      ? "Complete"
+      : "Incomplete";
+  }
+  if (stepId === "edges") {
+    const edges = character.edges || [];
+    if (!edges.length) return "Incomplete";
+    return edges.filter((edge) => isArcaneBackgroundEdge(edge.name)).length > 1
+      ? "Needs review"
+      : "Complete";
+  }
+  if (stepId === "powers") {
+    const { arcaneEdges, arcaneConfig, powerPoints, powers } =
+      setupPowerAuditContext();
+    const hasArcaneSignal =
+      arcaneEdges.length || arcaneConfig || powerPoints || powers.length;
+    if (!hasArcaneSignal) return "Not applicable";
+    if (!arcaneConfig && (powerPoints || powers.length)) return "Needs review";
+    if (arcaneEdges.length > 1) return "Needs review";
+    if (!powerPoints) return "Needs review";
+    return powers.length ? "Complete" : "Incomplete";
+  }
+  if (stepId === "gear") {
+    const counts = setupGearAuditCounts();
+    return counts.totalItems || counts.moneyCents ? "Complete" : "Incomplete";
+  }
   if (stepId === "review") return "Needs review";
   return "Planned";
 }
@@ -223,6 +252,56 @@ function setupStatusMarkup(status) {
 
 function setupDetail(label, value) {
   return `<div class="setup-detail"><span>${esc(label)}</span><strong>${esc(value || "—")}</strong></div>`;
+}
+
+function setupPowerAuditContext() {
+  const arcaneEdges = (character.edges || []).filter((edge) =>
+    isArcaneBackgroundEdge(edge.name),
+  );
+  const edgeConfig = arcaneEdges
+    .map((edge) => arcaneBackgroundConfigFromEdge(edge.name))
+    .find(Boolean);
+  const stateConfig = arcaneBackgroundConfigFromEdge(
+    character.arcaneBackground?.edgeName || character.arcaneBackground?.name || "",
+  );
+  return {
+    arcaneEdges,
+    arcaneConfig: stateConfig || edgeConfig || null,
+    powerPoints: powerPointResource(),
+    powers: [...(character.powers || [])].filter((power) => power.name),
+  };
+}
+
+function setupGearAuditCounts() {
+  const ammoPools = Object.values(character.ammo || {}).filter(
+    (ammo) => Number(ammo?.count) > 0,
+  );
+  const vehicles = (character.vehicles || []).filter(
+    (vehicle) => Number(vehicle?.count ?? 1) > 0,
+  );
+  const counts = {
+    moneyCents: Math.max(0, Number(character.moneyCents) || 0),
+    weapons: (character.weapons || []).filter((weapon) => weapon.name).length,
+    armor: (character.armorInventory || []).filter(
+      (armor) => Number(armor?.count ?? 1) > 0,
+    ).length,
+    inventory: (character.inventory || []).filter(
+      (item) => Number(item?.count ?? 1) > 0,
+    ).length,
+    consumables: (character.consumables || []).filter(
+      (item) => Number(item?.count ?? 1) > 0,
+    ).length,
+    ammo: ammoPools.length,
+    vehicles: vehicles.length,
+  };
+  counts.totalItems =
+    counts.weapons +
+    counts.armor +
+    counts.inventory +
+    counts.consumables +
+    counts.ammo +
+    counts.vehicles;
+  return counts;
 }
 
 function sortedAttributeEntries() {
@@ -270,7 +349,7 @@ function setupSkillCatalogEntries() {
           ...recorded,
           name: recorded.name || name,
           linkedAttribute: recorded.linkedAttribute || linkedAttribute,
-          isUntrained: false,
+          isUnskilled: false,
         };
       }
 
@@ -278,7 +357,7 @@ function setupSkillCatalogEntries() {
         name,
         die: "d4-2",
         linkedAttribute,
-        isUntrained: true,
+        isUnskilled: true,
       };
     },
   );
@@ -288,11 +367,125 @@ function setupSkillCatalogEntries() {
     entries.push({
       ...skill,
       linkedAttribute: skillLinkedAttribute(skill) || skill.linkedAttribute || "Custom",
-      isUntrained: false,
+      isUnskilled: false,
     });
   });
 
   return entries;
+}
+
+function edgeCatalogEntry(edge) {
+  const edgeId = String(edge?.id || "");
+  const catalogId =
+    edge?.catalogId || (edgeId.startsWith("dl-edge-") ? edgeId : "");
+  const catalog = catalogId
+    ? EDGE_CATALOG.find((item) => item.id === catalogId)
+    : null;
+  if (catalog) return catalog;
+
+  const text = plainEntryName(edge?.name);
+  if (!text) return null;
+  return EDGE_CATALOG.find((item) => plainEntryName(item.name) === text) || null;
+}
+
+function edgeMatchedAdvance(edge) {
+  const edgeName = plainEntryName(edge?.name);
+  if (!edgeName) return null;
+  return (character.advances || []).find((advance) => {
+    const advanceText = plainEntryName(
+      [
+        advance.type,
+        advance.name,
+        advance.targetName,
+        advance.summary,
+        advance.description,
+        advance.notes,
+      ].join(" "),
+    );
+    return advanceText.includes("edge") && advanceText.includes(edgeName);
+  });
+}
+
+function edgeLikelySource(edge) {
+  const source = plainEntryName(edge?.source);
+  const importNote = plainEntryName(edge?.importNote);
+
+  if (source === "human free edge") return "Human free Edge";
+  if (source === "hindrance purchased edge")
+    return "Hindrance benefit / GM exception Edge";
+  if (source === "later advance") return "Advance Edge";
+  if (importNote === "advance" || edgeMatchedAdvance(edge))
+    return "Imported Advance Edge";
+  if (importNote === "selected") return "Imported selected Edge";
+  if (edge?.source && edge.source !== "Manual") return "Imported / source unknown";
+  return "Manual / source unknown";
+}
+
+function setupEdgeBadge(label, tone = "") {
+  return `<span class="setup-edge-badge${tone ? ` ${esc(tone)}` : ""}">${esc(label)}</span>`;
+}
+
+function setupEdgeAuditCard(edge) {
+  const catalog = edgeCatalogEntry(edge);
+  const arcaneConfig = arcaneBackgroundConfigFromEdge(edge.name);
+  const likelySource = edgeLikelySource(edge);
+  const matchedAdvance = edgeMatchedAdvance(edge);
+  const category = catalog?.category || edge.category || "Unknown";
+  const rank = catalog?.rank || edge.rank || "Unknown";
+  const requirements = catalog?.requirements || edge.requirements || "";
+  const summary = catalog?.shortSummary || edge.shortSummary || edge.notes || "";
+  const source = [edge.source, edge.importNote ? `Import: ${edge.importNote}` : ""]
+    .filter(Boolean)
+    .join(" • ");
+  const badges = [
+    setupEdgeBadge(likelySource, likelySource.includes("unknown") ? "muted" : ""),
+    catalog
+      ? setupEdgeBadge("Catalog matched", "good")
+      : setupEdgeBadge("No catalog match", "warning"),
+    arcaneConfig ? setupEdgeBadge("Arcane Background", "arcane") : "",
+    category && category !== "Unknown" ? setupEdgeBadge(category) : "",
+    rank && rank !== "Unknown" ? setupEdgeBadge(rank) : "",
+  ]
+    .filter(Boolean)
+    .join("");
+  const advisories = [
+    !catalog
+      ? "Catalog match not found; imported or custom text is preserved for review."
+      : "",
+    likelySource.includes("unknown")
+      ? "Creation source is not explicit. Treat this as an audit hint, not validation."
+      : "",
+    matchedAdvance
+      ? `Matched recorded Advance #${matchedAdvance.number || "?"}.`
+      : "",
+    arcaneConfig
+      ? `${arcaneConfig.displayName} uses ${arcaneConfig.arcaneSkill} and starts with ${arcaneConfig.startingPowerPoints} Power Points.`
+      : "",
+  ].filter(Boolean);
+
+  return `<article class="setup-edge-card${arcaneConfig ? " arcane" : ""}">
+    <div class="setup-edge-card-head">
+      <div>
+        <h4>${esc(edge.name || "Unnamed Edge")}</h4>
+        ${source ? `<p>${esc(source)}</p>` : ""}
+      </div>
+      <div class="setup-edge-badges">${badges}</div>
+    </div>
+    <div class="setup-edge-details">
+      ${setupDetail("Category", category)}
+      ${setupDetail("Rank", rank)}
+      ${setupDetail("Requirements", requirements || "None recorded")}
+      ${setupDetail("Likely Source", likelySource)}
+    </div>
+    ${summary ? `<p class="setup-edge-summary">${esc(summary)}</p>` : ""}
+    ${
+      advisories.length
+        ? `<div class="setup-edge-advisories">${advisories
+            .map((item) => `<p>${esc(item)}</p>`)
+            .join("")}</div>`
+        : ""
+    }
+  </article>`;
 }
 
 function isHumanAncestry(value) {
@@ -349,12 +542,9 @@ function renderCharacterSetup() {
     ancestry: renderSetupAncestry,
     hindrances: renderSetupHindrances,
     attributesSkills: renderSetupTraits,
-    edges: () =>
-      renderSetupPlaceholder(
-        "Edges",
-        "Edge selection is planned for a later setup slice. Existing Edges remain visible in the dossier below.",
-        [["Recorded Edges", `${character.edges.length}`]],
-      ),
+    edges: renderSetupEdges,
+    powers: renderSetupPowers,
+    gear: renderSetupGear,
     review: renderSetupReview,
   };
 
@@ -484,7 +674,7 @@ function renderSetupTraits() {
   const attributeEntries = sortedAttributeEntries();
   const skills = sortedSkills();
   const setupSkills = setupSkillCatalogEntries();
-  const untrainedCount = setupSkills.filter((skill) => skill.isUntrained).length;
+  const unskilledCount = setupSkills.filter((skill) => skill.isUnskilled).length;
   const hasAdvances = (character.advances || []).length > 0;
 
   return `<section id="setupTraitsPanel" class="setup-step-panel" aria-labelledby="setupTraitsHeading">
@@ -499,8 +689,8 @@ function renderSetupTraits() {
       ${setupDetail("Recorded Attributes", `${attributeEntries.length}`)}
       ${setupDetail("Recorded Skills", `${skills.length}`)}
       ${setupDetail("All Skills Shown", `${setupSkills.length}`)}
-      ${setupDetail("Untrained Skills", `${untrainedCount}`)}
-      ${setupDetail("Untrained Value", "d4-2")}
+      ${setupDetail("Unskilled Skills", `${unskilledCount}`)}
+      ${setupDetail("Unskilled Value", "d4-2")}
       ${setupDetail("Recorded Advances", `${(character.advances || []).length}`)}
     </div>
     ${
@@ -523,7 +713,7 @@ function renderSetupTraits() {
       </section>
       <section class="setup-trait-group" aria-labelledby="setupSkillsHeading">
         <h4 id="setupSkillsHeading">Skills</h4>
-        <p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown as untrained d4-2.</p>
+        <p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown as unskilled d4-2.</p>
         <div class="setup-skill-attribute-groups">
           ${ATTRIBUTE_ORDER.map((attributeKey) => {
             const attributeSkills = setupSkills.filter(
@@ -550,6 +740,306 @@ function renderSetupTraits() {
   </section>`;
 }
 
+function renderSetupEdges() {
+  const edges = [...(character.edges || [])].filter((edge) => edge.name);
+  const catalogMatches = edges.filter((edge) => edgeCatalogEntry(edge)).length;
+  const arcaneEdges = edges.filter((edge) => isArcaneBackgroundEdge(edge.name));
+  const advanceEdges = edges.filter((edge) =>
+    edgeLikelySource(edge).includes("Advance"),
+  );
+  const status = characterSetupStatus("edges");
+
+  return `<section id="setupEdgesPanel" class="setup-step-panel" aria-labelledby="setupEdgesHeading">
+    <div class="section-title">
+      <div>
+        <h3 id="setupEdgesHeading">Edges</h3>
+        <p>Read-only audit of recorded Edges. Selection, purchase source editing, and full prerequisite enforcement come in a later setup slice.</p>
+      </div>
+      ${setupStatusMarkup(status)}
+    </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Recorded Edges", `${edges.length}`)}
+      ${setupDetail("Catalog Matches", `${catalogMatches}`)}
+      ${setupDetail("Arcane Background Edges", `${arcaneEdges.length}`)}
+      ${setupDetail("Advance-Looking Edges", `${advanceEdges.length}`)}
+    </div>
+    <p class="entry-advisory"><strong>Audit only:</strong> imported characters may not preserve whether an Edge came from Human ancestry, Hindrance benefits, Advances, or a GM exception. Source labels below are hints unless they were created in this tool.</p>
+    ${
+      arcaneEdges.length > 1
+        ? '<p class="entry-warning">Needs review: more than one Arcane Background Edge is recorded.</p>'
+        : ""
+    }
+    <div class="setup-edge-list">
+      ${
+        edges.length
+          ? edges.map(setupEdgeAuditCard).join("")
+          : emptyState("No Edges recorded yet.")
+      }
+    </div>
+  </section>`;
+}
+
+function setupPowerCostLabel(power) {
+  const value = [power.baseCost, power.powerPoints, power.basePowerPoints].find(
+    (item) => item !== undefined && item !== null && item !== "",
+  );
+  return value === undefined ? "" : `${value} PP`;
+}
+
+function setupFixedStartingPowerText(config, powers) {
+  if (!config?.fixedStartingPowers?.length) return "None";
+  const knownNames = new Set(powers.map((power) => plainEntryName(power.name)));
+  return config.fixedStartingPowers
+    .map((name) => {
+      const label = displayNameFromKey(name);
+      return knownNames.has(plainEntryName(name))
+        ? `${label} recorded`
+        : `${label} missing`;
+    })
+    .join(", ");
+}
+
+function setupPowerAuditCard(power) {
+  const meta = [
+    power.rank ? `Rank ${power.rank}` : "",
+    setupPowerCostLabel(power),
+    power.range ? `Range ${power.range}` : "",
+    power.duration ? `Duration ${power.duration}` : "",
+    power.source || "",
+  ].filter(Boolean);
+  const summary = power.shortSummary || power.notes || "";
+  const trapping = power.trapping ? `Trapping: ${power.trapping}` : "";
+
+  return `<article class="setup-power-card">
+    <div>
+      <h4>${esc(power.name || "Unnamed Power")}</h4>
+      ${meta.length ? `<span>${esc(meta.join(" • "))}</span>` : ""}
+    </div>
+    ${summary ? `<p>${esc(summary)}</p>` : ""}
+    ${trapping ? `<p>${esc(trapping)}</p>` : ""}
+  </article>`;
+}
+
+function renderSetupPowers() {
+  const { arcaneEdges, arcaneConfig, powerPoints, powers } =
+    setupPowerAuditContext();
+  const status = characterSetupStatus("powers");
+  const backgroundName =
+    arcaneConfig?.displayName ||
+    character.arcaneBackground?.name ||
+    arcaneEdges[0]?.name ||
+    "";
+  const powerPointLabel = powerPoints
+    ? `${powerPoints.current} / ${powerPoints.max || "—"}`
+    : "Not recorded";
+
+  return `<section id="setupPowersPanel" class="setup-step-panel" aria-labelledby="setupPowersHeading">
+    <div class="section-title">
+      <div>
+        <h3 id="setupPowersHeading">Powers</h3>
+        <p>Read-only audit of Arcane Background, Power Points, and known powers. Power selection and full validation come in a later setup slice.</p>
+      </div>
+      ${setupStatusMarkup(status)}
+    </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Arcane Background", backgroundName || "None recorded")}
+      ${setupDetail("Arcane Skill", arcaneConfig?.arcaneSkill || character.arcaneBackground?.arcaneSkill || "—")}
+      ${setupDetail("Power Points", powerPointLabel)}
+      ${setupDetail("Known Powers", `${powers.length}`)}
+      ${setupDetail("Starting Powers Expected", arcaneConfig ? `${arcaneConfig.startingPowersCount}` : "—")}
+      ${setupDetail("Fixed Starting Powers", setupFixedStartingPowerText(arcaneConfig, powers))}
+    </div>
+    ${
+      status === "Not applicable"
+        ? '<p class="creator-note">No Arcane Background is recorded, so this character does not need Powers during setup.</p>'
+        : '<p class="entry-advisory"><strong>Audit only:</strong> imported powers may be current known powers rather than the exact creation-time power list. Starting-power editing and advancement separation are deferred.</p>'
+    }
+    ${
+      status === "Incomplete"
+        ? '<p class="entry-warning">Powers incomplete: an Arcane Background is recorded but no known powers are listed.</p>'
+        : ""
+    }
+    ${
+      status === "Needs review"
+        ? '<p class="entry-warning">Needs review: the Arcane Background, Power Points, or known powers do not line up cleanly.</p>'
+        : ""
+    }
+    <div class="setup-power-list">
+      ${
+        powers.length
+          ? powers.sort(comparePowers).map(setupPowerAuditCard).join("")
+          : emptyState("No powers recorded.")
+      }
+    </div>
+  </section>`;
+}
+
+function setupQuantityText(item, unit = "") {
+  const count = Math.max(0, Number(item?.count ?? item?.quantity ?? 1) || 0);
+  return `Qty ${count || 0}${unit ? ` ${unit}` : ""}`;
+}
+
+function setupGearLine(name, details, note = "") {
+  return `<div class="setup-gear-line">
+    <div>
+      <strong>${esc(name || "Gear")}</strong>
+      ${details.filter(Boolean).length ? `<span>${esc(details.filter(Boolean).join(" • "))}</span>` : ""}
+      ${note ? `<p>${esc(note)}</p>` : ""}
+    </div>
+  </div>`;
+}
+
+function setupAuditGroup(title, items, emptyText, renderer) {
+  return `<section class="setup-audit-group" aria-label="${esc(title)}">
+    <h4>${esc(title)}</h4>
+    <div class="setup-audit-list">
+      ${items.length ? items.map(renderer).join("") : emptyState(emptyText)}
+    </div>
+  </section>`;
+}
+
+function setupWeaponLine(weapon) {
+  const entry = { type: "weapon", id: weapon.id, label: weapon.name, item: weapon };
+  const loaded = isTrackedWeapon(weapon)
+    ? `${weapon.shotsLoaded ?? 0} / ${weapon.shotsMax ?? "—"} loaded`
+    : "";
+  return setupGearLine(
+    weapon.name,
+    [
+      `Damage ${weapon.damage || "—"}`,
+      `Range ${weapon.range || "—"}`,
+      `AP ${weapon.ap ?? "—"}`,
+      `ROF ${weapon.rof ?? "—"}`,
+      loaded,
+      physicalItemLocationLabel(entry),
+      `Weight ${formatWeightPounds(physicalItemWeight(entry))}`,
+      weapon.costCents !== undefined ? `Cost ${money(weapon.costCents)}` : "",
+    ],
+    weapon.notes || "",
+  );
+}
+
+function setupArmorLine(armor) {
+  const entry = { type: "armor", id: armor.id, label: armor.name, item: armor };
+  return setupGearLine(
+    armor.name,
+    [
+      setupQuantityText(armor),
+      `+${armor.armor}`,
+      armorLabel(armor.location),
+      armor.equipped ? "Equipped" : "",
+      physicalItemLocationLabel(entry),
+      `Min Str ${armor.minStr || "—"}`,
+      `Weight ${formatWeightPounds(physicalItemWeight(entry))}`,
+      armor.costCents !== undefined ? `Cost ${money(armor.costCents)}` : "",
+    ],
+    armor.note || "",
+  );
+}
+
+function setupInventoryLine(item) {
+  return setupGearLine(
+    item.name,
+    [
+      setupQuantityText(item),
+      locationLabel(item.location || "carried", item.storageId),
+      `Weight ${formatWeightPounds(inventoryItemTotalWeight(item))}`,
+      item.costCents !== undefined ? `Cost ${money(item.costCents)}` : "",
+      item.book || "",
+    ],
+    item.note || "",
+  );
+}
+
+function setupConsumableLine(item) {
+  const entry = { type: "consumable", id: item.id, label: item.name, item };
+  return setupGearLine(
+    item.name,
+    [
+      setupQuantityText(item, item.unit || ""),
+      physicalItemLocationLabel(entry),
+      `Weight ${formatWeightPounds(physicalItemWeight(entry))}`,
+    ],
+    item.note || "",
+  );
+}
+
+function setupAmmoLine([key, ammo]) {
+  const entry = { type: "ammo", id: key, label: ammo.label, item: ammo };
+  return setupGearLine(
+    ammo.label,
+    [
+      `Reserve ${Math.max(0, Number(ammo.count) || 0)}`,
+      physicalItemLocationLabel(entry),
+      `Weight ${formatWeightPounds(physicalItemWeight(entry))}`,
+    ],
+    ammo.note || "",
+  );
+}
+
+function setupVehicleLine(vehicle) {
+  return setupGearLine(
+    vehicle.name,
+    [
+      setupQuantityText(vehicle),
+      vehicle.costCents !== undefined ? `Cost ${money(vehicle.costCents)}` : "",
+      vehicle.book || "",
+    ],
+    vehicle.note || "",
+  );
+}
+
+function renderSetupGear() {
+  const counts = setupGearAuditCounts();
+  const info = calculateEncumbrance(character);
+  const weapons = (character.weapons || []).filter((weapon) => weapon.name);
+  const armor = (character.armorInventory || []).filter(
+    (item) => Number(item.count ?? 1) > 0,
+  );
+  const inventory = (character.inventory || []).filter(
+    (item) => Number(item.count ?? 1) > 0,
+  );
+  const consumables = (character.consumables || []).filter(
+    (item) => Number(item.count ?? 1) > 0,
+  );
+  const ammo = Object.entries(character.ammo || {}).filter(
+    ([, reserve]) => Number(reserve?.count) > 0,
+  );
+  const vehicles = (character.vehicles || []).filter(
+    (vehicle) => Number(vehicle.count ?? 1) > 0,
+  );
+
+  return `<section id="setupGearPanel" class="setup-step-panel" aria-labelledby="setupGearHeading">
+    <div class="section-title">
+      <div>
+        <h3 id="setupGearHeading">Gear</h3>
+        <p>Read-only audit of recorded equipment, money, and load. Starting purchases and gear-source tracking come in a later setup slice.</p>
+      </div>
+      ${setupStatusMarkup(characterSetupStatus("gear"))}
+    </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Money", money(counts.moneyCents))}
+      ${setupDetail("Weapons", `${counts.weapons}`)}
+      ${setupDetail("Armor", `${counts.armor}`)}
+      ${setupDetail("Gear Items", `${counts.inventory}`)}
+      ${setupDetail("Consumables", `${counts.consumables}`)}
+      ${setupDetail("Ammo Pools", `${counts.ammo}`)}
+      ${setupDetail("Vehicles", `${counts.vehicles}`)}
+      ${setupDetail("Active Load", formatWeightPounds(info.carriedWeight))}
+      ${setupDetail("Load Limit", formatWeightPounds(info.loadLimit))}
+    </div>
+    <p class="entry-advisory"><strong>Audit only:</strong> imported/current inventory may include post-creation purchases, loot, or table adjustments. Starting cash and starting purchase validation are deferred.</p>
+    <div class="setup-gear-groups">
+      ${setupAuditGroup("Weapons", weapons, "No weapons recorded.", setupWeaponLine)}
+      ${setupAuditGroup("Armor", armor, "No armor recorded.", setupArmorLine)}
+      ${setupAuditGroup("Gear", inventory, "No general gear recorded.", setupInventoryLine)}
+      ${setupAuditGroup("Consumables", consumables, "No consumables recorded.", setupConsumableLine)}
+      ${setupAuditGroup("Ammunition", ammo, "No ammunition reserves recorded.", setupAmmoLine)}
+      ${setupAuditGroup("Vehicles", vehicles, "No vehicles recorded.", setupVehicleLine)}
+    </div>
+  </section>`;
+}
+
 function renderSetupPlaceholder(title, body, details = []) {
   return `<section class="setup-step-panel setup-placeholder" aria-labelledby="setup${slugify(title)}Heading">
     <div class="section-title">
@@ -571,6 +1061,13 @@ function renderSetupReview() {
   );
   const ancestryNeedsReview = !isHumanAncestry(character.ancestry);
   const hindranceStats = hindrancePointStats();
+  const edgeCount = (character.edges || []).length;
+  const arcaneEdgeCount = (character.edges || []).filter((edge) =>
+    isArcaneBackgroundEdge(edge.name),
+  ).length;
+  const powersCount = (character.powers || []).filter((power) => power.name).length;
+  const powerPoints = powerPointResource();
+  const gearCounts = setupGearAuditCounts();
   return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
     <div class="section-title">
       <div>
@@ -590,6 +1087,12 @@ function renderSetupReview() {
       ${setupDetail("Hindrance Count", `${hindranceStats.count}`)}
       ${setupDetail("Total Hindrance Points", `${hindranceStats.total}`)}
       ${setupDetail("Hindrance Benefit Cap", `${hindranceStats.benefitCap}`)}
+      ${setupDetail("Edge Count", `${edgeCount}`)}
+      ${setupDetail("Arcane Background Edges", `${arcaneEdgeCount}`)}
+      ${setupDetail("Known Powers", `${powersCount}`)}
+      ${setupDetail("Power Points", powerPoints ? `${powerPoints.current} / ${powerPoints.max || "—"}` : "Not recorded")}
+      ${setupDetail("Gear Items", `${gearCounts.totalItems}`)}
+      ${setupDetail("Money", money(gearCounts.moneyCents))}
       ${setupDetail("Description", character.description)}
       ${setupDetail("Background", character.background)}
     </div>
@@ -606,6 +1109,11 @@ function renderSetupReview() {
     ${
       hindranceStats.overCap
         ? `<p class="entry-advisory"><strong>Above the standard Hindrance benefit cap:</strong> ${hindranceStats.total} points selected, ${hindranceStats.benefitPoints} counted under default rules. Record any extra reward as a table or GM exception.</p>`
+        : ""
+    }
+    ${
+      arcaneEdgeCount > 1
+        ? '<p class="entry-warning">Needs review: more than one Arcane Background Edge is recorded.</p>'
         : ""
     }
     <div class="setup-review-list">

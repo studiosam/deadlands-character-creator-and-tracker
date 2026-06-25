@@ -571,6 +571,7 @@ function fromSavagedUs(data) {
     edges: arr(data.edges).map((edge) => ({
       name: edge.name || "Edge",
       source: savagedBook(edge),
+      importNote: edge.note || "",
       notes: edge.description || edge.summary || edge.notes || "",
     })),
     bennies: {

@@ -2,7 +2,7 @@
 
 ## Character Setup Shell
 
-The first Character Setup implementation creates the shared setup and review shell, with these visible first-slice steps: Concept, Race / Ancestry, Hindrances, Traits, Edges, and Review.
+The first Character Setup implementation creates the shared setup and review shell, with these visible first-slice steps: Concept, Race / Ancestry, Hindrances, Traits, Edges, Powers, Gear, and Review.
 
 Only Concept is fully functional in this slice. Concept edits map to the active character's `name`, `gender`, `age`, `archetype`, `player`, `description`, and `background` fields and save through the normal tracker persistence path. Rank is not edited in Concept; it is shown as recorded or derived advancement context elsewhere.
 
@@ -10,7 +10,23 @@ Race / Ancestry is read-only for the current Deadlands-focused profile. It recor
 
 Hindrances supports selecting and removing Hindrances from the existing catalog and tracks starting Hindrance points. The current expectation is at least one Hindrance, with Minor worth 1 point, Major worth 2 points, and a 4-point cap for default starting benefits. Taking more than 4 points is allowed and remains complete; the UI shows an informational note that extra rewards require a table or GM exception. Spending Hindrance points on attributes, skills, Edges, or money is deferred to later setup slices.
 
-Traits is read-only and shows recorded Attributes plus a comprehensive skill list for the current Deadlands profile. Recorded skills use the character's die values, and missing skills are shown as untrained `d4-2`. Trait cards and skill chips expose short usage notes through hover/focus help. Advanced characters show an advisory that recorded trait values may include changes gained through Advances; a later setup editor should separate starting traits from current values. Edges remains an intentionally scaffolded placeholder. Review is a simple summary of available setup data and import warnings, not full rules validation.
+Traits is read-only and shows recorded Attributes plus a comprehensive skill list for the current Deadlands profile. Recorded skills use the character's die values, and missing skills are shown as unskilled `d4-2`. Trait cards and skill chips expose short usage notes through hover/focus help. Advanced characters show an advisory that recorded trait values may include changes gained through Advances; a later setup editor should separate starting traits from current values.
+
+Edges is read-only and audits recorded Edges against the current catalog. It shows likely source hints such as Human free Edge, Hindrance benefit / GM exception Edge, imported selected Edge, imported Advance Edge, or unknown source when the data is ambiguous. Catalog-matched Edges show category, rank, requirements, and summary text. Arcane Background Edges are called out, and more than one Arcane Background Edge is flagged for review. Full Edge selection, source editing, prerequisite enforcement, and GM exception bookkeeping are deferred to later setup slices.
+
+Powers is read-only and follows Edges because Arcane Background Edges determine whether Powers are required. It audits the recorded Arcane Background, Arcane Skill, Power Points, known powers, expected starting power count, and fixed starting powers where the profile defines them. Non-arcane characters show this step as not applicable. Full power selection, starting-power validation, and separation of creation powers from powers gained through Advances are deferred to later setup slices.
+
+Gear is read-only and follows Powers. It audits recorded money, weapons, armor, gear, consumables, ammunition, vehicles, active load, and load limit. Imported/current equipment may include post-creation purchases, loot, or table adjustments. Starting cash, purchase validation, and gear-source tracking are deferred to later setup slices.
+
+Review is a simple summary of available setup data and import warnings, not full rules validation.
+
+## Project Goal: Creation Baseline and Current Character
+
+Characters created in this tool should eventually track starting character creation choices separately from later character growth. The app should preserve a creation baseline for starting Attributes, Skills, Hindrances, Edges, Gear, Powers, and other creation-time choices, then track later changes through an advancement ledger. Current character values should be explainable from the creation baseline plus applied Advances and explicit table or GM exceptions.
+
+This is the priority model for character creation. The app should make characters created here easy to audit: what the character started with, what came from Hindrance benefits, what came from racial or profile grants such as the Human free Edge, what came from special Hindrances such as Elderly, what came from Advances, and what came from a recorded GM exception.
+
+Imported advanced characters are a separate backlog problem. Savaged.us imports may provide current or recorded values plus Advances, but they may not provide enough information to safely reconstruct original creation stats. Future import tooling may attempt an inferred starting-build reconstruction from Advances, Hindrances, and imported data, but that inference should be advisory and should not block the primary goal of making newly-created app characters track correctly from the beginning.
 
 ## Sources & Rulesets
 

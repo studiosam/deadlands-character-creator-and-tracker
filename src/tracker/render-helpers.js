@@ -78,19 +78,19 @@ function skillChipMarkup(skill) {
   const linkedAttribute = skillLinkedAttribute(skill);
   const displayNote =
     skill.notes ||
-    [traitLabel(linkedAttribute), skill.isUntrained ? "Untrained" : ""]
+    [traitLabel(linkedAttribute), skill.isUnskilled ? "Unskilled" : ""]
       .filter(Boolean)
       .join(" • ");
   const useNote = skillUseNote(skill.name);
   const linkedText = linkedAttribute
     ? `Linked attribute: ${traitLabel(linkedAttribute)}.`
     : "";
-  const untrainedText = skill.isUntrained ? "Untrained roll: d4-2." : "";
-  const title = [skill.name || "Skill", useNote, linkedText, untrainedText]
+  const unskilledText = skill.isUnskilled ? "Unskilled roll: d4-2." : "";
+  const title = [skill.name || "Skill", useNote, linkedText, unskilledText]
     .filter(Boolean)
     .join(" ");
-  const help = [useNote, linkedText, untrainedText].filter(Boolean).join(" ");
-  return `<div class="skill-chip trait-help-target${skill.isUntrained ? " untrained" : ""}" tabindex="0" title="${esc(title)}" aria-label="${esc(`${skill.name || "Skill"} ${meta}. ${help}`)}"><strong>${esc(skill.name || "Skill")}</strong><span>${esc(meta)}${displayNote ? ` • ${esc(displayNote)}` : ""}</span>${help ? `<small class="trait-help" role="tooltip">${esc(help)}</small>` : ""}</div>`;
+  const help = [useNote, linkedText, unskilledText].filter(Boolean).join(" ");
+  return `<div class="skill-chip trait-help-target${skill.isUnskilled ? " unskilled" : ""}" tabindex="0" title="${esc(title)}" aria-label="${esc(`${skill.name || "Skill"} ${meta}. ${help}`)}"><strong>${esc(skill.name || "Skill")}</strong><span>${esc(meta)}${displayNote ? ` • ${esc(displayNote)}` : ""}</span>${help ? `<small class="trait-help" role="tooltip">${esc(help)}</small>` : ""}</div>`;
 }
 
 function equippedArmorSummaryMarkup() {
