@@ -739,6 +739,150 @@ test("adds a custom gear item and preserves it across reload", async ({
   await expect(gearItemRow()).toContainText(itemNote);
 });
 
+test("deletes only the selected gear item and preserves the deletion across reload", async ({
+  page,
+}) => {
+  const deleteName = "Gear Item To Delete";
+  const deleteNote = "This item should be deleted";
+  const keepName = "Gear Item To Keep";
+  const keepNote = "This item should remain";
+  const gearSection = page.locator("section.card").filter({
+    has: page.getByRole("heading", { name: /^Gear$/ }),
+  });
+  const addGearForm = page.locator("#gearAddForm");
+  const gearItemRow = (name) =>
+    page.locator("#inventoryList .inventory-row").filter({
+      has: page.getByText(name, { exact: true }),
+    });
+  const addCustomGear = async ({ name, quantity, note }) => {
+    await gearSection.locator("[data-toggle-form='gearAddForm']").click();
+    await expect(addGearForm).toBeVisible();
+    await addGearForm.locator("#inventoryNameInput").fill(name);
+    await addGearForm.locator("#inventoryCountInput").fill(quantity);
+    await addGearForm.locator("#inventoryNoteInput").fill(note);
+    await addGearForm.locator("#addInventoryBtn").click();
+  };
+
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await page.locator("#librarySaveCurrentBtn").click();
+
+  await page.getByRole("button", { name: "Inventory", exact: true }).click();
+  await expect(page.locator("#inventoryPanel")).toHaveClass(/active/);
+
+  await addCustomGear({
+    name: deleteName,
+    quantity: "2",
+    note: deleteNote,
+  });
+  await addCustomGear({
+    name: keepName,
+    quantity: "4",
+    note: keepNote,
+  });
+
+  await expect(gearItemRow(deleteName)).toHaveCount(1);
+  await expect(gearItemRow(deleteName)).toContainText("Qty 2");
+  await expect(gearItemRow(deleteName)).toContainText(deleteNote);
+  await expect(gearItemRow(keepName)).toHaveCount(1);
+  await expect(gearItemRow(keepName)).toContainText("Qty 4");
+  await expect(gearItemRow(keepName)).toContainText(keepNote);
+
+  await expect.poll(async () =>
+    page.evaluate(
+      ({ libraryKey, deleteName, keepName, deleteNote, keepNote }) => {
+        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+        const active =
+          library?.charactersById?.[library.activeCharacterId] || null;
+        const inventory = active?.character?.inventory || [];
+        const deleteItems = inventory.filter((item) => item.name === deleteName);
+        const keepItems = inventory.filter((item) => item.name === keepName);
+        return {
+          deleteCount: deleteItems.length,
+          deleteQuantity: deleteItems[0]?.count ?? null,
+          deleteNote: deleteItems[0]?.note || "",
+          keepCount: keepItems.length,
+          keepQuantity: keepItems[0]?.count ?? null,
+          keepNote: keepItems[0]?.note || "",
+          activeCharacterName: active?.character?.name || "",
+        };
+      },
+      {
+        libraryKey: CHARACTER_LIBRARY_KEY,
+        deleteName,
+        keepName,
+        deleteNote,
+        keepNote,
+      },
+    ),
+  ).toEqual({
+    deleteCount: 1,
+    deleteQuantity: 2,
+    deleteNote,
+    keepCount: 1,
+    keepQuantity: 4,
+    keepNote,
+    activeCharacterName: "Dusty McCaw",
+  });
+
+  await gearItemRow(deleteName).locator("button.delete-small").click();
+  if (await page.locator("#appDialog").isVisible()) {
+    await page.locator("#appDialogConfirmBtn").click();
+  }
+
+  await expect(gearItemRow(deleteName)).toHaveCount(0);
+  await expect(gearItemRow(keepName)).toHaveCount(1);
+  await expect(gearItemRow(keepName)).toContainText("Qty 4");
+  await expect(gearItemRow(keepName)).toContainText(keepNote);
+
+  await expect.poll(async () =>
+    page.evaluate(
+      ({ libraryKey, keepName, deleteName, keepNote }) => {
+        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+        const active =
+          library?.charactersById?.[library.activeCharacterId] || null;
+        const inventory = active?.character?.inventory || [];
+        const deleteItems = inventory.filter((item) => item.name === deleteName);
+        const keepItems = inventory.filter((item) => item.name === keepName);
+        return {
+          deleteCount: deleteItems.length,
+          keepCount: keepItems.length,
+          keepQuantity: keepItems[0]?.count ?? null,
+          keepNote: keepItems[0]?.note || "",
+        };
+      },
+      {
+        libraryKey: CHARACTER_LIBRARY_KEY,
+        keepName,
+        deleteName,
+        keepNote,
+      },
+    ),
+  ).toEqual({
+    deleteCount: 0,
+    keepCount: 1,
+    keepQuantity: 4,
+    keepNote,
+  });
+
+  await page.reload();
+  if (await page.locator("#landingPage").isVisible()) {
+    await page.locator("#landingContinueBtn").click();
+  }
+  await page.getByRole("button", { name: "Inventory", exact: true }).click();
+  await expect(page.locator("#inventoryPanel")).toHaveClass(/active/);
+
+  await expect(gearItemRow(deleteName)).toHaveCount(0);
+  await expect(gearItemRow(keepName)).toHaveCount(1);
+  await expect(gearItemRow(keepName)).toContainText("Qty 4");
+  await expect(gearItemRow(keepName)).toContainText(keepNote);
+});
+
 test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await page.locator("#landingContinueBtn").click();
   const sample = await page.request.get(
