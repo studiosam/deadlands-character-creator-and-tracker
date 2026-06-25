@@ -396,6 +396,129 @@ test("duplicates a character without linking the original and copy", async ({
   await expect(page.locator("#characterName")).toContainText(duplicateName);
 });
 
+test("preserves separate wound values across character switching and reload", async ({
+  page,
+}) => {
+  const healthyName = "Healthy Character";
+  const woundedName = "Wounded Character";
+  const woundsBlock = page.locator(".block").filter({
+    has: page.getByRole("heading", { name: "Wounds" }),
+  });
+  const woundsValue = page.locator("#woundsValue");
+  const healthyRow = () =>
+    page.locator(".library-character").filter({
+      has: page.getByRole("heading", { name: /^Healthy Character$/ }),
+    });
+  const woundedRow = () =>
+    page.locator(".library-character").filter({
+      has: page.getByRole("heading", { name: /^Wounded Character$/ }),
+    });
+  const increaseWounds = async () => {
+    await woundsBlock.getByRole("button", { name: "+", exact: true }).click();
+  };
+
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await page.locator("#librarySaveCurrentBtn").click();
+
+  await page
+    .locator(".library-character.active")
+    .getByRole("button", { name: "Rename" })
+    .click();
+  await page.locator("#appDialogInput").fill(healthyName);
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(healthyName);
+
+  await page.getByRole("button", { name: "Combat", exact: true }).click();
+  await increaseWounds();
+  await expect(woundsValue).toHaveText("1");
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await page.locator("#libraryDuplicateActiveBtn").click();
+  await expect(page.locator(".library-character")).toHaveCount(2);
+
+  await page
+    .locator(".library-character.active")
+    .getByRole("button", { name: "Rename" })
+    .click();
+  await page.locator("#appDialogInput").fill(woundedName);
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(woundedName);
+
+  await page.getByRole("button", { name: "Combat", exact: true }).click();
+  await expect(woundsValue).toHaveText("1");
+  await increaseWounds();
+  await expect(woundsValue).toHaveText("2");
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await healthyRow().getByRole("button", { name: "Switch" }).click();
+  await expect(page.locator("#characterName")).toContainText(healthyName);
+  await expect(woundsValue).toHaveText("1");
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await woundedRow().getByRole("button", { name: "Switch" }).click();
+  await expect(page.locator("#characterName")).toContainText(woundedName);
+  await expect(woundsValue).toHaveText("2");
+
+  await expect.poll(async () =>
+    page.evaluate(
+      ({ libraryKey, healthyName, woundedName }) => {
+        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+        const entries = Object.values(library?.charactersById || {});
+        const healthy = entries.find((entry) => entry.name === healthyName);
+        const wounded = entries.find((entry) => entry.name === woundedName);
+        return {
+          healthyWounds: healthy?.character?.damage?.wounds ?? null,
+          woundedWounds: wounded?.character?.damage?.wounds ?? null,
+          distinctIds:
+            Boolean(healthy?.id) &&
+            Boolean(wounded?.id) &&
+            healthy.id !== wounded.id,
+          activeName:
+            library?.charactersById?.[library.activeCharacterId]?.name || "",
+        };
+      },
+      {
+        libraryKey: CHARACTER_LIBRARY_KEY,
+        healthyName,
+        woundedName,
+      },
+    ),
+  ).toEqual({
+    healthyWounds: 1,
+    woundedWounds: 2,
+    distinctIds: true,
+    activeName: woundedName,
+  });
+
+  await page.reload();
+  if (await page.locator("#landingPage").isVisible()) {
+    await page.locator("#landingContinueBtn").click();
+  }
+  await expect(page.locator("#characterName")).toContainText(woundedName);
+  await expect(woundsValue).toHaveText("2");
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await healthyRow().getByRole("button", { name: "Switch" }).click();
+  await expect(page.locator("#characterName")).toContainText(healthyName);
+  await expect(woundsValue).toHaveText("1");
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await woundedRow().getByRole("button", { name: "Switch" }).click();
+  await expect(page.locator("#characterName")).toContainText(woundedName);
+  await expect(woundsValue).toHaveText("2");
+});
+
 test("deletes only the selected character and preserves the remaining character", async ({
   page,
 }) => {
@@ -544,29 +667,82 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await expect(page.locator("#importWarningsList")).toBeVisible();
 });
 
-test("round-trips exported tracker JSON through import", async ({ page }) => {
+test("round-trips exported tracker JSON through import", async ({
+  page,
+}, testInfo) => {
+  const characterName = "Backup Recovery Character";
+  const noteText = "Round trip smoke note";
+
   await page.locator("#landingContinueBtn").click();
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#characterLibraryMenuBtn").click();
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await page.locator("#librarySaveCurrentBtn").click();
+  await page
+    .locator(".library-character.active")
+    .getByRole("button", { name: "Rename" })
+    .click();
+  await page.locator("#appDialogInput").fill(characterName);
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#characterName")).toContainText(characterName);
+
+  await page.getByRole("button", { name: "Combat", exact: true }).click();
   await page.getByRole("button", { name: "+", exact: true }).first().click();
   await page.getByRole("button", { name: "Notes" }).click();
-  await page.locator("#notesArea").fill("Round trip smoke note");
-  await page.waitForTimeout(200);
+  await page.locator("#notesArea").fill(noteText);
 
-  const exported = await page.evaluate((key) => {
-    const saved = JSON.parse(localStorage.getItem(key));
-    return JSON.stringify(serializeTrackerExport(saved));
-  }, STORAGE_KEY);
+  await expect.poll(async () =>
+    page.evaluate(
+      ({ storageKey }) => {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+        return {
+          name: saved?.name || "",
+          wounds: saved?.damage?.wounds ?? null,
+          notes: saved?.notes || "",
+        };
+      },
+      {
+        storageKey: STORAGE_KEY,
+      },
+    ),
+  ).toEqual({
+    name: characterName,
+    wounds: 1,
+    notes: noteText,
+  });
+
+  await page.locator("#headerToolsMenu summary").click();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#exportBtn").click(),
+  ]);
+  const downloadedJsonPath = testInfo.outputPath(download.suggestedFilename());
+  await download.saveAs(downloadedJsonPath);
 
   await page.locator("#headerToolsMenu summary").click();
   await page.locator("#resetBtn").click();
   await page.locator("#appDialogConfirmBtn").click();
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
+  await expect(page.locator("#characterName")).not.toContainText(characterName);
+  await expect(page.locator("#woundsValue")).toHaveText("0");
+  await page.getByRole("button", { name: "Notes" }).click();
+  await expect(page.locator("#notesArea")).not.toHaveValue(noteText);
 
   await page.locator("#headerToolsMenu summary").click();
-  await page.locator("#pasteImportBtn").click();
-  await page.locator("#importJsonText").fill(exported);
-  await page.locator("#confirmPasteImportBtn").click();
+  await page.locator("#importFile").setInputFiles(downloadedJsonPath);
 
+  await expect(page.locator("#characterName")).toContainText(characterName);
   await expect(page.locator("#woundsValue")).toHaveText("1");
   await page.getByRole("button", { name: "Notes" }).click();
-  await expect(page.locator("#notesArea")).toHaveValue("Round trip smoke note");
+  await expect(page.locator("#notesArea")).toHaveValue(noteText);
+
+  await page.reload();
+  if (await page.locator("#landingPage").isVisible()) {
+    await page.locator("#landingContinueBtn").click();
+  }
+
+  await expect(page.locator("#characterName")).toContainText(characterName);
+  await expect(page.locator("#woundsValue")).toHaveText("1");
+  await page.getByRole("button", { name: "Notes" }).click();
+  await expect(page.locator("#notesArea")).toHaveValue(noteText);
 });
