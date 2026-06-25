@@ -93,6 +93,71 @@ function applyConceptInputs() {
   save();
 }
 
+function setupHindranceSeverityForCatalog(catalogEntry, selectedSeverity = "") {
+  if (catalogEntry?.severity === "Major" || catalogEntry?.severity === "Minor")
+    return catalogEntry.severity;
+  return selectedSeverity === "Major" ? "Major" : "Minor";
+}
+
+function addSetupHindrance() {
+  const catalogSelect = $("#setupHindranceCatalogSelect");
+  const severityInput = $("#setupHindranceSeverityInput");
+  const notesInput = $("#setupHindranceNotesInput");
+  const catalogEntry = chosen(HINDRANCE_CATALOG, catalogSelect?.value || "");
+  if (!catalogEntry) {
+    appToast("Choose a Hindrance before adding it.", "danger");
+    return;
+  }
+
+  const duplicate = character.hindrances.some(
+    (hindrance) => plainEntryName(hindrance.name) === plainEntryName(catalogEntry.name),
+  );
+  if (duplicate) {
+    appToast("That Hindrance is already selected.", "danger");
+    return;
+  }
+
+  const id = uniqueEntryId(
+    generateStableEntryId("hindrance", catalogEntry.name),
+    new Set(character.hindrances.map((hindrance) => hindrance.id)),
+  );
+  const severity = setupHindranceSeverityForCatalog(
+    catalogEntry,
+    severityInput?.value || "",
+  );
+  upsertHindrance(character, {
+    ...catalogEntry,
+    id,
+    catalogId: catalogEntry.id,
+    severity,
+    notes: notesInput?.value.trim() || "",
+    source: catalogEntry.source || "Manual",
+    isCustom: false,
+  });
+  render();
+  save();
+  appToast(`${catalogEntry.name} added.`, "success");
+}
+
+function removeSetupHindrance(id) {
+  if (!id) return;
+  removeHindrance(character, id);
+  render();
+  save();
+  appToast("Hindrance removed.", "success");
+}
+
+function syncSetupHindranceSeverity() {
+  const catalogSelect = $("#setupHindranceCatalogSelect");
+  const severityInput = $("#setupHindranceSeverityInput");
+  if (!catalogSelect || !severityInput) return;
+  const catalogEntry = chosen(HINDRANCE_CATALOG, catalogSelect.value);
+  severityInput.value = setupHindranceSeverityForCatalog(
+    catalogEntry,
+    severityInput.value,
+  );
+}
+
 function exportJson(name, data) {
   downloadJsonFile(name, data);
   appToast(`Exported ${name}.`, "success");
@@ -308,6 +373,10 @@ document.addEventListener("click", (event) => {
   if (setupAction?.dataset.setupAction === "saveConcept") {
     applyConceptInputs();
     appToast("Concept saved.", "success");
+  } else if (setupAction?.dataset.setupAction === "addHindrance") {
+    addSetupHindrance();
+  } else if (setupAction?.dataset.setupAction === "removeHindrance") {
+    removeSetupHindrance(setupAction.dataset.hindranceId || "");
   }
   const entryAction = event.target?.closest?.("[data-entry-action]");
   if (entryAction) handleEntryAction(entryAction);
@@ -329,6 +398,8 @@ document.addEventListener("input", (event) => {
 document.addEventListener("change", (event) => {
   const conceptInput = event.target?.closest?.("[data-concept-field]");
   if (conceptInput) applyConceptField(conceptInput);
+  if (event.target?.closest?.("#setupHindranceCatalogSelect"))
+    syncSetupHindranceSeverity();
 });
 
 async function handleLibraryAction(target) {

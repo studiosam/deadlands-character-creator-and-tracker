@@ -2010,6 +2010,42 @@ h3 {
   grid-column: 1 / -1;
 }
 
+.setup-hindrance-list,
+.setup-review-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.setup-hindrance-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: start;
+  min-width: 0;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--dossier-rule);
+  border-left: 4px solid #8c3328;
+  border-radius: 8px;
+  background: rgba(255, 243, 232, 0.62);
+}
+
+.setup-hindrance-row strong,
+.setup-hindrance-row span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.setup-hindrance-row span,
+.setup-hindrance-row p {
+  color: var(--dossier-muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.setup-hindrance-row p {
+  margin: 0.4rem 0 0;
+}
+
 .setup-detail,
 .setup-status {
   border: 1px solid var(--dossier-rule);
@@ -2072,14 +2108,72 @@ h3 {
   color: var(--dossier-muted);
 }
 
+.setup-review-list h4,
+.setup-review-warnings h4 {
+  margin: 0.35rem 0 0;
+  color: var(--dossier-ink);
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
 .setup-review-warnings {
   display: grid;
   gap: 0.55rem;
 }
 
-.setup-review-warnings h4 {
-  margin: 0.35rem 0 0;
+.setup-trait-groups {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.setup-trait-group {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.setup-trait-group h4 {
+  margin: 0;
+  color: var(--dossier-ink);
   font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.setup-skill-attribute-groups {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.setup-skill-attribute-group {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--dossier-rule);
+}
+
+.setup-skill-attribute-group:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.setup-skill-attribute-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.setup-skill-attribute-heading h5 {
+  margin: 0;
+  color: var(--dossier-ink);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+.setup-skill-attribute-heading span {
+  color: var(--dossier-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .dossier-heading,
@@ -2295,6 +2389,58 @@ h3 {
 
 .skill-chip {
   padding: 0.55rem 0.65rem;
+}
+
+.skill-chip.untrained {
+  border-style: dashed;
+  background: rgba(255, 250, 239, 0.36);
+}
+
+.skill-chip.untrained strong,
+.skill-chip.untrained span {
+  color: var(--dossier-muted);
+}
+
+.trait-help-target {
+  position: relative;
+  overflow: visible;
+  cursor: help;
+  outline-offset: 3px;
+}
+
+.trait-help {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.45rem);
+  z-index: 30;
+  width: min(18rem, 84vw);
+  padding: 0.58rem 0.68rem;
+  border: 1px solid rgba(242, 182, 95, 0.5);
+  border-radius: 8px;
+  background: rgba(28, 18, 10, 0.96);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  color: #fff5df;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(-50%, 0.25rem);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 140ms ease;
+  visibility: hidden;
+}
+
+.trait-help-target:hover .trait-help,
+.trait-help-target:focus .trait-help,
+.trait-help-target:focus-within .trait-help,
+.trait-help-target:focus-visible .trait-help {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  visibility: visible;
 }
 
 .skill-chip strong,
@@ -2558,6 +2704,30 @@ h3 {
   color: #7a2018;
   font-weight: 800;
   line-height: 1.35;
+}
+
+.entry-advisory {
+  margin: 0.75rem 0 0;
+  padding: 0.68rem 0.78rem;
+  border: 1px solid rgba(145, 86, 25, 0.42);
+  border-left: 4px solid var(--warn);
+  border-radius: 8px;
+  background: rgba(255, 246, 203, 0.78);
+  color: #5b3d08;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.entry-advisory p {
+  margin: 0.32rem 0 0;
+}
+
+.entry-advisory p:first-child {
+  margin-top: 0;
+}
+
+.entry-advisory strong {
+  color: #412900;
 }
 
 .creator-points {
@@ -2826,9 +2996,14 @@ h3 {
   .dossier-heading,
   .dossier-section-title,
   .dossier-tag-head,
-  .dossier-header-actions {
+  .dossier-header-actions,
+  .setup-hindrance-row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .setup-hindrance-row {
+    grid-template-columns: 1fr;
   }
 
   .dossier-header-actions,

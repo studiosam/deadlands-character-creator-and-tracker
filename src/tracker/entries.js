@@ -32,13 +32,49 @@ function normalizeEdgeEntry(entry) {
   };
 }
 
+function canonicalHindranceSeverity(value) {
+  const severity = String(value || "").trim().toLowerCase();
+  if (severity === "major") return "Major";
+  if (severity === "minor") return "Minor";
+  return "";
+}
+
+function hindranceBaseName(name) {
+  return String(name || "").replace(/\s*\((?:minor|major)\b.*$/i, "");
+}
+
+function inferHindranceSeverity(source) {
+  const explicit = canonicalHindranceSeverity(source?.severity);
+  if (explicit) return explicit;
+
+  if (typeof source?.major === "boolean") {
+    return source.major ? "Major" : "Minor";
+  }
+
+  if (typeof source?.minor === "boolean") {
+    return source.minor ? "Minor" : "";
+  }
+
+  const name = String(source?.name || "");
+  if (/\bmajor\b/i.test(name)) return "Major";
+  if (/\bminor\b/i.test(name)) return "Minor";
+
+  const catalog =
+    typeof HINDRANCE_CATALOG !== "undefined" ? HINDRANCE_CATALOG : [];
+  const baseName = plainEntryName(hindranceBaseName(name));
+  const catalogEntry = catalog.find(
+    (item) => plainEntryName(item.name) === baseName,
+  );
+  return canonicalHindranceSeverity(catalogEntry?.severity);
+}
+
 function normalizeHindranceEntry(entry) {
   if (typeof entry === "string") {
     return {
       id: generateStableEntryId("hindrance", entry),
       name: entry,
       type: "hindrance",
-      severity: "Unknown",
+      severity: inferHindranceSeverity({ name: entry }) || "Unknown",
       shortSummary: "",
       notes: "",
       source: "Imported",
@@ -53,7 +89,7 @@ function normalizeHindranceEntry(entry) {
       source.id || generateStableEntryId("hindrance", source.name || "hindrance"),
     name: source.name || "Unnamed Hindrance",
     type: source.type || "hindrance",
-    severity: source.severity || "Unknown",
+    severity: inferHindranceSeverity(source) || "Unknown",
     shortSummary: source.shortSummary || source.summary || "",
     notes: source.notes || source.text || "",
     source: source.source || "Imported",

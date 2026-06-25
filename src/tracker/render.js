@@ -2,7 +2,7 @@ const CHARACTER_SETUP_STEPS = [
   { id: "concept", label: "Concept" },
   { id: "ancestry", label: "Race / Ancestry" },
   { id: "hindrances", label: "Hindrances" },
-  { id: "attributesSkills", label: "Attributes and Skills" },
+  { id: "attributesSkills", label: "Traits" },
   { id: "edges", label: "Edges" },
   { id: "review", label: "Review" },
 ];
@@ -207,6 +207,11 @@ function characterSetupStatus(stepId) {
   if (stepId === "ancestry") {
     return isHumanAncestry(character.ancestry) ? "Complete" : "Needs review";
   }
+  if (stepId === "hindrances") {
+    const stats = hindrancePointStats();
+    if (!stats.count) return "Incomplete";
+    return stats.unknownCount ? "Needs review" : "Complete";
+  }
   if (stepId === "review") return "Needs review";
   return "Planned";
 }
@@ -220,8 +225,107 @@ function setupDetail(label, value) {
   return `<div class="setup-detail"><span>${esc(label)}</span><strong>${esc(value || "—")}</strong></div>`;
 }
 
+function sortedAttributeEntries() {
+  return Object.entries(character.attributes || {}).sort(([left], [right]) => {
+    const leftIndex = ATTRIBUTE_ORDER.indexOf(left);
+    const rightIndex = ATTRIBUTE_ORDER.indexOf(right);
+    return (
+      (leftIndex < 0 ? 99 : leftIndex) -
+        (rightIndex < 0 ? 99 : rightIndex) ||
+      displayNameFromKey(left).localeCompare(displayNameFromKey(right))
+    );
+  });
+}
+
+function sortedSkills() {
+  return [...(character.skills || [])].sort((left, right) =>
+    String(left.name || "").localeCompare(String(right.name || ""), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
+  );
+}
+
+function setupSkillAttributeKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function setupSkillCatalogEntries() {
+  const recordedSkills = sortedSkills();
+  const usedRecordedIndexes = new Set();
+  const entries = Object.entries(SKILL_LINKED_ATTRIBUTES).map(
+    ([name, linkedAttribute]) => {
+      const recordedIndex = recordedSkills.findIndex(
+        (skill, index) =>
+          !usedRecordedIndexes.has(index) &&
+          (skill.name === name || skillReferenceName(skill.name) === name),
+      );
+
+      if (recordedIndex >= 0) {
+        usedRecordedIndexes.add(recordedIndex);
+        const recorded = recordedSkills[recordedIndex];
+        return {
+          ...recorded,
+          name: recorded.name || name,
+          linkedAttribute: recorded.linkedAttribute || linkedAttribute,
+          isUntrained: false,
+        };
+      }
+
+      return {
+        name,
+        die: "d4-2",
+        linkedAttribute,
+        isUntrained: true,
+      };
+    },
+  );
+
+  recordedSkills.forEach((skill, index) => {
+    if (usedRecordedIndexes.has(index) || !skill.name) return;
+    entries.push({
+      ...skill,
+      linkedAttribute: skillLinkedAttribute(skill) || skill.linkedAttribute || "Custom",
+      isUntrained: false,
+    });
+  });
+
+  return entries;
+}
+
 function isHumanAncestry(value) {
   return String(value || "").trim().toLowerCase() === "human";
+}
+
+function hindrancePointValue(hindrance) {
+  if (hindrance?.severity === "Major") return 2;
+  if (hindrance?.severity === "Minor") return 1;
+  return 0;
+}
+
+function hindrancePointStats() {
+  const hindrances = character.hindrances || [];
+  const total = hindrances.reduce(
+    (sum, hindrance) => sum + hindrancePointValue(hindrance),
+    0,
+  );
+  return {
+    count: hindrances.length,
+    total,
+    benefitCap: 4,
+    benefitPoints: Math.min(total, 4),
+    overCap: total > 4,
+    unknownCount: hindrances.filter(
+      (hindrance) => !["Minor", "Major"].includes(hindrance?.severity),
+    ).length,
+  };
+}
+
+function hindrancePointText(hindrance) {
+  const value = hindrancePointValue(hindrance);
+  return value ? `${value} point${value === 1 ? "" : "s"}` : "Unknown points";
 }
 
 function renderCharacterSetup() {
@@ -243,21 +347,8 @@ function renderCharacterSetup() {
   const renderers = {
     concept: renderSetupConcept,
     ancestry: renderSetupAncestry,
-    hindrances: () =>
-      renderSetupPlaceholder(
-        "Hindrances",
-        "Hindrance selection and benefit spending are planned for a later implementation slice.",
-        [["Recorded Hindrances", `${character.hindrances.length}`]],
-      ),
-    attributesSkills: () =>
-      renderSetupPlaceholder(
-        "Attributes and Skills",
-        "Attribute and skill setup is scaffolded here but remains read-only in this first Concept-focused slice.",
-        [
-          ["Recorded Attributes", `${Object.keys(character.attributes || {}).length}`],
-          ["Recorded Skills", `${character.skills.length}`],
-        ],
-      ),
+    hindrances: renderSetupHindrances,
+    attributesSkills: renderSetupTraits,
     edges: () =>
       renderSetupPlaceholder(
         "Edges",
@@ -302,6 +393,69 @@ function renderSetupConcept() {
   </section>`;
 }
 
+function renderSetupHindranceRows() {
+  return (character.hindrances || []).length
+    ? character.hindrances
+        .map(
+          (hindrance) =>
+            `<article class="setup-hindrance-row">
+              <div>
+                <strong>${esc(hindrance.name || "Unnamed Hindrance")}</strong>
+                <span>${esc(hindrance.severity || "Unknown")} • ${esc(hindrancePointText(hindrance))}</span>
+                ${hindrance.shortSummary ? `<p>${esc(hindrance.shortSummary)}</p>` : ""}
+                ${hindrance.notes ? `<p>${esc(hindrance.notes)}</p>` : ""}
+              </div>
+              <button class="ghost tag-action danger-lite" type="button" data-setup-action="removeHindrance" data-hindrance-id="${esc(hindrance.id)}">Remove</button>
+            </article>`,
+        )
+        .join("")
+    : emptyState("No Hindrances selected yet.");
+}
+
+function renderSetupHindrances() {
+  const stats = hindrancePointStats();
+  const status = characterSetupStatus("hindrances");
+  return `<section id="setupHindrancesPanel" class="setup-step-panel" aria-labelledby="setupHindrancesHeading">
+    <div class="section-title">
+      <div>
+        <h3 id="setupHindrancesHeading">Hindrances</h3>
+        <p>Select starting Hindrances and track their point value. Spending those points comes in a later setup slice.</p>
+      </div>
+      ${setupStatusMarkup(status)}
+    </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Expected Selection", "At least 1 Hindrance")}
+      ${setupDetail("Minor Hindrance", "1 point")}
+      ${setupDetail("Major Hindrance", "2 points")}
+      ${setupDetail("Benefit Point Cap", "4 points")}
+      ${setupDetail("Selected Hindrances", `${stats.count}`)}
+      ${setupDetail("Total Hindrance Points", `${stats.total}`)}
+      ${setupDetail("Benefit Points Counted Later", `${stats.benefitPoints} / ${stats.benefitCap}`)}
+    </div>
+    ${
+      stats.overCap
+        ? `<div class="entry-advisory"><p>You may record more than ${stats.benefitCap} Hindrance points for character flavor, but only ${stats.benefitCap} points should count for starting benefits by default.</p><p><strong>Above the standard cap:</strong> ${stats.total} Hindrance points selected; extra rewards require a table or GM exception.</p></div>`
+        : '<p class="creator-note">You may record more than 4 Hindrance points for character flavor, but only 4 points should count for starting benefits.</p>'
+    }
+    ${
+      stats.unknownCount
+        ? '<p class="entry-warning">Needs review: one or more Hindrances need Minor or Major severity.</p>'
+        : ""
+    }
+    <div class="setup-form-grid setup-hindrance-form">
+      <label class="setup-wide">Hindrance<select id="setupHindranceCatalogSelect">${entryCatalogOptions(HINDRANCE_CATALOG, "Choose Hindrance...")}</select></label>
+      <label>Severity<select id="setupHindranceSeverityInput"><option value="Minor">Minor</option><option value="Major">Major</option></select></label>
+      <label class="setup-wide">Notes<input id="setupHindranceNotesInput" autocomplete="off" placeholder="Optional detail, obligation, enemy, vow, phobia, etc."></label>
+      <div class="creator-actions setup-wide">
+        <button id="setupAddHindranceBtn" type="button" data-setup-action="addHindrance">Add Hindrance</button>
+      </div>
+    </div>
+    <div class="setup-hindrance-list">
+      ${renderSetupHindranceRows()}
+    </div>
+  </section>`;
+}
+
 function renderSetupAncestry() {
   const status = characterSetupStatus("ancestry");
   const supported = isHumanAncestry(character.ancestry);
@@ -326,6 +480,76 @@ function renderSetupAncestry() {
   </section>`;
 }
 
+function renderSetupTraits() {
+  const attributeEntries = sortedAttributeEntries();
+  const skills = sortedSkills();
+  const setupSkills = setupSkillCatalogEntries();
+  const untrainedCount = setupSkills.filter((skill) => skill.isUntrained).length;
+  const hasAdvances = (character.advances || []).length > 0;
+
+  return `<section id="setupTraitsPanel" class="setup-step-panel" aria-labelledby="setupTraitsHeading">
+    <div class="section-title">
+      <div>
+        <h3 id="setupTraitsHeading">Traits</h3>
+        <p>Read-only view of recorded Attributes and the full skill list. Trait editing and starting-trait audit rules come in a later setup slice.</p>
+      </div>
+      ${setupStatusMarkup(characterSetupStatus("attributesSkills"))}
+    </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Recorded Attributes", `${attributeEntries.length}`)}
+      ${setupDetail("Recorded Skills", `${skills.length}`)}
+      ${setupDetail("All Skills Shown", `${setupSkills.length}`)}
+      ${setupDetail("Untrained Skills", `${untrainedCount}`)}
+      ${setupDetail("Untrained Value", "d4-2")}
+      ${setupDetail("Recorded Advances", `${(character.advances || []).length}`)}
+    </div>
+    ${
+      hasAdvances
+        ? '<p class="entry-advisory"><strong>Advanced character:</strong> this view shows recorded trait values. A later setup editor should separate starting traits from changes gained through Advances.</p>'
+        : ""
+    }
+    <div class="setup-trait-groups">
+      <section class="setup-trait-group" aria-labelledby="setupAttributesHeading">
+        <h4 id="setupAttributesHeading">Attributes</h4>
+        <div class="attribute-dice-grid">
+          ${
+            attributeEntries.length
+              ? attributeEntries
+                  .map(([name, die]) => attributeCardMarkup(name, die))
+                  .join("")
+              : emptyState("No attributes recorded.")
+          }
+        </div>
+      </section>
+      <section class="setup-trait-group" aria-labelledby="setupSkillsHeading">
+        <h4 id="setupSkillsHeading">Skills</h4>
+        <p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown as untrained d4-2.</p>
+        <div class="setup-skill-attribute-groups">
+          ${ATTRIBUTE_ORDER.map((attributeKey) => {
+            const attributeSkills = setupSkills.filter(
+              (skill) =>
+                setupSkillAttributeKey(skill.linkedAttribute) === attributeKey,
+            );
+            return `<section class="setup-skill-attribute-group" aria-label="${esc(displayNameFromKey(attributeKey))} skills">
+              <div class="setup-skill-attribute-heading">
+                <h5>${esc(displayNameFromKey(attributeKey))}</h5>
+                <span>Attribute ${esc(character.attributes?.[attributeKey] || "—")}</span>
+              </div>
+              <div class="skill-chip-grid">
+                ${
+                  attributeSkills.length
+                    ? attributeSkills.map(skillChipMarkup).join("")
+                    : emptyState("No linked skills in this profile.")
+                }
+              </div>
+            </section>`;
+          }).join("")}
+        </div>
+      </section>
+    </div>
+  </section>`;
+}
+
 function renderSetupPlaceholder(title, body, details = []) {
   return `<section class="setup-step-panel setup-placeholder" aria-labelledby="setup${slugify(title)}Heading">
     <div class="section-title">
@@ -346,6 +570,7 @@ function renderSetupReview() {
     (reminder) => reminder.type === "Import Warning",
   );
   const ancestryNeedsReview = !isHumanAncestry(character.ancestry);
+  const hindranceStats = hindrancePointStats();
   return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
     <div class="section-title">
       <div>
@@ -362,6 +587,9 @@ function renderSetupReview() {
       ${setupDetail("Race / Ancestry", character.ancestry)}
       ${setupDetail("Player Name", character.player)}
       ${setupDetail("Recorded Rank", character.rank)}
+      ${setupDetail("Hindrance Count", `${hindranceStats.count}`)}
+      ${setupDetail("Total Hindrance Points", `${hindranceStats.total}`)}
+      ${setupDetail("Hindrance Benefit Cap", `${hindranceStats.benefitCap}`)}
       ${setupDetail("Description", character.description)}
       ${setupDetail("Background", character.background)}
     </div>
@@ -370,6 +598,29 @@ function renderSetupReview() {
         ? '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
         : ""
     }
+    ${
+      !hindranceStats.count
+        ? '<p class="entry-warning">Hindrances incomplete: select at least one Hindrance.</p>'
+        : ""
+    }
+    ${
+      hindranceStats.overCap
+        ? `<p class="entry-advisory"><strong>Above the standard Hindrance benefit cap:</strong> ${hindranceStats.total} points selected, ${hindranceStats.benefitPoints} counted under default rules. Record any extra reward as a table or GM exception.</p>`
+        : ""
+    }
+    <div class="setup-review-list">
+      <h4>Selected Hindrances</h4>
+      ${
+        character.hindrances.length
+          ? character.hindrances
+              .map(
+                (hindrance) =>
+                  `<article class="dossier-note"><strong>${esc(hindrance.name || "Unnamed Hindrance")}</strong><p>${esc(hindrance.severity || "Unknown")} • ${esc(hindrancePointText(hindrance))}</p></article>`,
+              )
+              .join("")
+          : emptyState("No Hindrances selected yet.")
+      }
+    </div>
     <div class="setup-review-warnings">
       <h4>Import Warnings</h4>
       ${
@@ -464,29 +715,14 @@ function renderCharacterSummary() {
     .join("");
   els.addManualPowerPointsBtn.classList.toggle("hidden", Boolean(powerPoints));
 
-  const attributeEntries = Object.entries(character.attributes || {}).sort(
-    ([left], [right]) => {
-      const leftIndex = ATTRIBUTE_ORDER.indexOf(left);
-      const rightIndex = ATTRIBUTE_ORDER.indexOf(right);
-      return (
-        (leftIndex < 0 ? 99 : leftIndex) -
-          (rightIndex < 0 ? 99 : rightIndex) ||
-        displayNameFromKey(left).localeCompare(displayNameFromKey(right))
-      );
-    },
-  );
+  const attributeEntries = sortedAttributeEntries();
   els.attributesList.innerHTML = attributeEntries.length
     ? attributeEntries
         .map(([name, die]) => attributeCardMarkup(name, die))
         .join("")
     : emptyState("No attributes recorded.");
 
-  const skills = [...(character.skills || [])].sort((left, right) =>
-    String(left.name || "").localeCompare(String(right.name || ""), undefined, {
-      numeric: true,
-      sensitivity: "base",
-    }),
-  );
+  const skills = sortedSkills();
   els.skillsList.innerHTML = skills.length
     ? skills.map(skillChipMarkup).join("")
     : emptyState("No skills recorded.");

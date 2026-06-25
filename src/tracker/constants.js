@@ -123,6 +123,84 @@ const DEADLANDS_SKILL_LINKED_ATTRIBUTES = {
 };
 const SKILL_LINKED_ATTRIBUTES = DEADLANDS_SKILL_LINKED_ATTRIBUTES;
 
+const ATTRIBUTE_USE_NOTES = {
+  agility:
+    "Coordination, reflexes, balance, fine motor control, and most physical precision tasks.",
+  smarts:
+    "Reasoning, memory, education, perception, research, and most knowledge or craft skills.",
+  spirit:
+    "Willpower, courage, faith, social presence, and resisting fear, intimidation, or despair.",
+  strength:
+    "Raw muscle, lifting, carrying, melee damage, grappling force, and meeting gear strength requirements.",
+  vigor:
+    "Health, stamina, toughness, resisting poison, disease, fatigue, and surviving physical punishment.",
+};
+
+const SKILL_USE_NOTES = {
+  Academics:
+    "Formal education, history, law, literature, theology, and other scholarly knowledge.",
+  Athletics:
+    "Climbing, jumping, swimming, throwing, running stunts, and other active movement.",
+  Battle:
+    "Tactics, command decisions, reading battlefields, and coordinating troops or posses.",
+  Boating:
+    "Handling boats, rafts, ferries, river travel, and hazards on the water.",
+  "Common Knowledge":
+    "Everyday facts, local customs, rumors, practical judgment, and general know-how.",
+  Driving:
+    "Operating wagons, coaches, carts, steam vehicles, and other ground vehicles.",
+  Faith:
+    "Calling on divine power for Blessed or similar Arcane Backgrounds.",
+  Fighting:
+    "Melee attacks, close combat defense, brawling, blades, clubs, and other hand-to-hand violence.",
+  Focus:
+    "Channeling inner discipline for Chi Master or similar Arcane Backgrounds.",
+  Gambling:
+    "Cards, dice, odds, reading bets, cheating, and Huckster Deal with the Devil rolls.",
+  Healing:
+    "Treating wounds, stabilizing allies, diagnosing illness, and practical frontier medicine.",
+  Intimidation:
+    "Threats, pressure, fear, hard stares, and forcing someone to back down.",
+  Language:
+    "Speaking, reading, or understanding a specific language beyond default fluency.",
+  Notice:
+    "Spotting ambushes, clues, hidden details, sounds, tracks, and sudden danger.",
+  Occult:
+    "Supernatural lore, rituals, monsters, ghost-rock weirdness, and forbidden knowledge.",
+  Performance:
+    "Singing, acting, storytelling, preaching, showmanship, and holding a crowd.",
+  Persuasion:
+    "Friendly influence, negotiation, diplomacy, bargaining, and winning trust.",
+  Piloting:
+    "Operating flying machines and other aircraft when the setting allows them.",
+  Psionics:
+    "Using psychic powers for characters with a psionic Arcane Background.",
+  Repair:
+    "Fixing, maintaining, disabling, or jury-rigging devices, weapons, and machinery.",
+  Research:
+    "Digging through records, books, newspapers, archives, and other information sources.",
+  Riding:
+    "Handling horses and mounts, staying mounted, racing, and mounted maneuvers.",
+  Science:
+    "Scientific theory, experiments, chemistry, engineering principles, and technical analysis.",
+  Shooting:
+    "Ranged attacks with guns, bows, and similar weapons when the rules call for Shooting.",
+  Spellcasting:
+    "Casting arcane spells for Hucksters or other spellcasting Arcane Backgrounds.",
+  Stealth:
+    "Sneaking, hiding, moving quietly, shadowing targets, and avoiding attention.",
+  Survival:
+    "Tracking, foraging, finding shelter, navigating wilderness, and enduring the trail.",
+  Taunt:
+    "Verbal jabs, mockery, baiting foes, and distracting someone through ridicule.",
+  Thievery:
+    "Picking locks, palming objects, disarming traps, sleight of hand, and burglary.",
+  Trade:
+    "A chosen practical profession, craft, or job specialty not covered by another skill.",
+  "Weird Science":
+    "Building, activating, and managing mad science devices and infernal inventions.",
+};
+
 const CONSUMABLE_GEAR_CONVERSIONS = {
   "matches-box-100": {
     id: "matches",

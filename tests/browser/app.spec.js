@@ -421,6 +421,94 @@ test("shows human-only race ancestry setup as read-only", async ({ page }) => {
   await expect(page.locator("#setupReviewPanel")).toContainText("Human");
 });
 
+test("selects hindrances in character setup and summarizes point expectations", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+
+  await page.locator("[data-setup-step='hindrances']").click();
+  const hindrancePanel = page.locator("#setupHindrancesPanel");
+  await expect(hindrancePanel).toBeVisible();
+  await expect(hindrancePanel).toContainText("Expected Selection");
+  await expect(hindrancePanel).toContainText("At least 1 Hindrance");
+  await expect(hindrancePanel).toContainText("Minor Hindrance");
+  await expect(hindrancePanel).toContainText("1 point");
+  await expect(hindrancePanel).toContainText("Major Hindrance");
+  await expect(hindrancePanel).toContainText("2 points");
+  await expect(hindrancePanel).toContainText("Benefit Point Cap");
+  await expect(hindrancePanel).toContainText("4 points");
+  await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
+    "Incomplete",
+  );
+
+  await page
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-bad-luck");
+  await page
+    .locator("#setupHindranceNotesInput")
+    .fill("Hard luck follows him.");
+  await page.locator("#setupAddHindranceBtn").click();
+  await expect(hindrancePanel).toContainText("Bad Luck");
+  await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
+    "Complete",
+  );
+
+  await page
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("dl-hindrance-cursed");
+  await page.locator("#setupAddHindranceBtn").click();
+  await expect(hindrancePanel).toContainText("Cursed");
+  await expect(hindrancePanel).toContainText("Benefit Points Counted Later");
+  await expect(hindrancePanel).toContainText("4 / 4");
+
+  await page
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("dl-hindrance-tenderfoot");
+  await page.locator("#setupAddHindranceBtn").click();
+  await expect(hindrancePanel).toContainText("Tenderfoot");
+  await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
+    "Complete",
+  );
+  await expect(hindrancePanel).toContainText("Above the standard cap");
+  await expect(hindrancePanel).toContainText(
+    "extra rewards require a table or GM exception",
+  );
+  await expect(hindrancePanel.locator(".entry-advisory")).toContainText(
+    "Above the standard cap",
+  );
+  await expect(hindrancePanel.locator(".entry-warning")).toHaveCount(0);
+
+  await hindrancePanel
+    .locator(".setup-hindrance-row")
+    .filter({ hasText: "Tenderfoot" })
+    .getByRole("button", { name: "Remove" })
+    .click();
+  await expect(
+    hindrancePanel.locator(".setup-hindrance-row").filter({
+      hasText: "Tenderfoot",
+    }),
+  ).toHaveCount(0);
+  await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
+    "Complete",
+  );
+
+  await reloadIntoTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await page.locator("[data-setup-step='hindrances']").click();
+  await expect(page.locator("#setupHindrancesPanel")).toContainText("Bad Luck");
+  await expect(page.locator("#setupHindrancesPanel")).toContainText("Cursed");
+  await expect(page.locator("#setupHindrancesPanel")).toContainText("4 / 4");
+
+  await page.locator("[data-setup-step='review']").click();
+  const reviewPanel = page.locator("#setupReviewPanel");
+  await expect(reviewPanel).toContainText("Hindrance Count");
+  await expect(reviewPanel).toContainText("Total Hindrance Points");
+  await expect(reviewPanel).toContainText("Hindrance Benefit Cap");
+  await expect(reviewPanel).toContainText("Bad Luck");
+  await expect(reviewPanel).toContainText("Cursed");
+});
+
 test("loads a bundled sample in demo mode", async ({ page }) => {
   await page.locator("#landingLoadSampleBtn").click();
 
@@ -439,6 +527,61 @@ test("loads a bundled sample in demo mode", async ({ page }) => {
   );
   expect(Object.keys(library.charactersById)).toHaveLength(1);
   expect(library.charactersById[library.activeCharacterId].isDemo).toBe(true);
+});
+
+test("shows usage notes for attributes and skills", async ({ page }) => {
+  await enterTracker(page);
+  const sample = await page.request.get(
+    "/docs/Sample%20Characters/savaged-us-json-export-character-Dusty%20McCaw.json",
+  );
+  expect(sample.ok()).toBeTruthy();
+
+  await openHeaderMenu(page);
+  await page.locator("#pasteImportBtn").click();
+  await page.locator("#importJsonText").fill(await sample.text());
+  await page.locator("#confirmPasteImportBtn").click();
+  await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+
+  const agilityCard = page
+    .locator("#attributesList .attribute-die-card")
+    .filter({ hasText: "Agility" });
+  await expect(agilityCard).toHaveAttribute("title", /Coordination/);
+  await agilityCard.hover();
+  await expect(agilityCard.locator(".trait-help")).toBeVisible();
+  await expect(agilityCard.locator(".trait-help")).toContainText(
+    "Coordination",
+  );
+
+  const shootingChip = page
+    .locator("#skillsList .skill-chip")
+    .filter({ hasText: "Shooting" });
+  await expect(shootingChip).toHaveAttribute("title", /Ranged attacks/);
+  await shootingChip.hover();
+  await expect(shootingChip.locator(".trait-help")).toBeVisible();
+  await expect(shootingChip.locator(".trait-help")).toContainText(
+    "Linked attribute: Agility",
+  );
+
+  await page.locator("[data-setup-step='attributesSkills']").click();
+  const setupTraitsPanel = page.locator("#setupTraitsPanel");
+  await expect(setupTraitsPanel).toContainText("Traits");
+  await expect(setupTraitsPanel).toContainText("Advanced character");
+  await expect(setupTraitsPanel).toContainText("All Skills Shown");
+  await expect(setupTraitsPanel).toContainText("Untrained Value");
+  await expect(setupTraitsPanel).toContainText("d4-2");
+  await expect(
+    page
+      .locator("#setupTraitsPanel .skill-chip")
+      .filter({ hasText: "Healing" }),
+  ).toHaveAttribute("title", /Treating wounds/);
+
+  const untrainedAcademics = setupTraitsPanel
+    .locator(".skill-chip.untrained")
+    .filter({ hasText: "Academics" });
+  await expect(untrainedAcademics).toContainText("d4-2");
+  await expect(untrainedAcademics).toContainText("Untrained");
+  await expect(untrainedAcademics).toHaveAttribute("title", /Formal education/);
 });
 
 test("manages multiple local character save slots", async ({ page }) => {
@@ -1036,6 +1179,18 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await expect(page.locator("#importWarningsList")).toBeVisible();
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
+    "Complete",
+  );
+  await page.locator("[data-setup-step='hindrances']").click();
+  const hindrancePanel = page.locator("#setupHindrancesPanel");
+  await expect(hindrancePanel).toContainText("Heroic");
+  await expect(hindrancePanel).toContainText("Major");
+  await expect(hindrancePanel).toContainText("Small");
+  await expect(hindrancePanel).toContainText("Minor");
+  await expect(hindrancePanel).not.toContainText(
+    "Needs review: one or more Hindrances need Minor or Major severity.",
+  );
   await page.locator("[data-setup-step='review']").click();
   await expect(page.locator("#setupReviewPanel")).toContainText("Lehi Larson");
   await expect(page.locator("#setupReviewPanel")).toContainText(

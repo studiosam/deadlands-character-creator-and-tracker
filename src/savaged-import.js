@@ -564,6 +564,7 @@ function fromSavagedUs(data) {
     hindrances: arr(data.hindrances).map((hindrance) => ({
       name: hindrance.name || "Hindrance",
       severity: hindrance.severity || "",
+      major: hindrance.major,
       notes:
         hindrance.description || hindrance.summary || hindrance.notes || "",
     })),

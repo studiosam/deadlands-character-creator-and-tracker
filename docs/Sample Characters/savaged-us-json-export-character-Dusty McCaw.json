@@ -24,12 +24,30 @@
   "playerName": "Austin",
   "naturalIsHeavy": false,
   "naturalArmor": [],
-  "raceGenderAndProfession": "Novice Male Human, Drifter",
+  "raceGenderAndProfession": "Seasoned Male Human, Drifter",
   "playerCharacter": true,
-  "createdDate": "2026-06-23T00:07:52.587Z",
-  "updatedDate": "2026-06-23T00:07:52.587Z",
+  "createdDate": "2026-06-25T19:45:03.080Z",
+  "updatedDate": "2026-06-25T19:45:03.080Z",
   "appVersion": "3.2.4b031506",
   "abilities": [
+    {
+      "name": "Blessed",
+      "description": "Power Points: 15; Powers: Barrier (Savage Worlds: Adventure Edition p155), Holy Symbol (Deadlands - The Weird West p76), Protection (Savage Worlds: Adventure Edition p165-166)",
+      "note": "",
+      "positive": true,
+      "from": "",
+      "takenFrom": "Deadlands",
+      "bookID": 97
+    },
+    {
+      "name": "Sinnin’",
+      "description": "Blessed who violate their core beliefs (see Sin on page 56) are forsaken by whatever forces of good grant them their powers. Minor sins give the character −2 to his Faith rolls for a week. Major sins rob him of all arcane powers for a week. Mortal sins cause the character to be forsaken until the penitent hero completes some great quest or task of atonement to regain his lost powers.",
+      "note": "Arcane Background",
+      "positive": true,
+      "from": "Arcane Background",
+      "takenFrom": "Deadlands p55",
+      "bookID": 97
+    },
     {
       "name": "Languages Known",
       "description": "English (native, d8)",
@@ -40,7 +58,133 @@
       "bookID": 0
     }
   ],
-  "abs": [],
+  "abs": [
+    {
+      "id": 72,
+      "hasPowerPointPool": true,
+      "uuid": "b96902c1-9c04-400d-1ea3-d7c5ccbe30d8",
+      "hasMegaPowerOptions": false,
+      "name": "Blessed",
+      "powersTotal": 2,
+      "powerPointsMax": 15,
+      "powerPointsCurrent": 15,
+      "arcaneSkill": "Faith",
+      "takenFrom": "Deadlands p.55",
+      "bookID": 97,
+      "powerPointsName": "Power Points",
+      "powers": [
+        {
+          "id": 58,
+          "uuid": "0d473e43-f800-4800-0193-48af0b352c16",
+          "name": "Barrier",
+          "aspectOnlyName": "Barrier",
+          "customName": "",
+          "powerPoints": "2",
+          "range": "Smarts",
+          "takenFrom": "Savage Worlds: Adventure Edition p155",
+          "bookID": 9,
+          "damage": "",
+          "damageWithBrackets": "",
+          "duration": "5",
+          "innate": false,
+          "summary": "Creates 10 yard long, 2 yard tall, Toughness 10 barrier. - ",
+          "description": "Barrier creates a straight wall 5′′ (10 yards)\nlong and 1′′ (two yards) tall, of immobile\nmaterial that conforms to the surface it’s cast\nupon. Thickness varies depending on what\nthe wall is made of, but is usually a few inches.\nThe wall has a Hardness of 10, and may be\ndestroyed as any other object (see Breaking\nThings on page 98).\n\nWhen the spell expires or the wall is broken\nit crumbles to dust or dissipates. Trap­pings\nare never left behind.\n",
+          "bookPowerName": "Barrier",
+          "trappings": "",
+          "rank": "seasoned",
+          "skillModifier": 0,
+          "arcaneSkillName": "Faith",
+          "arcaneSkillRoll": "d4",
+          "powerModifiers": [
+            "DAMAGE (+1): The barrier causes 2d4 damage to anyone who contacts it.",
+            "SHAPED (+2): The barrier forms a circle, square or other basic shape.",
+            "SIZE (+1): The length and height of the barrier doubles.",
+            "STRONG (+1): The wall is Toughness 12."
+          ],
+          "additionalTargets": [
+            ""
+          ],
+          "megaPowerOptions": [
+            "STALWART WALLS (+2): The barrier gains +12 MDC Armor.",
+            ""
+          ],
+          "descriptionHTML": "<p>Barrier creates a straight wall 5′′ (10 yards) long and 1′′ (two yards) tall, of immobile material that conforms to the surface it’s cast upon. Thickness varies depending on what the wall is made of, but is usually a few inches. The wall has a Hardness of 10, and may be destroyed as any other object (see Breaking Things on page 98).</p> <p>When the spell expires or the wall is broken it crumbles to dust or dissipates. Trap­pings are never left behind.</p><h3>Modifiers</h3><ul><li><b>Damage (+1)</b>: The barrier causes 2d4 damage to anyone who contacts it.</li><li><b>Shaped (+2)</b>: The barrier forms a circle, square or other basic shape.</li><li><b>Size (+1)</b>: The length and height of the barrier doubles.</li><li><b>Strong (+1)</b>: The wall is Toughness 12.</li></ul><p><cite>Savage Worlds: Adventure Edition p.155</cite></p>",
+          "customDescription": "",
+          "originalName": "Barrier"
+        },
+        {
+          "id": 210,
+          "uuid": "ae850cae-dfb9-4643-0df3-bfb78bc1d08c",
+          "name": "Holy Symbol",
+          "aspectOnlyName": "Holy Symbol",
+          "customName": "",
+          "powerPoints": "3",
+          "range": "Self",
+          "takenFrom": "Deadlands - The Weird West p76",
+          "bookID": 97,
+          "damage": "",
+          "damageWithBrackets": "",
+          "duration": "5",
+          "innate": false,
+          "summary": "Supernatural evil cannot touch you unless Spirit roll as free action (-2 on raise), requires a holy symbol. - ",
+          "description": "",
+          "bookPowerName": "Holy Symbol",
+          "trappings": "",
+          "rank": "novice",
+          "skillModifier": 0,
+          "arcaneSkillName": "Faith",
+          "arcaneSkillRoll": "d4",
+          "powerModifiers": [
+            "AREA EFFECT (+2/+3): For +2 points the power affects all allies within a Medium Blast Template centered on the caster. It does not prevent creatures from entering the area, only their attacks against those within it. For +3 points the area of effect is increased to a Large Blast Template.",
+            "STRONG (+1): Spirit rolls by the creature are made at −2 (–4 with a raise)."
+          ],
+          "additionalTargets": [],
+          "megaPowerOptions": [],
+          "descriptionHTML": "<h3>Modifiers</h3><ul><li><b>Area Effect (+2/+3)</b>: For +2 points the power affects all allies within a Medium Blast Template centered on the caster. It does not prevent creatures from entering the area, only their attacks against those within it. For +3 points the area of effect is increased to a Large Blast Template.</li><li><b>Strong (+1)</b>: Spirit rolls by the creature are made at −2 (–4 with a raise).</li></ul><p><cite>Deadlands - The Weird West p.76</cite></p>",
+          "customDescription": "",
+          "originalName": "Holy Symbol"
+        },
+        {
+          "id": 93,
+          "uuid": "a50aaa01-2150-4add-2b12-17e532cb3913",
+          "name": "Protection",
+          "aspectOnlyName": "Protection",
+          "customName": "",
+          "powerPoints": "1",
+          "range": "Smarts",
+          "takenFrom": "Savage Worlds: Adventure Edition p165-166",
+          "bookID": 9,
+          "damage": "",
+          "damageWithBrackets": "",
+          "duration": "5",
+          "innate": false,
+          "summary": "Grants Armor +2 (Toughness, with a raise). - ",
+          "description": "Protection creates a field of energy or armor\naround a character, giving him 2 points of\nArmor, or +4 with a raise.\n\nWhether the protection is visible or not\ndepends on the Trapping — this is entirely\nup to the caster.\n\nProtection stacks with all other armor, natural\nor worn, and is negated by AP as usual.\n",
+          "bookPowerName": "Protection",
+          "trappings": "",
+          "rank": "novice",
+          "skillModifier": 0,
+          "arcaneSkillName": "Faith",
+          "arcaneSkillRoll": "d4",
+          "powerModifiers": [
+            "ADDITIONAL RECIPIENTS (+1): The power may affect additional targets at a cost of 1 Power Point each.",
+            "MORE ARMOR (+1): Success grants 4 points of Armor (+6 with a raise).",
+            "TOUGHNESS (+1): Protection provides Toughness instead of Armor and is not affected by AP (magical or otherwise). This means it stacks with natural or worn armor."
+          ],
+          "additionalTargets": [
+            ""
+          ],
+          "megaPowerOptions": [
+            "GREATER PROTECTION (+3): Protection provides 6 points of MDC Armor (+8 with a raise), which stacks with all other armor, natural or worn. May be combined with the Toughness Power Modifier, but not More Armor.",
+            ""
+          ],
+          "descriptionHTML": "<p>Protection creates a field of energy or armor around a character, giving him 2 points of Armor, or +4 with a raise.</p> <p>Whether the protection is visible or not depends on the Trapping — this is entirely up to the caster.</p> <p>Protection stacks with all other armor, natural or worn, and is negated by AP as usual.</p><h3>Modifiers</h3><ul><li><b>Additional Recipients (+1)</b>: The power may affect additional targets at a cost of 1 Power Point each.</li><li><b>More Armor (+1)</b>: Success grants 4 points of Armor (+6 with a raise).</li><li><b>Toughness (+1)</b>: Protection provides Toughness instead of Armor and is not affected by AP (magical or otherwise). This means it stacks with natural or worn armor.</li></ul><p><cite>Savage Worlds: Adventure Edition p.165-166</cite></p>",
+          "customDescription": "",
+          "originalName": "Protection"
+        }
+      ]
+    }
+  ],
   "advances": [
     {
       "name": "Raise Attribute: Agility",
@@ -48,17 +192,22 @@
       "description": "Raise Attribute: Agility"
     },
     {
-      "name": "Raise Skills: Fighting/Battle",
+      "name": "Raise Skills: Fighting/Faith",
       "number": 2,
-      "description": "Raise Skills: Fighting/Battle"
+      "description": "Raise Skills: Fighting/Faith"
     },
     {
       "name": "Raise Skill: Survival",
       "number": 3,
       "description": "Raise Skill: Survival"
+    },
+    {
+      "name": "Edge: Arcane Background (Blessed)",
+      "number": 4,
+      "description": "Edge: Arcane Background (Blessed)"
     }
   ],
-  "advancesCount": 3,
+  "advancesCount": 4,
   "age": "61",
   "armor": [
     {
@@ -225,6 +374,17 @@
   "cyberware": [],
   "description": "Dusty McCaw is sixty-one years old and looks every day of it, though not in a fragile way. He is lean rather than frail, with the kind of wiry strength that comes from decades of fence mending, saddle lifting, and long days in the sun. His shoulders are slightly rounded from years in the saddle. One knee stiffens when the weather turns cold, and he stands up slow, but once he's moving, he moves steadily.\n\nHis face is narrow and weather-cut, deep lines carved around the mouth and eyes. His beard is more gray than brown now, trimmed short when he has the chance, left uneven when he does not. His hands are calloused and cracked, permanently stained with dust and oil. His clothes are clean when possible but worn thin: an old hat reshaped more times than it should have survived, a faded coat with careful patches, boots that have been resoled twice.",
   "edges": [
+    {
+      "id": 951,
+      "customDescription": "",
+      "name": "Arcane Background (Blessed)",
+      "description": "Can call upon the power of their deity for aid.",
+      "note": "Advance",
+      "takenFrom": "Deadlands p17",
+      "bookID": 97,
+      "isHidden": false,
+      "descriptionHTML": "<p>Can call upon the power of their deity for aid.</p><p><cite>Deadlands - The Weird West p.17</cite></p>"
+    },
     {
       "id": 281,
       "customDescription": "",
@@ -668,7 +828,7 @@
   ],
   "iconicFramework": "",
   "settingImage": "/shares/data/setting-15.png",
-  "image": "https://savaged.us/data-images/users/33145-session-character.webp?v=1782173272.587",
+  "image": "https://savaged.us/data-images/users/33145-session-character.webp?v=1782416703.08",
   "imageToken": "",
   "alliedExtras": [],
   "journal": [
@@ -704,8 +864,8 @@
   "parryHR": "4",
   "professionOrTitle": "Drifter",
   "race": "Human",
-  "rank": 0,
-  "rankName": "Novice",
+  "rank": 1,
+  "rankName": "Seasoned",
   "runningDie": "d6",
   "sanity": 6,
   "savagedUsShareURL": "",
@@ -732,21 +892,21 @@
       "bookID": 9
     },
     {
-      "name": "Battle",
-      "attribute": "smarts",
-      "value": "d4",
-      "dieValue": 4,
-      "mod": 0,
-      "isCore": false,
-      "bookID": 9
-    },
-    {
       "name": "Common Knowledge",
       "attribute": "smarts",
       "value": "d4",
       "dieValue": 4,
       "mod": 0,
       "isCore": true,
+      "bookID": 9
+    },
+    {
+      "name": "Faith",
+      "attribute": "spirit",
+      "value": "d4",
+      "dieValue": 4,
+      "mod": 0,
+      "isCore": false,
       "bookID": 9
     },
     {
@@ -871,8 +1031,8 @@
     {
       "name": "Battle",
       "attribute": "smarts",
-      "value": "d4",
-      "dieValue": 4,
+      "value": "-",
+      "dieValue": 0,
       "mod": 0,
       "isCore": false,
       "bookID": 9
@@ -907,8 +1067,8 @@
     {
       "name": "Faith",
       "attribute": "spirit",
-      "value": "-",
-      "dieValue": 0,
+      "value": "d4",
+      "dieValue": 4,
       "mod": 0,
       "isCore": false,
       "bookID": 9
@@ -1146,7 +1306,7 @@
   "weapons": [
     {
       "id": 0,
-      "uuid": "82405320-a6f2-4d22-1c9b-eefd3bbfda36",
+      "uuid": "7dd511db-43f6-4088-0e5b-44df382b88e2",
       "name": "Unarmed",
       "weight": 0,
       "range": "Melee",

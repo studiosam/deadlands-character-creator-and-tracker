@@ -36,14 +36,61 @@ function tagCardMarkup(item, kind = "") {
   return `<article class="dossier-tag ${kind}"><div class="dossier-tag-head"><div><strong>${esc(item.name)}</strong>${item.meta ? `<span>${esc(item.meta)}</span>` : ""}</div>${controls}</div>${item.summary ? `<p>${esc(item.summary)}</p>` : ""}${item.note ? `<p class="tag-note">${esc(item.note)}</p>` : ""}${item.sourceMeta ? `<small>${esc(item.sourceMeta)}</small>` : ""}</article>`;
 }
 
+function skillReferenceName(name) {
+  const text = String(name || "").trim();
+  if (SKILL_USE_NOTES[text]) return text;
+  const withoutParenthetical = text.replace(/\s*\(.+\)\s*$/, "");
+  if (SKILL_USE_NOTES[withoutParenthetical]) return withoutParenthetical;
+  return text;
+}
+
+function attributeUseNote(name) {
+  return ATTRIBUTE_USE_NOTES[String(name || "").toLowerCase()] || "";
+}
+
+function skillUseNote(name) {
+  return SKILL_USE_NOTES[skillReferenceName(name)] || "";
+}
+
+function skillLinkedAttribute(skill) {
+  const referenceName = skillReferenceName(skill?.name);
+  return (
+    skill?.linkedAttribute ||
+    SKILL_LINKED_ATTRIBUTES[referenceName] ||
+    SKILL_LINKED_ATTRIBUTES[String(skill?.name || "")]
+  );
+}
+
+function traitLabel(value) {
+  const text = String(value || "").trim();
+  return text ? displayNameFromKey(text.toLowerCase()) : "";
+}
+
 function attributeCardMarkup(name, die) {
-  return `<div class="attribute-die-card"><span>${esc(displayNameFromKey(name))}</span><strong>${esc(die || "—")}</strong></div>`;
+  const label = traitLabel(name);
+  const note = attributeUseNote(name);
+  const title = note ? `${label}: ${note}` : label;
+  return `<div class="attribute-die-card trait-help-target" tabindex="0" title="${esc(title)}" aria-label="${esc(`${label} ${die || "—"}. ${note}`)}"><span>${esc(label)}</span><strong>${esc(die || "—")}</strong>${note ? `<small class="trait-help" role="tooltip">${esc(note)}</small>` : ""}</div>`;
 }
 
 function skillChipMarkup(skill) {
   const meta = skill.die || skill.value || "—";
-  const note = skill.notes || skill.linkedAttribute || "";
-  return `<div class="skill-chip"><strong>${esc(skill.name || "Skill")}</strong><span>${esc(meta)}${note ? ` • ${esc(note)}` : ""}</span></div>`;
+  const linkedAttribute = skillLinkedAttribute(skill);
+  const displayNote =
+    skill.notes ||
+    [traitLabel(linkedAttribute), skill.isUntrained ? "Untrained" : ""]
+      .filter(Boolean)
+      .join(" • ");
+  const useNote = skillUseNote(skill.name);
+  const linkedText = linkedAttribute
+    ? `Linked attribute: ${traitLabel(linkedAttribute)}.`
+    : "";
+  const untrainedText = skill.isUntrained ? "Untrained roll: d4-2." : "";
+  const title = [skill.name || "Skill", useNote, linkedText, untrainedText]
+    .filter(Boolean)
+    .join(" ");
+  const help = [useNote, linkedText, untrainedText].filter(Boolean).join(" ");
+  return `<div class="skill-chip trait-help-target${skill.isUntrained ? " untrained" : ""}" tabindex="0" title="${esc(title)}" aria-label="${esc(`${skill.name || "Skill"} ${meta}. ${help}`)}"><strong>${esc(skill.name || "Skill")}</strong><span>${esc(meta)}${displayNote ? ` • ${esc(displayNote)}` : ""}</span>${help ? `<small class="trait-help" role="tooltip">${esc(help)}</small>` : ""}</div>`;
 }
 
 function equippedArmorSummaryMarkup() {
