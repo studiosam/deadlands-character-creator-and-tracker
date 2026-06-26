@@ -40,7 +40,7 @@ The current MVP should use one built-in profile and avoid making users configure
 
 ## Current Implementation Status
 
-This document is the source of truth for Character Setup lifecycle, the boundary between Character Setup and the normal Character Sheet, Characters panel responsibility, creation baseline planning, and future Advancement boundaries.
+This document is the source of truth for Character Setup lifecycle, the boundary between Character Setup and the normal Character Sheet, Characters panel responsibility, creation baseline planning, and future Advancement boundaries. The detailed Advancement ledger contract lives in `docs/advancement-contract.md`.
 
 ### Implemented now
 
