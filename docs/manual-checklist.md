@@ -122,6 +122,13 @@ selection, and variable Power Point spending workflow.
 - [ ] Marshal override allows invalid/manual choices.
 - [ ] Catalog preview shows name, rank, PP, range, duration, summary, and notes.
 
+## Read-only Catalog page
+
+- [ ] Catalog tab opens from the primary app tabs.
+- [ ] Edges, Hindrances, and Powers can be browsed without Add, Save, or Apply buttons.
+- [ ] Search and filters update the result list and detail panel.
+- [ ] Browsing the Catalog does not change the active character or local save data.
+
 ## Variable Power Point spending
 
 ### Deflection

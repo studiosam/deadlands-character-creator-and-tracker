@@ -39,6 +39,7 @@ want a local, private, session-focused tracker at the table.
   `complete`, and Review Setup can intentionally reopen setup later.
 - Use the Character tab as a reference-focused Character Sheet after setup is
   complete, while keeping the setup workflow hidden by default.
+- Browse a read-only Catalog reference for Edges, Hindrances, and Powers.
 - Track Arcane Backgrounds, Power Points, known powers, active powers, and
   Huckster Dealing with the Devil helper state.
 - Import Savaged.us JSON exports and preserve app-owned tracker data through

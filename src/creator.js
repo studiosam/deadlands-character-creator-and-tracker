@@ -485,6 +485,7 @@ function setAppTab(tabName) {
   const panelMap = {
     play: "#playPanel",
     character: "#characterPanel",
+    catalog: "#catalogPanel",
     inventory: "#inventoryPanel",
     arcane: "#arcanePanel",
     notes: "#notesPanel",

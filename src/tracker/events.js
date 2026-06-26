@@ -911,6 +911,14 @@ window.addEventListener("beforeunload", (event) => {
 
 document.addEventListener("click", async (event) => {
   if (event.target?.dataset?.action) action(event.target.dataset.action);
+  const catalogTypeButton = event.target?.closest?.("[data-catalog-type]");
+  if (catalogTypeButton) {
+    catalogSetType(catalogTypeButton.dataset.catalogType || "edges");
+  }
+  const catalogResult = event.target?.closest?.("[data-catalog-result-id]");
+  if (catalogResult) {
+    catalogSelectResult(catalogResult.dataset.catalogResultId || "");
+  }
   const setupStep = event.target?.closest?.("[data-setup-step]");
   if (setupStep) {
     characterSetupStep = setupStep.dataset.setupStep;
@@ -985,11 +993,13 @@ document.addEventListener("click", async (event) => {
 document.addEventListener("input", (event) => {
   const conceptInput = event.target?.closest?.("[data-concept-field]");
   if (conceptInput) applyConceptField(conceptInput);
+  if (event.target?.closest?.("#catalogSearchInput")) renderCatalogBrowser();
 });
 
 document.addEventListener("change", (event) => {
   const conceptInput = event.target?.closest?.("[data-concept-field]");
   if (conceptInput) applyConceptField(conceptInput);
+  if (event.target?.closest?.("[data-catalog-filter]")) renderCatalogBrowser();
   if (event.target?.closest?.("#setupHindranceCatalogSelect"))
     syncSetupHindranceSeverity();
 });

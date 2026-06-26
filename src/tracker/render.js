@@ -110,6 +110,7 @@ function render() {
   renderCharacterSummary();
   renderCharacterSetup();
   renderCharacterTabMode();
+  renderCatalogBrowser();
   renderAdvancement();
   renderArmor();
   renderWeapons();

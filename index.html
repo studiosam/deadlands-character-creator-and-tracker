@@ -128,6 +128,7 @@
         Combat
       </button>
       <button type="button" data-app-tab="character">Character</button>
+      <button type="button" data-app-tab="catalog">Catalog</button>
       <button type="button" data-app-tab="inventory">Inventory</button>
       <button type="button" data-app-tab="arcane">Arcane</button>
       <button type="button" data-app-tab="notes">Notes</button>
@@ -973,6 +974,50 @@
         <section class="card wide">
           <h2>Background and Long-Form Text</h2>
           <div id="longFormNotesList" class="list"></div>
+        </section>
+      </section>
+
+      <section id="catalogPanel" class="dashboard tab-panel hidden catalog-panel" aria-labelledby="catalogHeading">
+        <section class="card wide catalog-hero">
+          <div>
+            <p class="eyebrow">Reference</p>
+            <h2 id="catalogHeading">Catalog</h2>
+            <p class="muted">
+              Browse Edges, Hindrances, and Powers without editing the character.
+            </p>
+          </div>
+        </section>
+
+        <section class="card wide catalog-browser" aria-label="Read-only catalog browser">
+          <div class="catalog-controls">
+            <div class="catalog-type-selector" role="group" aria-label="Catalog type">
+              <button class="active" type="button" data-catalog-type="edges">Edges</button>
+              <button type="button" data-catalog-type="hindrances">Hindrances</button>
+              <button type="button" data-catalog-type="powers">Powers</button>
+            </div>
+            <label class="catalog-search-control">
+              Search
+              <input id="catalogSearchInput" type="search" autocomplete="off"
+                placeholder="Search name, summary, source, or requirements">
+            </label>
+            <div id="catalogFilterFields" class="catalog-filter-fields"></div>
+          </div>
+
+          <div class="catalog-browser-layout">
+            <section class="catalog-results-shell" aria-labelledby="catalogResultsHeading">
+              <div class="catalog-section-heading">
+                <h3 id="catalogResultsHeading">Results</h3>
+                <span id="catalogResultSummary" class="pill"></span>
+              </div>
+              <div id="catalogResultsList" class="catalog-results-list"></div>
+            </section>
+            <section class="catalog-detail-shell" aria-labelledby="catalogDetailHeading">
+              <div class="catalog-section-heading">
+                <h3 id="catalogDetailHeading">Details</h3>
+              </div>
+              <div id="catalogDetailPanel" class="catalog-detail-panel"></div>
+            </section>
+          </div>
         </section>
       </section>
 
