@@ -7,6 +7,8 @@ delete process.env.NO_COLOR;
 
 module.exports = defineConfig({
   testDir: "./tests/browser",
+  fullyParallel: true,
+  preserveOutput: "failures-only",
   timeout: 30_000,
   expect: {
     timeout: 5_000,

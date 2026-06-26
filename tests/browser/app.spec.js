@@ -206,7 +206,7 @@ test.afterEach(async ({ page }) => {
   ).toEqual([]);
 });
 
-test("loads the app and switches primary tabs", async ({ page }) => {
+test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await expect(page).toHaveTitle(/Deadlands Character Tracker/);
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
   await expect(page.locator("#landingPage")).toBeVisible();
@@ -252,7 +252,9 @@ test("loads the app and switches primary tabs", async ({ page }) => {
   await expect(page.locator(".shell")).toBeHidden();
 });
 
-test("starts new characters directly in character setup", async ({ page }) => {
+test("starts new characters directly in character setup @mobile", async ({
+  page,
+}) => {
   await expect(page.locator("#landingPage")).toBeVisible();
   await page.locator("#landingCreateBtn").click();
 
@@ -1171,7 +1173,7 @@ test("keeps character slots in stable order when switching", async ({
   expect(namesAfter).toEqual(namesBefore);
 });
 
-test("selects and opens a saved character from the minimal landing page", async ({
+test("selects and opens a saved character from the minimal landing page @mobile", async ({
   page,
 }) => {
   const firstName = "Landing Character One";
@@ -1253,7 +1255,7 @@ test("selects and opens a saved character from the minimal landing page", async 
   await expect(characterSelect.locator("option:checked")).toHaveText(firstName);
 });
 
-test("imports JSON from the landing page only after confirmation", async ({
+test("imports JSON from the landing page only after confirmation @mobile", async ({
   page,
 }) => {
   const sample = await page.request.get(
@@ -1284,7 +1286,7 @@ test("imports JSON from the landing page only after confirmation", async ({
   await expect(page.locator("#characterName")).toContainText("Lehi Larson");
 });
 
-test("shows setup review for imported characters until confirmed", async ({
+test("shows setup review for imported characters until confirmed @mobile", async ({
   page,
 }) => {
   const sample = await page.request.get(
@@ -1394,7 +1396,7 @@ test("shows setup review for imported characters until confirmed", async ({
     });
 });
 
-test("keeps duplicated character state independent across switching and reload", async ({
+test("keeps duplicated character state independent across switching and reload @mobile", async ({
   page,
 }) => {
   const originalName = "Healthy Character";
@@ -1627,7 +1629,7 @@ test("deletes only the selected character and preserves the remaining character"
   );
 });
 
-test("persists wounds for an unsaved active character across reload", async ({
+test("persists wounds for an unsaved active character across reload @mobile", async ({
   page,
 }) => {
   await enterTracker(page);
@@ -1640,7 +1642,7 @@ test("persists wounds for an unsaved active character across reload", async ({
   await expectWounds(page, 1);
 });
 
-test("adds and deletes gear while preserving remaining inventory across reload", async ({
+test("adds and deletes gear while preserving remaining inventory across reload @mobile", async ({
   page,
 }) => {
   const deleteName = "Gear Item To Delete";
@@ -1847,7 +1849,7 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   );
 });
 
-test("round-trips exported tracker JSON through import", async ({
+test("round-trips exported tracker JSON through import @mobile", async ({
   page,
 }, testInfo) => {
   const characterName = "Backup Recovery Character";
