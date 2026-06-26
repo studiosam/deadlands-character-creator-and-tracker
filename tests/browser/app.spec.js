@@ -763,6 +763,15 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await expect(edgesPanel).toContainText("Human Free Edge");
   await expect(edgesPanel).toContainText("0 / 1");
   await expect(edgesPanel).toContainText("Hindrance Benefit Edges");
+  await expect(page.locator("#setupHumanFreeEdgeSelect")).not.toContainText(
+    "Brave",
+  );
+  await expect(page.locator("#setupHumanFreeEdgeSelect")).not.toContainText(
+    "Fan the Hammer",
+  );
+  await expect(page.locator("#setupHumanFreeEdgeSelect")).not.toContainText(
+    "\u00e2\u20ac\u00a2",
+  );
 
   await page
     .locator("#setupHumanFreeEdgeSelect")
@@ -773,11 +782,11 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
 
   await page
     .locator("#setupHindranceBenefitEdgeSelect")
-    .selectOption("swade-edge-brave");
+    .selectOption("swade-edge-berserk");
   await edgesPanel
     .getByRole("button", { name: "Add Hindrance Benefit Edge" })
     .click();
-  await expect(edgesPanel).toContainText("Brave");
+  await expect(edgesPanel).toContainText("Berserk");
   await expect(edgesPanel).toContainText("Hindrance benefit Edge");
   await expect(page.locator("[data-setup-step='edges']")).toContainText(
     "Complete",
@@ -798,7 +807,7 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
             activeCharacter?.edges?.find((edge) => edge.name === "Alertness")
               ?.creationSource || "",
           hindranceEdge:
-            activeCharacter?.edges?.find((edge) => edge.name === "Brave")
+            activeCharacter?.edges?.find((edge) => edge.name === "Berserk")
               ?.creationSource || "",
         };
       }, CHARACTER_LIBRARY_KEY),
@@ -815,7 +824,7 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await page.locator("[data-setup-step='edges']").click();
   await expect(page.locator("#setupEdgesPanel")).toContainText("Alertness");
-  await expect(page.locator("#setupEdgesPanel")).toContainText("Brave");
+  await expect(page.locator("#setupEdgesPanel")).toContainText("Berserk");
   await expect(page.locator("#setupEdgesPanel")).toContainText(
     "Human free Edge",
   );

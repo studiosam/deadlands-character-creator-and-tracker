@@ -828,7 +828,7 @@ function renderSetupHindranceBenefitRows(stats) {
           return `<div class="setup-trait-editor-row">
             <div>
               <strong>${esc(item.pluralLabel)}</strong>
-              <span>${esc(item.effect)} â€¢ costs ${item.cost} point${item.cost === 1 ? "" : "s"} each</span>
+              <span>${esc(item.effect)} - costs ${item.cost} point${item.cost === 1 ? "" : "s"} each</span>
             </div>
             <div class="setup-trait-controls">
               <button type="button" data-setup-action="decHindranceBenefit" data-benefit-key="${esc(item.key)}"${canDecrease ? "" : " disabled"}>-</button>
@@ -1236,20 +1236,128 @@ function renderSetupTraits() {
   </section>`;
 }
 
+const SETUP_EDGE_RANKS = [
+  "novice",
+  "seasoned",
+  "veteran",
+  "heroic",
+  "legendary",
+];
+
+function setupEdgeRankValue(rank) {
+  const text = plainEntryName(rank || "Novice");
+  const index = SETUP_EDGE_RANKS.indexOf(text);
+  return index < 0 ? 0 : index;
+}
+
+function setupCurrentRankValue() {
+  return setupEdgeRankValue(character.rank || "Novice");
+}
+
+function setupHasEdgeNamed(name) {
+  const text = plainEntryName(name);
+  return (character.edges || []).some(
+    (edge) => plainEntryName(edge.name) === text,
+  );
+}
+
+function setupEdgeRequirementTraitDie(traitName) {
+  const attributeDie = getAttributeDie(character, traitName);
+  if (attributeDie) return attributeDie;
+  return getSkillDie(character, traitName);
+}
+
+function setupDieRequirementMet(traitName, requiredDie) {
+  const die = setupEdgeRequirementTraitDie(traitName);
+  return getDieStepIndex(die) >= getDieStepIndex(requiredDie);
+}
+
+function setupRequirementTextIsRankOnly(text) {
+  if (!text) return true;
+  if (text === "novice" || text === "wild card") return true;
+  if (text === "none beyond rank" || text === "rank") return true;
+  return SETUP_EDGE_RANKS.includes(text);
+}
+
+function setupEdgeRequirementPartMet(part) {
+  const text = String(part || "").trim();
+  const normalized = plainEntryName(text);
+  if (setupRequirementTextIsRankOnly(normalized)) return true;
+
+  const dieMatch = text.match(/^(.+?)\s+d(4|6|8|10|12)\+$/i);
+  if (dieMatch) {
+    const [, traitText, sides] = dieMatch;
+    const requiredDie = `d${sides}`;
+    const options = traitText
+      .split(/\s+(?:or)\s+|\/|;/i)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    return options.some((name) => setupDieRequirementMet(name, requiredDie));
+  }
+
+  const edgeRequirement = EDGE_CATALOG.find(
+    (edge) => plainEntryName(edge.name) === normalized,
+  );
+  if (edgeRequirement) return setupHasEdgeNamed(edgeRequirement.name);
+
+  return false;
+}
+
+function setupEdgeEligibility(edge) {
+  const rank = edge?.rank || "Novice";
+  if (setupEdgeRankValue(rank) > setupCurrentRankValue()) {
+    return {
+      eligible: false,
+      reason: `${rank} Edge; starting characters can only choose rank-legal Edges.`,
+    };
+  }
+
+  const requirements = String(edge?.requirements || "").trim();
+  if (!requirements) return { eligible: true, reason: "" };
+  const unmet = requirements
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => !setupEdgeRequirementPartMet(part));
+
+  return {
+    eligible: unmet.length === 0,
+    reason: unmet.length ? `Missing requirement: ${unmet.join(", ")}` : "",
+  };
+}
+
+function setupEligibleStartingEdges() {
+  const selectedNames = new Set(
+    (character.edges || [])
+      .filter((edge) => edge.name)
+      .map((edge) => plainEntryName(edge.name)),
+  );
+  return EDGE_CATALOG.filter(
+    (edge) =>
+      !selectedNames.has(plainEntryName(edge.name)) &&
+      setupEdgeEligibility(edge).eligible,
+  );
+}
+
+function setupEdgeOptionLabel(edge) {
+  const details = [edge.category, edge.rank, edge.requirements].filter(Boolean);
+  return `${edge.name}${details.length ? ` - ${details.join(" - ")}` : ""}`;
+}
+
 function setupEdgeCatalogOptions(placeholder) {
   const selectedNames = new Set(
     (character.edges || [])
       .filter((edge) => edge.name)
       .map((edge) => plainEntryName(edge.name)),
   );
-  const availableEdges = EDGE_CATALOG.filter(
+  const availableEdges = setupEligibleStartingEdges().filter(
     (edge) => !selectedNames.has(plainEntryName(edge.name)),
   );
   return [
     `<option value="">${placeholder}</option>`,
     ...availableEdges.map(
       (edge) =>
-        `<option value="${esc(edge.id)}">${esc(edge.name)}${edge.category ? ` â€¢ ${esc(edge.category)}` : ""}${edge.rank ? ` â€¢ ${esc(edge.rank)}` : ""}${edge.requirements ? ` â€¢ ${esc(edge.requirements)}` : ""}</option>`,
+        `<option value="${esc(edge.id)}">${esc(setupEdgeOptionLabel(edge))}</option>`,
     ),
   ].join("");
 }
@@ -1269,6 +1377,7 @@ function renderSetupEdgeSelectionControls() {
 
   return `<section class="setup-trait-group setup-edge-selection" aria-labelledby="setupEdgeSelectionHeading">
     <h4 id="setupEdgeSelectionHeading">Select Starting Edges</h4>
+    <p class="creator-note">Only currently eligible starting Edges are shown. Raise Traits or choose prerequisite Edges first to unlock more options.</p>
     <div class="setup-review-grid">
       ${setupDetail("Human Free Edge", `${humanEdges} / ${expectedHumanEdges}`)}
       ${setupDetail("Hindrance Benefit Edges", `${hindranceEdges} / ${hindranceEdgeSlots}`)}

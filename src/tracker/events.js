@@ -254,6 +254,15 @@ function addSetupEdgeFromCatalog(selectId, creationSource, sourceLabel) {
     return;
   }
 
+  const eligibility = setupEdgeEligibility(catalogEntry);
+  if (!eligibility.eligible) {
+    appToast(
+      eligibility.reason || "That Edge is not currently eligible.",
+      "danger",
+    );
+    return;
+  }
+
   if (
     creationSource === "human-free-edge" &&
     setupHumanFreeEdges().length >= setupExpectedHumanFreeEdges()

@@ -37,3 +37,76 @@ Imported advanced characters are a separate backlog problem. Savaged.us imports 
 `Sources & Rulesets` is currently a read-only informational page. It records the default Deadlands-focused campaign profile used by the app and is not currently a campaign settings editor.
 
 The current MVP should use one built-in profile and avoid making users configure source books before creating or importing characters. A future SWADE-wide or Pinnacle-facing version could expand this area into editable campaign profile configuration.
+
+## Character Tab Cleanup Plan
+
+The Character tab currently combines three different jobs: one-time Character Setup, the long-term Character Sheet, and Advancement/history management. The cleanup should separate those concerns without removing existing data or changing persistence behavior.
+
+### Section Classification
+
+| Current area                                  | Classification                                                     | Cleanup direction                                                                                                                                                                                                                    |
+| --------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Character Dossier header                      | Keep on normal Character Sheet                                     | Keep as the Character Sheet identity header. It should show name, rank, ancestry, archetype, player-facing source/status, and a compact status strip only if those values help reference the character.                              |
+| Character Setup shell and stepper             | Keep only in Character Setup                                       | Do not show the full setup workflow by default once setup is complete. It should be prominent only when the character needs setup review or when the user intentionally reopens setup review.                                        |
+| Concept fields                                | Keep only in Character Setup                                       | Keep editable concept fields in setup review. The normal Character Sheet should show identity values read-only, with any future editing exposed deliberately rather than inline with setup.                                          |
+| Race / Ancestry                               | Keep on normal Character Sheet and keep only in Character Setup    | Show current ancestry on the sheet as identity/reference data. Keep ancestry validation and profile warnings in setup review.                                                                                                        |
+| Hindrances                                    | Keep on normal Character Sheet and keep only in Character Setup    | Show selected Hindrances on the sheet as normal reference. Keep starting Hindrance selection, point accounting, and benefit spending in setup review.                                                                                |
+| Traits / Attributes                           | Keep on normal Character Sheet and keep only in Character Setup    | Show final Attributes on the sheet. Keep point-spending controls and creation-baseline audit in setup review.                                                                                                                        |
+| Skills                                        | Keep on normal Character Sheet and keep only in Character Setup    | Show final Skills on the sheet. Keep unskilled/full-profile setup audit and starting Skill point spending in setup review.                                                                                                           |
+| Edges                                         | Keep on normal Character Sheet and keep only in Character Setup    | Show current Edges on the sheet. Keep Human free Edge and Hindrance benefit Edge source tracking in setup review. Manual add/edit should not compete with setup in the completed sheet.                                              |
+| Derived stats                                 | Keep on normal Character Sheet and move primarily to Combat        | Keep Pace, Parry, Toughness, Size, and Armor on the sheet as reference. Combat remains the primary active-use location for Pace, Parry, Toughness, Wounds, Fatigue, and status.                                                      |
+| Import warnings                               | Move to Notes                                                      | Keep a small setup warning if review is needed, but detailed import warnings belong in Notes or a review/details area rather than permanently occupying normal Character Sheet space.                                                |
+| Arcane snapshot                               | Move primarily to Arcane                                           | Keep a short Arcane Background / Power Points summary on the sheet if relevant. Full Power Points controls, powers, active powers, backlash/reminders, and arcane setup belong in Arcane.                                            |
+| Equipped summary                              | Move primarily to Combat and Inventory                             | Combat should show current weapons, armor impact, ammo, and active-use equipment. Inventory should own equipment management. The sheet can keep a small read-only equipment summary or omit it if Combat/Inventory already cover it. |
+| Gear summary                                  | Move primarily to Inventory                                        | Full gear, money, ammo, armor, weapons, vehicles, carried state, and add-item forms belong in Inventory. Character Setup Gear remains audit-only until a dedicated starting-purchase slice exists.                                   |
+| Background / Import Notes                     | Move to Notes                                                      | Character background can appear as a short sheet note or excerpt, but long-form background, import notes, reminders, and session notes belong in Notes.                                                                              |
+| Advancement panel and add-advance form        | Move primarily to Advancement later                                | Advancement work is paused. Existing advancement UI should not remain embedded in the normal Character Sheet long term. It should move to a dedicated Advancement workflow later.                                                    |
+| Manual Edge and Hindrance add/edit forms      | Hide or postpone                                                   | These are useful escape hatches but should not be prominent in the completed Character Sheet. Prefer setup-source workflows for creation choices and a later Advancement workflow for post-creation changes.                         |
+| Enable Manual Power Points control            | Move primarily to Arcane                                           | Manual Power Points are arcane/resource setup. The normal sheet may show whether Power Points exist, but the control belongs in Arcane or setup review.                                                                              |
+| Source badge and save/setup status indicators | Keep on normal Character Sheet and move to Settings or global menu | Keep a small source/setup-status indicator on the sheet. Detailed local save, import/export, and library management remain Settings/global menu responsibilities.                                                                    |
+
+### Proposed Future Character Tab Structure
+
+#### State A: Character needs setup review
+
+- Show Character Setup prominently at the top of the Character tab.
+- Show a compact identity summary above setup: name, rank, ancestry, archetype, source, and setup status.
+- Show clear setup actions: save draft/current character, finish or confirm setup, and return to play when ready.
+- Keep the normal Character Sheet secondary or collapsed so setup does not compete with onboarding.
+- Show warnings for incomplete setup sections and import review issues near the setup workflow.
+
+#### State B: Character setup is complete
+
+- Show a clean Character Sheet by default.
+- Show identity, derived stats, Attributes, Skills, Edges, Hindrances, and short notes.
+- Show a deliberate `Review Setup` or `Reopen Setup Review` action.
+- Do not show the full setup workflow by default.
+- Keep active combat, inventory management, arcane controls, long-form notes, and future Advancement workflows in their own tabs or dedicated panels.
+
+### Proposed `setupStatus` Lifecycle
+
+- Imported characters should default to `needsReview`.
+- Newly created characters should default to `needsReview`.
+- Confirmed characters should become `complete`.
+- Users should be able to intentionally reopen setup review later.
+- `setupStatus` should be explicit and separate from `creation.finalized` if needed, because finalized currently means "ready to start playing" rather than "all setup review is permanently hidden."
+- Do not implement `setupStatus` in this task.
+
+### Do Not Do Yet
+
+- Do not implement more Advancement behavior.
+- Do not make Gear editable from Character Setup.
+- Do not make Powers editable from Character Setup.
+- Do not enforce full Edge prerequisites yet.
+- Do not build a full campaign settings editor.
+- Do not refactor the whole renderer yet.
+
+### Recommended First Implementation Slice
+
+Add `setupStatus` and use it to decide whether the Character tab opens in Setup Review mode or normal Character Sheet mode.
+
+The first slice should preserve all current setup sections and sheet sections, but change their default visibility:
+
+- `needsReview`: Character tab opens with setup review prominent.
+- `complete`: Character tab opens with the normal Character Sheet prominent and setup collapsed behind `Review Setup`.
+- Reopened review: user can intentionally return to setup without losing the completed sheet state.
