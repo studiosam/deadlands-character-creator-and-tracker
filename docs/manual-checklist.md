@@ -124,7 +124,7 @@ selection, and variable Power Point spending workflow.
 
 ## Read-only Catalog page
 
-- [ ] Catalog tab opens from the primary app tabs.
+- [ ] Catalog opens from the main menu or Manage > App, not from the active-play primary tabs.
 - [ ] Edges, Hindrances, and Powers can be browsed without Add, Save, or Apply buttons.
 - [ ] Search and filters update the result list and detail panel.
 - [ ] Browsing the Catalog does not change the active character or local save data.

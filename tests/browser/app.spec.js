@@ -271,6 +271,9 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await expect(page.locator(".app-tabs [data-app-tab='creation']")).toHaveCount(
     0,
   );
+  await expect(page.locator(".app-tabs [data-app-tab='catalog']")).toHaveCount(
+    0,
+  );
 
   await page.locator("#landingContinueBtn").click();
   await expect(page.locator("#landingPage")).toBeHidden();
@@ -283,7 +286,7 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator(".shell")).toBeVisible();
 
-  for (const tab of ["Character", "Catalog", "Inventory", "Arcane", "Notes"]) {
+  for (const tab of ["Character", "Inventory", "Arcane", "Notes"]) {
     await page.getByRole("button", { name: tab, exact: true }).click();
     await expect(page.locator(".tab-panel.active")).toBeVisible();
   }
@@ -1271,7 +1274,7 @@ test("opens sources and rulesets from the landing footer", async ({ page }) => {
 test("opens the read-only Catalog and browses Edge Hindrance and Power entries", async ({
   page,
 }) => {
-  await enterTracker(page);
+  await expect(page.locator("#landingPage")).toBeVisible();
   const panel = page.locator("#catalogPanel");
   const detail = page.locator("#catalogDetailPanel");
   const storageBefore = await page.evaluate(
@@ -1282,8 +1285,12 @@ test("opens the read-only Catalog and browses Edge Hindrance and Power entries",
     { storageKey: STORAGE_KEY, libraryKey: CHARACTER_LIBRARY_KEY },
   );
 
-  await page.getByRole("button", { name: "Catalog", exact: true }).click();
+  await page.locator("#landingCatalogBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
   await expect(panel).toBeVisible();
+  await expect(page.locator(".app-tabs [data-app-tab='catalog']")).toHaveCount(
+    0,
+  );
   await expect(panel).toContainText("Catalog");
   await expect(panel).toContainText(
     "Browse Edges, Hindrances, and Powers without editing the character.",
@@ -1368,7 +1375,6 @@ test("shows the read-only sources and rulesets page from the global menu", async
 
   const primaryTabs = [
     ["Character", "#characterPanel"],
-    ["Catalog", "#catalogPanel"],
     ["Inventory", "#inventoryPanel"],
     ["Arcane", "#arcanePanel"],
     ["Notes", "#notesPanel"],
