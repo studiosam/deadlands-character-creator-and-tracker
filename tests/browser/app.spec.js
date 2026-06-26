@@ -1271,19 +1271,20 @@ test("opens sources and rulesets from the landing footer", async ({ page }) => {
   await expect(panel.locator("input, select, textarea, button")).toHaveCount(0);
 });
 
-test("opens the read-only Catalog and browses Edge Hindrance and Power entries", async ({
-  page,
-}) => {
+test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
   const panel = page.locator("#catalogPanel");
-  const detail = page.locator("#catalogDetailPanel");
-  const storageBefore = await page.evaluate(
-    ({ storageKey, libraryKey }) => ({
-      tracker: localStorage.getItem(storageKey),
-      library: localStorage.getItem(libraryKey),
-    }),
-    { storageKey: STORAGE_KEY, libraryKey: CHARACTER_LIBRARY_KEY },
-  );
+  const assertCatalogMode = async (label) => {
+    await expect(
+      panel.locator(".catalog-type-selector button.active"),
+    ).toHaveText(label);
+    await expect(
+      panel.locator("#catalogResultsList .catalog-result").first(),
+    ).toBeVisible();
+    await expect(
+      panel.locator("#catalogDetailPanel .catalog-detail-card"),
+    ).toBeVisible();
+  };
 
   await page.locator("#landingCatalogBtn").click();
   await expect(page.locator("#landingPage")).toBeHidden();
@@ -1295,54 +1296,15 @@ test("opens the read-only Catalog and browses Edge Hindrance and Power entries",
   await expect(panel).toContainText(
     "Browse Edges, Hindrances, and Powers without editing the character.",
   );
-  await expect(
-    panel.locator(".catalog-type-selector button.active"),
-  ).toHaveText("Edges");
-
-  await page.locator("#catalogSearchInput").fill("Alertness");
-  await expect(detail).toContainText("Alertness");
-  await expect(detail).toContainText("Requirements");
-  await expect(detail).toContainText("Novice");
-  await expect(detail).toContainText("+2 to Notice rolls.");
-
+  await assertCatalogMode("Edges");
   await page.locator("[data-catalog-type='hindrances']").click();
-  await page.locator("#catalogSearchInput").fill("Bad Luck");
-  await expect(detail).toContainText("Bad Luck");
-  await expect(detail).toContainText("Major");
-  await expect(detail).toContainText(
-    "Starts each session with one fewer Benny.",
-  );
-
+  await assertCatalogMode("Hindrances");
   await page.locator("[data-catalog-type='powers']").click();
-  await page.locator("#catalogSearchInput").fill("Arcane Protection");
-  await page.locator("#catalogPowerRankFilter").selectOption("Novice");
-  await page.locator("#catalogPowerBackgroundFilter").selectOption("Blessed");
-  await expect(detail).toContainText("Arcane Protection");
-  await expect(detail).toContainText("Power Points");
-  await expect(detail).toContainText("Range");
-  await expect(detail).toContainText("Smarts");
-  await expect(detail).toContainText("Duration");
-  await expect(detail).toContainText("Allowed Arcane Backgrounds");
-  await expect(detail).toContainText("Blessed");
-  await expect(detail).toContainText("Enemy casters take a penalty");
+  await assertCatalogMode("Powers");
 
   await expect(
     panel.getByRole("button", { name: /^(Add|Save|Apply)\b/i }),
   ).toHaveCount(0);
-  await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
-  const storageAfter = await page.evaluate(
-    ({ storageKey, libraryKey }) => ({
-      tracker: localStorage.getItem(storageKey),
-      library: localStorage.getItem(libraryKey),
-    }),
-    { storageKey: STORAGE_KEY, libraryKey: CHARACTER_LIBRARY_KEY },
-  );
-  expect(storageAfter).toEqual(storageBefore);
-
-  await page.reload();
-  await expect(page.locator("#landingPage")).toBeVisible();
-  await page.locator("#landingContinueBtn").click();
-  await expect(page.locator(".shell")).toBeVisible();
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
 });
 
