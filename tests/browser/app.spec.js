@@ -404,6 +404,95 @@ test("normalizes legacy characters without setupStatus as complete", async ({
   expect(setupStatus).toBe("complete");
 });
 
+test("shows a clean reference sheet for confirmed characters", async ({
+  page,
+}) => {
+  const sample = await page.request.get(
+    "/docs/Sample%20Characters/savaged-us-json-export-character-Dusty%20McCaw.json",
+  );
+  expect(sample.ok()).toBeTruthy();
+
+  await enterTracker(page);
+  await openHeaderMenu(page);
+  await page.locator("#pasteImportBtn").click();
+  await page.locator("#importJsonText").fill(await sample.text());
+  await page.locator("#confirmPasteImportBtn").click();
+  await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await page
+    .locator("#characterSetupPanel [data-setup-action='confirmSetup']")
+    .click();
+  await expect(page.locator("#characterSetupPanel")).toBeHidden();
+
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterSummaryName")).toContainText(
+    "Dusty McCaw",
+  );
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(
+    "Drifter",
+  );
+  await expect(page.locator("#characterBasicsList")).toContainText("Human");
+  await expect(page.locator("#characterDerivedDetails")).toContainText("Pace");
+  await expect(page.locator("#characterDerivedDetails")).toContainText("Parry");
+  await expect(page.locator("#characterDerivedDetails")).toContainText(
+    "Toughness",
+  );
+  await expect(page.locator("#attributesList")).toContainText("Agility");
+  await expect(page.locator("#skillsList")).toContainText("Shooting");
+  await expect(page.locator("#edgesList")).toContainText("Healer");
+  await expect(page.locator("#hindrancesList")).toContainText("Bad Luck");
+
+  await expect(page.locator("#reviewSetupBtn")).toBeVisible();
+  await expect(page.locator("#manageCharacterBtn")).toBeVisible();
+  await expect(page.locator("#characterSetupPanel")).toBeHidden();
+  await expect(page.locator("#characterSetupStepper")).toBeHidden();
+  await expect(page.locator("#setupConceptPanel")).toBeHidden();
+  await expect(page.locator("#setupSaveConceptBtn")).toBeHidden();
+  await expect(page.locator("#showAdvanceFormBtn")).toBeHidden();
+  await expect(page.locator("#showEdgeFormBtn")).toBeHidden();
+  await expect(page.locator("#showHindranceFormBtn")).toBeHidden();
+  await expect(page.locator("#addManualPowerPointsBtn")).toBeHidden();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+  await expect(page.locator("#edgeEditorPanel")).toBeHidden();
+  await expect(page.locator("#hindranceEditorPanel")).toBeHidden();
+
+  await page.locator("#manageCharacterBtn").click();
+  await expect(page.locator("#libraryPanel")).toBeVisible();
+  await expect(page.locator("#characterProfileEditor")).toBeVisible();
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await page.locator("#reviewSetupBtn").click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#characterSetupStepper")).toBeVisible();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ libraryKey, storageKey }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active =
+            library?.charactersById?.[library.activeCharacterId] || null;
+          return {
+            activeSetupStatus: active?.character?.setupStatus || "",
+            trackerSetupStatus: tracker?.setupStatus || "",
+          };
+        },
+        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+      ),
+    )
+    .toEqual({
+      activeSetupStatus: "complete",
+      trackerSetupStatus: "complete",
+    });
+});
+
 test("finishes character setup and starts playing with a saved character", async ({
   page,
 }) => {

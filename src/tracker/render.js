@@ -17,8 +17,27 @@ function characterSetupReviewMode() {
 
 function renderCharacterTabMode() {
   const setupMode = characterSetupReviewMode();
+  const confirmedSheetMode =
+    character?.setupStatus === "complete" && !characterSetupReviewOpen;
   els.characterSetupPanel?.classList.toggle("hidden", !setupMode);
   els.reviewSetupBtn?.classList.toggle("hidden", setupMode);
+  els.manageCharacterBtn?.classList.toggle("hidden", false);
+  els.addManualPowerPointsBtn?.classList.toggle(
+    "hidden",
+    confirmedSheetMode || Boolean(powerPointResource()),
+  );
+  [
+    els.showAdvanceFormBtn,
+    els.showEdgeFormBtn,
+    els.showHindranceFormBtn,
+  ].forEach((button) => button?.classList.toggle("hidden", confirmedSheetMode));
+  [
+    els.advanceEditorPanel,
+    els.edgeEditorPanel,
+    els.hindranceEditorPanel,
+  ].forEach((panel) => {
+    if (confirmedSheetMode) panel?.classList.add("hidden");
+  });
 }
 
 function characterIdentitySubtitle(separator = " ") {

@@ -175,6 +175,39 @@ This editor is intentionally limited to profile text. It does not edit Attribute
 
 The older slot Rename control remains available alongside the Name field for now. This is duplicated UX: Rename is still a quick saved-slot name action, while Character Profile is the broader identity editor.
 
+### Implemented Confirmed Character Sheet Cleanup Slice
+
+Confirmed characters now open the Character tab as a reference-focused Character Sheet by default. The confirmed sheet owns:
+
+- Identity summary, source/setup status, race or ancestry, rank, archetype or concept, and profile metadata.
+- Derived stats for reference.
+- Attributes and Skills.
+- Current Edges and Hindrances as read-only reference lists.
+- Short background, description, and compact import/source notes.
+- A deliberate `Review Setup` action.
+- A deliberate `Manage Character` action that opens the Characters panel profile editor and character-management controls.
+
+The confirmed Character Sheet hides setup/editing workflows by default:
+
+- Character Setup stepper and concept/setup forms.
+- Hindrance benefit spending controls.
+- Trait point-spending controls.
+- Starting Edge selection controls.
+- Manual Edge and Hindrance add/edit escape hatches.
+- Advancement add forms.
+- Manual Power Points setup controls.
+
+Ownership boundaries after confirmation:
+
+- Characters panel owns identity/profile editing and character management.
+- Combat owns wounds, fatigue, Bennies, temporary combat state, current weapons, and active-use combat controls.
+- Inventory owns gear, money, possessions, ammo, armor, vehicles, and storage.
+- Arcane owns powers, Power Points, and arcane-resource controls.
+- Notes owns long-form notes, reminders, and import-warning details.
+- Advancement later owns character growth.
+
+Reopening setup review intentionally shows the setup workflow without changing persisted `setupStatus`.
+
 ### Recommended Next Implementation Slice
 
 Continue reducing normal Character Sheet editing affordances so the Character tab stays reference-focused after setup is complete, while keeping deliberate setup review, advancement, inventory, and arcane workflows separate.
