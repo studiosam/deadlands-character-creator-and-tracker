@@ -1303,11 +1303,10 @@ test("shows setup review for imported characters until confirmed", async ({
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await expect(page.locator("#characterSetupStepper")).toBeVisible();
   await expect(page.locator("#setupReviewPanel")).toBeVisible();
-  await expect(
-    page
-      .locator("#characterSetupPanel")
-      .getByRole("button", { name: "Confirm Setup" }),
-  ).toBeVisible();
+  const confirmSetupButton = page.locator(
+    "#characterSetupPanel [data-setup-action='confirmSetup']",
+  );
+  await expect(confirmSetupButton).toBeVisible();
 
   await expect
     .poll(() =>
@@ -1333,10 +1332,7 @@ test("shows setup review for imported characters until confirmed", async ({
       trackerStatus: "needsReview",
     });
 
-  await page
-    .locator("#characterSetupPanel")
-    .getByRole("button", { name: "Confirm Setup" })
-    .click();
+  await confirmSetupButton.click();
   await expect(page.locator("#characterSetupPanel")).toBeHidden();
   await expect(page.locator("#reviewSetupBtn")).toBeVisible();
 
@@ -1372,6 +1368,30 @@ test("shows setup review for imported characters until confirmed", async ({
   await page.locator("#reviewSetupBtn").click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await expect(page.locator("#setupReviewPanel")).toBeVisible();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ libraryKey, storageKey }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active = library?.charactersById?.[library.activeCharacterId];
+          return {
+            libraryStatus: active?.character?.setupStatus || "",
+            trackerStatus: tracker?.setupStatus || "",
+          };
+        },
+        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+      ),
+    )
+    .toEqual({
+      libraryStatus: "complete",
+      trackerStatus: "complete",
+    });
 });
 
 test("keeps duplicated character state independent across switching and reload", async ({
