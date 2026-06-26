@@ -377,6 +377,77 @@ test("starts new characters directly in character setup", async ({ page }) => {
     .toBe(0);
 });
 
+test("finishes character setup and starts playing with a saved character", async ({
+  page,
+}) => {
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await page.locator("#landingCreateBtn").click();
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+
+  await page.locator("#setupNameInput").fill("Finished Setup Character");
+  await page.locator("#setupArchetypeInput").fill("Trail Scout");
+  await page.locator("#setupPlayerInput").fill("Playwright");
+
+  await page.locator("[data-setup-action='finishSetup']").click();
+  await expect(page.locator("#appDialog")).toBeVisible();
+  await expect(page.locator("#appDialogTitle")).toHaveText("Finish setup?");
+  await expect(page.locator("#appDialogMessage")).toContainText("Hindrances");
+  await expect(page.locator("#appDialogMessage")).toContainText("Traits");
+  await page.locator("#appDialogConfirmBtn").click();
+
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterName")).toContainText(
+    "Finished Setup Character",
+  );
+  await expect(page.locator("#landingPage")).toBeHidden();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ libraryKey, storageKey }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active =
+            library?.charactersById?.[library.activeCharacterId]?.character ||
+            null;
+          return {
+            slotCount: Object.keys(library?.charactersById || {}).length,
+            activeName: active?.name || "",
+            activeFinalized: Boolean(active?.creation?.finalized),
+            trackerName: tracker?.name || "",
+            trackerFinalized: Boolean(tracker?.creation?.finalized),
+          };
+        },
+        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+      ),
+    )
+    .toEqual({
+      slotCount: 1,
+      activeName: "Finished Setup Character",
+      activeFinalized: true,
+      trackerName: "Finished Setup Character",
+      trackerFinalized: true,
+    });
+
+  await reloadIntoTracker(page);
+  await openCombat(page);
+  await expect(page.locator("#characterName")).toContainText(
+    "Finished Setup Character",
+  );
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator(".setup-persistence-panel")).toContainText(
+    "Character ready to play",
+  );
+  await expect(
+    page.locator("[data-setup-action='finishSetup']").first(),
+  ).toHaveText("Start Playing");
+});
+
 test("settings panel exposes backup and local data controls", async ({
   page,
 }) => {
@@ -596,7 +667,8 @@ test("selects hindrances in character setup and summarizes point expectations", 
     .selectOption("dl-hindrance-cursed");
   await page.locator("#setupAddHindranceBtn").click();
   await expect(hindrancePanel).toContainText("Cursed");
-  await expect(hindrancePanel).toContainText("Benefit Points Counted Later");
+  await expect(hindrancePanel).toContainText("Benefit Points Counted");
+  await expect(hindrancePanel).toContainText("Benefit Points Spent");
   await expect(hindrancePanel).toContainText("4 / 4");
 
   await page
@@ -644,6 +716,112 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(reviewPanel).toContainText("Hindrance Benefit Cap");
   await expect(reviewPanel).toContainText("Bad Luck");
   await expect(reviewPanel).toContainText("Cursed");
+});
+
+test("spends hindrance benefits and selects source-tracked setup edges", async ({
+  page,
+}) => {
+  await page.locator("#landingCreateBtn").click();
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+
+  await page.locator("#setupNameInput").fill("Benefit Edge Character");
+  await page.locator("#setupArchetypeInput").fill("Card Sharp");
+  await page.locator("#setupSaveConceptBtn").click();
+  await page.locator("[data-setup-action='saveDraftCharacter']").click();
+  await expect(page.locator(".setup-persistence-panel")).toContainText(
+    "Saved character slot",
+  );
+
+  await page.locator("[data-setup-step='hindrances']").click();
+  const hindrancePanel = page.locator("#setupHindrancesPanel");
+  await page
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-bad-luck");
+  await page.locator("#setupAddHindranceBtn").click();
+  await page
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("dl-hindrance-cursed");
+  await page.locator("#setupAddHindranceBtn").click();
+  await expect(hindrancePanel).toContainText("Benefit Points Counted");
+  await expect(hindrancePanel).toContainText("4 / 4");
+
+  const attributeBenefitRow = hindrancePanel
+    .locator(".setup-trait-editor-row")
+    .filter({ hasText: "Attribute Raises" });
+  const edgeBenefitRow = hindrancePanel
+    .locator(".setup-trait-editor-row")
+    .filter({ hasText: "Edges" });
+  await attributeBenefitRow.getByRole("button", { name: "+" }).click();
+  await edgeBenefitRow.getByRole("button", { name: "+" }).click();
+  await expect(hindrancePanel).toContainText("Benefit Points Spent");
+  await expect(hindrancePanel).toContainText("4 / 4");
+  await expect(attributeBenefitRow).toContainText("1 Attribute Raise");
+  await expect(edgeBenefitRow).toContainText("1 Edge");
+
+  await page.locator("[data-setup-step='edges']").click();
+  const edgesPanel = page.locator("#setupEdgesPanel");
+  await expect(edgesPanel).toContainText("Human Free Edge");
+  await expect(edgesPanel).toContainText("0 / 1");
+  await expect(edgesPanel).toContainText("Hindrance Benefit Edges");
+
+  await page
+    .locator("#setupHumanFreeEdgeSelect")
+    .selectOption("swade-edge-alertness");
+  await edgesPanel.getByRole("button", { name: "Add Human Free Edge" }).click();
+  await expect(edgesPanel).toContainText("Alertness");
+  await expect(edgesPanel).toContainText("Human free Edge");
+
+  await page
+    .locator("#setupHindranceBenefitEdgeSelect")
+    .selectOption("swade-edge-brave");
+  await edgesPanel
+    .getByRole("button", { name: "Add Hindrance Benefit Edge" })
+    .click();
+  await expect(edgesPanel).toContainText("Brave");
+  await expect(edgesPanel).toContainText("Hindrance benefit Edge");
+  await expect(page.locator("[data-setup-step='edges']")).toContainText(
+    "Complete",
+  );
+
+  await expect
+    .poll(() =>
+      page.evaluate((libraryKey) => {
+        const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+        const active = library?.charactersById?.[library.activeCharacterId];
+        const activeCharacter = active?.character;
+        return {
+          activeName: active?.name || "",
+          extraAttributeRaises:
+            activeCharacter?.creation?.extraAttributeRaisesFromHindrances ?? 0,
+          extraEdges: activeCharacter?.creation?.extraEdgesFromHindrances ?? 0,
+          humanEdge:
+            activeCharacter?.edges?.find((edge) => edge.name === "Alertness")
+              ?.creationSource || "",
+          hindranceEdge:
+            activeCharacter?.edges?.find((edge) => edge.name === "Brave")
+              ?.creationSource || "",
+        };
+      }, CHARACTER_LIBRARY_KEY),
+    )
+    .toEqual({
+      activeName: "Benefit Edge Character",
+      extraAttributeRaises: 1,
+      extraEdges: 1,
+      humanEdge: "human-free-edge",
+      hindranceEdge: "hindrance-benefit",
+    });
+
+  await reloadIntoTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await page.locator("[data-setup-step='edges']").click();
+  await expect(page.locator("#setupEdgesPanel")).toContainText("Alertness");
+  await expect(page.locator("#setupEdgesPanel")).toContainText("Brave");
+  await expect(page.locator("#setupEdgesPanel")).toContainText(
+    "Human free Edge",
+  );
+  await expect(page.locator("#setupEdgesPanel")).toContainText(
+    "Hindrance benefit Edge",
+  );
 });
 
 test("loads a bundled sample in demo mode", async ({ page }) => {

@@ -110,7 +110,8 @@ function addSetupHindrance() {
   }
 
   const duplicate = character.hindrances.some(
-    (hindrance) => plainEntryName(hindrance.name) === plainEntryName(catalogEntry.name),
+    (hindrance) =>
+      plainEntryName(hindrance.name) === plainEntryName(catalogEntry.name),
   );
   if (duplicate) {
     appToast("That Hindrance is already selected.", "danger");
@@ -147,9 +148,170 @@ function removeSetupHindrance(id) {
   appToast("Hindrance removed.", "success");
 }
 
+function setupCanDecreaseHindranceBenefit(key, nextValue) {
+  if (key === "extraAttributeRaisesFromHindrances") {
+    const stats = setupAttributePointStats();
+    return stats.spent <= stats.normalAttributePoints + nextValue;
+  }
+  if (key === "extraSkillPointsFromHindrances") {
+    const stats = setupSkillPointStats();
+    return stats.spent <= stats.normalSkillPoints + nextValue;
+  }
+  if (key === "extraEdgesFromHindrances") {
+    return setupHindranceBenefitEdges().length <= nextValue;
+  }
+  return true;
+}
+
+function setupHindranceBenefitDecreaseMessage(key) {
+  if (key === "extraAttributeRaisesFromHindrances")
+    return "Reduce starting Attributes before removing this Attribute benefit.";
+  if (key === "extraSkillPointsFromHindrances")
+    return "Reduce starting Skills before removing this Skill point benefit.";
+  if (key === "extraEdgesFromHindrances")
+    return "Remove a Hindrance benefit Edge before removing this Edge benefit.";
+  return "That Hindrance benefit cannot be reduced right now.";
+}
+
+function updateSetupMoneyForBenefitChange(key, direction) {
+  if (key !== "extraMoneyFromHindrances") return;
+  character.moneyCents = Math.max(
+    0,
+    (Number(character.moneyCents) || 0) + direction * 50000,
+  );
+}
+
+function changeSetupHindranceBenefit(key, direction) {
+  if (!ensureSetupTraitsEditable()) return;
+  const benefit = setupHindranceBenefitItem(key);
+  if (!benefit) return;
+  character.creation = {
+    normalAttributePointsAvailable: 5,
+    normalSkillPointsAvailable: 12,
+    ...(character.creation || {}),
+  };
+  const current = setupCreationBenefitValue(key);
+
+  if (direction > 0) {
+    const spending = setupHindranceBenefitSpending();
+    if (spending.remaining < benefit.cost) {
+      appToast("Not enough Hindrance benefit points remain.", "danger");
+      return;
+    }
+    character.creation[key] = current + 1;
+    updateSetupMoneyForBenefitChange(key, 1);
+  } else if (direction < 0 && current > 0) {
+    const nextValue = current - 1;
+    if (!setupCanDecreaseHindranceBenefit(key, nextValue)) {
+      appToast(setupHindranceBenefitDecreaseMessage(key), "danger");
+      return;
+    }
+    character.creation[key] = nextValue;
+    updateSetupMoneyForBenefitChange(key, -1);
+  } else {
+    return;
+  }
+
+  render();
+  save();
+}
+
+function setupSkillIncreaseCost(name, existing) {
+  const definition = setupSkillDefinition(name);
+  const currentCost = existing ? setupSkillPointCost(existing) : 0;
+  const nextSkill = existing
+    ? { ...existing }
+    : {
+        name,
+        die: "d4",
+        linkedAttribute: definition.linkedAttribute,
+        notes: "",
+        core: definition.core,
+      };
+  if (existing) {
+    const currentIndex = getDieStepIndex(existing.die || existing.value);
+    if (currentIndex < 0 || currentIndex >= DIE_STEPS.length - 1)
+      return Infinity;
+    nextSkill.die = setupTraitDieFromIndex(currentIndex + 1);
+  }
+  return Math.max(0, setupSkillPointCost(nextSkill) - currentCost);
+}
+
+function addSetupEdgeFromCatalog(selectId, creationSource, sourceLabel) {
+  if (!ensureSetupTraitsEditable()) return;
+  const catalogSelect = $(selectId);
+  const catalogEntry = chosen(EDGE_CATALOG, catalogSelect?.value || "");
+  if (!catalogEntry) {
+    appToast("Choose an Edge before adding it.", "danger");
+    return;
+  }
+
+  const duplicate = (character.edges || []).some(
+    (edge) => plainEntryName(edge.name) === plainEntryName(catalogEntry.name),
+  );
+  if (duplicate) {
+    appToast("That Edge is already selected.", "danger");
+    return;
+  }
+
+  if (
+    creationSource === "human-free-edge" &&
+    setupHumanFreeEdges().length >= setupExpectedHumanFreeEdges()
+  ) {
+    appToast("The Human free Edge slot is already filled.", "danger");
+    return;
+  }
+
+  if (
+    creationSource === "hindrance-benefit" &&
+    setupHindranceBenefitEdges().length >=
+      setupCreationBenefitValue("extraEdgesFromHindrances")
+  ) {
+    appToast("Spend Hindrance benefit points on an Edge slot first.", "danger");
+    return;
+  }
+
+  const id = uniqueEntryId(
+    generateStableEntryId("edge", `${creationSource}-${catalogEntry.name}`),
+    new Set((character.edges || []).map((edge) => edge.id)),
+  );
+  upsertEdge(character, {
+    ...catalogEntry,
+    id,
+    catalogId: catalogEntry.id,
+    source: sourceLabel,
+    creationSource,
+    isCustom: false,
+  });
+  render();
+  save();
+  appToast(`${catalogEntry.name} added.`, "success");
+}
+
+function removeSetupEdge(id) {
+  if (!ensureSetupTraitsEditable() || !id) return;
+  const edge = (character.edges || []).find((item) => item.id === id);
+  if (!edge) return;
+  if (
+    !["human-free-edge", "hindrance-benefit"].includes(
+      setupEdgeCreationSource(edge),
+    )
+  ) {
+    appToast("Only setup-selected Edges can be removed here.", "danger");
+    return;
+  }
+  removeEdge(character, id);
+  render();
+  save();
+  appToast("Edge removed.", "success");
+}
+
 function ensureSetupTraitsEditable() {
   if (setupTraitsEditable()) return true;
-  appToast("Trait editing is only available for created characters with no Advances.", "danger");
+  appToast(
+    "Trait editing is only available for created characters with no Advances.",
+    "danger",
+  );
   return false;
 }
 
@@ -218,7 +380,10 @@ function changeSetupAttribute(name, direction) {
   const key = setupSkillAttributeKey(name);
   if (!ATTRIBUTE_ORDER.includes(key)) return;
   if (!character.attributes) character.attributes = {};
-  const currentIndex = Math.max(0, getDieStepIndex(character.attributes[key] || "d4"));
+  const currentIndex = Math.max(
+    0,
+    getDieStepIndex(character.attributes[key] || "d4"),
+  );
   if (direction > 0) {
     const stats = setupAttributePointStats();
     if (currentIndex >= DIE_STEPS.length - 1 || stats.spent >= stats.available)
@@ -236,6 +401,11 @@ function changeSetupSkill(name, direction) {
   const existing = setupFindSkill(name);
 
   if (!existing && direction > 0) {
+    const cost = setupSkillIncreaseCost(name, null);
+    if (setupSkillPointStats().remaining < cost) {
+      appToast("No setup Skill points remain.", "danger");
+      return;
+    }
     const definition = setupSkillDefinition(name);
     character.skills.push({
       name,
@@ -250,11 +420,25 @@ function changeSetupSkill(name, direction) {
   if (!existing) return;
 
   const currentIndex = getDieStepIndex(existing.die || existing.value);
-  if (direction > 0 && currentIndex >= 0 && currentIndex < DIE_STEPS.length - 1) {
+  if (
+    direction > 0 &&
+    currentIndex >= 0 &&
+    currentIndex < DIE_STEPS.length - 1
+  ) {
+    const cost = setupSkillIncreaseCost(name, existing);
+    if (setupSkillPointStats().remaining < cost) {
+      appToast("No setup Skill points remain.", "danger");
+      return;
+    }
     existing.die = setupTraitDieFromIndex(currentIndex + 1);
   } else if (direction < 0 && currentIndex > 0) {
     existing.die = setupTraitDieFromIndex(currentIndex - 1);
-  } else if (direction < 0 && currentIndex <= 0 && !existing.core && !setupSkillIsCoreName(existing.name)) {
+  } else if (
+    direction < 0 &&
+    currentIndex <= 0 &&
+    !existing.core &&
+    !setupSkillIsCoreName(existing.name)
+  ) {
     character.skills = character.skills.filter((skill) => skill !== existing);
   } else {
     return;
@@ -338,6 +522,91 @@ async function saveCurrentCharacterToLibrary() {
   saveCharacterSlot(character);
   render();
   appToast("Current character saved to the library.", "success");
+}
+
+function incompleteSetupSections() {
+  return [
+    ["concept", "Concept"],
+    ["ancestry", "Race / Ancestry"],
+    ["hindrances", "Hindrances"],
+    ["attributesSkills", "Traits"],
+    ["edges", "Edges"],
+  ].filter(([stepId]) => characterSetupStatus(stepId) !== "Complete");
+}
+
+async function ensureSetupCharacterHasName() {
+  const existingName = draftCharacterSaveName();
+  if (existingName) return true;
+
+  const prompted = await appPrompt(
+    "Name this character before finishing setup.",
+    "",
+    {
+      title: "Finish Character Setup",
+      confirmText: "Continue",
+      inputLabel: "Character name",
+    },
+  );
+  if (prompted === null) return false;
+
+  const name = prompted.trim();
+  if (!name || placeholderSetupCharacterName(name)) {
+    appToast("A character name is required before finishing setup.", "danger");
+    return false;
+  }
+
+  character.name = name;
+  return true;
+}
+
+async function finishSetupAndStartPlaying() {
+  applyConceptInputs();
+  if (!(await ensureSetupCharacterHasName())) return false;
+
+  const wasFinalized = Boolean(character.creation?.finalized);
+  const incompleteSections = incompleteSetupSections();
+  if (
+    !wasFinalized &&
+    incompleteSections.length &&
+    !(await appConfirm(
+      `Some setup sections still need attention: ${incompleteSections
+        .map(([, label]) => label)
+        .join(", ")}. You can keep editing later. Start playing anyway?`,
+      {
+        title: "Finish setup?",
+        confirmText: "Start Playing",
+      },
+    ))
+  ) {
+    return false;
+  }
+
+  character.creation = {
+    normalAttributePointsAvailable: 5,
+    normalSkillPointsAvailable: 12,
+    ...(character.creation || {}),
+    finalized: true,
+  };
+
+  if (isUnsavedCharacterDraft()) {
+    const entry = await saveUnsavedCharacterDraft();
+    if (!entry) return false;
+    character = normalize(entry.character);
+  } else {
+    saveCharacterSlot(character);
+  }
+
+  characterSetupStep = "review";
+  render();
+  setAppTab("play");
+  renderDemoExperience();
+  appToast(
+    wasFinalized
+      ? "Character loaded for play."
+      : "Character setup finished and saved.",
+    "success",
+  );
+  return true;
 }
 
 function exportJson(name, data) {
@@ -573,12 +842,32 @@ document.addEventListener("click", async (event) => {
     await discardDraftCharacterFromSetup();
   } else if (setupAction?.dataset.setupAction === "saveCharacterNow") {
     await saveCurrentCharacterToLibrary();
+  } else if (setupAction?.dataset.setupAction === "finishSetup") {
+    await finishSetupAndStartPlaying();
   } else if (setupAction?.dataset.setupAction === "deleteCharacterSlot") {
     await deleteActiveCharacterSlotFromSetup();
   } else if (setupAction?.dataset.setupAction === "addHindrance") {
     addSetupHindrance();
   } else if (setupAction?.dataset.setupAction === "removeHindrance") {
     removeSetupHindrance(setupAction.dataset.hindranceId || "");
+  } else if (setupAction?.dataset.setupAction === "incHindranceBenefit") {
+    changeSetupHindranceBenefit(setupAction.dataset.benefitKey || "", 1);
+  } else if (setupAction?.dataset.setupAction === "decHindranceBenefit") {
+    changeSetupHindranceBenefit(setupAction.dataset.benefitKey || "", -1);
+  } else if (setupAction?.dataset.setupAction === "addHumanFreeEdge") {
+    addSetupEdgeFromCatalog(
+      "#setupHumanFreeEdgeSelect",
+      "human-free-edge",
+      "Human free Edge",
+    );
+  } else if (setupAction?.dataset.setupAction === "addHindranceBenefitEdge") {
+    addSetupEdgeFromCatalog(
+      "#setupHindranceBenefitEdgeSelect",
+      "hindrance-benefit",
+      "Hindrance benefit Edge",
+    );
+  } else if (setupAction?.dataset.setupAction === "removeSetupEdge") {
+    removeSetupEdge(setupAction.dataset.edgeId || "");
   } else if (setupAction?.dataset.setupAction === "incAttribute") {
     changeSetupAttribute(setupAction.dataset.traitName || "", 1);
   } else if (setupAction?.dataset.setupAction === "decAttribute") {

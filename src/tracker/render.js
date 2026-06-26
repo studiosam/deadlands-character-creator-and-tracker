@@ -19,7 +19,8 @@ function characterIdentitySubtitle(separator = " ") {
 function renderCharacterIdentityDisplays() {
   els.characterName.textContent = character.name;
   els.characterSubtitle.textContent = characterIdentitySubtitle(" ");
-  if (els.characterSummaryName) els.characterSummaryName.textContent = character.name;
+  if (els.characterSummaryName)
+    els.characterSummaryName.textContent = character.name;
   if (els.characterDossierSubtitle)
     els.characterDossierSubtitle.textContent = characterIdentitySubtitle(" • ");
 }
@@ -27,15 +28,23 @@ function renderCharacterIdentityDisplays() {
 function render() {
   renderCharacterIdentityDisplays();
   els.woundsValue.textContent = character.damage.wounds;
-  const woundPenalty = Math.min(character.damage.wounds, character.damage.maxWounds);
+  const woundPenalty = Math.min(
+    character.damage.wounds,
+    character.damage.maxWounds,
+  );
   els.woundPenalty.textContent = woundPenalty ? `Penalty -${woundPenalty}` : "";
   els.woundPenalty.classList.toggle("hidden", !woundPenalty);
   els.woundsNote.textContent = character.damage.wounds
     ? "Apply wound penalty to affected trait rolls."
     : "Healthy";
   els.fatigueValue.textContent = character.damage.fatigue;
-  const fatiguePenalty = Math.min(character.damage.fatigue, character.damage.maxFatigue);
-  els.fatiguePenalty.textContent = fatiguePenalty ? `Penalty -${fatiguePenalty}` : "";
+  const fatiguePenalty = Math.min(
+    character.damage.fatigue,
+    character.damage.maxFatigue,
+  );
+  els.fatiguePenalty.textContent = fatiguePenalty
+    ? `Penalty -${fatiguePenalty}`
+    : "";
   els.fatiguePenalty.classList.toggle("hidden", !fatiguePenalty);
   els.fatigueNote.textContent = character.damage.fatigue
     ? "Apply fatigue penalty to affected trait rolls."
@@ -150,7 +159,9 @@ function renderCharacterLibrary() {
           </article>`;
         })
         .join("")
-    : emptyState("No saved character slots yet. Save the current character, load a sample, import JSON, or finalize a creator draft.");
+    : emptyState(
+        "No saved character slots yet. Save the current character, load a sample, import JSON, or finalize a creator draft.",
+      );
 }
 
 function localJsonSize(key) {
@@ -185,12 +196,20 @@ function renderSettingsSummary() {
 
   els.settingsAppDetails.innerHTML = [
     ["Current Character", character.name],
-    ["Rank / Archetype", [character.rank, character.archetype].filter(Boolean).join(" / ")],
+    [
+      "Rank / Archetype",
+      [character.rank, character.archetype].filter(Boolean).join(" / "),
+    ],
     ["Source", source],
     ["App Version", APP_VERSION],
     ["Schema Version", APP_SCHEMA_VERSION],
     ["Browser Save Key", STORAGE_KEY],
-    ["Power Points", powerPoints ? `${powerPoints.current} / ${powerPoints.max}` : "Not enabled"],
+    [
+      "Power Points",
+      powerPoints
+        ? `${powerPoints.current} / ${powerPoints.max}`
+        : "Not enabled",
+    ],
     ["Hosted Demo", DEMO_URL],
   ]
     .map(([label, value]) => settingsDetail(label, value))
@@ -211,9 +230,17 @@ function renderSettingsSummary() {
         ? `${characterLibraryEntries().length} slot(s), ${localJsonSize(CHARACTER_LIBRARY_KEY)}`
         : "No library saved",
     ],
-    ["Creator Draft", hasDraft ? localJsonSize(CREATION_KEY) : "No draft saved"],
+    [
+      "Creator Draft",
+      hasDraft ? localJsonSize(CREATION_KEY) : "No draft saved",
+    ],
     ["Demo Mode", isDemoMode ? "On" : "Off"],
-    ["Export Reminder", hasTrackerSave ? "Use full backup before clearing local data" : "Load, import, or create a character first"],
+    [
+      "Export Reminder",
+      hasTrackerSave
+        ? "Use full backup before clearing local data"
+        : "Load, import, or create a character first",
+    ],
   ]
     .map(([label, value]) => settingsDetail(label, value))
     .join("");
@@ -228,8 +255,11 @@ function characterSetupStatus(stepId) {
   }
   if (stepId === "hindrances") {
     const stats = hindrancePointStats();
+    const spending = setupHindranceBenefitSpending(stats);
     if (!stats.count) return "Incomplete";
-    return stats.unknownCount ? "Needs review" : "Complete";
+    if (stats.unknownCount || spending.spent > spending.available)
+      return "Needs review";
+    return "Complete";
   }
   if (stepId === "attributesSkills") {
     if (!ATTRIBUTE_ORDER.every((key) => character.attributes?.[key]))
@@ -237,16 +267,18 @@ function characterSetupStatus(stepId) {
     if (!setupTraitsEditable()) return "Complete";
     const attributes = setupAttributePointStats();
     const skills = setupSkillPointStats();
-    if (attributes.spent > attributes.available || skills.spent > skills.available)
+    if (
+      attributes.spent > attributes.available ||
+      skills.spent > skills.available
+    )
       return "Needs review";
-    return attributes.spent === attributes.available ? "Complete" : "Incomplete";
+    return attributes.spent === attributes.available &&
+      skills.spent === skills.available
+      ? "Complete"
+      : "Incomplete";
   }
   if (stepId === "edges") {
-    const edges = character.edges || [];
-    if (!edges.length) return "Incomplete";
-    return edges.filter((edge) => isArcaneBackgroundEdge(edge.name)).length > 1
-      ? "Needs review"
-      : "Complete";
+    return setupEdgeSelectionStatus();
   }
   if (stepId === "powers") {
     const { arcaneEdges, arcaneConfig, powerPoints, powers } =
@@ -284,7 +316,9 @@ function setupPowerAuditContext() {
     .map((edge) => arcaneBackgroundConfigFromEdge(edge.name))
     .find(Boolean);
   const stateConfig = arcaneBackgroundConfigFromEdge(
-    character.arcaneBackground?.edgeName || character.arcaneBackground?.name || "",
+    character.arcaneBackground?.edgeName ||
+      character.arcaneBackground?.name ||
+      "",
   );
   return {
     arcaneEdges,
@@ -334,6 +368,37 @@ function setupTraitsEditable() {
   return setupCharacterIsCreated() && !(character.advances || []).length;
 }
 
+const SETUP_HINDRANCE_BENEFITS = [
+  {
+    key: "extraAttributeRaisesFromHindrances",
+    label: "Attribute Raise",
+    pluralLabel: "Attribute Raises",
+    cost: 2,
+    effect: "+1 Attribute point",
+  },
+  {
+    key: "extraEdgesFromHindrances",
+    label: "Edge",
+    pluralLabel: "Edges",
+    cost: 2,
+    effect: "+1 starting Edge slot",
+  },
+  {
+    key: "extraSkillPointsFromHindrances",
+    label: "Skill Point",
+    pluralLabel: "Skill Points",
+    cost: 1,
+    effect: "+1 Skill point",
+  },
+  {
+    key: "extraMoneyFromHindrances",
+    label: "Money",
+    pluralLabel: "Money",
+    cost: 1,
+    effect: "+$500 starting funds",
+  },
+];
+
 function setupCreationRules() {
   const creation = character.creation || {};
   return {
@@ -356,10 +421,38 @@ function setupCreationRules() {
   };
 }
 
+function setupCreationBenefitValue(key) {
+  return Math.max(0, Number(character.creation?.[key]) || 0);
+}
+
+function setupHindranceBenefitSpending(stats = hindrancePointStats()) {
+  const items = SETUP_HINDRANCE_BENEFITS.map((definition) => {
+    const count = setupCreationBenefitValue(definition.key);
+    return {
+      ...definition,
+      count,
+      spent: count * definition.cost,
+    };
+  });
+  const spent = items.reduce((sum, item) => sum + item.spent, 0);
+  const available = stats.benefitPoints;
+  return {
+    items,
+    spent,
+    available,
+    remaining: available - spent,
+  };
+}
+
+function setupHindranceBenefitItem(key) {
+  return SETUP_HINDRANCE_BENEFITS.find((item) => item.key === key) || null;
+}
+
 function setupAttributePointStats() {
   const rules = setupCreationRules();
   const spent = ATTRIBUTE_ORDER.reduce(
-    (sum, key) => sum + Math.max(0, getDieStepIndex(character.attributes?.[key])),
+    (sum, key) =>
+      sum + Math.max(0, getDieStepIndex(character.attributes?.[key])),
     0,
   );
   const available = rules.normalAttributePoints + rules.extraAttributeRaises;
@@ -372,9 +465,13 @@ function setupAttributePointStats() {
 }
 
 function setupSkillIsCoreName(name) {
-  return ["Athletics", "Common Knowledge", "Notice", "Persuasion", "Stealth"].includes(
-    skillReferenceName(name),
-  );
+  return [
+    "Athletics",
+    "Common Knowledge",
+    "Notice",
+    "Persuasion",
+    "Stealth",
+  ].includes(skillReferenceName(name));
 }
 
 function setupSkillPointCost(skill) {
@@ -412,8 +509,7 @@ function sortedAttributeEntries() {
     const leftIndex = ATTRIBUTE_ORDER.indexOf(left);
     const rightIndex = ATTRIBUTE_ORDER.indexOf(right);
     return (
-      (leftIndex < 0 ? 99 : leftIndex) -
-        (rightIndex < 0 ? 99 : rightIndex) ||
+      (leftIndex < 0 ? 99 : leftIndex) - (rightIndex < 0 ? 99 : rightIndex) ||
       displayNameFromKey(left).localeCompare(displayNameFromKey(right))
     );
   });
@@ -469,7 +565,8 @@ function setupSkillCatalogEntries() {
     if (usedRecordedIndexes.has(index) || !skill.name) return;
     entries.push({
       ...skill,
-      linkedAttribute: skillLinkedAttribute(skill) || skill.linkedAttribute || "Custom",
+      linkedAttribute:
+        skillLinkedAttribute(skill) || skill.linkedAttribute || "Custom",
       isUnskilled: false,
     });
   });
@@ -488,7 +585,9 @@ function edgeCatalogEntry(edge) {
 
   const text = plainEntryName(edge?.name);
   if (!text) return null;
-  return EDGE_CATALOG.find((item) => plainEntryName(item.name) === text) || null;
+  return (
+    EDGE_CATALOG.find((item) => plainEntryName(item.name) === text) || null
+  );
 }
 
 function edgeMatchedAdvance(edge) {
@@ -509,18 +608,83 @@ function edgeMatchedAdvance(edge) {
   });
 }
 
+function setupEdgeCreationSource(edge) {
+  const explicit = plainEntryName(edge?.creationSource);
+  if (explicit === "human free edge" || explicit === "human-free-edge")
+    return "human-free-edge";
+  if (
+    explicit === "hindrance benefit edge" ||
+    explicit === "hindrance-benefit" ||
+    explicit === "hindrance purchased edge"
+  )
+    return "hindrance-benefit";
+
+  const source = plainEntryName(edge?.source);
+  if (source === "human free edge") return "human-free-edge";
+  if (
+    source === "hindrance benefit edge" ||
+    source === "hindrance purchased edge"
+  )
+    return "hindrance-benefit";
+  return "";
+}
+
+function setupHumanFreeEdges() {
+  return (character.edges || []).filter(
+    (edge) => setupEdgeCreationSource(edge) === "human-free-edge",
+  );
+}
+
+function setupExpectedHumanFreeEdges() {
+  return isHumanAncestry(character.ancestry) ? 1 : 0;
+}
+
+function setupHindranceBenefitEdges() {
+  return (character.edges || []).filter(
+    (edge) => setupEdgeCreationSource(edge) === "hindrance-benefit",
+  );
+}
+
+function setupEdgeSelectionStatus() {
+  const edges = character.edges || [];
+  const arcaneEdgeCount = edges.filter((edge) =>
+    isArcaneBackgroundEdge(edge.name),
+  ).length;
+  if (!setupTraitsEditable()) {
+    if (!edges.length) return "Incomplete";
+    return arcaneEdgeCount > 1 ? "Needs review" : "Complete";
+  }
+  const expectedHumanEdges = setupExpectedHumanFreeEdges();
+  const humanEdges = setupHumanFreeEdges().length;
+  const hindranceEdgeSlots = setupCreationBenefitValue(
+    "extraEdgesFromHindrances",
+  );
+  const hindranceEdges = setupHindranceBenefitEdges().length;
+
+  if (arcaneEdgeCount > 1 || humanEdges > expectedHumanEdges)
+    return "Needs review";
+  if (hindranceEdges > hindranceEdgeSlots) return "Needs review";
+  if (humanEdges < expectedHumanEdges) return "Incomplete";
+  if (hindranceEdges < hindranceEdgeSlots) return "Incomplete";
+  return edges.length ? "Complete" : "Incomplete";
+}
+
 function edgeLikelySource(edge) {
+  const creationSource = setupEdgeCreationSource(edge);
+  if (creationSource === "human-free-edge") return "Human free Edge";
+  if (creationSource === "hindrance-benefit") return "Hindrance benefit Edge";
+
   const source = plainEntryName(edge?.source);
   const importNote = plainEntryName(edge?.importNote);
 
   if (source === "human free edge") return "Human free Edge";
-  if (source === "hindrance purchased edge")
-    return "Hindrance benefit / GM exception Edge";
+  if (source === "hindrance purchased edge") return "Hindrance benefit Edge";
   if (source === "later advance") return "Advance Edge";
   if (importNote === "advance" || edgeMatchedAdvance(edge))
     return "Imported Advance Edge";
   if (importNote === "selected") return "Imported selected Edge";
-  if (edge?.source && edge.source !== "Manual") return "Imported / source unknown";
+  if (edge?.source && edge.source !== "Manual")
+    return "Imported / source unknown";
   return "Manual / source unknown";
 }
 
@@ -536,12 +700,24 @@ function setupEdgeAuditCard(edge) {
   const category = catalog?.category || edge.category || "Unknown";
   const rank = catalog?.rank || edge.rank || "Unknown";
   const requirements = catalog?.requirements || edge.requirements || "";
-  const summary = catalog?.shortSummary || edge.shortSummary || edge.notes || "";
-  const source = [edge.source, edge.importNote ? `Import: ${edge.importNote}` : ""]
+  const summary =
+    catalog?.shortSummary || edge.shortSummary || edge.notes || "";
+  const removable =
+    setupTraitsEditable() &&
+    ["human-free-edge", "hindrance-benefit"].includes(
+      setupEdgeCreationSource(edge),
+    );
+  const source = [
+    edge.source,
+    edge.importNote ? `Import: ${edge.importNote}` : "",
+  ]
     .filter(Boolean)
     .join(" • ");
   const badges = [
-    setupEdgeBadge(likelySource, likelySource.includes("unknown") ? "muted" : ""),
+    setupEdgeBadge(
+      likelySource,
+      likelySource.includes("unknown") ? "muted" : "",
+    ),
     catalog
       ? setupEdgeBadge("Catalog matched", "good")
       : setupEdgeBadge("No catalog match", "warning"),
@@ -572,7 +748,14 @@ function setupEdgeAuditCard(edge) {
         <h4>${esc(edge.name || "Unnamed Edge")}</h4>
         ${source ? `<p>${esc(source)}</p>` : ""}
       </div>
-      <div class="setup-edge-badges">${badges}</div>
+      <div class="setup-edge-badges">
+        ${badges}
+        ${
+          removable
+            ? `<button class="ghost tag-action danger-lite" type="button" data-setup-action="removeSetupEdge" data-edge-id="${esc(edge.id)}">Remove</button>`
+            : ""
+        }
+      </div>
     </div>
     <div class="setup-edge-details">
       ${setupDetail("Category", category)}
@@ -592,7 +775,11 @@ function setupEdgeAuditCard(edge) {
 }
 
 function isHumanAncestry(value) {
-  return String(value || "").trim().toLowerCase() === "human";
+  return (
+    String(value || "")
+      .trim()
+      .toLowerCase() === "human"
+  );
 }
 
 function hindrancePointValue(hindrance) {
@@ -622,6 +809,42 @@ function hindrancePointStats() {
 function hindrancePointText(hindrance) {
   const value = hindrancePointValue(hindrance);
   return value ? `${value} point${value === 1 ? "" : "s"}` : "Unknown points";
+}
+
+function renderSetupHindranceBenefitRows(stats) {
+  const spending = setupHindranceBenefitSpending(stats);
+  const canEdit = setupTraitsEditable();
+  const overSpent = spending.spent > spending.available;
+  return `<section class="setup-trait-group setup-benefit-spending" aria-labelledby="setupHindranceBenefitsHeading">
+    <h4 id="setupHindranceBenefitsHeading">Spend Hindrance Benefits</h4>
+    <p class="creator-note">Counted Hindrance points may buy Attribute raises, extra Edge slots, Skill points, or extra starting money.</p>
+    <div class="setup-trait-editor-list">
+      ${spending.items
+        .map((item) => {
+          const canIncrease =
+            canEdit && spending.remaining >= item.cost && !overSpent;
+          const canDecrease = canEdit && item.count > 0;
+          const label = item.count === 1 ? item.label : item.pluralLabel;
+          return `<div class="setup-trait-editor-row">
+            <div>
+              <strong>${esc(item.pluralLabel)}</strong>
+              <span>${esc(item.effect)} â€¢ costs ${item.cost} point${item.cost === 1 ? "" : "s"} each</span>
+            </div>
+            <div class="setup-trait-controls">
+              <button type="button" data-setup-action="decHindranceBenefit" data-benefit-key="${esc(item.key)}"${canDecrease ? "" : " disabled"}>-</button>
+              <span>${esc(`${item.count} ${label}`)}</span>
+              <button type="button" data-setup-action="incHindranceBenefit" data-benefit-key="${esc(item.key)}"${canIncrease ? "" : " disabled"}>+</button>
+            </div>
+          </div>`;
+        })
+        .join("")}
+    </div>
+    ${
+      overSpent
+        ? `<p class="entry-warning">Needs review: ${spending.spent} Hindrance benefit points are spent, but only ${spending.available} are available.</p>`
+        : ""
+    }
+  </section>`;
 }
 
 function renderCharacterSetup() {
@@ -657,14 +880,18 @@ function renderCharacterSetup() {
 }
 
 function renderSetupPersistencePanel() {
+  const finishLabel = character.creation?.finalized
+    ? "Start Playing"
+    : "Finish Setup & Start Playing";
   if (isUnsavedCharacterDraft()) {
     return `<div class="setup-persistence-panel unsaved">
       <div>
         <strong>Unsaved setup draft</strong>
-        <p>This character is only temporary until you save it to the local character library.</p>
+        <p>This character is only temporary until you save it to the local character library. Finish setup saves it and opens Combat.</p>
       </div>
       <div class="creator-actions">
         <button type="button" data-setup-action="saveDraftCharacter">Save Draft</button>
+        <button type="button" data-setup-action="finishSetup">${finishLabel}</button>
         <button class="ghost danger-lite" type="button" data-setup-action="discardDraftCharacter">Discard Draft</button>
       </div>
     </div>`;
@@ -674,11 +901,16 @@ function renderSetupPersistencePanel() {
   if (!active) return "";
   return `<div class="setup-persistence-panel">
     <div>
-      <strong>Saved character slot</strong>
-      <p>Changes autosave to this browser. You can also delete this local slot from here or the Characters library.</p>
+      <strong>${character.creation?.finalized ? "Character ready to play" : "Saved character slot"}</strong>
+      <p>${
+        character.creation?.finalized
+          ? "This setup is marked finished. Use Start Playing to return to Combat."
+          : "Changes autosave to this browser. Finish setup marks this character ready and opens Combat."
+      }</p>
     </div>
     <div class="creator-actions">
       <button class="ghost" type="button" data-setup-action="saveCharacterNow">Save Now</button>
+      <button type="button" data-setup-action="finishSetup">${finishLabel}</button>
       <button class="ghost danger-lite" type="button" data-setup-action="deleteCharacterSlot">Delete Character</button>
     </div>
   </div>`;
@@ -740,12 +972,13 @@ function renderSetupHindranceRows() {
 
 function renderSetupHindrances() {
   const stats = hindrancePointStats();
+  const spending = setupHindranceBenefitSpending(stats);
   const status = characterSetupStatus("hindrances");
   return `<section id="setupHindrancesPanel" class="setup-step-panel" aria-labelledby="setupHindrancesHeading">
     <div class="section-title">
       <div>
         <h3 id="setupHindrancesHeading">Hindrances</h3>
-        <p>Select starting Hindrances and track their point value. Spending those points comes in a later setup slice.</p>
+        <p>Select starting Hindrances, track their point value, and spend counted benefit points.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>
@@ -756,7 +989,9 @@ function renderSetupHindrances() {
       ${setupDetail("Benefit Point Cap", "4 points")}
       ${setupDetail("Selected Hindrances", `${stats.count}`)}
       ${setupDetail("Total Hindrance Points", `${stats.total}`)}
-      ${setupDetail("Benefit Points Counted Later", `${stats.benefitPoints} / ${stats.benefitCap}`)}
+      ${setupDetail("Benefit Points Counted", `${stats.benefitPoints} / ${stats.benefitCap}`)}
+      ${setupDetail("Benefit Points Spent", `${spending.spent} / ${spending.available}`)}
+      ${setupDetail("Benefit Points Remaining", `${spending.remaining}`)}
     </div>
     ${
       stats.overCap
@@ -768,6 +1003,7 @@ function renderSetupHindrances() {
         ? '<p class="entry-warning">Needs review: one or more Hindrances need Minor or Major severity.</p>'
         : ""
     }
+    ${renderSetupHindranceBenefitRows(stats)}
     <div class="setup-form-grid setup-hindrance-form">
       <label class="setup-wide">Hindrance<select id="setupHindranceCatalogSelect">${entryCatalogOptions(HINDRANCE_CATALOG, "Choose Hindrance...")}</select></label>
       <label>Severity<select id="setupHindranceSeverityInput"><option value="Minor">Minor</option><option value="Major">Major</option></select></label>
@@ -816,7 +1052,10 @@ function setupTraitPointDetails(attributeStats, skillStats) {
       "Attribute Normal / Extra",
       `${attributeStats.normalAttributePoints} / ${attributeStats.extraAttributeRaises}`,
     ),
-    setupDetail("Skill Points", `${skillStats.spent} / ${skillStats.available}`),
+    setupDetail(
+      "Skill Points",
+      `${skillStats.spent} / ${skillStats.available}`,
+    ),
     setupDetail("Skill Points Remaining", `${skillStats.remaining}`),
     setupDetail(
       "Skill Normal / Extra",
@@ -825,7 +1064,12 @@ function setupTraitPointDetails(attributeStats, skillStats) {
   ].join("");
 }
 
-function setupTraitControls(actionBase, name, decreaseDisabled, increaseDisabled) {
+function setupTraitControls(
+  actionBase,
+  name,
+  decreaseDisabled,
+  increaseDisabled,
+) {
   return `<div class="setup-trait-controls">
     <button class="ghost tag-action" type="button" data-setup-action="dec${actionBase}" data-trait-name="${esc(name)}"${decreaseDisabled ? " disabled" : ""}>−</button>
     <button class="ghost tag-action" type="button" data-setup-action="inc${actionBase}" data-trait-name="${esc(name)}"${increaseDisabled ? " disabled" : ""}>+</button>
@@ -852,7 +1096,9 @@ function setupSkillEditorRow(skill) {
   const attributeDie = character.attributes?.[linkedAttribute] || "d4";
   const referenceName = skillReferenceName(skill.name);
   const useNote = skillUseNote(skill.name);
-  const displayDie = skill.isUnskilled ? "d4-2" : skill.die || skill.value || "—";
+  const displayDie = skill.isUnskilled
+    ? "d4-2"
+    : skill.die || skill.value || "—";
   const index = getDieStepIndex(skill.die || skill.value);
   const cost = skill.isUnskilled ? 0 : setupSkillPointCost(skill);
   const core = skill.core || setupSkillIsCoreName(skill.name);
@@ -893,7 +1139,9 @@ function renderSetupTraitAttributeGroup(attributeStats) {
   return `<div class="attribute-dice-grid">
     ${
       attributeEntries.length
-        ? attributeEntries.map(([name, die]) => attributeCardMarkup(name, die)).join("")
+        ? attributeEntries
+            .map(([name, die]) => attributeCardMarkup(name, die))
+            .join("")
         : emptyState("No attributes recorded.")
     }
   </div>`;
@@ -904,7 +1152,8 @@ function renderSetupTraitSkillGroup(setupSkills) {
   return `<div class="setup-skill-attribute-groups">
     ${ATTRIBUTE_ORDER.map((attributeKey) => {
       const attributeSkills = setupSkills.filter(
-        (skill) => setupSkillAttributeKey(skill.linkedAttribute) === attributeKey,
+        (skill) =>
+          setupSkillAttributeKey(skill.linkedAttribute) === attributeKey,
       );
       return `<section class="setup-skill-attribute-group" aria-label="${esc(displayNameFromKey(attributeKey))} skills">
         <div class="setup-skill-attribute-heading">
@@ -916,7 +1165,9 @@ function renderSetupTraitSkillGroup(setupSkills) {
             attributeSkills.length
               ? attributeSkills
                   .map((skill) =>
-                    editable ? setupSkillEditorRow(skill) : skillChipMarkup(skill),
+                    editable
+                      ? setupSkillEditorRow(skill)
+                      : skillChipMarkup(skill),
                   )
                   .join("")
               : emptyState("No linked skills in this profile.")
@@ -931,7 +1182,9 @@ function renderSetupTraits() {
   const attributeEntries = sortedAttributeEntries();
   const skills = sortedSkills();
   const setupSkills = setupSkillCatalogEntries();
-  const unskilledCount = setupSkills.filter((skill) => skill.isUnskilled).length;
+  const unskilledCount = setupSkills.filter(
+    (skill) => skill.isUnskilled,
+  ).length;
   const editable = setupTraitsEditable();
   const hasAdvances = (character.advances || []).length > 0;
   const attributeStats = setupAttributePointStats();
@@ -983,6 +1236,66 @@ function renderSetupTraits() {
   </section>`;
 }
 
+function setupEdgeCatalogOptions(placeholder) {
+  const selectedNames = new Set(
+    (character.edges || [])
+      .filter((edge) => edge.name)
+      .map((edge) => plainEntryName(edge.name)),
+  );
+  const availableEdges = EDGE_CATALOG.filter(
+    (edge) => !selectedNames.has(plainEntryName(edge.name)),
+  );
+  return [
+    `<option value="">${placeholder}</option>`,
+    ...availableEdges.map(
+      (edge) =>
+        `<option value="${esc(edge.id)}">${esc(edge.name)}${edge.category ? ` â€¢ ${esc(edge.category)}` : ""}${edge.rank ? ` â€¢ ${esc(edge.rank)}` : ""}${edge.requirements ? ` â€¢ ${esc(edge.requirements)}` : ""}</option>`,
+    ),
+  ].join("");
+}
+
+function renderSetupEdgeSelectionControls() {
+  const canEdit = setupTraitsEditable();
+  const expectedHumanEdges = setupExpectedHumanFreeEdges();
+  const humanEdges = setupHumanFreeEdges().length;
+  const hindranceEdgeSlots = setupCreationBenefitValue(
+    "extraEdgesFromHindrances",
+  );
+  const hindranceEdges = setupHindranceBenefitEdges().length;
+
+  if (!canEdit) {
+    return `<p class="entry-advisory"><strong>Audit only:</strong> imported or advanced characters keep their existing Edge records here. Use Advances for later Edge changes.</p>`;
+  }
+
+  return `<section class="setup-trait-group setup-edge-selection" aria-labelledby="setupEdgeSelectionHeading">
+    <h4 id="setupEdgeSelectionHeading">Select Starting Edges</h4>
+    <div class="setup-review-grid">
+      ${setupDetail("Human Free Edge", `${humanEdges} / ${expectedHumanEdges}`)}
+      ${setupDetail("Hindrance Benefit Edges", `${hindranceEdges} / ${hindranceEdgeSlots}`)}
+    </div>
+    ${
+      expectedHumanEdges
+        ? `<div class="setup-form-grid">
+          <label class="setup-wide">Human free Edge<select id="setupHumanFreeEdgeSelect"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>${setupEdgeCatalogOptions("Choose Human free Edge...")}</select></label>
+          <div class="creator-actions setup-wide">
+            <button type="button" data-setup-action="addHumanFreeEdge"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>Add Human Free Edge</button>
+          </div>
+        </div>`
+        : '<p class="creator-note">This ancestry does not grant a built-in Human free Edge.</p>'
+    }
+    ${
+      hindranceEdgeSlots
+        ? `<div class="setup-form-grid">
+          <label class="setup-wide">Hindrance benefit Edge<select id="setupHindranceBenefitEdgeSelect"${hindranceEdges >= hindranceEdgeSlots ? " disabled" : ""}>${setupEdgeCatalogOptions("Choose Hindrance benefit Edge...")}</select></label>
+          <div class="creator-actions setup-wide">
+            <button type="button" data-setup-action="addHindranceBenefitEdge"${hindranceEdges >= hindranceEdgeSlots ? " disabled" : ""}>Add Hindrance Benefit Edge</button>
+          </div>
+        </div>`
+        : '<p class="creator-note">Spend 2 Hindrance benefit points on Edges to unlock an extra starting Edge slot.</p>'
+    }
+  </section>`;
+}
+
 function renderSetupEdges() {
   const edges = [...(character.edges || [])].filter((edge) => edge.name);
   const catalogMatches = edges.filter((edge) => edgeCatalogEntry(edge)).length;
@@ -990,13 +1303,20 @@ function renderSetupEdges() {
   const advanceEdges = edges.filter((edge) =>
     edgeLikelySource(edge).includes("Advance"),
   );
+  const expectedHumanEdges = setupExpectedHumanFreeEdges();
+  const humanEdges = setupHumanFreeEdges().length;
+  const hindranceEdgeSlots = setupCreationBenefitValue(
+    "extraEdgesFromHindrances",
+  );
+  const hindranceEdges = setupHindranceBenefitEdges().length;
+  const edgeSelectionEditable = setupTraitsEditable();
   const status = characterSetupStatus("edges");
 
   return `<section id="setupEdgesPanel" class="setup-step-panel" aria-labelledby="setupEdgesHeading">
     <div class="section-title">
       <div>
         <h3 id="setupEdgesHeading">Edges</h3>
-        <p>Read-only audit of recorded Edges. Selection, purchase source editing, and full prerequisite enforcement come in a later setup slice.</p>
+        <p>Select starting Edges and keep their creation source separate from later Advances. Full prerequisite enforcement is still a manual review item.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>
@@ -1005,8 +1325,26 @@ function renderSetupEdges() {
       ${setupDetail("Catalog Matches", `${catalogMatches}`)}
       ${setupDetail("Arcane Background Edges", `${arcaneEdges.length}`)}
       ${setupDetail("Advance-Looking Edges", `${advanceEdges.length}`)}
+      ${setupDetail("Human Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
+      ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
     </div>
+    ${renderSetupEdgeSelectionControls()}
     <p class="entry-advisory"><strong>Audit only:</strong> imported characters may not preserve whether an Edge came from Human ancestry, Hindrance benefits, Advances, or a GM exception. Source labels below are hints unless they were created in this tool.</p>
+    ${
+      edgeSelectionEditable && humanEdges < expectedHumanEdges
+        ? '<p class="entry-warning">Incomplete: Human characters should select their free starting Edge.</p>'
+        : ""
+    }
+    ${
+      edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
+        ? '<p class="entry-warning">Incomplete: one or more Hindrance benefit Edge slots have not been selected.</p>'
+        : ""
+    }
+    ${
+      edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
+        ? '<p class="entry-warning">Needs review: more Hindrance benefit Edges are recorded than current Hindrance spending allows.</p>'
+        : ""
+    }
     ${
       arcaneEdges.length > 1
         ? '<p class="entry-warning">Needs review: more than one Arcane Background Edge is recorded.</p>'
@@ -1142,7 +1480,12 @@ function setupAuditGroup(title, items, emptyText, renderer) {
 }
 
 function setupWeaponLine(weapon) {
-  const entry = { type: "weapon", id: weapon.id, label: weapon.name, item: weapon };
+  const entry = {
+    type: "weapon",
+    id: weapon.id,
+    label: weapon.name,
+    item: weapon,
+  };
   const loaded = isTrackedWeapon(weapon)
     ? `${weapon.shotsLoaded ?? 0} / ${weapon.shotsMax ?? "—"} loaded`
     : "";
@@ -1304,11 +1647,21 @@ function renderSetupReview() {
   );
   const ancestryNeedsReview = !isHumanAncestry(character.ancestry);
   const hindranceStats = hindrancePointStats();
+  const hindranceSpending = setupHindranceBenefitSpending(hindranceStats);
   const edgeCount = (character.edges || []).length;
   const arcaneEdgeCount = (character.edges || []).filter((edge) =>
     isArcaneBackgroundEdge(edge.name),
   ).length;
-  const powersCount = (character.powers || []).filter((power) => power.name).length;
+  const expectedHumanEdges = setupExpectedHumanFreeEdges();
+  const humanEdges = setupHumanFreeEdges().length;
+  const hindranceEdgeSlots = setupCreationBenefitValue(
+    "extraEdgesFromHindrances",
+  );
+  const hindranceEdges = setupHindranceBenefitEdges().length;
+  const edgeSelectionEditable = setupTraitsEditable();
+  const powersCount = (character.powers || []).filter(
+    (power) => power.name,
+  ).length;
   const powerPoints = powerPointResource();
   const gearCounts = setupGearAuditCounts();
   return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
@@ -1330,7 +1683,10 @@ function renderSetupReview() {
       ${setupDetail("Hindrance Count", `${hindranceStats.count}`)}
       ${setupDetail("Total Hindrance Points", `${hindranceStats.total}`)}
       ${setupDetail("Hindrance Benefit Cap", `${hindranceStats.benefitCap}`)}
+      ${setupDetail("Hindrance Benefits Spent", `${hindranceSpending.spent} / ${hindranceSpending.available}`)}
       ${setupDetail("Edge Count", `${edgeCount}`)}
+      ${setupDetail("Human Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
+      ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
       ${setupDetail("Arcane Background Edges", `${arcaneEdgeCount}`)}
       ${setupDetail("Known Powers", `${powersCount}`)}
       ${setupDetail("Power Points", powerPoints ? `${powerPoints.current} / ${powerPoints.max || "—"}` : "Not recorded")}
@@ -1352,6 +1708,21 @@ function renderSetupReview() {
     ${
       hindranceStats.overCap
         ? `<p class="entry-advisory"><strong>Above the standard Hindrance benefit cap:</strong> ${hindranceStats.total} points selected, ${hindranceStats.benefitPoints} counted under default rules. Record any extra reward as a table or GM exception.</p>`
+        : ""
+    }
+    ${
+      hindranceSpending.spent > hindranceSpending.available
+        ? '<p class="entry-warning">Needs review: Hindrance benefit spending exceeds counted Hindrance points.</p>'
+        : ""
+    }
+    ${
+      edgeSelectionEditable && humanEdges < expectedHumanEdges
+        ? '<p class="entry-warning">Edges incomplete: select the Human free starting Edge.</p>'
+        : ""
+    }
+    ${
+      edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
+        ? '<p class="entry-warning">Edges incomplete: select all Hindrance benefit Edge slots or adjust Hindrance spending.</p>'
         : ""
     }
     ${
@@ -1452,7 +1823,11 @@ function renderCharacterSummary() {
       "Fatigue",
       `${character.damage.fatigue} / ${character.damage.maxFatigue}`,
     ),
-    statusPipMarkup("Bennies", character.bennies.current, `Start ${character.bennies.starting}`),
+    statusPipMarkup(
+      "Bennies",
+      character.bennies.current,
+      `Start ${character.bennies.starting}`,
+    ),
     statusPipMarkup("Conviction", character.conviction),
     powerPoints
       ? statusPipMarkup(
@@ -1519,7 +1894,9 @@ function renderCharacterSummary() {
     ["Size", character.derived.size ?? character.size, ""],
     ["Armor", `+${compactText(character.derived.armor, "0")}`, "Best equipped"],
   ]
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    )
     .map(
       ([label, value, note]) =>
         `<div class="derived-scan-card"><span>${esc(label)}</span><strong>${esc(value ?? "—")}</strong>${note ? `<small>${esc(note)}</small>` : ""}</div>`,
@@ -1576,8 +1953,12 @@ function sortedAdvances() {
 
 function nextAdvanceNumber() {
   return (
-    Math.max(0, ...((character.advances || []).map((advance) => Number(advance.number) || 0))) +
-    1
+    Math.max(
+      0,
+      ...(character.advances || []).map(
+        (advance) => Number(advance.number) || 0,
+      ),
+    ) + 1
   );
 }
 
@@ -1592,7 +1973,9 @@ function advanceCardMarkup(advance) {
   ]
     .filter(Boolean)
     .join(": ");
-  const source = [advance.source, advance.dateAdded].filter(Boolean).join(" • ");
+  const source = [advance.source, advance.dateAdded]
+    .filter(Boolean)
+    .join(" • ");
   return tagCardMarkup(
     {
       id: advance.id,
