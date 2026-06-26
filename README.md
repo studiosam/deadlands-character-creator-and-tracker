@@ -89,6 +89,10 @@ Recommended portfolio screenshots/GIFs:
 - Combat tab during live play with wounds, Bennies, weapons, ammo, and
   conditions visible.
 - Inventory tab showing storage locations and encumbrance.
+- Encumbrance separates Current Load from Combat Load: Current Load is what the
+  character normally carries, Combat Load assumes droppable backpack/container
+  load is dropped, Carrying Capacity is the base penalty threshold, and Maximum
+  Normal Carry is only a separate out-of-combat allowance when shown.
 - Arcane tab showing Power Points and known powers.
 - Character Setup review and confirmed Character Sheet mode.
 - Characters panel profile editor.

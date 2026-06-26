@@ -135,7 +135,11 @@ function combatPenaltyInfo() {
 
 function renderCombatPenalties() {
   const { total, traitPenalties, modifiers } = combatPenaltyInfo();
-  const encumbrance = calculateEncumbrance(character);
+  const encumbrance = calculateEncumbrance(character, { combat: true });
+  const loadText = `Current Load (Combat Load): ${esc(
+    compactLoadText(encumbrance),
+  )}. Carrying Capacity: ${esc(formatWeightPounds(encumbrance.carryingCapacity))}`;
+  const encumbranceWarning = esc(encumbranceWarningText(encumbrance));
   const entries = [
     ...traitPenalties.map(
       (penalty) => `${penalty.label} ${penalty.value}`,
@@ -153,10 +157,10 @@ function renderCombatPenalties() {
         .join("")
     : '<span>No active penalty causes.</span>';
   els.combatEncumbranceSummary.innerHTML = encumbrance.overloaded
-    ? `<strong>Encumbrance: Overloaded</strong><span>${esc(encumbranceWarningText(encumbrance))}</span>`
+    ? `<strong>Encumbrance: Overloaded</strong><span>${loadText}. ${encumbranceWarning}</span>`
     : encumbrance.encumbered
-      ? `<strong>Encumbrance: ${esc(encumbranceText(encumbrance))}</strong><span>${esc(encumbranceWarningText(encumbrance))}</span>`
-      : `<strong>Encumbrance: None</strong><span>${esc(formatWeightPounds(encumbrance.carriedWeight))} active / ${esc(formatWeightPounds(encumbrance.loadLimit))} Load Limit.</span>`;
+      ? `<strong>Encumbrance: ${esc(encumbranceText(encumbrance))}</strong><span>${loadText}. ${encumbranceWarning}</span>`
+      : `<strong>Encumbrance: ${esc(encumbranceText(encumbrance))}</strong><span>${loadText}</span>`;
 }
 
 function renderCombatPowerPoints() {
@@ -176,12 +180,15 @@ function renderCombatPowerPoints() {
 
 function renderCombatWeapons() {
   els.playWeaponList.innerHTML = "";
-  if (!character.weapons.length) {
+  const activeWeapons = character.weapons.filter((weapon) =>
+    physicalItemIsTopLevelActive(weapon),
+  );
+  if (!activeWeapons.length) {
     els.playWeaponList.innerHTML = emptyState("No weapons tracked.");
     return;
   }
 
-  [...character.weapons]
+  [...activeWeapons]
     .sort(
       (left, right) =>
         Number(isTrackedWeapon(right)) - Number(isTrackedWeapon(left)),

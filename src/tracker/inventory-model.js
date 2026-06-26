@@ -23,8 +23,12 @@ function locationLabel(location, storageId = "") {
 }
 
 function allStorageLocations() {
-  const custom = Array.isArray(character?.storageLocations)
-    ? character.storageLocations
+  return storageLocationsForCharacter(character);
+}
+
+function storageLocationsForCharacter(currentCharacter = character) {
+  const custom = Array.isArray(currentCharacter?.storageLocations)
+    ? currentCharacter.storageLocations
     : [];
   const byId = new Map();
   [...BUILT_IN_STORAGE_LOCATIONS, ...custom].forEach((location) => {
@@ -38,13 +42,57 @@ function storageLocationName(id) {
   return allStorageLocations().find((location) => location.id === id)?.name || "";
 }
 
-function normalizeInventoryLocation(value) {
+function storageLocationIdForValue(value, currentCharacter = character) {
+  let raw = String(value || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("stored:")) raw = raw.slice("stored:".length).trim();
+  const slug = slugify(raw);
+  const ruleName = normalizeRuleName(raw);
+  return (
+    storageLocationsForCharacter(currentCharacter).find(
+      (location) =>
+        location.id === raw ||
+        location.id === slug ||
+        normalizeRuleName(location.name) === ruleName,
+    )?.id || ""
+  );
+}
+
+function normalizeInventoryLocation(value, currentCharacter = character) {
+  if (storageLocationIdForValue(value, currentCharacter)) return "stored";
   return INVENTORY_LOCATIONS.includes(value) ? value : "carried";
 }
 
-function normalizePhysicalItemLocation(item, fallback = "carried") {
-  item.itemLocation = normalizeInventoryLocation(item.itemLocation || fallback);
-  item.storageId = item.itemLocation === "stored" ? item.storageId || "" : "";
+function normalizeItemStorageId(source, currentCharacter = character) {
+  return (
+    storageLocationIdForValue(source.storageId, currentCharacter) ||
+    storageLocationIdForValue(source.storageLocationId, currentCharacter) ||
+    storageLocationIdForValue(source.storageLocation, currentCharacter) ||
+    storageLocationIdForValue(source.location, currentCharacter) ||
+    storageLocationIdForValue(source.itemLocation, currentCharacter) ||
+    String(
+      source.storageId || source.storageLocationId || source.storageLocation || "",
+    ).trim()
+  );
+}
+
+function normalizePhysicalItemLocation(
+  item,
+  fallback = "carried",
+  currentCharacter = character,
+) {
+  const sourceLocation = item.itemLocation || fallback;
+  item.itemLocation = normalizeInventoryLocation(
+    sourceLocation,
+    currentCharacter,
+  );
+  item.storageId =
+    item.itemLocation === "stored"
+      ? normalizeItemStorageId(
+          { ...item, itemLocation: sourceLocation },
+          currentCharacter,
+        )
+      : "";
   item.containerId =
     item.itemLocation === "container" ? item.containerId || "" : "";
   return item;
@@ -60,6 +108,11 @@ function knownEmptyContainerWeight(item) {
   return parseWeightNumber(catalog?.weight);
 }
 
+function isKnownContainerItem(item) {
+  const name = normalizeRuleName(item?.name);
+  return name.includes("backpack");
+}
+
 function normalizeItemWeightFields(item, count, children, currentCharacter) {
   const source = String(item.source || "").toLowerCase();
   const importedTotal = parseWeightNumber(item.totalWeight ?? item.weight);
@@ -70,7 +123,12 @@ function normalizeItemWeightFields(item, count, children, currentCharacter) {
     0,
   );
 
-  if (children.length || item.isContainer || item.container) {
+  if (
+    children.length ||
+    item.isContainer ||
+    item.container ||
+    isKnownContainerItem(item)
+  ) {
     const knownEmpty = knownEmptyContainerWeight(item);
     const derivedEmpty =
       importedTotal === null ? null : Math.max(0, importedTotal - childTotal);
@@ -157,9 +215,11 @@ function normalizeInventoryItem(
   );
   const location = parentLocation
     ? "container"
-    : normalizeInventoryLocation(source.location);
+    : normalizeInventoryLocation(source.location, currentCharacter);
   const storageId =
-    location === "stored" ? source.storageId || source.storageLocationId || "" : "";
+    location === "stored"
+      ? normalizeItemStorageId(source, currentCharacter)
+      : "";
 
   return {
     ...source,
@@ -211,16 +271,20 @@ function normalizeInventoryState(currentCharacter) {
 
 function normalizePhysicalInventoryState(currentCharacter) {
   (currentCharacter.weapons || []).forEach((weapon) =>
-    normalizePhysicalItemLocation(weapon, "carried"),
+    normalizePhysicalItemLocation(weapon, "carried", currentCharacter),
   );
   (currentCharacter.armorInventory || []).forEach((armor) =>
-    normalizePhysicalItemLocation(armor, armor.equipped ? "equipped" : "carried"),
+    normalizePhysicalItemLocation(
+      armor,
+      armor.equipped ? "equipped" : "carried",
+      currentCharacter,
+    ),
   );
   Object.values(currentCharacter.ammo || {}).forEach((ammo) =>
-    normalizePhysicalItemLocation(ammo, "carried"),
+    normalizePhysicalItemLocation(ammo, "carried", currentCharacter),
   );
   (currentCharacter.consumables || []).forEach((item) =>
-    normalizePhysicalItemLocation(item, "carried"),
+    normalizePhysicalItemLocation(item, "carried", currentCharacter),
   );
 }
 

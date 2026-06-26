@@ -133,7 +133,10 @@ function isNormalClothingItem(item) {
 function equipmentIdentitySet(currentCharacter) {
   const keys = new Set();
   [...(currentCharacter.weapons || []), ...(currentCharacter.armorInventory || [])]
-    .filter((item) => carriedQuantity(item) > 0)
+    .filter(
+      (item) =>
+        carriedQuantity(item) > 0 && physicalItemIsTopLevelActive(item),
+    )
     .forEach((item) => {
       const key = carriedItemKey(item);
       if (key.id) keys.add(`id:${key.id}`);
@@ -156,7 +159,36 @@ function carriedWeightForItem(item, quantity = carriedQuantity(item)) {
   return parseWeight(item?.unitWeight ?? item?.weight) * quantity;
 }
 
-function activeInventoryWeight(currentCharacter) {
+function normalCapacityForCombatCapacity(combatCapacity) {
+  return combatCapacity * 2;
+}
+
+function itemDropsInCombat(item) {
+  const text = normalizeRuleName(
+    `${item?.id || ""} ${item?.name || ""} ${item?.note || item?.notes || ""}`,
+  );
+  return (
+    Boolean(item?.dropsInCombat) ||
+    text.includes("backpack") ||
+    (item?.isContainer && text.includes("dropped in combat"))
+  );
+}
+
+function combatAutoDroppedInventoryWeight(currentCharacter) {
+  return (currentCharacter.inventory || [])
+    .filter(
+      (item) =>
+        item.location !== "dropped" &&
+        item.location !== "stored" &&
+        itemDropsInCombat(item),
+    )
+    .reduce(
+      (sum, item) => sum + inventoryItemTotalWeight(item, currentCharacter),
+      0,
+    );
+}
+
+function activeInventoryWeight(currentCharacter, options = {}) {
   const equipmentKeys = equipmentIdentitySet(currentCharacter);
   const inventoryTotals = inventoryWeightBreakdown(currentCharacter);
   const duplicateEquipmentWeight = (currentCharacter.inventory || [])
@@ -167,23 +199,37 @@ function activeInventoryWeight(currentCharacter) {
         isDuplicateEquipmentInventoryItem(item, equipmentKeys),
     )
     .reduce((sum, item) => sum + inventoryItemTotalWeight(item), 0);
+  const autoDroppedWeight = options.combat
+    ? combatAutoDroppedInventoryWeight(currentCharacter)
+    : 0;
 
-  return Math.max(0, inventoryTotals.activeLoad - duplicateEquipmentWeight);
+  return Math.max(
+    0,
+    inventoryTotals.activeLoad - duplicateEquipmentWeight - autoDroppedWeight,
+  );
 }
 
-function calculateTotalCarriedWeight(currentCharacter) {
-  return activeInventoryWeight(currentCharacter);
+function calculateTotalCarriedWeight(currentCharacter, options = {}) {
+  return activeInventoryWeight(currentCharacter, options);
 }
 
 function calculateEncumbrancePenalty(carriedWeight, loadLimit) {
   return carriedWeight > loadLimit ? -2 : 0;
 }
 
-function calculateEncumbrance(currentCharacter) {
-  const carriedWeight = calculateTotalCarriedWeight(currentCharacter);
+function calculateEncumbrance(currentCharacter, options = {}) {
   const inventoryTotals = inventoryWeightBreakdown(currentCharacter);
   const effectiveStrength = effectiveStrengthForEncumbrance(currentCharacter);
-  const loadLimit = loadLimitForStrength(effectiveStrength);
+  const carryingCapacity = loadLimitForStrength(effectiveStrength);
+  const combatCapacity = carryingCapacity;
+  const normalCapacity = normalCapacityForCombatCapacity(carryingCapacity);
+  const combatLoad = calculateTotalCarriedWeight(currentCharacter, {
+    combat: true,
+  });
+  const normalLoad = calculateTotalCarriedWeight(currentCharacter);
+  const combatMode = Boolean(options.combat);
+  const carriedWeight = combatMode ? combatLoad : normalLoad;
+  const loadLimit = carryingCapacity;
   const penalty = calculateEncumbrancePenalty(carriedWeight, loadLimit);
   const encumbered = carriedWeight > loadLimit;
   const heavyOverload = carriedWeight >= loadLimit * 3;
@@ -198,6 +244,11 @@ function calculateEncumbrance(currentCharacter) {
 
   return {
     carriedWeight,
+    combatLoad,
+    normalLoad,
+    carryingCapacity,
+    combatCapacity,
+    normalCapacity,
     inventoryTotals,
     effectiveStrength,
     loadLimit,
@@ -210,6 +261,10 @@ function calculateEncumbrance(currentCharacter) {
   };
 }
 
+function compactLoadText(info) {
+  return `${wt(info.normalLoad)} (${wt(info.combatLoad)})`;
+}
+
 function formatWeightPounds(weight) {
   return `${wt(weight)} lb`;
 }
@@ -217,7 +272,7 @@ function formatWeightPounds(weight) {
 function encumbranceText(info) {
   if (info.overloaded) return "Overloaded";
   if (info.heavyOverload) return "Heavy overload";
-  return info.encumbered ? "Encumbered" : "None";
+  return info.encumbered ? "Encumbered" : "Unencumbered";
 }
 
 function nextEncumbranceText(info) {
@@ -232,9 +287,9 @@ function nextEncumbranceText(info) {
 
 function encumbranceWarningText(info) {
   if (info.overloaded)
-    return "Above 4x Load Limit. This exceeds the maximum weight the character can lift or carry.";
+    return "Above 4x Carrying Capacity. This exceeds the maximum weight the character can lift or carry.";
   if (info.heavyOverload)
-    return "At 3x Load Limit or more: Pace 1 for Vigor rounds, then Vigor each round or take Fatigue.";
+    return "At 3x Carrying Capacity or more: Pace 1 for Vigor rounds, then Vigor each round or take Fatigue.";
   if (info.encumbered)
     return "Encumbered reminder: -2 Pace (minimum 1), -2 running rolls, -2 Agility and Agility-linked skills, and -2 Vigor rolls to resist Fatigue.";
   return "";

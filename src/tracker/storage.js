@@ -165,6 +165,10 @@ function normalize(data, options = {}) {
     location: ARMOR_LOCATIONS.some((location) => location.id === armor.location)
       ? armor.location
       : "torso",
+    itemLocation: armor.itemLocation,
+    storageId: armor.storageId,
+    storageLocationId: armor.storageLocationId,
+    containerId: armor.containerId,
     equipped: Boolean(armor.equipped),
     note: armor.note || "",
   }));

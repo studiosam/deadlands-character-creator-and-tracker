@@ -1792,8 +1792,8 @@ function renderSetupGear() {
       ${setupDetail("Consumables", `${counts.consumables}`)}
       ${setupDetail("Ammo Pools", `${counts.ammo}`)}
       ${setupDetail("Vehicles", `${counts.vehicles}`)}
-      ${setupDetail("Active Load", formatWeightPounds(info.carriedWeight))}
-      ${setupDetail("Load Limit", formatWeightPounds(info.loadLimit))}
+      ${setupDetail("Current Load (Combat Load)", compactLoadText(info))}
+      ${setupDetail("Carrying Capacity", formatWeightPounds(info.carryingCapacity))}
     </div>
     <p class="entry-advisory"><strong>Audit only:</strong> imported/current inventory may include post-creation purchases, loot, or table adjustments. Starting cash and starting purchase validation are deferred.</p>
     <div class="setup-gear-groups">
@@ -1942,23 +1942,35 @@ function renderSetupReview() {
 
 function renderEncumbrance() {
   const info = calculateEncumbrance(character);
-  const warning = encumbranceWarningText(info);
+  const combatInfo = calculateEncumbrance(character, { combat: true });
+  const warning =
+    encumbranceWarningText(combatInfo) || encumbranceWarningText(info);
 
-  els.encumbranceSummaryPill.textContent = info.overloaded
+  els.encumbranceSummaryPill.textContent = combatInfo.overloaded
     ? "Overloaded"
-    : info.encumbered
-      ? encumbranceText(info)
-      : "No encumbrance";
+    : combatInfo.encumbered
+      ? `Combat ${encumbranceText(combatInfo)}`
+      : info.encumbered
+        ? `Normal ${encumbranceText(info)}`
+        : "No encumbrance";
   els.encumbranceDetails.innerHTML = [
-    ["Active Load", formatWeightPounds(info.carriedWeight)],
+    ["Current Load (Combat Load)", compactLoadText(info)],
+    ["Carrying Capacity", formatWeightPounds(info.carryingCapacity)],
+    [
+      "Encumbrance",
+      `Normal - ${encumbranceText(info)}, Combat - ${encumbranceText(combatInfo)}`,
+    ],
+    ["Combat Load", formatWeightPounds(info.combatLoad)],
+    ["Normal Load", formatWeightPounds(info.normalLoad)],
     ["Container Load", formatWeightPounds(info.inventoryTotals.containerLoad)],
     ["Dropped Load", formatWeightPounds(info.inventoryTotals.droppedLoad)],
     ["Stored Load", formatWeightPounds(info.inventoryTotals.storedLoad)],
     ["Owned Gear", formatWeightPounds(info.inventoryTotals.ownedWeight)],
-    ["Load Limit", formatWeightPounds(info.loadLimit)],
+    ["Maximum Normal Carry", formatWeightPounds(info.normalCapacity)],
     ["Effective Strength", info.effectiveStrength],
-    ["Encumbrance", encumbranceText(info)],
-    ["Next Threshold", nextEncumbranceText(info)],
+    ["Combat Encumbrance", encumbranceText(combatInfo)],
+    ["Normal Encumbrance", encumbranceText(info)],
+    ["Next Combat Threshold", nextEncumbranceText(combatInfo)],
   ]
     .map(
       ([label, value]) =>
