@@ -6,9 +6,10 @@ The core browser regression tests now live in `tests/browser/app.spec.js` and
 cover app load, tab switching, minimal landing flows, saved-character selection,
 setupStatus, confirmed Character Sheet cleanup, Characters panel profile
 editing, sample loading, Savaged.us paste import, export/import round trip,
-persistence, inventory item persistence, and core combat controls across desktop
-and mobile viewports. Keep this checklist for rules-heavy validation and table
-workflow checks that are not yet practical to automate.
+persistence, inventory item persistence, canonical Advancement ledger save/reload
+coverage, and core combat controls across desktop and mobile viewports. Keep
+this checklist for rules-heavy validation and table workflow checks that are not
+yet practical to automate.
 
 ## Current manual status
 
@@ -17,9 +18,9 @@ workflow checks that are not yet practical to automate.
   page import/selection, Sources & Rulesets, Characters panel profile editing,
   and confirmed Character Sheet reference mode.
 - Partially implemented: Advancement storage, adaptive forms, application
-  helpers, and skill filtering exist, but Advancement product work is paused.
-  Treat the Advancement sections below as historical regression/backlog checks,
-  not the next implementation direction.
+  helpers, skill filtering, and canonical ledger entries exist. Automated tests
+  cover supported apply types and imported history; the manual Advancement
+  sections below focus on editing, removal/undo, and rules-heavy table review.
 - Deferred for MVP: full Edge prerequisite validation, full Power legality
   validation, starting gear purchase validation, imported advanced-character
   baseline reconstruction, and editable campaign/source configuration.
@@ -176,6 +177,12 @@ Use this section during testing.
 -
 
 # Advancement Tests
+
+Automated browser coverage now verifies canonical save/reload behavior for
+`Increase Skill`, `Increase Two Skills`, `Increase Attribute`, `New Edge`,
+`New Powers`, `Power Points`, `Other / Marshal-approved`, and imported
+Savaged.us history. Use the checks below for workflows that still need human
+review, especially edit/remove/undo behavior and deferred rules enforcement.
 
 ## Basic behavior
 

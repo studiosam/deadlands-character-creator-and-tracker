@@ -215,10 +215,12 @@ async function importSavagedSample(page, fileName) {
   expect(sample.ok()).toBeTruthy();
 
   await enterTracker(page);
-  await openHeaderMenu(page);
-  await page.locator("#pasteImportBtn").click();
-  await page.locator("#importJsonText").fill(await sample.text());
-  await page.locator("#confirmPasteImportBtn").click();
+  await page.evaluate(
+    (text) => {
+      importJsonText(text);
+    },
+    await sample.text(),
+  );
 }
 
 async function openAdvanceEditor(page, type) {
@@ -243,6 +245,218 @@ async function eligibleAdvanceSkills(page, mode) {
       };
     });
   }, mode);
+}
+
+function expectCanonicalAdvanceScaffold(advance, type) {
+  expect(advance).toBeTruthy();
+  expect(advance).toEqual(
+    expect.objectContaining({
+      type,
+      label: expect.any(String),
+      source: expect.any(String),
+      advanceNumber: expect.any(Number),
+      rankAtTime: expect.any(String),
+      createdAt: expect.any(String),
+      changes: expect.any(Array),
+      notes: expect.any(String),
+    }),
+  );
+  expect(advance.label).toBeTruthy();
+  expect(advance.source).toBeTruthy();
+  expect(advance.advanceNumber).toBeGreaterThan(0);
+  expect(advance.rankAtTime).toBeTruthy();
+  expect(advance.createdAt).toBeTruthy();
+}
+
+function expectCanonicalChangeScaffold(change) {
+  expect(change).toBeTruthy();
+  expect(change).toEqual(
+    expect.objectContaining({
+      path: expect.any(String),
+      displayLabel: expect.any(String),
+    }),
+  );
+  expect(Object.prototype.hasOwnProperty.call(change, "before")).toBe(true);
+  expect(Object.prototype.hasOwnProperty.call(change, "after")).toBe(true);
+  expect(change.path).toBeTruthy();
+  expect(change.displayLabel).toBeTruthy();
+}
+
+async function firstEligibleAttributeAdvance(page) {
+  return page.evaluate(() => {
+    return ATTRIBUTE_ORDER.map((key) => ({
+      key,
+      ...attributeTargetForKey(key),
+    })).find((target) => target.after && target.after !== target.before);
+  });
+}
+
+async function firstAvailableAdvanceEdge(page) {
+  return page.evaluate(() => {
+    const known = new Set(
+      (character.edges || []).map((edge) => plainEntryName(edge.name)),
+    );
+    const edge = EDGE_CATALOG.find(
+      (item) => item.name && !known.has(plainEntryName(item.name)),
+    );
+    return edge
+      ? {
+          id: edge.id,
+          name: edge.name,
+        }
+      : null;
+  });
+}
+
+async function firstAvailableAdvancePower(page) {
+  return page.evaluate(() => {
+    const knownIds = new Set(
+      (character.powers || []).map((power) => power.catalogId).filter(Boolean),
+    );
+    const knownNames = new Set(
+      (character.powers || []).map((power) => plainEntryName(power.name)),
+    );
+    const power = POWER_CATALOG.find(
+      (item) =>
+        item.id &&
+        item.name &&
+        !knownIds.has(item.id) &&
+        !knownNames.has(plainEntryName(item.name)),
+    );
+    return power
+      ? {
+          id: power.id,
+          name: power.name,
+        }
+      : null;
+  });
+}
+
+async function nonAdvancementMutationSnapshot(page) {
+  return page.evaluate(() => {
+    const copy = (value) => JSON.parse(JSON.stringify(value ?? null));
+    return {
+      attributes: copy(character.attributes),
+      skills: copy(character.skills),
+      edges: copy(character.edges),
+      powers: copy(character.powers),
+      resources: copy(character.resources),
+      damage: copy(character.damage),
+      moneyCents: character.moneyCents,
+    };
+  });
+}
+
+async function seedCanonicalAdvancementCharacter(page) {
+  await enterTracker(page);
+  await page.evaluate(() => {
+    const testCharacter = normalize({
+      source: "test",
+      setupStatus: "needsReview",
+      name: "Canonical Advancement Tester",
+      rank: "Novice",
+      ancestry: "Human",
+      archetype: "Regression Character",
+      attributes: {
+        agility: "d6",
+        smarts: "d8",
+        spirit: "d6",
+        strength: "d6",
+        vigor: "d6",
+      },
+      skills: [
+        {
+          name: "Shooting",
+          die: "d8",
+          linkedAttribute: "agility",
+        },
+        {
+          name: "Fighting",
+          die: "d4",
+          linkedAttribute: "agility",
+        },
+        {
+          name: "Riding",
+          die: "d4",
+          linkedAttribute: "agility",
+        },
+        {
+          name: "Faith",
+          die: "d6",
+          linkedAttribute: "spirit",
+        },
+      ],
+      edges: [],
+      hindrances: [],
+      powers: [],
+      resources: [
+        {
+          id: "power-points",
+          name: "Power Points",
+          current: 10,
+          max: 10,
+          source: "test",
+        },
+      ],
+      advances: [],
+    });
+    const entry = addCharacterSlot(testCharacter, {
+      source: "test",
+      preferredId: "canonical-advancement-test",
+    });
+    character = normalize(entry.character);
+    characterSetupReviewOpen = false;
+    characterDraftMode = false;
+    render();
+    renderDemoExperience();
+  });
+  await expect(page.locator("#characterName")).toContainText(
+    "Canonical Advancement Tester",
+  );
+}
+
+async function importMinimalSavagedAdvancementHistory(page) {
+  await enterTracker(page);
+  await page.evaluate(
+    (payload) => {
+      importJsonText(JSON.stringify(payload));
+    },
+    {
+      appVersion: "minimal-test",
+      name: "Imported Advancement History",
+      rankName: "Seasoned",
+      race: "Human",
+      attributes: [
+        { name: "agility", label: "Agility", value: "d6" },
+        { name: "smarts", label: "Smarts", value: "d6" },
+        { name: "spirit", label: "Spirit", value: "d6" },
+        { name: "strength", label: "Strength", value: "d6" },
+        { name: "vigor", label: "Vigor", value: "d6" },
+      ],
+      skills: [
+        {
+          name: "Shooting",
+          attribute: "agility",
+          value: "d8",
+        },
+      ],
+      advances: [
+        {
+          number: 1,
+          name: "Raise Skill: Shooting",
+          description: "Raise Skill: Shooting",
+        },
+        {
+          number: 2,
+          name: "Edge: Alertness",
+          description: "Edge: Alertness",
+        },
+      ],
+    },
+  );
+  await expect(page.locator("#characterName")).toContainText(
+    "Imported Advancement History",
+  );
 }
 
 test.beforeEach(async ({ page }) => {
@@ -431,16 +645,10 @@ test("shows current load combat load and carrying capacity separately", async ({
 test("imports Savaged.us backpack contents without double-counting load", async ({
   page,
 }) => {
-  const sample = await page.request.get(
-    "/docs/Sample%20Characters/savaged-us-json-export-character-Dusty%20McCaw.json",
+  await importSavagedSample(
+    page,
+    "savaged-us-json-export-character-Dusty McCaw.json",
   );
-  expect(sample.ok()).toBeTruthy();
-
-  await enterTracker(page);
-  await openHeaderMenu(page);
-  await page.locator("#pasteImportBtn").click();
-  await page.locator("#importJsonText").fill(await sample.text());
-  await page.locator("#confirmPasteImportBtn").click();
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
 
   const backpackWeights = await page.evaluate(() => {
@@ -867,16 +1075,10 @@ test("normalizes legacy characters without setupStatus as complete", async ({
 test("shows a clean reference sheet for confirmed characters", async ({
   page,
 }) => {
-  const sample = await page.request.get(
-    "/docs/Sample%20Characters/savaged-us-json-export-character-Dusty%20McCaw.json",
+  await importSavagedSample(
+    page,
+    "savaged-us-json-export-character-Dusty McCaw.json",
   );
-  expect(sample.ok()).toBeTruthy();
-
-  await enterTracker(page);
-  await openHeaderMenu(page);
-  await page.locator("#pasteImportBtn").click();
-  await page.locator("#importJsonText").fill(await sample.text());
-  await page.locator("#confirmPasteImportBtn").click();
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
@@ -954,10 +1156,7 @@ test("shows a clean reference sheet for confirmed characters", async ({
 });
 
 test("Increase Skill writes a canonical ledger entry", async ({ page }) => {
-  await importSavagedSample(
-    page,
-    "savaged-us-json-export-character-Dusty McCaw.json",
-  );
+  await seedCanonicalAdvancementCharacter(page);
 
   const [target] = await eligibleAdvanceSkills(page, "single");
   expect(
@@ -1033,10 +1232,7 @@ test("Increase Skill writes a canonical ledger entry", async ({ page }) => {
 test("Increase Two Skills writes one canonical ledger entry", async ({
   page,
 }) => {
-  await importSavagedSample(
-    page,
-    "savaged-us-json-export-character-Dusty McCaw.json",
-  );
+  await seedCanonicalAdvancementCharacter(page);
 
   const targets = (await eligibleAdvanceSkills(page, "two")).slice(0, 2);
   expect(targets).toHaveLength(2);
@@ -1120,13 +1316,403 @@ test("Increase Two Skills writes one canonical ledger entry", async ({
   });
 });
 
-test("preserves imported advancement history as imported history", async ({
+test("Increase Attribute writes a canonical attribute-increase ledger entry", async ({
   page,
 }) => {
-  await importSavagedSample(
-    page,
-    "savaged-us-json-export-character-Dusty McCaw.json",
+  await seedCanonicalAdvancementCharacter(page);
+
+  const target = await firstEligibleAttributeAdvance(page);
+  expect(
+    target,
+    "Expected at least one eligible attribute advance target",
+  ).toBeTruthy();
+
+  await openAdvanceEditor(page, "Increase Attribute");
+  await page.locator("#advanceAttributeSelect").selectOption(target.key);
+  await page.locator("#saveAdvanceBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+  await expect(page.locator("#advancesList")).toContainText(
+    "Increase Attribute",
   );
+  await expect(page.locator("#advancesList")).toContainText(target.targetName);
+
+  const result = await page.evaluate((attributeKey) => {
+    const advance = character.advances.find(
+      (item) =>
+        item.type === "attribute-increase" &&
+        item.changes?.some(
+          (change) => change.path === `attributes.${attributeKey}`,
+        ),
+    );
+    return {
+      attributeDie: character.attributes?.[attributeKey] || "",
+      advance,
+      hasLegacyAppliedChanges: Boolean(advance?.appliedChanges?.length),
+    };
+  }, target.key);
+
+  expect(result.attributeDie).toBe(target.after);
+  expectCanonicalAdvanceScaffold(result.advance, "attribute-increase");
+  expect(result.advance.source).toBe("advancement");
+  expect(result.advance.changes).toHaveLength(1);
+  expectCanonicalChangeScaffold(result.advance.changes[0]);
+  expect(result.advance.changes[0]).toEqual(
+    expect.objectContaining({
+      path: `attributes.${target.key}`,
+      before: target.before,
+      after: target.after,
+      displayLabel: target.targetName,
+    }),
+  );
+  expect(result.hasLegacyAppliedChanges).toBe(false);
+
+  await reloadIntoTracker(page);
+  const persisted = await page.evaluate((attributeKey) => {
+    const advance = character.advances.find(
+      (item) =>
+        item.type === "attribute-increase" &&
+        item.changes?.some(
+          (change) => change.path === `attributes.${attributeKey}`,
+        ),
+    );
+    return {
+      attributeDie: character.attributes?.[attributeKey] || "",
+      advanceType: advance?.type || "",
+      change: advance?.changes?.[0] || null,
+    };
+  }, target.key);
+
+  expect(persisted.attributeDie).toBe(target.after);
+  expect(persisted.advanceType).toBe("attribute-increase");
+  expect(persisted.change).toEqual(
+    expect.objectContaining({
+      path: `attributes.${target.key}`,
+      before: target.before,
+      after: target.after,
+      displayLabel: target.targetName,
+    }),
+  );
+});
+
+test("New Edge writes a canonical edge-gain ledger entry", async ({ page }) => {
+  await seedCanonicalAdvancementCharacter(page);
+
+  const edge = await firstAvailableAdvanceEdge(page);
+  expect(
+    edge,
+    "Expected at least one available Edge catalog entry",
+  ).toBeTruthy();
+
+  await openAdvanceEditor(page, "New Edge");
+  await page.locator("#advanceEdgeSelect").selectOption(edge.id);
+  await page.locator("#saveAdvanceBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+  await expect(page.locator("#advancesList")).toContainText("New Edge");
+  await expect(page.locator("#advancesList")).toContainText(edge.name);
+
+  const result = await page.evaluate((edgeName) => {
+    const edgeRecord = character.edges.find((item) => item.name === edgeName);
+    const advance = character.advances.find(
+      (item) =>
+        item.type === "edge-gain" &&
+        item.changes?.some((change) => change.displayLabel === edgeName),
+    );
+    return {
+      edge: edgeRecord,
+      advance,
+      hasLegacyAppliedChanges: Boolean(advance?.appliedChanges?.length),
+    };
+  }, edge.name);
+
+  expect(result.edge).toEqual(
+    expect.objectContaining({
+      name: edge.name,
+      source: "advancement",
+      createdByAdvanceId: expect.any(String),
+    }),
+  );
+  expectCanonicalAdvanceScaffold(result.advance, "edge-gain");
+  expect(result.advance.source).toBe("advancement");
+  expect(result.advance.changes).toHaveLength(1);
+  expectCanonicalChangeScaffold(result.advance.changes[0]);
+  expect(result.advance.changes[0]).toEqual(
+    expect.objectContaining({
+      path: `edges[${result.edge.id}]`,
+      before: null,
+      after: expect.objectContaining({
+        id: result.edge.id,
+        catalogId: edge.id,
+        name: edge.name,
+      }),
+      displayLabel: edge.name,
+      targetType: "edge",
+      operation: "add",
+    }),
+  );
+  expect(result.hasLegacyAppliedChanges).toBe(false);
+
+  await reloadIntoTracker(page);
+  const persisted = await page.evaluate((edgeName) => {
+    const edgeRecord = character.edges.find((item) => item.name === edgeName);
+    const advance = character.advances.find(
+      (item) =>
+        item.type === "edge-gain" &&
+        item.changes?.some((change) => change.displayLabel === edgeName),
+    );
+    return {
+      edgeName: edgeRecord?.name || "",
+      advanceType: advance?.type || "",
+      change: advance?.changes?.[0] || null,
+    };
+  }, edge.name);
+
+  expect(persisted.edgeName).toBe(edge.name);
+  expect(persisted.advanceType).toBe("edge-gain");
+  expect(persisted.change).toEqual(
+    expect.objectContaining({
+      displayLabel: edge.name,
+      targetType: "edge",
+      operation: "add",
+    }),
+  );
+});
+
+test("New Powers writes a canonical power-gain ledger entry", async ({
+  page,
+}) => {
+  await seedCanonicalAdvancementCharacter(page);
+
+  const power = await firstAvailableAdvancePower(page);
+  expect(
+    power,
+    "Expected at least one available Power catalog entry",
+  ).toBeTruthy();
+
+  await openAdvanceEditor(page, "New Powers");
+  await page.locator("#advancePowerSelect").selectOption(power.id);
+  await page.locator("#advanceAddPowerTargetBtn").click();
+  await expect(page.locator(".selected-target-list")).toContainText(power.name);
+  await page.locator("#saveAdvanceBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+  await expect(page.locator("#advancesList")).toContainText("New Powers");
+  await expect(page.locator("#advancesList")).toContainText(power.name);
+
+  const result = await page.evaluate((powerName) => {
+    const powerRecord = character.powers.find(
+      (item) => item.name === powerName,
+    );
+    const advance = character.advances.find(
+      (item) =>
+        item.type === "power-gain" &&
+        item.changes?.some((change) => change.displayLabel === powerName),
+    );
+    return {
+      power: powerRecord,
+      advance,
+      hasLegacyAppliedChanges: Boolean(advance?.appliedChanges?.length),
+    };
+  }, power.name);
+
+  expect(result.power).toEqual(
+    expect.objectContaining({
+      name: power.name,
+      source: "advancement",
+      addedReason: "advancement",
+      createdByAdvanceId: expect.any(String),
+    }),
+  );
+  expectCanonicalAdvanceScaffold(result.advance, "power-gain");
+  expect(result.advance.source).toBe("advancement");
+  expect(result.advance.changes).toHaveLength(1);
+  expectCanonicalChangeScaffold(result.advance.changes[0]);
+  expect(result.advance.changes[0]).toEqual(
+    expect.objectContaining({
+      path: `powers[${result.power.id}]`,
+      before: null,
+      after: expect.objectContaining({
+        id: result.power.id,
+        catalogId: power.id,
+        name: power.name,
+      }),
+      displayLabel: power.name,
+      targetType: "power",
+      operation: "add",
+    }),
+  );
+  expect(result.hasLegacyAppliedChanges).toBe(false);
+
+  await reloadIntoTracker(page);
+  const persisted = await page.evaluate((powerName) => {
+    const powerRecord = character.powers.find(
+      (item) => item.name === powerName,
+    );
+    const advance = character.advances.find(
+      (item) =>
+        item.type === "power-gain" &&
+        item.changes?.some((change) => change.displayLabel === powerName),
+    );
+    return {
+      powerName: powerRecord?.name || "",
+      advanceType: advance?.type || "",
+      change: advance?.changes?.[0] || null,
+    };
+  }, power.name);
+
+  expect(persisted.powerName).toBe(power.name);
+  expect(persisted.advanceType).toBe("power-gain");
+  expect(persisted.change).toEqual(
+    expect.objectContaining({
+      displayLabel: power.name,
+      targetType: "power",
+      operation: "add",
+    }),
+  );
+});
+
+test("Power Points writes a canonical power-points-increase ledger entry", async ({
+  page,
+}) => {
+  await seedCanonicalAdvancementCharacter(page);
+
+  const before = await page.evaluate(() => powerPointResource()?.max || 0);
+  const amount = 5;
+
+  await openAdvanceEditor(page, "Power Points");
+  await page.locator("#advancePowerPointAmountInput").fill(String(amount));
+  await page.locator("#saveAdvanceBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+  await expect(page.locator("#advancesList")).toContainText("Power Points");
+
+  const result = await page.evaluate(() => {
+    const advance = character.advances.find(
+      (item) => item.type === "power-points-increase",
+    );
+    return {
+      maxPowerPoints: powerPointResource()?.max || 0,
+      advance,
+      hasLegacyAppliedChanges: Boolean(advance?.appliedChanges?.length),
+    };
+  });
+
+  expect(result.maxPowerPoints).toBe(before + amount);
+  expectCanonicalAdvanceScaffold(result.advance, "power-points-increase");
+  expect(result.advance.source).toBe("advancement");
+  expect(result.advance.changes).toHaveLength(1);
+  expectCanonicalChangeScaffold(result.advance.changes[0]);
+  expect(result.advance.changes[0]).toEqual(
+    expect.objectContaining({
+      path: "resources.power-points.max",
+      before,
+      after: before + amount,
+      displayLabel: "Power Points",
+      targetType: "power-points",
+      operation: "update",
+    }),
+  );
+  expect(result.hasLegacyAppliedChanges).toBe(false);
+
+  await reloadIntoTracker(page);
+  const persisted = await page.evaluate(() => {
+    const advance = character.advances.find(
+      (item) => item.type === "power-points-increase",
+    );
+    return {
+      maxPowerPoints: powerPointResource()?.max || 0,
+      advanceType: advance?.type || "",
+      change: advance?.changes?.[0] || null,
+    };
+  });
+
+  expect(persisted.maxPowerPoints).toBe(before + amount);
+  expect(persisted.advanceType).toBe("power-points-increase");
+  expect(persisted.change).toEqual(
+    expect.objectContaining({
+      before,
+      after: before + amount,
+      displayLabel: "Power Points",
+    }),
+  );
+});
+
+test("Other Marshal-approved writes a canonical gm-exception history entry", async ({
+  page,
+}) => {
+  await seedCanonicalAdvancementCharacter(page);
+  const before = await nonAdvancementMutationSnapshot(page);
+
+  await openAdvanceEditor(page, "Other / Marshal-approved");
+  await page.locator("#advanceSourceInput").selectOption("marshal-override");
+  await page
+    .locator("#advanceSummaryInput")
+    .fill("Marshal-approved story milestone");
+  await page.locator("#advanceTargetTypeInput").selectOption("custom");
+  await page.locator("#advanceTargetNameInput").fill("Story milestone");
+  await page.locator("#showAdvanceNotesBtn").click();
+  await page.locator("#advanceNotesInput").fill("No sheet mutation.");
+  await page.locator("#saveAdvanceBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+  await expect(page.locator("#advancesList")).toContainText(
+    "Other / Marshal-approved",
+  );
+  await expect(page.locator("#advancesList")).toContainText(
+    "Marshal-approved story milestone",
+  );
+
+  const after = await nonAdvancementMutationSnapshot(page);
+  expect(after).toEqual(before);
+
+  const result = await page.evaluate(() => {
+    const advance = character.advances.find(
+      (item) => item.type === "gm-exception",
+    );
+    return {
+      advance,
+      hasLegacyAppliedChanges: Boolean(advance?.appliedChanges?.length),
+    };
+  });
+
+  expectCanonicalAdvanceScaffold(result.advance, "gm-exception");
+  expect(result.advance).toEqual(
+    expect.objectContaining({
+      source: "marshal-override",
+      targetType: "custom",
+      targetName: "Story milestone",
+      applied: false,
+      appliedByApp: false,
+      appliedAt: "",
+      changes: [],
+      notes: "No sheet mutation.",
+    }),
+  );
+  expect(result.hasLegacyAppliedChanges).toBe(false);
+
+  await reloadIntoTracker(page);
+  const persisted = await page.evaluate(() => {
+    const advance = character.advances.find(
+      (item) => item.type === "gm-exception",
+    );
+    return {
+      type: advance?.type || "",
+      source: advance?.source || "",
+      changesLength: advance?.changes?.length ?? -1,
+      applied: Boolean(advance?.applied),
+      appliedByApp: Boolean(advance?.appliedByApp),
+    };
+  });
+
+  expect(persisted).toEqual({
+    type: "gm-exception",
+    source: "marshal-override",
+    changesLength: 0,
+    applied: false,
+    appliedByApp: false,
+  });
+});
+
+test("Imported Savaged.us advancement history remains canonical imported history", async ({
+  page,
+}) => {
+  await importMinimalSavagedAdvancementHistory(page);
 
   const imported = await page.evaluate(() => ({
     shootingDie:
@@ -1138,11 +1724,13 @@ test("preserves imported advancement history as imported history", async ({
       changesLength: advance.changes?.length || 0,
       applied: Boolean(advance.applied),
       appliedByApp: Boolean(advance.appliedByApp),
+      trustedUndoable: Boolean(advance.appliedByApp && advance.changes?.length),
     })),
   }));
 
   expect(imported.shootingDie).toBeTruthy();
   expect(imported.advances.length).toBeGreaterThan(0);
+  await expect(page.locator("#advancesList")).toContainText("Imported History");
   imported.advances.forEach((advance) => {
     expect(advance.type).toBe("imported-history");
     expect(advance.source).toBe("imported");
@@ -1150,6 +1738,31 @@ test("preserves imported advancement history as imported history", async ({
     expect(advance.changesLength).toBe(0);
     expect(advance.applied).toBe(false);
     expect(advance.appliedByApp).toBe(false);
+    expect(advance.trustedUndoable).toBe(false);
+  });
+
+  await reloadIntoTracker(page);
+  const persisted = await page.evaluate(() =>
+    character.advances.map((advance) => ({
+      type: advance.type,
+      source: advance.source,
+      changesLength: advance.changes?.length || 0,
+      applied: Boolean(advance.applied),
+      appliedByApp: Boolean(advance.appliedByApp),
+    })),
+  );
+
+  expect(persisted.length).toBe(imported.advances.length);
+  persisted.forEach((advance) => {
+    expect(advance).toEqual(
+      expect.objectContaining({
+        type: "imported-history",
+        source: "imported",
+        changesLength: 0,
+        applied: false,
+        appliedByApp: false,
+      }),
+    );
   });
 });
 
@@ -1679,16 +2292,10 @@ test("loads a bundled sample in demo mode", async ({ page }) => {
 test("shows usage notes and audits setup traits, edges, powers, and gear", async ({
   page,
 }) => {
-  await enterTracker(page);
-  const sample = await page.request.get(
-    "/docs/Sample%20Characters/savaged-us-json-export-character-Dusty%20McCaw.json",
+  await importSavagedSample(
+    page,
+    "savaged-us-json-export-character-Dusty McCaw.json",
   );
-  expect(sample.ok()).toBeTruthy();
-
-  await openHeaderMenu(page);
-  await page.locator("#pasteImportBtn").click();
-  await page.locator("#importJsonText").fill(await sample.text());
-  await page.locator("#confirmPasteImportBtn").click();
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
   await page.getByRole("button", { name: "Character", exact: true }).click();
 
