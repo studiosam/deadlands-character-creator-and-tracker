@@ -52,13 +52,31 @@ mechanical decision.
 
 ## UX Decisions
 
-The first screen prioritizes table use over marketing. Combat is the default
-tab, with high-frequency state controls near the top. Character creation remains
-available but separate from live play.
+The first screen is now a minimal application launcher rather than a marketing
+page. It lets a returning player continue the active saved character, select a
+saved character, create a character, import JSON, try the sample in the empty
+state, or open the read-only Sources & Rulesets page. After the launcher,
+Combat remains the default play tab, with high-frequency state controls near the
+top.
+
+Character Setup is treated as a one-time creation/import confirmation workflow.
+Newly created and imported characters start with `setupStatus: "needsReview"`;
+confirming setup changes that state to `complete`. Complete characters open the
+Character tab as a reference-focused Character Sheet by default, while Review
+Setup can intentionally reopen the setup workflow without changing persisted
+status.
+
+The Characters panel owns deliberate character management and stable profile
+edits after setup: switching, renaming, duplicating, deleting, exporting, and
+editing identity/profile text. Normal Character Sheet reference is kept separate
+from profile management and from post-creation rules changes.
 
 Recent polish adds:
 
-- First-run demo/sample loading.
+- Minimal landing page with saved-character selection and docked JSON import.
+- Read-only Sources & Rulesets page for the current Deadlands-focused profile.
+- `setupStatus` separation between setup review and confirmed sheet reference.
+- Characters panel profile editor.
 - A demo-mode banner so sample data is not mistaken for a campaign save.
 - App-styled dialogs and toasts for destructive actions, imports, exports, and
   validation feedback.
@@ -76,8 +94,11 @@ Recent polish adds:
 
 ## Next Steps
 
-- Publish a hosted demo and add screenshots/GIFs to the README.
-- Expand automated tests around imports, migrations, and core table workflows.
+- Add final screenshots/GIFs to the README.
+- Expand automated tests around remaining manual rules-heavy workflows without
+  broadening MVP scope.
+- Keep Advancement paused until its workflow boundary is separated from the
+  normal Character Sheet.
 - Gather user feedback from real sessions before investing in paid-product
   packaging.
 - Resolve licensing before selling bundled Deadlands-specific content.

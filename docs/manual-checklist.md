@@ -1,16 +1,69 @@
-# Power Catalog Workflow Test Checklist
+# Manual Test Checklist
 
 ## Automated coverage note
 
-The core browser smoke tests now live in `tests/browser/app.spec.js` and cover
-app load, tab switching, sample loading, Savaged.us paste import, export/import
-round trip, persistence, and core combat controls across desktop and mobile
-viewports. Keep this checklist for rules-heavy validation and table workflow
-checks that are not yet practical to automate.
+The core browser regression tests now live in `tests/browser/app.spec.js` and
+cover app load, tab switching, minimal landing flows, saved-character selection,
+setupStatus, confirmed Character Sheet cleanup, Characters panel profile
+editing, sample loading, Savaged.us paste import, export/import round trip,
+persistence, inventory item persistence, and core combat controls across desktop
+and mobile viewports. Keep this checklist for rules-heavy validation and table
+workflow checks that are not yet practical to automate.
 
-## Purpose
+## Current manual status
 
-Manual test checklist for the Deadlands power catalog, Arcane Background power selection, and variable Power Point spending workflow.
+- Implemented and still worth manual regression: Power catalog workflow, Arcane
+  Background compatibility, variable Power Point spending, setup review, landing
+  page import/selection, Sources & Rulesets, Characters panel profile editing,
+  and confirmed Character Sheet reference mode.
+- Partially implemented: Advancement storage, adaptive forms, application
+  helpers, and skill filtering exist, but Advancement product work is paused.
+  Treat the Advancement sections below as historical regression/backlog checks,
+  not the next implementation direction.
+- Deferred for MVP: full Edge prerequisite validation, full Power legality
+  validation, starting gear purchase validation, imported advanced-character
+  baseline reconstruction, and editable campaign/source configuration.
+
+# Landing, Sources, Setup, and Character Sheet Tests
+
+## Landing page
+
+- [ ] Empty state shows Continue/Open Tracker, Create Character, Import JSON,
+      Try sample, Sources & Rulesets, and the local-storage/unofficial-tool note.
+- [ ] Saved-character state shows the saved-character selector and updates the
+      primary action label to `Continue as <character name>`.
+- [ ] Import JSON on the landing page can paste JSON or select a file and does
+      not enter the tracker until import is confirmed.
+- [ ] Mobile layout stacks and scrolls without clipping landing controls.
+
+## Sources & Rulesets
+
+- [ ] Sources & Rulesets opens from the landing footer.
+- [ ] Sources & Rulesets opens from the global menu.
+- [ ] The page is read-only and does not present campaign-setting edit controls.
+
+## Character Setup and confirmed sheet
+
+- [ ] Created characters open Character Setup with `setupStatus: needsReview`.
+- [ ] Imported characters open Character Setup with `setupStatus: needsReview`.
+- [ ] Confirm Setup hides the setup workflow and persists `setupStatus` as
+      `complete`.
+- [ ] Complete characters open the Character tab as a reference-focused sheet.
+- [ ] Review Setup reopens setup review without changing persisted
+      `setupStatus`.
+- [ ] The confirmed Character Sheet shows identity, derived stats, Attributes,
+      Skills, Edges, Hindrances, and short notes/reference text.
+- [ ] The confirmed Character Sheet hides setup stepper/forms, manual
+      Edge/Hindrance add forms, Advancement add forms, and manual Power Points
+      setup by default.
+- [ ] Manage Character opens the Characters panel profile editor.
+- [ ] Characters panel profile edits update the header and Character Sheet while
+      preserving `setupStatus`.
+
+# Power Catalog Workflow Tests
+
+Manual checks for the Deadlands power catalog, Arcane Background power
+selection, and variable Power Point spending workflow.
 
 ## Basic load test
 
@@ -64,7 +117,7 @@ Manual test checklist for the Deadlands power catalog, Arcane Background power s
 
 - [ ] Search filters powers by name.
 - [ ] Rank filter works.
-- [ ] “Valid for current Arcane Background” filter works.
+- [ ] "Valid for current Arcane Background" filter works.
 - [ ] Invalid powers show warnings.
 - [ ] Marshal override allows invalid/manual choices.
 - [ ] Catalog preview shows name, rank, PP, range, duration, summary, and notes.
@@ -98,7 +151,7 @@ Manual test checklist for the Deadlands power catalog, Arcane Background power s
 - [ ] Added catalog powers appear in Known Powers.
 - [ ] Known Powers show PP, range, duration, source, summary, and notes.
 - [ ] Edit works without modifying the global catalog.
-- [ ] Remove works and only removes the character’s known power.
+- [ ] Remove works and only removes the character's known power.
 - [ ] Custom/manual powers can still be added.
 
 ## Persistence

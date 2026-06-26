@@ -38,9 +38,51 @@ Imported advanced characters are a separate backlog problem. Savaged.us imports 
 
 The current MVP should use one built-in profile and avoid making users configure source books before creating or importing characters. A future SWADE-wide or Pinnacle-facing version could expand this area into editable campaign profile configuration.
 
+## Current Implementation Status
+
+This document is the source of truth for Character Setup lifecycle, the boundary between Character Setup and the normal Character Sheet, Characters panel responsibility, creation baseline planning, and future Advancement boundaries.
+
+### Implemented now
+
+- Minimal landing page with Continue, Create Character, Import JSON, saved-character selection, empty-state sample loading, local-storage note, and `Sources & Rulesets` access.
+- Read-only `Sources & Rulesets` page for the current Deadlands-focused profile.
+- Character Setup shell for created and imported characters, with `setupStatus` deciding whether setup review is needed.
+- `setupStatus` lifecycle: created and imported characters default to `needsReview`; confirmed setup becomes `complete`; legacy/sample saves without a value normalize to `complete`.
+- Confirmed Character Sheet mode: complete characters open the Character tab as a reference-focused sheet by default.
+- `Review Setup` reopening: users can deliberately reopen setup review without changing persisted `setupStatus`.
+- Characters panel management: switch, rename, duplicate, delete, export, and save active character slots.
+- Characters panel profile editor for stable identity/profile text fields.
+- Created-character Hindrance benefit spending, Trait point spending, and starting Edge source tracking for eligible pre-advance characters.
+
+### Partially implemented
+
+- Creation baseline tracking exists for created-character starting Attributes and Skills and should be extended carefully to other setup-time choices.
+- Character Setup Powers and Gear are audit-first. They review current/imported data but do not yet provide full starting-power selection, starting-purchase validation, or source tracking.
+- Advancement has data storage, adaptive forms, application helpers, and validation, but the product direction is paused. Do not treat the current Character-tab Advancement area as the final long-term workflow.
+
+### Planned next
+
+- Keep the Character tab reference-focused after setup is complete.
+- Move or contain remaining Advancement history/workflow so it no longer competes with normal Character Sheet reference use when Advancement work resumes.
+- Define a deliberate GM exception/correction workflow before allowing broad post-confirmation rules edits.
+
+### Deferred
+
+- Full Edge prerequisite validation.
+- Full Power legality validation and starting-power selection.
+- Starting cash purchase validation and gear-source tracking.
+- Reconstruction of original creation baselines for advanced imported characters.
+- Editable campaign/source configuration in `Sources & Rulesets`.
+
+### Explicitly out of scope for the current MVP
+
+- Cloud sync, accounts, or shared campaign storage.
+- A full campaign settings editor.
+- Selling bundled Deadlands-specific rules/catalog content without resolving licensing.
+
 ## Character Tab Cleanup Plan
 
-The Character tab currently combines three different jobs: one-time Character Setup, the long-term Character Sheet, and Advancement/history management. The cleanup should separate those concerns without removing existing data or changing persistence behavior.
+The Character tab historically combined three different jobs: one-time Character Setup, the long-term Character Sheet, and Advancement/history management. The current cleanup separates setup review from the confirmed Character Sheet through `setupStatus`; remaining long-term cleanup should continue separating Advancement/history without removing existing data or changing persistence behavior.
 
 ### Post-Confirmation Editing Model
 
@@ -48,9 +90,9 @@ Character Setup is a one-time confirmation workflow used after character creatio
 
 After setup is confirmed, the Character tab should default to a normal Character Sheet: a clean, read-only or mostly read-only reference view for identity, core stats, traits, Edges, Hindrances, and short notes. The normal sheet should show character data clearly, but it should not expose every setup control by default.
 
-The Characters panel should become the deliberate place to manage characters and edit stable character profile information after confirmation. This keeps ordinary sheet reference separate from higher-intent character-management actions.
+The Characters panel is the deliberate place to manage characters and edit stable character profile information after confirmation. This keeps ordinary sheet reference separate from higher-intent character-management actions.
 
-The Characters panel may eventually handle:
+The Characters panel currently handles:
 
 - Switch character.
 - Rename character.
@@ -58,6 +100,9 @@ The Characters panel may eventually handle:
 - Delete character.
 - Export character.
 - Edit character identity/profile fields.
+
+It may eventually also handle:
+
 - Reopen Setup Review.
 - View or change setup status when appropriate.
 
@@ -210,4 +255,4 @@ Reopening setup review intentionally shows the setup workflow without changing p
 
 ### Recommended Next Implementation Slice
 
-Continue reducing normal Character Sheet editing affordances so the Character tab stays reference-focused after setup is complete, while keeping deliberate setup review, advancement, inventory, and arcane workflows separate.
+Keep the confirmed Character Sheet reference-focused and move the remaining Advancement history/add workflow behind a more deliberate Advancement entry point when Advancement work resumes. Do not add more Advancement rules behavior until that workflow boundary is settled.
