@@ -666,7 +666,9 @@ function edgeMatchedAdvance(edge) {
   return (character.advances || []).find((advance) => {
     const advanceText = plainEntryName(
       [
+        canonicalAdvanceTypeLabel(advance.type),
         advance.type,
+        advance.label,
         advance.name,
         advance.targetName,
         advance.summary,
@@ -805,7 +807,7 @@ function setupEdgeAuditCard(edge) {
       ? "Creation source is not explicit. Treat this as an audit hint, not validation."
       : "",
     matchedAdvance
-      ? `Matched recorded Advance #${matchedAdvance.number || "?"}.`
+      ? `Matched recorded Advance #${matchedAdvance.advanceNumber || matchedAdvance.number || "?"}.`
       : "",
     arcaneConfig
       ? `${arcaneConfig.displayName} uses ${arcaneConfig.arcaneSkill} and starts with ${arcaneConfig.startingPowerPoints} Power Points.`
@@ -2139,8 +2141,11 @@ function renderCharacterSummary() {
 function sortedAdvances() {
   return [...(character.advances || [])].sort(
     (left, right) =>
-      Number(left.number) - Number(right.number) ||
-      String(left.dateAdded || "").localeCompare(String(right.dateAdded || "")),
+      Number(left.advanceNumber ?? left.number) -
+        Number(right.advanceNumber ?? right.number) ||
+      String(left.createdAt || left.dateAdded || "").localeCompare(
+        String(right.createdAt || right.dateAdded || ""),
+      ),
   );
 }
 
@@ -2149,7 +2154,7 @@ function nextAdvanceNumber() {
     Math.max(
       0,
       ...(character.advances || []).map(
-        (advance) => Number(advance.number) || 0,
+        (advance) => Number(advance.advanceNumber ?? advance.number) || 0,
       ),
     ) + 1
   );
@@ -2157,6 +2162,7 @@ function nextAdvanceNumber() {
 
 function advanceCardMarkup(advance) {
   const warnings = advanceWarnings(character, advance, advance.id);
+  const number = advance.advanceNumber ?? advance.number;
   const status = advance.applied
     ? `Applied${advance.appliedAt ? ` ${advance.appliedAt}` : ""}`
     : "History only";
@@ -2166,14 +2172,19 @@ function advanceCardMarkup(advance) {
   ]
     .filter(Boolean)
     .join(": ");
-  const source = [advance.source, advance.dateAdded]
+  const source = [advance.source, advance.createdAt || advance.dateAdded]
     .filter(Boolean)
     .join(" • ");
   return tagCardMarkup(
     {
       id: advance.id,
-      name: `Advance #${advance.number}`,
-      meta: [advance.rank, advance.type].filter(Boolean).join(" • "),
+      name: `Advance #${number}`,
+      meta: [
+        advance.rankAtTime || advance.rank,
+        canonicalAdvanceTypeLabel(advance.type),
+      ]
+        .filter(Boolean)
+        .join(" • "),
       summary: advanceDisplaySummary(advance),
       note: [
         status,
@@ -2216,7 +2227,7 @@ function renderAdvancement() {
   const duplicateNumbers = new Set();
   const seenNumbers = new Set();
   (character.advances || []).forEach((advance) => {
-    const number = Number(advance.number);
+    const number = Number(advance.advanceNumber ?? advance.number);
     if (!number) return;
     if (seenNumbers.has(number)) duplicateNumbers.add(number);
     seenNumbers.add(number);

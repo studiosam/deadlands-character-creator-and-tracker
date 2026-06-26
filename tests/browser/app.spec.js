@@ -208,6 +208,43 @@ async function addCustomGear(
   await expect(addGearForm).toBeHidden();
 }
 
+async function importSavagedSample(page, fileName) {
+  const sample = await page.request.get(
+    `/docs/Sample%20Characters/${encodeURIComponent(fileName)}`,
+  );
+  expect(sample.ok()).toBeTruthy();
+
+  await enterTracker(page);
+  await openHeaderMenu(page);
+  await page.locator("#pasteImportBtn").click();
+  await page.locator("#importJsonText").fill(await sample.text());
+  await page.locator("#confirmPasteImportBtn").click();
+}
+
+async function openAdvanceEditor(page, type) {
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  if (!(await page.locator("#showAdvanceFormBtn").isVisible())) {
+    await page.locator("#reviewSetupBtn").click();
+  }
+  await expect(page.locator("#showAdvanceFormBtn")).toBeVisible();
+  await page.locator("#showAdvanceFormBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeVisible();
+  await page.locator("#advanceTypeInput").selectOption(type);
+}
+
+async function eligibleAdvanceSkills(page, mode) {
+  return page.evaluate((advanceMode) => {
+    return eligibleSkillsForAdvanceMode(advanceMode).map((skill) => {
+      const target = skillTargetForName(skill.name);
+      return {
+        name: skill.name,
+        before: target.before,
+        after: target.after,
+      };
+    });
+  }, mode);
+}
+
 test.beforeEach(async ({ page }) => {
   installRuntimeErrorCollectors(page);
   await clearAppStorage(page);
@@ -911,6 +948,206 @@ test("shows a clean reference sheet for confirmed characters", async ({
       activeSetupStatus: "complete",
       trackerSetupStatus: "complete",
     });
+});
+
+test("Increase Skill writes a canonical ledger entry", async ({ page }) => {
+  await importSavagedSample(
+    page,
+    "savaged-us-json-export-character-Dusty McCaw.json",
+  );
+
+  const [target] = await eligibleAdvanceSkills(page, "single");
+  expect(
+    target,
+    "Expected at least one eligible one-skill advance target",
+  ).toBeTruthy();
+
+  await openAdvanceEditor(page, "Increase Skill");
+  await page.locator("#advanceSkillSelect").selectOption(target.name);
+  await page.locator("#saveAdvanceBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+
+  const result = await page.evaluate((targetName) => {
+    const advance = character.advances.find(
+      (item) =>
+        item.type === "skill-increase" &&
+        item.changes?.some((change) => change.displayLabel === targetName),
+    );
+    const skill = character.skills.find((item) => item.name === targetName);
+    return {
+      skillDie: skill?.die || "",
+      advance,
+      hasLegacyAppliedChanges: Boolean(advance?.appliedChanges?.length),
+    };
+  }, target.name);
+
+  expect(result.skillDie).toBe(target.after);
+  expect(result.advance).toEqual(
+    expect.objectContaining({
+      type: "skill-increase",
+      label: expect.any(String),
+      source: "advancement",
+      advanceNumber: expect.any(Number),
+      rankAtTime: expect.any(String),
+      createdAt: expect.any(String),
+      changes: expect.any(Array),
+      notes: expect.any(String),
+    }),
+  );
+  expect(result.advance.changes).toHaveLength(1);
+  expect(result.advance.changes[0]).toEqual(
+    expect.objectContaining({
+      path: `skills[${target.name}].die`,
+      before: target.before,
+      after: target.after,
+      displayLabel: target.name,
+    }),
+  );
+  expect(result.hasLegacyAppliedChanges).toBe(false);
+
+  await reloadIntoTracker(page);
+  const persisted = await page.evaluate((targetName) => {
+    const advance = character.advances.find(
+      (item) =>
+        item.type === "skill-increase" &&
+        item.changes?.some((change) => change.displayLabel === targetName),
+    );
+    const skill = character.skills.find((item) => item.name === targetName);
+    return {
+      skillDie: skill?.die || "",
+      advanceType: advance?.type || "",
+      changeCount: advance?.changes?.length || 0,
+    };
+  }, target.name);
+
+  expect(persisted).toEqual({
+    skillDie: target.after,
+    advanceType: "skill-increase",
+    changeCount: 1,
+  });
+});
+
+test("Increase Two Skills writes one canonical ledger entry", async ({
+  page,
+}) => {
+  await importSavagedSample(
+    page,
+    "savaged-us-json-export-character-Dusty McCaw.json",
+  );
+
+  const targets = (await eligibleAdvanceSkills(page, "two")).slice(0, 2);
+  expect(targets).toHaveLength(2);
+
+  await openAdvanceEditor(page, "Increase Two Skills");
+  await page.locator("#advanceSkillOneSelect").selectOption(targets[0].name);
+  await page.locator("#advanceSkillTwoSelect").selectOption(targets[1].name);
+  await page.locator("#saveAdvanceBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+
+  const result = await page.evaluate(
+    (targetNames) => {
+      const advances = character.advances.filter(
+        (item) => item.type === "two-skills-increase",
+      );
+      const skills = targetNames.map((name) => {
+        const skill = character.skills.find((item) => item.name === name);
+        return { name, die: skill?.die || "" };
+      });
+      return { advances, skills };
+    },
+    targets.map((target) => target.name),
+  );
+
+  expect(result.advances).toHaveLength(1);
+  expect(result.advances[0]).toEqual(
+    expect.objectContaining({
+      type: "two-skills-increase",
+      label: expect.any(String),
+      source: "advancement",
+      advanceNumber: expect.any(Number),
+      rankAtTime: expect.any(String),
+      createdAt: expect.any(String),
+      changes: expect.any(Array),
+      notes: expect.any(String),
+    }),
+  );
+  expect(result.advances[0].changes).toHaveLength(2);
+  targets.forEach((target) => {
+    expect(result.skills).toContainEqual({
+      name: target.name,
+      die: target.after,
+    });
+    expect(result.advances[0].changes).toContainEqual(
+      expect.objectContaining({
+        path: `skills[${target.name}].die`,
+        before: target.before,
+        after: target.after,
+        displayLabel: target.name,
+      }),
+    );
+  });
+  expect(Boolean(result.advances[0].appliedChanges?.length)).toBe(false);
+
+  await reloadIntoTracker(page);
+  const persisted = await page.evaluate(
+    (targetNames) => {
+      const advances = character.advances.filter(
+        (item) => item.type === "two-skills-increase",
+      );
+      const skills = targetNames.map((name) => {
+        const skill = character.skills.find((item) => item.name === name);
+        return { name, die: skill?.die || "" };
+      });
+      return {
+        advanceCount: advances.length,
+        changeCount: advances[0]?.changes?.length || 0,
+        skills,
+      };
+    },
+    targets.map((target) => target.name),
+  );
+
+  expect(persisted.advanceCount).toBe(1);
+  expect(persisted.changeCount).toBe(2);
+  targets.forEach((target) => {
+    expect(persisted.skills).toContainEqual({
+      name: target.name,
+      die: target.after,
+    });
+  });
+});
+
+test("preserves imported advancement history as imported history", async ({
+  page,
+}) => {
+  await importSavagedSample(
+    page,
+    "savaged-us-json-export-character-Dusty McCaw.json",
+  );
+
+  const imported = await page.evaluate(() => ({
+    shootingDie:
+      character.skills.find((skill) => skill.name === "Shooting")?.die || "",
+    advances: character.advances.map((advance) => ({
+      type: advance.type,
+      source: advance.source,
+      label: advance.label,
+      changesLength: advance.changes?.length || 0,
+      applied: Boolean(advance.applied),
+      appliedByApp: Boolean(advance.appliedByApp),
+    })),
+  }));
+
+  expect(imported.shootingDie).toBeTruthy();
+  expect(imported.advances.length).toBeGreaterThan(0);
+  imported.advances.forEach((advance) => {
+    expect(advance.type).toBe("imported-history");
+    expect(advance.source).toBe("imported");
+    expect(advance.label).toBeTruthy();
+    expect(advance.changesLength).toBe(0);
+    expect(advance.applied).toBe(false);
+    expect(advance.appliedByApp).toBe(false);
+  });
 });
 
 test("finishes character setup and starts playing with a saved character", async ({

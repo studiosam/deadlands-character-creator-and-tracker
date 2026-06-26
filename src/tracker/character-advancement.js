@@ -543,7 +543,7 @@ function renderAdvanceDynamicFields(advance = null) {
 }
 
 function resetAdvanceEditor(advance = null) {
-  const number = advance?.number || nextAdvanceNumber();
+  const number = advance?.advanceNumber || advance?.number || nextAdvanceNumber();
   const alreadyApplied = Boolean(advance?.applied);
   const existing = Boolean(advance);
   advanceEditingId = advance?.id || "";
@@ -552,11 +552,17 @@ function resetAdvanceEditor(advance = null) {
   els.advanceNumberInput.value = number;
   selectKnownValue(
     els.advanceRankInput,
-    advance?.rank || getAdvanceRankFromCount(Math.max(0, Number(number) - 1)),
+    advance?.rankAtTime ||
+      advance?.rank ||
+      getAdvanceRankFromCount(Math.max(0, Number(number) - 1)),
     "Novice",
   );
-  selectKnownValue(els.advanceTypeInput, advance?.type || "New Edge", "New Edge");
-  els.advanceSummaryInput.value = advance?.summary || "";
+  selectKnownValue(
+    els.advanceTypeInput,
+    advance ? canonicalAdvanceTypeLabel(advance.type) : "New Edge",
+    "New Edge",
+  );
+  els.advanceSummaryInput.value = advanceDisplayLabel(advance) || "";
   els.advanceTargetNameInput.value = advance?.targetName || "";
   selectKnownValue(
     els.advanceTargetTypeInput,
@@ -633,8 +639,10 @@ function advanceDraftFromForm() {
     1,
     Math.floor(Number(els.advanceNumberInput.value) || nextAdvanceNumber()),
   );
-  const type = els.advanceTypeInput.value || "";
+  const uiType = els.advanceTypeInput.value || "";
   const generated = advanceGeneratedValues();
+  const source = els.advanceSourceInput.value || "manual";
+  const type = legacyAdvanceTypeToCanonical(uiType, source);
   const isApplied = Boolean(existing?.applied);
   const targetName = isApplied
     ? existing.targetName || ""
@@ -646,28 +654,40 @@ function advanceDraftFromForm() {
     generateAdvanceId(number, type, targetName || summary),
     new Set(character.advances.map((advance) => advance.id)),
   );
+  const createdAt = existing?.createdAt || new Date().toISOString();
 
   return {
     ...(existing || {}),
     id,
-    number,
-    rank: els.advanceRankInput.value || "",
+    label: summary || canonicalAdvanceTypeLabel(type),
+    source,
+    advanceNumber: number,
+    rankAtTime: els.advanceRankInput.value || "",
+    createdAt,
+    changes: existing?.changes || [],
+    notes: els.advanceNotesInput.value.trim(),
     type,
-    summary,
     targetName,
     targetType: isApplied
       ? existing?.targetType || ""
-      : generated.targetType || els.advanceTargetTypeInput.value || targetTypeForAdvanceType(type),
-    targetId: isApplied ? existing?.targetId || "" : generated.targetId || existing?.targetId || "",
-    catalogId: isApplied ? existing?.catalogId || "" : generated.catalogId || existing?.catalogId || "",
+      : generated.targetType ||
+        els.advanceTargetTypeInput.value ||
+        targetTypeForAdvanceType(type),
+    targetId: isApplied
+      ? existing?.targetId || ""
+      : generated.targetId || existing?.targetId || "",
+    catalogId: isApplied
+      ? existing?.catalogId || ""
+      : generated.catalogId || existing?.catalogId || "",
     targets: isApplied ? existing?.targets || [] : generated.targets || [],
     powerPointAmount: Math.max(
       1,
-      Math.floor(Number(generated.powerPointAmount || els.advancePowerPointAmountInput.value) || 5),
+      Math.floor(
+        Number(
+          generated.powerPointAmount || els.advancePowerPointAmountInput.value,
+        ) || 5,
+      ),
     ),
-    notes: els.advanceNotesInput.value.trim(),
-    dateAdded: existing?.dateAdded || new Date().toISOString(),
-    source: els.advanceSourceInput.value || "manual",
   };
 }
 
@@ -696,7 +716,7 @@ function saveAdvanceEditor() {
       applied: false,
       appliedByApp: false,
       appliedAt: "",
-      appliedChanges: [],
+      changes: [],
     };
   }
   upsertAdvance(character, savedAdvance);
@@ -752,15 +772,13 @@ async function handleEntryAction(target) {
 }
 
 async function removeAdvanceWithPrompt(advance) {
-  const label = `Advance #${advance.number || "?"}`;
-  const changes = Array.isArray(advance.appliedChanges)
-    ? advance.appliedChanges
-    : [];
+  const label = `Advance #${advance.advanceNumber || advance.number || "?"}`;
+  const changes = Array.isArray(advance.changes) ? advance.changes : [];
 
   if (!advance.applied || !changes.length) {
     const note =
       advance.applied && !changes.length
-        ? "\n\nThis advance has no reliable appliedChanges data, so only the history record can be removed."
+        ? "\n\nThis advance has no reliable canonical changes data, so only the history record can be removed."
         : "";
     if (
       !(await appConfirm(note.trim(), {

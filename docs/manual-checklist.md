@@ -199,9 +199,9 @@ Use this section during testing.
 
 ## Non-goals
 
-- [ ] Adding an advance does not automatically modify skills.
-- [ ] Adding an advance does not automatically add Edges.
-- [ ] Adding an advance does not automatically add powers.
+- [ ] Saving a history-only advance does not automatically modify skills.
+- [ ] Saving a history-only advance does not automatically add Edges.
+- [ ] Saving a history-only advance does not automatically add powers.
 
 # Advancement Application Tests
 
@@ -231,16 +231,16 @@ Use this section during testing.
 - [ ] Remove app-applied skill increase reverts only if the current skill still equals the recorded after value.
 - [ ] Remove app-applied attribute increase reverts only if the current attribute still equals the recorded after value.
 - [ ] Remove app-applied Power Points increase reverts only if the current max Power Points still equals the recorded after value.
-- [ ] Imported advance without appliedChanges removes history only and does not alter the character sheet.
+- [ ] Imported advance without canonical `changes` removes history only and does not alter the character sheet.
 
 ## Persistence
 
 - [ ] Save/reload preserves applied advances.
-- [ ] Save/reload preserves appliedChanges.
+- [ ] Save/reload preserves canonical `changes`.
 - [ ] JSON export/import preserves applied advances.
-- [ ] JSON export/import preserves appliedChanges.
+- [ ] JSON export/import preserves canonical `changes`.
 - [ ] Existing characters without applied fields still load.
-- [ ] Imported advances without appliedChanges still load.
+- [ ] Imported advances without canonical `changes` still load.
 
 ## Non-goals
 
@@ -315,7 +315,7 @@ Use this section during testing.
 - [ ] JSON export/import preserves structured `targets`.
 - [ ] Existing advances without `targets` still load.
 - [ ] Existing imported advances still load.
-- [ ] Applied advances still preserve `appliedChanges`.
+- [ ] Applied advances preserve canonical `changes`.
 
 # Advancement Form Cleanup Tests
 
@@ -358,7 +358,7 @@ Use this section during testing.
 - [ ] Save/reload preserves cleaned adaptive advance entries.
 - [ ] JSON export/import preserves cleaned adaptive advance entries.
 - [ ] Existing old advances still load.
-- [ ] Existing applied advances still preserve `appliedChanges`.
+- [ ] Existing applied advances normalize reliable legacy `appliedChanges` to canonical `changes`.
 
 # Advancement Skill Dropdown Filtering Tests
 

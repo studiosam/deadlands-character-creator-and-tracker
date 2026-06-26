@@ -18,14 +18,42 @@ function generateAdvanceId(number, type, targetName) {
   return `advance-${slugify(number || "x")}-${slugify(type || "advance")}-${slugify(targetName || "entry")}`;
 }
 
+function legacyAdvanceTypeToCanonical(type, source = "") {
+  const value = String(type || "").trim();
+  if (CANONICAL_ADVANCE_TYPE_LABELS[value]) return value;
+  if (value === "Other / Marshal-approved") {
+    return source === "marshal-override" ? "gm-exception" : "manual-history";
+  }
+  return LEGACY_ADVANCE_TYPE_MAP[value] || value;
+}
+
+function canonicalAdvanceTypeLabel(type) {
+  return CANONICAL_ADVANCE_TYPE_LABELS[type] || type || "Advance";
+}
+
+function isCanonicalAppliedAdvance(type) {
+  return CANONICAL_ADVANCE_APPLY_TYPES.includes(
+    legacyAdvanceTypeToCanonical(type),
+  );
+}
+
+function advanceDisplayLabel(advance) {
+  return (
+    compactText(advance?.label, "") ||
+    compactText(advance?.summary, "") ||
+    compactText(advance?.name, "") ||
+    canonicalAdvanceTypeLabel(advance?.type)
+  );
+}
+
 function inferAdvanceTypeFromText(text) {
   const value = String(text || "").trim();
-  if (/^raise attribute:/i.test(value)) return "Increase Attribute";
-  if (/^raise skills:/i.test(value)) return "Increase Two Skills";
-  if (/^raise skill:/i.test(value)) return "Increase Skill";
-  if (/^edge:\s*new powers/i.test(value)) return "New Powers";
-  if (/^edge:\s*power points/i.test(value)) return "Power Points";
-  if (/^edge:/i.test(value)) return "New Edge";
+  if (/^raise attribute:/i.test(value)) return "attribute-increase";
+  if (/^raise skills:/i.test(value)) return "two-skills-increase";
+  if (/^raise skill:/i.test(value)) return "skill-increase";
+  if (/^edge:\s*new powers/i.test(value)) return "power-gain";
+  if (/^edge:\s*power points/i.test(value)) return "power-points-increase";
+  if (/^edge:/i.test(value)) return "edge-gain";
   return "";
 }
 
@@ -33,8 +61,9 @@ function inferAdvanceTargetName(text, type) {
   const value = String(text || "").trim();
   if (!value) return "";
   const [, afterColon = ""] = value.match(/^[^:]+:\s*(.+)$/) || [];
-  if (type === "Power Points") return "+5 Power Points";
-  if (type === "New Powers") {
+  const canonicalType = legacyAdvanceTypeToCanonical(type);
+  if (canonicalType === "power-points-increase") return "+5 Power Points";
+  if (canonicalType === "power-gain") {
     const powers = afterColon.match(/\((.+)\)/);
     return powers?.[1] || afterColon.replace(/^New Powers\s*/i, "").trim();
   }
@@ -166,15 +195,20 @@ function canUseTwoSkillAdvance(currentCharacter, skillName) {
 }
 
 function isSupportedAppliedAdvance(type) {
-  return ADVANCE_APPLY_TYPES.includes(type);
+  return isCanonicalAppliedAdvance(type);
 }
 
 function targetTypeForAdvanceType(type) {
-  if (type === "New Edge") return "edge";
-  if (type === "Increase Skill" || type === "Increase Two Skills") return "skill";
-  if (type === "Increase Attribute") return "attribute";
-  if (type === "New Powers") return "power";
-  if (type === "Power Points") return "power-points";
+  const canonicalType = legacyAdvanceTypeToCanonical(type);
+  if (canonicalType === "edge-gain") return "edge";
+  if (
+    canonicalType === "skill-increase" ||
+    canonicalType === "two-skills-increase"
+  )
+    return "skill";
+  if (canonicalType === "attribute-increase") return "attribute";
+  if (canonicalType === "power-gain") return "power";
+  if (canonicalType === "power-points-increase") return "power-points";
   return "custom";
 }
 
@@ -203,50 +237,148 @@ function normalizeAdvanceEntry(entry, index = 0) {
       : entry && typeof entry === "object"
         ? entry
         : {};
-  const sourceText = raw.summary || raw.description || raw.name || "";
-  const number = Math.max(
+  const sourceText = raw.label || raw.summary || raw.description || raw.name || "";
+  const advanceNumber = Math.max(
     1,
-    Math.floor(Number(raw.number ?? raw.advanceNumber ?? index + 1) || index + 1),
+    Math.floor(Number(raw.advanceNumber ?? raw.number ?? index + 1) || index + 1),
   );
-  const type =
+  const rawSource = raw.source || "manual";
+  const inferredType =
     raw.type ||
     raw.advanceType ||
     raw.advancementType ||
     inferAdvanceTypeFromText(sourceText);
-  const summary = raw.summary || raw.description || raw.name || "";
-  const rank = raw.rank || raw.rankAtAdvance || raw.selectedRank || "";
+  const type =
+    raw.source === "imported" && !CANONICAL_ADVANCE_TYPE_LABELS[inferredType]
+      ? "imported-history"
+      : legacyAdvanceTypeToCanonical(inferredType, rawSource);
+  const label =
+    raw.label || raw.summary || raw.description || raw.name || canonicalAdvanceTypeLabel(type);
+  const rank = raw.rankAtTime || raw.rank || raw.rankAtAdvance || raw.selectedRank || "";
   const targetName =
     raw.targetName || raw.target || inferAdvanceTargetName(sourceText, type);
   const targetType = raw.targetType || raw.targetKind || targetTypeForAdvanceType(type);
-  const source = raw.source || "manual";
+  const source = rawSource;
   const targets = Array.isArray(raw.targets)
     ? raw.targets.map(normalizeAdvanceTarget)
     : [];
+  const changes = Array.isArray(raw.changes)
+    ? raw.changes.map(normalizeCanonicalChange).filter(Boolean)
+    : canonicalChangesFromLegacyChanges(raw.appliedChanges || []);
+  const createdAt = raw.createdAt || raw.dateAdded || raw.appliedAt || "";
+  const rankAtTime = ADVANCE_RANKS.includes(rank)
+    ? rank
+    : getAdvanceRankFromCount(Math.max(0, advanceNumber - 1));
 
   return {
     ...raw,
-    id: raw.id || generateAdvanceId(number, type, targetName || summary),
-    number,
-    rank: ADVANCE_RANKS.includes(rank)
-      ? rank
-      : getAdvanceRankFromCount(Math.max(0, number - 1)),
-    type: ADVANCE_TYPES.includes(type) ? type : type || "",
-    summary,
+    id: raw.id || generateAdvanceId(advanceNumber, type, targetName || label),
+    type,
+    label,
+    source: ADVANCE_SOURCES.includes(source) ? source : source || "manual",
+    advanceNumber,
+    rankAtTime,
+    createdAt,
+    changes,
+    notes: raw.notes || "",
     targetName,
     targetType: ADVANCE_TARGET_TYPES.includes(targetType) ? targetType : "",
     targetId: raw.targetId || "",
     catalogId: raw.catalogId || "",
     targets,
-    notes: raw.notes || "",
-    dateAdded: raw.dateAdded || "",
-    source: ADVANCE_SOURCES.includes(source) ? source : source || "manual",
     applied: Boolean(raw.applied),
     appliedByApp: Boolean(raw.appliedByApp),
     appliedAt: raw.appliedAt || "",
-    appliedChanges: Array.isArray(raw.appliedChanges)
-      ? raw.appliedChanges
-      : [],
   };
+}
+
+function normalizeCanonicalChange(change) {
+  if (!change || typeof change !== "object") return null;
+  return {
+    ...change,
+    path: change.path || "",
+    before: change.before === undefined ? null : change.before,
+    after: change.after === undefined ? null : change.after,
+    displayLabel: change.displayLabel || change.targetName || "",
+  };
+}
+
+function canonicalChangesFromLegacyChanges(changes) {
+  return (Array.isArray(changes) ? changes : [])
+    .map(canonicalChangeFromLegacyChange)
+    .filter(Boolean);
+}
+
+function canonicalChangeFromLegacyChange(change) {
+  if (!change || typeof change !== "object") return null;
+  if (change.kind === "skill-increased") {
+    return {
+      path: `skills[${change.skillName}].die`,
+      before: change.before || "",
+      after: change.after || "",
+      displayLabel: change.skillName || "Skill",
+      targetName: change.skillName || "",
+      targetType: "skill",
+      operation: "update",
+    };
+  }
+  if (change.kind === "attribute-increased") {
+    const key = change.attributeKey || normalizeAttributeKey(change.attributeName);
+    return {
+      path: `attributes.${key}`,
+      before: change.before || "",
+      after: change.after || "",
+      displayLabel: change.attributeName || displayNameFromKey(key),
+      targetId: key,
+      targetName: change.attributeName || displayNameFromKey(key),
+      targetType: "attribute",
+      operation: "update",
+    };
+  }
+  if (change.kind === "edge-added") {
+    return {
+      path: `edges[${change.entityId}]`,
+      before: null,
+      after: {
+        id: change.entityId || "",
+        catalogId: change.catalogId || "",
+        name: change.name || "",
+      },
+      displayLabel: change.name || "Edge",
+      targetId: change.entityId || "",
+      targetName: change.name || "",
+      targetType: "edge",
+      operation: "add",
+    };
+  }
+  if (change.kind === "power-added") {
+    return {
+      path: `powers[${change.entityId}]`,
+      before: null,
+      after: {
+        id: change.entityId || "",
+        catalogId: change.catalogId || "",
+        name: change.name || "",
+      },
+      displayLabel: change.name || "Power",
+      targetId: change.entityId || "",
+      targetName: change.name || "",
+      targetType: "power",
+      operation: "add",
+    };
+  }
+  if (change.kind === "power-points-increased") {
+    return {
+      path: "resources.power-points.max",
+      before: change.before ?? 0,
+      after: change.after ?? 0,
+      displayLabel: "Power Points",
+      targetType: "power-points",
+      operation: "update",
+      metadata: { amount: change.amount ?? 0 },
+    };
+  }
+  return null;
 }
 
 function normalizeAdvances(entries) {
@@ -275,45 +407,47 @@ function getCharacterAdvanceSummary(currentCharacter) {
 }
 
 function advanceDisplaySummary(advance) {
-  const summary = compactText(advance.summary, "");
-  if (summary) return summary;
+  const label = compactText(advanceDisplayLabel(advance), "");
+  if (label) return label;
   const targets = Array.isArray(advance.targets) ? advance.targets : [];
   if (targets.length) {
     const names = targets.map((target) => target.targetName).filter(Boolean);
-    if (names.length) return `${compactText(advance.type, "Advance")}: ${names.join(", ")}`;
+    if (names.length)
+      return `${canonicalAdvanceTypeLabel(advance.type)}: ${names.join(", ")}`;
   }
   const target = compactText(advance.targetName, "");
-  if (target) return `${compactText(advance.type, "Advance")}: ${target}`;
-  if (advance.type === "Power Points") return "Power Points: +5 Power Points";
-  return compactText(advance.type, "Advance recorded");
+  if (target) return `${canonicalAdvanceTypeLabel(advance.type)}: ${target}`;
+  if (advance.type === "power-points-increase")
+    return "Power Points: +5 Power Points";
+  return compactText(canonicalAdvanceTypeLabel(advance.type), "Advance recorded");
 }
 
 function advanceWarnings(currentCharacter, advance, editingId = "") {
   const warnings = [];
-  const type = compactText(advance.type, "");
+  const type = legacyAdvanceTypeToCanonical(advance.type);
   if (!type) warnings.push("Advance type is missing.");
   const targets = Array.isArray(advance.targets) ? advance.targets : [];
 
   const needsTarget = [
-    "New Edge",
-    "Increase Skill",
-    "Increase Two Skills",
-    "Increase Attribute",
-    "New Powers",
-    "Power Points",
+    "edge-gain",
+    "skill-increase",
+    "two-skills-increase",
+    "attribute-increase",
+    "power-gain",
+    "power-points-increase",
   ].includes(type);
   if (needsTarget && !compactText(advance.targetName, "") && !targets.length)
     warnings.push("Target name is missing for this advance type.");
   if (
-    (type === "Increase Skill" || type === "Increase Two Skills") &&
+    (type === "skill-increase" || type === "two-skills-increase") &&
     targets.some((target) => target.before === "d12" || target.after === "d12" && target.before === target.after)
   )
     warnings.push("Selected skill is already at d12 and cannot increase.");
-  if (type === "Increase Skill" && targets[0]?.targetName) {
+  if (type === "skill-increase" && targets[0]?.targetName) {
     const check = canUseSingleSkillAdvance(currentCharacter, targets[0].targetName);
     if (!check.ok) warnings.push(check.reason || "Selected skill cannot use Increase Skill.");
   }
-  if (type === "Increase Two Skills") {
+  if (type === "two-skills-increase") {
     const names = targets.map((target) => plainEntryName(target.targetName)).filter(Boolean);
     if (names.length === 2 && names[0] === names[1])
       warnings.push("Select two different skills.");
@@ -327,21 +461,29 @@ function advanceWarnings(currentCharacter, advance, editingId = "") {
     });
   }
   if (
-    type === "Increase Attribute" &&
+    type === "attribute-increase" &&
     targets.some((target) => target.before === "d12" || target.after === target.before)
   )
     warnings.push("Selected attribute is already at d12 and cannot increase.");
 
   const duplicate = (currentCharacter.advances || []).some(
-    (item) => item.id !== editingId && Number(item.number) === Number(advance.number),
+    (item) =>
+      item.id !== editingId &&
+      Number(item.advanceNumber ?? item.number) ===
+        Number(advance.advanceNumber ?? advance.number),
   );
-  if (duplicate) warnings.push(`Advance #${advance.number} is already used.`);
+  if (duplicate)
+    warnings.push(
+      `Advance #${advance.advanceNumber ?? advance.number} is already used.`,
+    );
 
-  const expectedRank = getAdvanceRankFromCount(Math.max(0, Number(advance.number) - 1));
+  const expectedRank = getAdvanceRankFromCount(
+    Math.max(0, Number(advance.advanceNumber ?? advance.number) - 1),
+  );
   if (
-    advance.rank &&
-    ADVANCE_RANKS.includes(advance.rank) &&
-    advance.rank !== expectedRank
+    (advance.rankAtTime || advance.rank) &&
+    ADVANCE_RANKS.includes(advance.rankAtTime || advance.rank) &&
+    (advance.rankAtTime || advance.rank) !== expectedRank
   )
     warnings.push(`Selected rank differs from expected rank ${expectedRank}.`);
 
@@ -352,14 +494,15 @@ function getAdvanceApplicationWarnings(currentCharacter, advance) {
   if (!isSupportedAppliedAdvance(advance.type)) return [];
   const targets = advanceTargetsForLegacy(advance);
   const warnings = [];
+  const type = legacyAdvanceTypeToCanonical(advance.type);
 
-  if (advance.type === "New Edge" && !targets[0]?.targetName)
+  if (type === "edge-gain" && !targets[0]?.targetName)
     warnings.push("Select an Edge before applying.");
-  if (advance.type === "New Powers" && !targets.length)
+  if (type === "power-gain" && !targets.length)
     warnings.push("Select at least one power before applying.");
-  if (advance.type === "Power Points" && parsePowerPointAdvanceAmount(advance) < 1)
+  if (type === "power-points-increase" && parsePowerPointAdvanceAmount(advance) < 1)
     warnings.push("Power Point increase must be at least 1.");
-  if (advance.type === "Increase Skill") {
+  if (type === "skill-increase") {
     const target = targets[0];
     if (!target?.targetName) warnings.push("Select a skill before applying.");
     else {
@@ -370,7 +513,7 @@ function getAdvanceApplicationWarnings(currentCharacter, advance) {
         );
     }
   }
-  if (advance.type === "Increase Two Skills") {
+  if (type === "two-skills-increase") {
     if (targets.length !== 2) warnings.push("Select two skills before applying.");
     const names = targets.map((target) => plainEntryName(target.targetName)).filter(Boolean);
     if (names.length === 2 && names[0] === names[1])
@@ -384,7 +527,7 @@ function getAdvanceApplicationWarnings(currentCharacter, advance) {
         );
     });
   }
-  if (advance.type === "Increase Attribute") {
+  if (type === "attribute-increase") {
     const target = targets[0];
     if (!target?.targetName) warnings.push("Select an attribute before applying.");
     else if (target.before === "d12" || target.after === target.before)
@@ -440,7 +583,7 @@ function parsePowerPointAdvanceAmount(advance) {
   const structuredAmount = (advance.targets || []).find(
     (target) => target.targetType === "power-points" && target.amount,
   )?.amount;
-  const match = `${advance.targetName || ""} ${advance.summary || ""} ${advance.notes || ""}`.match(
+  const match = `${advance.targetName || ""} ${advance.label || ""} ${advance.summary || ""} ${advance.notes || ""}`.match(
     /[+]?(\d+)/,
   );
   return Math.max(
@@ -488,10 +631,10 @@ function attributeTargetForKey(attributeKey) {
 }
 
 function advanceTargetsForLegacy(advance) {
-  const type = advance.type;
+  const type = legacyAdvanceTypeToCanonical(advance.type);
   if (Array.isArray(advance.targets) && advance.targets.length)
     return advance.targets;
-  if (type === "New Edge" && advance.targetName) {
+  if (type === "edge-gain" && advance.targetName) {
     return [
       {
         targetType: "edge",
@@ -501,14 +644,17 @@ function advanceTargetsForLegacy(advance) {
       },
     ];
   }
-  if ((type === "Increase Skill" || type === "Increase Two Skills") && advance.targetName) {
+  if (
+    (type === "skill-increase" || type === "two-skills-increase") &&
+    advance.targetName
+  ) {
     return splitAdvanceTargets(advance.targetName).map(skillTargetForName);
   }
-  if (type === "Increase Attribute" && advance.targetName) {
+  if (type === "attribute-increase" && advance.targetName) {
     const key = normalizeAttributeKey(advance.targetName);
     return key ? [attributeTargetForKey(key)] : [];
   }
-  if (type === "New Powers" && advance.targetName) {
+  if (type === "power-gain" && advance.targetName) {
     return splitAdvanceTargets(advance.targetName).map((name) => {
       const catalogEntry = findPowerCatalogEntryByLooseName(name);
       return {
@@ -519,7 +665,7 @@ function advanceTargetsForLegacy(advance) {
       };
     });
   }
-  if (type === "Power Points") {
+  if (type === "power-points-increase") {
     return [
       {
         targetType: "power-points",
@@ -580,7 +726,7 @@ function createAdvancePower(advance, name, target = null) {
         id,
         name,
         source: "advancement",
-        rank: advance.rank || "Novice",
+        rank: advance.rankAtTime || advance.rank || "Novice",
         active: false,
         addedReason: "advancement",
         isCustom: true,
@@ -690,20 +836,22 @@ function applyAdvanceToCharacter(advance) {
   const targets = advanceTargetsForLegacy(normalized);
   const applicationWarnings = getAdvanceApplicationWarnings(character, normalized);
   if (applicationWarnings.length) throw new Error(applicationWarnings.join(" "));
-  const changes = [];
+  const legacyChanges = [];
 
-  if (normalized.type === "New Edge") {
-    changes.push(createAdvanceEdge(normalized, targets[0]));
-  } else if (normalized.type === "New Powers") {
+  if (normalized.type === "edge-gain") {
+    legacyChanges.push(createAdvanceEdge(normalized, targets[0]));
+  } else if (normalized.type === "power-gain") {
     if (!targets.length) throw new Error("At least one power name is required.");
     targets.forEach((target) =>
-      changes.push(createAdvancePower(normalized, target.targetName, target)),
+      legacyChanges.push(createAdvancePower(normalized, target.targetName, target)),
     );
-  } else if (normalized.type === "Power Points") {
-    changes.push(increasePowerPointsForAdvance(normalized));
-  } else if (normalized.type === "Increase Skill") {
-    changes.push(increaseSkillForAdvance(normalized, targets[0] || normalized.targetName));
-  } else if (normalized.type === "Increase Two Skills") {
+  } else if (normalized.type === "power-points-increase") {
+    legacyChanges.push(increasePowerPointsForAdvance(normalized));
+  } else if (normalized.type === "skill-increase") {
+    legacyChanges.push(
+      increaseSkillForAdvance(normalized, targets[0] || normalized.targetName),
+    );
+  } else if (normalized.type === "two-skills-increase") {
     if (targets.length !== 2)
       throw new Error("Select exactly two skills.");
     const names = targets.map((target) => plainEntryName(target.targetName));
@@ -714,9 +862,13 @@ function applyAdvanceToCharacter(advance) {
       .filter((skill) => skill && getNextDieStep(skill.die || skill.value) === (skill.die || skill.value));
     if (invalid.length)
       throw new Error(`${invalid.map((skill) => skill.name).join(", ")} cannot increase further.`);
-    targets.forEach((target) => changes.push(increaseSkillForAdvance(normalized, target)));
-  } else if (normalized.type === "Increase Attribute") {
-    changes.push(increaseAttributeForAdvance(targets[0] || normalized.targetName));
+    targets.forEach((target) =>
+      legacyChanges.push(increaseSkillForAdvance(normalized, target)),
+    );
+  } else if (normalized.type === "attribute-increase") {
+    legacyChanges.push(
+      increaseAttributeForAdvance(targets[0] || normalized.targetName),
+    );
   }
 
   return {
@@ -724,45 +876,54 @@ function applyAdvanceToCharacter(advance) {
     applied: true,
     appliedByApp: true,
     appliedAt: new Date().toISOString(),
-    appliedChanges: changes,
+    changes: canonicalChangesFromLegacyChanges(legacyChanges),
   };
 }
 
+function canonicalChangeAfterId(change) {
+  return typeof change.after === "object" && change.after
+    ? change.after.id || change.targetId || ""
+    : change.targetId || "";
+}
+
 function canUndoAdvanceChange(advance, change) {
-  if (change.kind === "edge-added") {
-    const edge = character.edges.find((item) => item.id === change.entityId);
+  if (change.targetType === "edge" && change.operation === "add") {
+    const entityId = canonicalChangeAfterId(change);
+    const edge = character.edges.find((item) => item.id === entityId);
+    const expected = typeof change.after === "object" ? change.after : {};
     const safe =
       edge &&
-      edge.name === change.name &&
-      (!change.catalogId || edge.catalogId === change.catalogId) &&
-      (edge.createdByAdvanceId === advance.id ||
-        change.createdByAdvanceId === advance.id);
+      edge.name === (expected.name || change.displayLabel) &&
+      (!expected.catalogId || edge.catalogId === expected.catalogId) &&
+      edge.createdByAdvanceId === advance.id;
     return {
       safe,
       message: safe
-        ? `Remove Edge ${change.name}.`
-        : `Cannot safely remove Edge ${change.name}; it was changed or is missing.`,
+        ? `Remove Edge ${edge.name}.`
+        : `Cannot safely remove Edge ${change.displayLabel}; it was changed or is missing.`,
     };
   }
 
-  if (change.kind === "power-added") {
-    const power = character.powers.find((item) => item.id === change.entityId);
+  if (change.targetType === "power" && change.operation === "add") {
+    const entityId = canonicalChangeAfterId(change);
+    const power = character.powers.find((item) => item.id === entityId);
+    const expected = typeof change.after === "object" ? change.after : {};
     const safe =
       power &&
-      power.name === change.name &&
-      (!change.catalogId || power.catalogId === change.catalogId) &&
-      (power.createdByAdvanceId === advance.id ||
-        change.createdByAdvanceId === advance.id);
+      power.name === (expected.name || change.displayLabel) &&
+      (!expected.catalogId || power.catalogId === expected.catalogId) &&
+      power.createdByAdvanceId === advance.id;
     return {
       safe,
       message: safe
-        ? `Remove Power ${change.name}.`
-        : `Cannot safely remove Power ${change.name}; it was changed or is missing.`,
+        ? `Remove Power ${power.name}.`
+        : `Cannot safely remove Power ${change.displayLabel}; it was changed or is missing.`,
     };
   }
 
-  if (change.kind === "skill-increased") {
-    const skill = findSkillByName(change.skillName);
+  if (change.targetType === "skill") {
+    const skillName = change.targetName || change.displayLabel;
+    const skill = findSkillByName(skillName);
     const current = skill?.die || skill?.value || "";
     const safe =
       skill &&
@@ -772,13 +933,16 @@ function canUndoAdvanceChange(advance, change) {
     return {
       safe,
       message: safe
-        ? `Revert ${change.skillName} from ${change.after} to ${change.before || "untrained"}.`
-        : `Cannot safely revert ${change.skillName}; current value is ${current || "missing"}.`,
+        ? `Revert ${skillName} from ${change.after} to ${change.before || "untrained"}.`
+        : `Cannot safely revert ${skillName}; current value is ${current || "missing"}.`,
     };
   }
 
-  if (change.kind === "attribute-increased") {
-    const key = change.attributeKey || normalizeAttributeKey(change.attributeName);
+  if (change.targetType === "attribute") {
+    const key =
+      change.targetId ||
+      String(change.path || "").replace(/^attributes\./, "") ||
+      normalizeAttributeKey(change.displayLabel);
     const current = character.attributes?.[key] || "";
     const safe =
       key &&
@@ -789,11 +953,11 @@ function canUndoAdvanceChange(advance, change) {
       safe,
       message: safe
         ? `Revert ${displayNameFromKey(key)} from ${change.after} to ${change.before}.`
-        : `Cannot safely revert ${change.attributeName}; current value is ${current || "missing"}.`,
+        : `Cannot safely revert ${change.displayLabel}; current value is ${current || "missing"}.`,
     };
   }
 
-  if (change.kind === "power-points-increased") {
+  if (change.targetType === "power-points") {
     const resource = powerPointResource();
     const currentMax = Math.max(0, Math.floor(Number(resource?.max) || 0));
     const safe = resource && currentMax === change.after;
@@ -811,14 +975,12 @@ function canUndoAdvanceChange(advance, change) {
 
   return {
     safe: false,
-    message: `Cannot safely undo unknown change ${change.kind || "unknown"}.`,
+    message: `Cannot safely undo unknown change ${change.displayLabel || "unknown"}.`,
   };
 }
 
 function getAdvanceUndoPlan(advance) {
-  const changes = Array.isArray(advance.appliedChanges)
-    ? advance.appliedChanges
-    : [];
+  const changes = Array.isArray(advance.changes) ? advance.changes : [];
   const checks = changes.map((change) => canUndoAdvanceChange(advance, change));
   return {
     safe: Boolean(changes.length) && checks.every((check) => check.safe),
@@ -827,18 +989,23 @@ function getAdvanceUndoPlan(advance) {
 }
 
 function undoAdvanceChange(change) {
-  if (change.kind === "edge-added") {
-    character.edges = character.edges.filter((edge) => edge.id !== change.entityId);
-  } else if (change.kind === "power-added") {
-    character.powers = character.powers.filter((power) => power.id !== change.entityId);
-  } else if (change.kind === "skill-increased") {
-    const skill = findSkillByName(change.skillName);
+  if (change.targetType === "edge" && change.operation === "add") {
+    const entityId = canonicalChangeAfterId(change);
+    character.edges = character.edges.filter((edge) => edge.id !== entityId);
+  } else if (change.targetType === "power" && change.operation === "add") {
+    const entityId = canonicalChangeAfterId(change);
+    character.powers = character.powers.filter((power) => power.id !== entityId);
+  } else if (change.targetType === "skill") {
+    const skill = findSkillByName(change.targetName || change.displayLabel);
     if (skill) {
       if (change.before) skill.die = change.before;
       else character.skills = character.skills.filter((item) => item !== skill);
     }
-  } else if (change.kind === "attribute-increased") {
-    const key = change.attributeKey || normalizeAttributeKey(change.attributeName);
+  } else if (change.targetType === "attribute") {
+    const key =
+      change.targetId ||
+      String(change.path || "").replace(/^attributes\./, "") ||
+      normalizeAttributeKey(change.displayLabel);
     if (key) {
       character.attributes[key] = change.before;
       if (key === "strength") {
@@ -846,7 +1013,7 @@ function undoAdvanceChange(change) {
         character.weaponStrength = change.before;
       }
     }
-  } else if (change.kind === "power-points-increased") {
+  } else if (change.targetType === "power-points") {
     const resource = powerPointResource();
     if (resource) {
       resource.max = change.before;
@@ -856,5 +1023,5 @@ function undoAdvanceChange(change) {
 }
 
 function undoAdvanceChanges(advance) {
-  (advance.appliedChanges || []).forEach(undoAdvanceChange);
+  (advance.changes || []).forEach(undoAdvanceChange);
 }

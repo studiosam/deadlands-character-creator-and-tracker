@@ -87,6 +87,33 @@ const ADVANCE_APPLY_TYPES = [
   "New Powers",
   "Power Points",
 ];
+const CANONICAL_ADVANCE_TYPE_LABELS = {
+  "edge-gain": "New Edge",
+  "skill-increase": "Increase Skill",
+  "two-skills-increase": "Increase Two Skills",
+  "attribute-increase": "Increase Attribute",
+  "power-gain": "New Powers",
+  "power-points-increase": "Power Points",
+  "gm-exception": "Other / Marshal-approved",
+  "manual-history": "Other / Marshal-approved",
+  "imported-history": "Imported History",
+};
+const LEGACY_ADVANCE_TYPE_MAP = {
+  "New Edge": "edge-gain",
+  "Increase Skill": "skill-increase",
+  "Increase Two Skills": "two-skills-increase",
+  "Increase Attribute": "attribute-increase",
+  "New Powers": "power-gain",
+  "Power Points": "power-points-increase",
+};
+const CANONICAL_ADVANCE_APPLY_TYPES = [
+  "edge-gain",
+  "skill-increase",
+  "two-skills-increase",
+  "attribute-increase",
+  "power-gain",
+  "power-points-increase",
+];
 const DIE_STEPS = ["d4", "d6", "d8", "d10", "d12"];
 const DEADLANDS_SKILL_LINKED_ATTRIBUTES = {
   Academics: "Smarts",

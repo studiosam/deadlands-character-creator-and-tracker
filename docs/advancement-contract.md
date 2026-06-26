@@ -14,8 +14,8 @@ The explainability model is:
 Creation baseline + Advancement ledger + GM exceptions/corrections = Current character
 ```
 
-This contract is planning documentation only. It does not describe newly
-implemented UI behavior.
+This contract describes the canonical Advancement ledger model and the current
+implementation boundaries.
 
 ## Current Data Shape
 
@@ -48,42 +48,69 @@ The current app stores character data directly on the active character object.
   `Other / Marshal-approved` advance type, import notes, setup warnings, and
   manual/custom entry sources.
 
-### Current Legacy `character.advances` Shape
+### Current Canonical App-Owned `character.advances` Shape
 
-The current pre-release app-owned implementation normalizes advances into
-records with these fields:
+The app-owned Advancement implementation now normalizes newly saved advances
+into canonical records using these fields as the source of truth:
 
 - `id`
+- `type`
+- `label`
+- `source`
+- `advanceNumber`
+- `rankAtTime`
+- `createdAt`
+- `changes`
+- `notes`
+
+Canonical `changes` entries use:
+
+- `path`
+- `before`
+- `after`
+- `displayLabel`
+
+Optional change metadata may include `targetId`, `targetName`, `targetType`,
+`operation`, and `metadata` when useful for display or safe undo.
+
+The app may temporarily read old pre-release app-owned fields during
+normalization only where needed to keep the migration incremental:
+
 - `number`
 - `rank`
-- `type`
 - `summary`
+- `dateAdded`
+- `appliedChanges`
+
+These old fields are not the long-term source of truth and should not be
+expanded into a permanent bridge. Old pre-release app-owned advancement
+compatibility is intentionally not guaranteed.
+
+Current app-owned records may also carry transitional control fields used by
+the existing UI and safe-undo flow:
+
 - `targetName`
 - `targetType`
 - `targetId`
 - `catalogId`
 - `targets`
-- `notes`
-- `dateAdded`
-- `source`
 - `applied`
 - `appliedByApp`
 - `appliedAt`
-- `appliedChanges`
 
-Current supported applied types are `New Edge`, `Increase Skill`,
-`Increase Two Skills`, `Increase Attribute`, `New Powers`, and `Power Points`.
-Current legacy/manual type support also includes `Other / Marshal-approved`.
+Those fields are not the canonical ledger identity. They should be reduced or
+re-scoped only in focused follow-up work.
 
-`appliedChanges` is a legacy change-capture shape. It records kind-specific
-objects such as `edge-added`, `power-added`, `skill-increased`,
-`attribute-increased`, and `power-points-increased`. Some imported or legacy
-entries may have no reliable `appliedChanges`.
+Current supported applied UI labels map to canonical types:
 
-This legacy app-owned shape is not the long-term model. Old pre-release
-app-owned advancement compatibility is intentionally not guaranteed. The next
-implementation should migrate app-owned Advancement to the canonical ledger
-shape as the app's single internal model.
+- `New Edge` -> `edge-gain`
+- `Increase Skill` -> `skill-increase`
+- `Increase Two Skills` -> `two-skills-increase`
+- `Increase Attribute` -> `attribute-increase`
+- `New Powers` -> `power-gain`
+- `Power Points` -> `power-points-increase`
+- `Other / Marshal-approved` -> `gm-exception` or `manual-history`
+- Imported Savaged.us history -> `imported-history`
 
 Savaged.us import support remains in scope. Imported Savaged.us advancement
 history should be preserved as imported history when present, but it should not
@@ -113,16 +140,16 @@ Inspected files:
 
 ### Supported Type Classification
 
-| Type                       | Current classification                                                                 | Current behavior                                                                                                                                                                                                                                                                                                                                                   |
-| -------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Increase Skill`           | Implemented and auto-applied; Needs tests                                              | Uses a generated skill target, validates an existing eligible trained skill equal to or greater than its linked attribute, increases one die step, writes one `skill-increased` `appliedChanges` entry, and can safely undo when the current die still matches the recorded `after` value.                                                                         |
-| `Increase Two Skills`      | Implemented and auto-applied; Needs tests                                              | Uses two generated skill targets, validates two different eligible skills below their linked attributes, applies both skill increases as one advance, writes two `skill-increased` `appliedChanges` entries, and can safely undo both when current values still match. This already matches the official one-advance/two-skill model.                              |
-| `Increase Attribute`       | Implemented and auto-applied; Partially implemented; Needs tests; Needs redesign later | Uses a generated attribute target, increases one attribute die step, updates Strength-dependent armor/weapon strength when Strength changes, writes one `attribute-increased` `appliedChanges` entry, and can safely undo when the current die still matches. It does not yet track the official once-per-Rank limit or the Legendary every-other-Advance cadence. |
-| `New Edge`                 | Implemented and auto-applied; Partially implemented; Needs tests; Needs redesign later | Adds a catalog or custom Edge with `source: "advancement"` and `createdByAdvanceId`, writes one `edge-added` `appliedChanges` entry, and can safely undo by removing the same created Edge. Full Rank and requirements enforcement remains deferred.                                                                                                               |
-| `New Powers`               | Implemented and auto-applied; Partially implemented; Needs tests; Needs redesign later | Adds one or more catalog/custom powers with `source: "advancement"`, `addedReason: "advancement"`, and `createdByAdvanceId`, writes `power-added` `appliedChanges`, and can safely undo by removing created powers. Power eligibility and starting-vs-advance separation remain deferred.                                                                          |
-| `Power Points`             | Implemented and auto-applied; Partially implemented; Needs tests; Needs redesign later | Increases the max Power Points resource by the selected amount, creates a Power Points resource if missing, writes one `power-points-increased` `appliedChanges` entry, and can safely undo when the current max still matches. Whether this belongs in Advancement, Arcane, or a GM exception model remains an open design issue.                                 |
-| `Other / Marshal-approved` | Implemented as manual/history only; Needs tests; Needs redesign later                  | Records manual history with target, summary, notes, source, and date fields. It is not in `ADVANCE_APPLY_TYPES`, so the app does not auto-apply or undo character mutations for this type.                                                                                                                                                                         |
-| Reduce or Remove Hindrance | Legacy compatibility only through `Other / Marshal-approved`; Needs redesign later     | There is no dedicated advancement type for reducing or removing Hindrances. The current app can record a manual history entry, but it does not apply a Minor removal, Major reduction, two-Advance Major removal spend, or GM-approved exception path.                                                                                                             |
+| Type                       | Current classification                                                                 | Current behavior                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Increase Skill`           | Implemented and auto-applied                                                           | Uses a generated skill target, validates an existing eligible trained skill equal to or greater than its linked attribute, increases one die step, writes canonical `type: "skill-increase"` with one skill `changes` item, and can safely undo when the current die still matches the recorded `after` value.                                             |
+| `Increase Two Skills`      | Implemented and auto-applied                                                           | Uses two generated skill targets, validates two different eligible skills below their linked attributes, applies both skill increases as one advance, writes canonical `type: "two-skills-increase"` with two skill `changes` items, and can safely undo both when current values still match. This matches the official one-advance/two-skill model.      |
+| `Increase Attribute`       | Implemented and auto-applied; Partially implemented; Needs tests; Needs redesign later | Uses a generated attribute target, increases one attribute die step, updates Strength-dependent armor/weapon strength when Strength changes, writes canonical `type: "attribute-increase"` with one attribute `changes` item, and can safely undo when the current die still matches. It does not yet track the once-per-Rank or Legendary cadence limits. |
+| `New Edge`                 | Implemented and auto-applied; Partially implemented; Needs tests; Needs redesign later | Adds a catalog or custom Edge with `source: "advancement"` and `createdByAdvanceId`, writes canonical `type: "edge-gain"` with one add `changes` item, and can safely undo by removing the same created Edge. Full Rank and requirements enforcement remains deferred.                                                                                     |
+| `New Powers`               | Implemented and auto-applied; Partially implemented; Needs tests; Needs redesign later | Adds one or more catalog/custom powers with `source: "advancement"`, `addedReason: "advancement"`, and `createdByAdvanceId`, writes canonical `type: "power-gain"` with one add `changes` item per power, and can safely undo by removing created powers. Power eligibility and starting-vs-advance separation remain deferred.                            |
+| `Power Points`             | Implemented and auto-applied; Partially implemented; Needs tests; Needs redesign later | Increases the max Power Points resource by the selected amount, creates a Power Points resource if missing, writes canonical `type: "power-points-increase"` with one resource `changes` item, and can safely undo when the current max still matches. Whether this belongs in Advancement, Arcane, or a GM exception model remains an open design issue.  |
+| `Other / Marshal-approved` | Implemented as manual/history only; Needs tests; Needs redesign later                  | Records manual history as canonical `manual-history` or `gm-exception` with `changes: []` unless the UI applies a reliable mutation. It does not auto-apply or undo character mutations.                                                                                                                                                                   |
+| Reduce or Remove Hindrance | Needs redesign later                                                                   | There is no dedicated advancement type for reducing or removing Hindrances. The current app can record a manual history entry, but it does not apply a Minor removal, Major reduction, two-Advance Major removal spend, or GM-approved exception path.                                                                                                     |
 
 ### Official Rules Alignment
 
@@ -148,7 +175,7 @@ advance with:
 - `applied: true`
 - `appliedByApp: true`
 - `appliedAt: new Date().toISOString()`
-- `appliedChanges: [...]`
+- canonical `changes: [...]`
 
 When a supported type is saved without application, or when
 `Other / Marshal-approved` is saved, the entry remains history-only with:
@@ -156,25 +183,24 @@ When a supported type is saved without application, or when
 - `applied: false`
 - `appliedByApp: false`
 - `appliedAt: ""`
-- `appliedChanges: []`
+- `changes: []`
 
-Undo behavior is tied to legacy `appliedChanges`. Removing an applied advance
+Undo behavior is based on canonical `changes`. Removing an applied advance
 offers history-only removal when undo is unsafe, or remove-and-undo when every
-recorded change still matches the current character state. This behavior should
-be migrated to canonical `changes` if undo remains in the first canonical
-implementation slice.
+recorded `after` value still matches the current character state.
 
 ### Increase Skill Modeling
 
-`Increase Skill` is currently modeled as one legacy advance with one skill
+`Increase Skill` is currently modeled as one canonical advance with one skill
 target. The generated entry uses:
 
-- `type: "Increase Skill"`
+- `type: "skill-increase"`
+- `label` like `Increase Skill: Shooting d6 -> d8`
 - `targetType: "skill"`
 - `targetName` set to the selected skill name
 - `targets[0]` with `targetType`, `targetName`, `targetId`, `before`, `after`,
   linked-attribute metadata, and eligibility flags
-- `summary` like `Increase Skill: Shooting d6 -> d8`
+- `changes[0]` with `path`, `before`, `after`, and `displayLabel`
 
 Application calls `increaseSkillForAdvance()` once. It reads the current skill
 die from `character.skills`, computes the next die step, mutates `skill.die`,
@@ -192,37 +218,26 @@ attribute are routed to `Increase Two Skills`.
 
 ### Increase Two Skills Modeling
 
-`Increase Two Skills` is currently modeled as one legacy advance containing two
+`Increase Two Skills` is currently modeled as one canonical advance containing two
 skill targets. The generated entry uses:
 
-- `type: "Increase Two Skills"`
+- `type: "two-skills-increase"`
+- `label` like `Increase Two Skills: Academics unskilled 1d4-2 -> d4, Battle unskilled 1d4-2 -> d4`
 - `targetType: "skill"`
 - `targetName` as a comma-separated list of the two selected skills
 - `targets` with two target records, each carrying `before`, `after`,
   linked-attribute metadata, unskilled state, and eligibility flags
-- `summary` like `Increase Two Skills: Academics unskilled 1d4-2 -> d4, Battle unskilled 1d4-2 -> d4`
+- `changes` with two canonical skill changes
 
 Application validates exactly two different targets, then calls
 `increaseSkillForAdvance()` once for each target. The resulting saved advance
-has one `appliedChanges` array with two `skill-increased` entries. This is
-already close to the proposed ledger direction of one advance with multiple
-skill changes and should be preserved.
+has one `changes` array with two skill changes. This preserves the
+one-advance/multiple-change model.
 
 ### Legacy Shape Compared To Canonical Ledger Shape
 
-The current app writes and depends on the legacy fields listed above. New
-entries do not currently write the canonical ledger fields. Imported or manually
-constructed records may preserve unknown canonical-like fields because
-normalization starts by spreading the raw advance object, but the app does not
-generate those fields or use them as the source of truth.
-
-Canonical fields missing from newly created advancement entries:
-
-- `label`
-- `advanceNumber`
-- `rankAtTime`
-- `createdAt`
-- `changes`
+The current app-owned shape now writes canonical ledger fields for newly saved
+advances. Normalization may still read legacy fields as migration inputs:
 
 Old app-owned fields are no longer the long-term source of truth:
 
@@ -246,9 +261,12 @@ the internal source of truth:
 - `appliedChanges` can become canonical `changes` only when the target path,
   before value, after value, and display label are reliable.
 
+New app-owned records should not depend on legacy fields. Export/import of this
+app's new records should preserve canonical fields.
+
 ### Canonical Advancement Model Migration
 
-Recommended next implementation plan:
+Implemented migration direction:
 
 - Replace the app-owned legacy advancement shape with the canonical ledger
   shape as the app's single internal model.
@@ -263,11 +281,7 @@ Recommended next implementation plan:
   `appliedChanges` may be read temporarily during migration only where needed
   to keep the transition incremental. They should not be expanded or preserved
   as a permanent transition model.
-- Safe undo should be based on canonical `changes`, not legacy
-  `appliedChanges`.
-- If safe undo cannot be cleanly migrated in the first implementation slice,
-  undo should be disabled or deferred for canonical advances rather than
-  preserving the old model indefinitely.
+- Safe undo is based on canonical `changes`, not legacy `appliedChanges`.
 - Imported Savaged.us advancement history should become canonical
   imported-history entries where practical:
   - `type: "imported-history"`
@@ -384,41 +398,52 @@ Optional future fields may include `targetId`, `targetName`, `targetType`,
 
 The ledger should support these post-creation growth categories:
 
-- Gain a New Edge.
+- Gain a New Edge as canonical `type: "edge-gain"`.
 - Increase One Skill as canonical `type: "skill-increase"`.
 - Increase Two Skills as canonical `type: "two-skills-increase"`, represented
   by one advance entry with two skill changes.
-- Increase One Attribute, including once-per-Rank tracking and Legendary
-  every-other-Advance handling.
+- Increase One Attribute as canonical `type: "attribute-increase"`, with
+  once-per-Rank tracking and Legendary every-other-Advance handling deferred.
 - Reduce or Remove Hindrance.
-- New Power when granted through an Edge or table-approved advancement path.
-- Other table-approved change or GM exception.
+- New Power as canonical `type: "power-gain"` when granted through an Edge or
+  table-approved advancement path.
+- Power Points as canonical `type: "power-points-increase"` while the app keeps
+  the current behavior.
+- Other table-approved change or GM exception as canonical
+  `type: "manual-history"` or `type: "gm-exception"`.
 
-Migration note: current UI code also mentions `Increase Two Skills`,
-`New Powers`, and `Power Points`. The first canonical implementation should
-focus on app-owned skill advancement only. Other current applied types should
-not be redesigned until their canonical type semantics are explicitly scoped.
+Migration note: current UI labels remain user-facing labels. Internally,
+newly saved app-owned records use canonical machine-readable type names.
 
 ## First Implementation Slice
 
-Canonicalize app-owned skill advancement.
+Canonicalize current app-owned Advancement records.
 
 The slice should:
 
+- Map all currently supported app-owned advancement types to canonical type
+  names at the data-shape level.
 - Replace app-owned `Increase Skill` records with canonical
   `type: "skill-increase"` entries.
 - Replace app-owned `Increase Two Skills` records with canonical
   `type: "two-skills-increase"` entries.
+- Represent `New Edge` as `type: "edge-gain"`.
+- Represent `Increase Attribute` as `type: "attribute-increase"`.
+- Represent `New Powers` as `type: "power-gain"`.
+- Represent `Power Points` as `type: "power-points-increase"`.
+- Represent `Other / Marshal-approved` as `type: "manual-history"` or
+  `type: "gm-exception"` with `changes: []` unless a reliable mutation exists.
 - Keep `Increase Two Skills` as one advance entry with two skill changes.
 - Store canonical fields: `id`, `type`, `label`, `source`, `advanceNumber`,
   `rankAtTime`, `createdAt`, `changes`, and `notes`.
 - Store canonical `changes` using `path`, `before`, `after`, and
   `displayLabel`.
-- Persist canonical app-owned skill advances through save and reload.
-- Update the Character Sheet immediately after applying the canonical skill
-  advance.
-- Keep the implementation focused on app-owned skill advancement and avoid
-  expanding the legacy shape.
+- Persist canonical app-owned advances through save and reload.
+- Update the Character Sheet immediately after applying canonical advances.
+- Keep existing applied behavior for current types and avoid expanding the
+  legacy shape.
+- Focus the deepest first-pass behavioral tests on `Increase Skill` and
+  `Increase Two Skills` because they have the cleanest before/after data.
 
 The slice should not include:
 
@@ -427,15 +452,14 @@ The slice should not include:
 - Hindrance reduction/removal.
 - Power validation.
 - Imported advancement reconstruction.
-- Full undo migration unless it is straightforward.
 
 This slice should be first because:
 
 - `Increase Skill` and `Increase Two Skills` already have working application
   behavior that should be preserved at the user-facing level.
 - Skill advancement has simple, reliable before/after values.
-- Canonical skill changes establish the ledger model before more complex
-  advance types are migrated.
+- Canonical skill changes provide the clearest proof that the ledger model
+  works before stricter rule-enforcement features are added.
 
 ## Imported Character Handling
 
@@ -479,13 +503,9 @@ Character Setup, and Sources & Rulesets respectively.
 
 ## Undo and Corrections
 
-Undo is not required for the first canonical ledger slice.
-
-The current app has legacy safe-undo checks for some `appliedChanges`, but
-canonical undo should be based on canonical `changes`, not legacy
-`appliedChanges`. If safe undo cannot be cleanly migrated in the first
-implementation slice, undo should be disabled or deferred for canonical
-advances rather than preserving the old app-owned model indefinitely.
+Undo is based on canonical `changes`, not legacy `appliedChanges`. Safe undo is
+available only when the current character still matches the recorded `after`
+value for every change in the advance.
 
 If the current character no longer matches a recorded `after` value, the app
 should not silently reverse the entry.

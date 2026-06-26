@@ -22,6 +22,45 @@ function savagedBook(item) {
     : "Deadlands";
 }
 
+function savagedAdvanceLabel(advance) {
+  return (
+    advance?.label ||
+    advance?.summary ||
+    advance?.description ||
+    advance?.name ||
+    advance?.text ||
+    ""
+  );
+}
+
+function savagedAdvances(data) {
+  return arr(data.advances).map((advance, index) => {
+    const advanceNumber = Math.max(
+      1,
+      Math.floor(Number(advance?.advanceNumber ?? advance?.number) || index + 1),
+    );
+    const label = savagedAdvanceLabel(advance) || `Imported Advance ${advanceNumber}`;
+    return {
+      id: slugify(
+        advance?.uuid ||
+          advance?.id ||
+          `imported-advance-${advanceNumber}-${label}`,
+      ),
+      type: "imported-history",
+      label,
+      source: "imported",
+      advanceNumber,
+      rankAtTime:
+        advance?.rankAtTime ||
+        advance?.rank ||
+        getAdvanceRankFromCount(Math.max(0, advanceNumber - 1)),
+      createdAt: advance?.createdAt || advance?.dateAdded || "",
+      changes: [],
+      notes: advance?.notes || advance?.description || advance?.summary || "",
+    };
+  });
+}
+
 function savagedAmmoKey(item) {
   const text = `${item?.name || ""} ${item?.notes || ""}`.toLowerCase();
   if (/shotgun|shell/.test(text)) return "shotgun-shells";
@@ -612,7 +651,7 @@ function fromSavagedUs(data) {
       : null,
     resources,
     powers,
-    advances: Array.isArray(data.advances) ? data.advances : [],
+    advances: savagedAdvances(data),
     hucksterDeal: arcaneConfig?.key === "huckster" ? makeHucksterDeal() : null,
     conditions: clone(defaultCharacter.conditions),
     temporaryConditions: clone(defaultCharacter.temporaryConditions),
