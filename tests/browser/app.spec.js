@@ -137,6 +137,15 @@ async function openCombat(page) {
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
 }
 
+async function openCharacterSetupReview(page) {
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const setupPanel = page.locator("#characterSetupPanel");
+  if (!(await setupPanel.isVisible())) {
+    await page.locator("#reviewSetupBtn").click();
+  }
+  await expect(setupPanel).toBeVisible();
+}
+
 function woundsBlock(page) {
   return page.locator(".block").filter({
     has: page.getByRole("heading", { name: "Wounds" }),
@@ -377,6 +386,22 @@ test("starts new characters directly in character setup", async ({ page }) => {
     .toBe(0);
 });
 
+test("normalizes legacy characters without setupStatus as complete", async ({
+  page,
+}) => {
+  const setupStatus = await page.evaluate(
+    () =>
+      normalize({
+        name: "Legacy Character",
+        rank: "Novice",
+        attributes: {},
+        skills: [],
+      }).setupStatus,
+  );
+
+  expect(setupStatus).toBe("complete");
+});
+
 test("finishes character setup and starts playing with a saved character", async ({
   page,
 }) => {
@@ -418,8 +443,10 @@ test("finishes character setup and starts playing with a saved character", async
             slotCount: Object.keys(library?.charactersById || {}).length,
             activeName: active?.name || "",
             activeFinalized: Boolean(active?.creation?.finalized),
+            activeSetupStatus: active?.setupStatus || "",
             trackerName: tracker?.name || "",
             trackerFinalized: Boolean(tracker?.creation?.finalized),
+            trackerSetupStatus: tracker?.setupStatus || "",
           };
         },
         { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
@@ -429,8 +456,10 @@ test("finishes character setup and starts playing with a saved character", async
       slotCount: 1,
       activeName: "Finished Setup Character",
       activeFinalized: true,
+      activeSetupStatus: "complete",
       trackerName: "Finished Setup Character",
       trackerFinalized: true,
+      trackerSetupStatus: "complete",
     });
 
   await reloadIntoTracker(page);
@@ -440,6 +469,10 @@ test("finishes character setup and starts playing with a saved character", async
   );
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeHidden();
+  await expect(page.locator("#reviewSetupBtn")).toBeVisible();
+  await page.locator("#reviewSetupBtn").click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await expect(page.locator(".setup-persistence-panel")).toContainText(
     "Character ready to play",
   );
@@ -531,7 +564,8 @@ test("edits concept information in character setup and preserves it across reloa
   page,
 }) => {
   await enterTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
+  await page.locator("[data-setup-step='concept']").click();
 
   const setupPanel = page.locator("#characterSetupPanel");
   await expect(setupPanel).toBeVisible();
@@ -576,7 +610,8 @@ test("edits concept information in character setup and preserves it across reloa
   );
 
   await reloadIntoTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
+  await page.locator("[data-setup-step='concept']").click();
 
   await expect(page.locator("#characterName")).toContainText(
     "Concept Test Character",
@@ -601,7 +636,7 @@ test("edits concept information in character setup and preserves it across reloa
 
 test("shows human-only race ancestry setup as read-only", async ({ page }) => {
   await enterTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
 
   await page.locator("[data-setup-step='ancestry']").click();
   const ancestryPanel = page.locator("#setupRaceAncestryPanel");
@@ -633,7 +668,7 @@ test("selects hindrances in character setup and summarizes point expectations", 
   page,
 }) => {
   await enterTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
 
   await page.locator("[data-setup-step='hindrances']").click();
   const hindrancePanel = page.locator("#setupHindrancesPanel");
@@ -703,7 +738,7 @@ test("selects hindrances in character setup and summarizes point expectations", 
   );
 
   await reloadIntoTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
   await page.locator("[data-setup-step='hindrances']").click();
   await expect(page.locator("#setupHindrancesPanel")).toContainText("Bad Luck");
   await expect(page.locator("#setupHindrancesPanel")).toContainText("Cursed");
@@ -1247,6 +1282,96 @@ test("imports JSON from the landing page only after confirmation", async ({
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator(".shell")).toBeVisible();
   await expect(page.locator("#characterName")).toContainText("Lehi Larson");
+});
+
+test("shows setup review for imported characters until confirmed", async ({
+  page,
+}) => {
+  const sample = await page.request.get(
+    "/docs/Sample%20Characters/savaged-us-json-export-character-Lehi%20Larson.json",
+  );
+  expect(sample.ok()).toBeTruthy();
+
+  await enterTracker(page);
+  await openHeaderMenu(page);
+  await page.locator("#pasteImportBtn").click();
+  await page.locator("#importJsonText").fill(await sample.text());
+  await page.locator("#confirmPasteImportBtn").click();
+  await expect(page.locator("#characterName")).toContainText("Lehi Larson");
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#characterSetupStepper")).toBeVisible();
+  await expect(page.locator("#setupReviewPanel")).toBeVisible();
+  await expect(
+    page
+      .locator("#characterSetupPanel")
+      .getByRole("button", { name: "Confirm Setup" }),
+  ).toBeVisible();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ libraryKey, storageKey }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active = library?.charactersById?.[library.activeCharacterId];
+          return {
+            libraryStatus: active?.character?.setupStatus || "",
+            trackerStatus: tracker?.setupStatus || "",
+          };
+        },
+        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+      ),
+    )
+    .toEqual({
+      libraryStatus: "needsReview",
+      trackerStatus: "needsReview",
+    });
+
+  await page
+    .locator("#characterSetupPanel")
+    .getByRole("button", { name: "Confirm Setup" })
+    .click();
+  await expect(page.locator("#characterSetupPanel")).toBeHidden();
+  await expect(page.locator("#reviewSetupBtn")).toBeVisible();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ libraryKey, storageKey }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active = library?.charactersById?.[library.activeCharacterId];
+          return {
+            libraryStatus: active?.character?.setupStatus || "",
+            trackerStatus: tracker?.setupStatus || "",
+          };
+        },
+        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+      ),
+    )
+    .toEqual({
+      libraryStatus: "complete",
+      trackerStatus: "complete",
+    });
+
+  await reloadIntoTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeHidden();
+  await expect(page.locator("#reviewSetupBtn")).toBeVisible();
+
+  await page.locator("#reviewSetupBtn").click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#setupReviewPanel")).toBeVisible();
 });
 
 test("keeps duplicated character state independent across switching and reload", async ({

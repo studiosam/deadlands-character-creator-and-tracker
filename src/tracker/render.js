@@ -9,6 +9,17 @@ const CHARACTER_SETUP_STEPS = [
   { id: "review", label: "Review" },
 ];
 var characterSetupStep = "concept";
+var characterSetupReviewOpen = false;
+
+function characterSetupReviewMode() {
+  return character?.setupStatus === "needsReview" || characterSetupReviewOpen;
+}
+
+function renderCharacterTabMode() {
+  const setupMode = characterSetupReviewMode();
+  els.characterSetupPanel?.classList.toggle("hidden", !setupMode);
+  els.reviewSetupBtn?.classList.toggle("hidden", setupMode);
+}
 
 function characterIdentitySubtitle(separator = " ") {
   return [character.rank, character.ancestry, character.archetype]
@@ -79,6 +90,7 @@ function render() {
 
   renderCharacterSummary();
   renderCharacterSetup();
+  renderCharacterTabMode();
   renderAdvancement();
   renderArmor();
   renderWeapons();
@@ -891,6 +903,7 @@ function renderSetupPersistencePanel() {
       </div>
       <div class="creator-actions">
         <button type="button" data-setup-action="saveDraftCharacter">Save Draft</button>
+        <button type="button" data-setup-action="confirmSetup">Confirm Setup</button>
         <button type="button" data-setup-action="finishSetup">${finishLabel}</button>
         <button class="ghost danger-lite" type="button" data-setup-action="discardDraftCharacter">Discard Draft</button>
       </div>
@@ -910,6 +923,7 @@ function renderSetupPersistencePanel() {
     </div>
     <div class="creator-actions">
       <button class="ghost" type="button" data-setup-action="saveCharacterNow">Save Now</button>
+      <button type="button" data-setup-action="confirmSetup">Confirm Setup</button>
       <button type="button" data-setup-action="finishSetup">${finishLabel}</button>
       <button class="ghost danger-lite" type="button" data-setup-action="deleteCharacterSlot">Delete Character</button>
     </div>

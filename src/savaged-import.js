@@ -543,6 +543,7 @@ function fromSavagedUs(data) {
 
   return normalize({
     source: "savaged.us",
+    setupStatus: "needsReview",
     sourceId: data.uuid || data.id || data.saveID,
     name: data.name || "Imported Character",
     rank: data.rankName || data.rank || "Novice",

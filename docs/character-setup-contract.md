@@ -42,6 +42,51 @@ The current MVP should use one built-in profile and avoid making users configure
 
 The Character tab currently combines three different jobs: one-time Character Setup, the long-term Character Sheet, and Advancement/history management. The cleanup should separate those concerns without removing existing data or changing persistence behavior.
 
+### Post-Confirmation Editing Model
+
+Character Setup is a one-time confirmation workflow used after character creation or import. It exists to confirm the initial build, resolve import/setup warnings, and establish what belongs to the character's starting baseline.
+
+After setup is confirmed, the Character tab should default to a normal Character Sheet: a clean, read-only or mostly read-only reference view for identity, core stats, traits, Edges, Hindrances, and short notes. The normal sheet should show character data clearly, but it should not expose every setup control by default.
+
+The Characters panel should become the deliberate place to manage characters and edit stable character profile information after confirmation. This keeps ordinary sheet reference separate from higher-intent character-management actions.
+
+The Characters panel may eventually handle:
+
+- Switch character.
+- Rename character.
+- Duplicate character.
+- Delete character.
+- Export character.
+- Edit character identity/profile fields.
+- Reopen Setup Review.
+- View or change setup status when appropriate.
+
+Character identity/profile fields include:
+
+- Name.
+- Player.
+- Profession or title.
+- Archetype or concept.
+- Age.
+- Gender.
+- Background.
+- Description.
+- Source/import status.
+- Setup status.
+
+The Characters panel should not become the normal place for casual rules edits after play starts. Post-confirmation editing boundaries should be:
+
+- Advancement edits character growth.
+- Inventory edits possessions.
+- Arcane edits powers and arcane resources.
+- Combat edits temporary play state.
+- Setup edits initial build confirmation.
+- Characters edits identity and character management.
+
+Direct changes to Attributes, Skills, Edges, Hindrances, Powers, or Gear after setup should be handled through Advancement, Inventory, Arcane, or a deliberate GM exception/correction workflow rather than casual inline editing on the normal Character Sheet. Users should still be able to intentionally reopen setup review later, but reopening setup should be a deliberate review action, not the default Character tab state.
+
+`creation.finalized` and `setupStatus` remain distinct. `creation.finalized` means the character was allowed to start play, while `setupStatus` decides whether setup review is still needed or complete. Reopening setup review is a temporary UI state and does not by itself change either persisted value.
+
 ### Section Classification
 
 | Current area                                  | Classification                                                     | Cleanup direction                                                                                                                                                                                                                    |
@@ -83,14 +128,15 @@ The Character tab currently combines three different jobs: one-time Character Se
 - Do not show the full setup workflow by default.
 - Keep active combat, inventory management, arcane controls, long-form notes, and future Advancement workflows in their own tabs or dedicated panels.
 
-### Proposed `setupStatus` Lifecycle
+### `setupStatus` Lifecycle
 
-- Imported characters should default to `needsReview`.
-- Newly created characters should default to `needsReview`.
-- Confirmed characters should become `complete`.
-- Users should be able to intentionally reopen setup review later.
-- `setupStatus` should be explicit and separate from `creation.finalized` if needed, because finalized currently means "ready to start playing" rather than "all setup review is permanently hidden."
-- Do not implement `setupStatus` in this task.
+- `setupStatus` is persisted on character data as either `needsReview` or `complete`.
+- Imported characters default to `needsReview`.
+- Newly created characters default to `needsReview`.
+- Existing legacy, sample, or saved characters without `setupStatus` normalize to `complete` so current users do not unexpectedly re-enter setup review.
+- Confirmed setup changes `setupStatus` to `complete`.
+- Users can intentionally reopen setup review later without changing the persisted setup status unless they confirm setup again.
+- `setupStatus` is explicit and separate from `creation.finalized`, because finalized means "ready to start playing" rather than "all setup review is permanently hidden."
 
 ### Do Not Do Yet
 
@@ -101,12 +147,16 @@ The Character tab currently combines three different jobs: one-time Character Se
 - Do not build a full campaign settings editor.
 - Do not refactor the whole renderer yet.
 
-### Recommended First Implementation Slice
+### Implemented First Slice
 
 Add `setupStatus` and use it to decide whether the Character tab opens in Setup Review mode or normal Character Sheet mode.
 
-The first slice should preserve all current setup sections and sheet sections, but change their default visibility:
+This first slice preserves all current setup sections and sheet sections, but changes their default visibility:
 
 - `needsReview`: Character tab opens with setup review prominent.
 - `complete`: Character tab opens with the normal Character Sheet prominent and setup collapsed behind `Review Setup`.
 - Reopened review: user can intentionally return to setup without losing the completed sheet state.
+
+### Recommended Next Implementation Slice
+
+Move stable post-confirmation identity/profile editing toward the Characters panel, while keeping the normal Character tab focused on read-only Character Sheet reference.

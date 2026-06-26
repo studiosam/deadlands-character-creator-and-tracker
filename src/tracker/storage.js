@@ -1,4 +1,8 @@
-function normalize(data) {
+function normalizeSetupStatus(value, fallback = "complete") {
+  return value === "needsReview" || value === "complete" ? value : fallback;
+}
+
+function normalize(data, options = {}) {
   const defaults = clone(defaultCharacter);
   const normalized =
     data && typeof data === "object"
@@ -15,6 +19,10 @@ function normalize(data) {
   normalized.player ||= defaults.player || "";
   normalized.description ||= defaults.description || "";
   normalized.background ||= defaults.background || "";
+  normalized.setupStatus = normalizeSetupStatus(
+    normalized.setupStatus,
+    options.defaultSetupStatus || "complete",
+  );
   normalized.bennies = { ...defaults.bennies, ...(normalized.bennies || {}) };
   normalized.damage = { ...defaults.damage, ...(normalized.damage || {}) };
   normalized.derived = { ...defaults.derived, ...(normalized.derived || {}) };
@@ -449,6 +457,8 @@ async function resolveUnsavedCharacterDraft(message) {
 
 function addCharacterSlot(data, metadata = {}) {
   characterDraftMode = false;
+  if (typeof characterSetupReviewOpen !== "undefined")
+    characterSetupReviewOpen = false;
   if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
   const preferredId = metadata.preferredId || "";
   const existingId = metadata.replacePreferred
@@ -473,6 +483,8 @@ function activateCharacterSlot(id) {
   const entry = characterLibrary?.charactersById?.[id];
   if (!entry) return false;
   characterDraftMode = false;
+  if (typeof characterSetupReviewOpen !== "undefined")
+    characterSetupReviewOpen = false;
   characterLibrary.activeCharacterId = id;
   character = normalize(entry.character);
   persistCharacterLibrary();
@@ -485,6 +497,8 @@ function removeCharacterSlot(id) {
   const removingActive = characterLibrary.activeCharacterId === id;
   delete characterLibrary.charactersById[id];
   if (removingActive) {
+    if (typeof characterSetupReviewOpen !== "undefined")
+      characterSetupReviewOpen = false;
     const next = characterLibraryEntries()[0];
     characterLibrary.activeCharacterId = next?.id || "";
     if (!isUnsavedCharacterDraft())

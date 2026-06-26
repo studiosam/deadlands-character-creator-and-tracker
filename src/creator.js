@@ -550,6 +550,7 @@ function newSetupCharacterPayload() {
 
   return {
     source: "created",
+    setupStatus: "needsReview",
     name: "Untitled Character",
     rank: "Novice",
     ancestry: "Human",
@@ -617,6 +618,7 @@ async function startCharacterSetupCreation() {
   )
     return;
   if (activeCharacterSlot()) saveCharacterSlot(character);
+  characterSetupReviewOpen = false;
   character = normalize(newSetupCharacterPayload());
   characterDraftMode = true;
   characterSetupStep = "concept";
@@ -768,7 +770,9 @@ async function loadSampleCharacter(sample) {
   const response = await fetch(encodeURI(sample.source));
   if (!response.ok) throw new Error(`Could not load ${sample.name}.`);
   const data = await response.json();
-  return normalize(isSavagedUsExport(data) ? fromSavagedUs(data) : data);
+  const sampleCharacter = normalize(isSavagedUsExport(data) ? fromSavagedUs(data) : data);
+  sampleCharacter.setupStatus = "complete";
+  return normalize(sampleCharacter);
 }
 
 async function loadSelectedSampleCharacter() {
@@ -790,6 +794,7 @@ async function loadSelectedSampleCharacter() {
       preferredId: `sample-${sample.id}`,
       replacePreferred: true,
     });
+    characterSetupReviewOpen = false;
     character = normalize(entry.character);
     storageAdapter.writeFlag(DEMO_MODE_KEY, true);
     storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);

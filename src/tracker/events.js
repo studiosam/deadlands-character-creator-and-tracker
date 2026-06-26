@@ -533,6 +533,39 @@ async function saveCurrentCharacterToLibrary() {
   appToast("Current character saved to the library.", "success");
 }
 
+async function confirmSetupReview() {
+  applyConceptInputs();
+  if (!(await ensureSetupCharacterHasName())) return false;
+
+  character.setupStatus = "complete";
+  characterSetupReviewOpen = false;
+
+  if (isUnsavedCharacterDraft()) {
+    const entry = await saveUnsavedCharacterDraft();
+    if (!entry) return false;
+    character = normalize(entry.character);
+    character.setupStatus = "complete";
+    saveCharacterSlot(character);
+  } else {
+    saveCharacterSlot(character);
+  }
+
+  render();
+  renderDemoExperience();
+  appToast("Character setup marked complete.", "success");
+  return true;
+}
+
+function reopenSetupReview() {
+  characterSetupReviewOpen = true;
+  characterSetupStep = "review";
+  render();
+  $("#characterSetupPanel")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
 function incompleteSetupSections() {
   return [
     ["concept", "Concept"],
@@ -596,6 +629,8 @@ async function finishSetupAndStartPlaying() {
     ...(character.creation || {}),
     finalized: true,
   };
+  character.setupStatus = "complete";
+  characterSetupReviewOpen = false;
 
   if (isUnsavedCharacterDraft()) {
     const entry = await saveUnsavedCharacterDraft();
@@ -627,6 +662,7 @@ function importJsonText(text) {
   const data = JSON.parse(text);
   const payload = unwrapImportPayload(data);
   characterDraftMode = false;
+  characterSetupReviewOpen = false;
   if (payload.type === "full-state") {
     characterLibrary = payload.characterLibrary
       ? normalizeCharacterLibrary(payload.characterLibrary)
@@ -651,13 +687,16 @@ function importJsonText(text) {
   } else {
     const importedCharacter = isSavagedUsExport(data)
       ? fromSavagedUs(data)
-      : normalize(payload.activeCharacter);
+      : normalize(payload.activeCharacter, {
+          defaultSetupStatus: "needsReview",
+        });
     const entry = addCharacterSlot(importedCharacter, {
       source:
         importedCharacter.source ||
         (isSavagedUsExport(data) ? "savaged.us" : "imported"),
     });
     character = normalize(entry.character);
+    characterSetupStep = "review";
     storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   }
   render();
@@ -851,6 +890,8 @@ document.addEventListener("click", async (event) => {
     await discardDraftCharacterFromSetup();
   } else if (setupAction?.dataset.setupAction === "saveCharacterNow") {
     await saveCurrentCharacterToLibrary();
+  } else if (setupAction?.dataset.setupAction === "confirmSetup") {
+    await confirmSetupReview();
   } else if (setupAction?.dataset.setupAction === "finishSetup") {
     await finishSetupAndStartPlaying();
   } else if (setupAction?.dataset.setupAction === "deleteCharacterSlot") {
@@ -1048,6 +1089,7 @@ if (els.addRequiredPowerBtn) els.addRequiredPowerBtn.onclick = addRequiredPower;
     input.onchange = renderPowerCatalogPicker;
   });
 els.addManualPowerPointsBtn.onclick = addManualPowerPoints;
+els.reviewSetupBtn.onclick = reopenSetupReview;
 els.showEdgeFormBtn.onclick = () => openEdgeEditor();
 els.edgeCatalogSelect.onchange = chooseEdgeCatalogEntry;
 els.saveEdgeBtn.onclick = saveEdgeEditor;
