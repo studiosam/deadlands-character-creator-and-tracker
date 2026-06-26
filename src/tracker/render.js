@@ -135,6 +135,44 @@ function characterSlotSourceLabel(sourceValue) {
   return source;
 }
 
+function renderCharacterProfileEditor() {
+  if (!els.characterProfileEditor) return;
+  const activeEntry = activeCharacterSlot();
+  const slotMeta = activeEntry
+    ? `${activeEntry.name || "Unnamed Character"} • ${characterSlotMeta(activeEntry) || "Local character"}`
+    : "Saving profile edits will create a local saved slot for this character.";
+  const setupStatus =
+    character.setupStatus === "needsReview"
+      ? "Needs setup review"
+      : "Setup complete";
+  els.characterProfileEditor.innerHTML = `
+    <div class="character-profile-summary">
+      <span class="pill">${esc(setupStatus)}</span>
+      <p class="muted">${esc(slotMeta)}</p>
+    </div>
+    <div class="creator-grid character-profile-grid">
+      <label>Name<input id="profileNameInput" data-profile-field="name" value="${esc(character.name || "")}" autocomplete="off"></label>
+      <label>Player<input id="profilePlayerInput" data-profile-field="player" value="${esc(character.player || "")}" autocomplete="off"></label>
+      <label>Profession or Title<input id="profileArchetypeInput" data-profile-field="archetype" value="${esc(character.archetype || "")}" autocomplete="off"></label>
+      <label>Age<input id="profileAgeInput" data-profile-field="age" value="${esc(character.age || "")}" autocomplete="off"></label>
+      <label>Gender<input id="profileGenderInput" data-profile-field="gender" value="${esc(character.gender || "")}" autocomplete="off" list="profileGenderOptions"></label>
+      <datalist id="profileGenderOptions">
+        <option value="Female"></option>
+        <option value="Male"></option>
+        <option value="Nonbinary"></option>
+      </datalist>
+      <label class="setup-wide">Description<textarea id="profileDescriptionInput" data-profile-field="description" rows="4">${esc(character.description || "")}</textarea></label>
+      <label class="setup-wide">Background<textarea id="profileBackgroundInput" data-profile-field="background" rows="5">${esc(character.background || "")}</textarea></label>
+    </div>
+    <div class="creator-actions character-profile-actions">
+      <button id="saveCharacterProfileBtn" type="button">Save Profile</button>
+    </div>
+  `;
+  if (els.characterProfileStatus)
+    els.characterProfileStatus.textContent =
+      "Profile edits update identity text only. Rules, gear, powers, and advancement stay in their dedicated workflows.";
+}
+
 function renderCharacterLibrary() {
   if (!els.characterLibraryList) return;
   const entries = characterLibraryEntries();
@@ -174,6 +212,7 @@ function renderCharacterLibrary() {
     : emptyState(
         "No saved character slots yet. Save the current character, load a sample, import JSON, or finalize a creator draft.",
       );
+  renderCharacterProfileEditor();
 }
 
 function localJsonSize(key) {

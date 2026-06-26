@@ -93,6 +93,47 @@ function applyConceptInputs() {
   save();
 }
 
+const CHARACTER_PROFILE_FIELDS = [
+  "name",
+  "gender",
+  "age",
+  "archetype",
+  "player",
+  "description",
+  "background",
+];
+
+async function saveCharacterProfile() {
+  const updates = {};
+  document.querySelectorAll("[data-profile-field]").forEach((input) => {
+    const field = input.dataset.profileField;
+    if (CHARACTER_PROFILE_FIELDS.includes(field))
+      updates[field] = input.value.trim();
+  });
+
+  if (!updates.name) {
+    appToast("Character profile requires a name.", "danger");
+    return;
+  }
+
+  CHARACTER_PROFILE_FIELDS.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(updates, field))
+      character[field] = updates[field];
+  });
+
+  if (isUnsavedCharacterDraft()) {
+    const entry = await saveUnsavedCharacterDraft();
+    if (!entry) return;
+    character = normalize(entry.character);
+  } else {
+    saveCharacterSlot(character);
+  }
+
+  render();
+  renderDemoExperience();
+  appToast("Character profile saved.", "success");
+}
+
 function setupHindranceSeverityForCatalog(catalogEntry, selectedSeverity = "") {
   if (catalogEntry?.severity === "Major" || catalogEntry?.severity === "Minor")
     return catalogEntry.severity;
@@ -931,6 +972,8 @@ document.addEventListener("click", async (event) => {
   if (entryAction) handleEntryAction(entryAction);
   const libraryAction = event.target?.closest?.("[data-library-action]");
   if (libraryAction) handleLibraryAction(libraryAction);
+  if (event.target?.closest?.("#saveCharacterProfileBtn"))
+    await saveCharacterProfile();
   if (event.target?.dataset?.toggleForm) {
     const form = document.getElementById(event.target.dataset.toggleForm);
     form?.classList.toggle("hidden");
@@ -1283,6 +1326,10 @@ els.settingsExportTrackerBtn.onclick = exportTrackerCharacter;
 els.settingsExportFullBtn.onclick = exportFullState;
 els.settingsOpenImportBtn.onclick = openPasteImportPanel;
 els.librarySaveCurrentBtn.onclick = saveCurrentCharacterToLibrary;
+els.libraryReviewSetupBtn.onclick = () => {
+  setAppTab("character");
+  reopenSetupReview();
+};
 els.libraryDuplicateActiveBtn.onclick = async () => {
   if (
     !(await resolveUnsavedCharacterDraft(

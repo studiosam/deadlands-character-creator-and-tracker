@@ -262,7 +262,10 @@ const els = {
   landingCharacterPicker: $("#landingCharacterPicker"),
   landingCharacterSelect: $("#landingCharacterSelect"),
   librarySummaryPill: $("#librarySummaryPill"),
+  characterProfileEditor: $("#characterProfileEditor"),
+  characterProfileStatus: $("#characterProfileStatus"),
   characterLibraryList: $("#characterLibraryList"),
   librarySaveCurrentBtn: $("#librarySaveCurrentBtn"),
   libraryDuplicateActiveBtn: $("#libraryDuplicateActiveBtn"),
+  libraryReviewSetupBtn: $("#libraryReviewSetupBtn"),
 };

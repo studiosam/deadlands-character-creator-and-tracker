@@ -157,6 +157,24 @@ This first slice preserves all current setup sections and sheet sections, but ch
 - `complete`: Character tab opens with the normal Character Sheet prominent and setup collapsed behind `Review Setup`.
 - Reopened review: user can intentionally return to setup without losing the completed sheet state.
 
+### Implemented Characters Panel Profile Slice
+
+The Characters panel now includes a deliberate Character Profile editor for stable identity/profile fields on the active character. Editable fields are:
+
+- Name.
+- Player.
+- Profession or title, stored in the existing `archetype` field.
+- Age.
+- Gender.
+- Description.
+- Background.
+
+Saving profile edits updates the active character, the active saved character slot, the tracker header, and the normal Character Sheet reference display. It preserves `setupStatus` and `creation.finalized`.
+
+This editor is intentionally limited to profile text. It does not edit Attributes, Skills, Edges, Hindrances, Gear, Powers, Advancement, setup-source tracking, or campaign settings. Those remain in Character Setup, Advancement, Inventory, Arcane, or future deliberate correction workflows as appropriate.
+
+The older slot Rename control remains available alongside the Name field for now. This is duplicated UX: Rename is still a quick saved-slot name action, while Character Profile is the broader identity editor.
+
 ### Recommended Next Implementation Slice
 
-Move stable post-confirmation identity/profile editing toward the Characters panel, while keeping the normal Character tab focused on read-only Character Sheet reference.
+Continue reducing normal Character Sheet editing affordances so the Character tab stays reference-focused after setup is complete, while keeping deliberate setup review, advancement, inventory, and arcane workflows separate.

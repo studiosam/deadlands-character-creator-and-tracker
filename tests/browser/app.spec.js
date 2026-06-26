@@ -1173,6 +1173,129 @@ test("keeps character slots in stable order when switching", async ({
   expect(namesAfter).toEqual(namesBefore);
 });
 
+test("edits active character profile from the characters panel", async ({
+  page,
+}) => {
+  const name = "Profile Panel Character";
+  const archetype = "Rail Agent Profile Test";
+  const player = "Profile Panel Player";
+  const age = "42";
+  const gender = "Nonbinary";
+  const description = "Profile panel description persists across reload.";
+  const background = "Profile panel background stays with the character.";
+
+  await enterTracker(page);
+  await openCharacterLibrary(page);
+  await expect(page.locator("#characterProfileEditor")).toBeVisible();
+  await page.locator("#profileNameInput").fill(name);
+  await page.locator("#profileArchetypeInput").fill(archetype);
+  await page.locator("#profilePlayerInput").fill(player);
+  await page.locator("#profileAgeInput").fill(age);
+  await page.locator("#profileGenderInput").fill(gender);
+  await page.locator("#profileDescriptionInput").fill(description);
+  await page.locator("#profileBackgroundInput").fill(background);
+  await page.locator("#saveCharacterProfileBtn").click();
+
+  await expect(page.locator("#characterName")).toContainText(name);
+  await expect(page.locator(".library-character.active")).toContainText(name);
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSummaryName")).toHaveText(name);
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(
+    archetype,
+  );
+  await expect(page.locator("#characterBasicsList")).toContainText(archetype);
+  await expect(page.locator("#characterBasicsList")).toContainText(player);
+  await expect(page.locator("#characterBasicsList")).toContainText(age);
+  await expect(page.locator("#characterBasicsList")).toContainText(gender);
+  await expect(page.locator("#characterBackgroundSummary")).toContainText(
+    description,
+  );
+  await expect(page.locator("#characterBackgroundSummary")).toContainText(
+    background,
+  );
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ libraryKey, storageKey }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active =
+            library?.charactersById?.[library.activeCharacterId] || null;
+          return {
+            activeName: active?.name || "",
+            activeCharacterName: active?.character?.name || "",
+            activeArchetype: active?.character?.archetype || "",
+            activePlayer: active?.character?.player || "",
+            activeAge: active?.character?.age || "",
+            activeGender: active?.character?.gender || "",
+            activeDescription: active?.character?.description || "",
+            activeBackground: active?.character?.background || "",
+            activeSetupStatus: active?.character?.setupStatus || "",
+            trackerName: tracker?.name || "",
+            trackerArchetype: tracker?.archetype || "",
+            trackerSetupStatus: tracker?.setupStatus || "",
+          };
+        },
+        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+      ),
+    )
+    .toEqual({
+      activeName: name,
+      activeCharacterName: name,
+      activeArchetype: archetype,
+      activePlayer: player,
+      activeAge: age,
+      activeGender: gender,
+      activeDescription: description,
+      activeBackground: background,
+      activeSetupStatus: "complete",
+      trackerName: name,
+      trackerArchetype: archetype,
+      trackerSetupStatus: "complete",
+    });
+
+  await reloadIntoTracker(page);
+  await expect(page.locator("#characterName")).toContainText(name);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSummaryName")).toHaveText(name);
+  await expect(page.locator("#characterBasicsList")).toContainText(archetype);
+  await expect(page.locator("#characterBasicsList")).toContainText(player);
+  await expect(page.locator("#characterBackgroundSummary")).toContainText(
+    description,
+  );
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ libraryKey, storageKey }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const active =
+            library?.charactersById?.[library.activeCharacterId] || null;
+          return {
+            activeSetupStatus: active?.character?.setupStatus || "",
+            trackerSetupStatus: tracker?.setupStatus || "",
+          };
+        },
+        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+      ),
+    )
+    .toEqual({
+      activeSetupStatus: "complete",
+      trackerSetupStatus: "complete",
+    });
+});
+
 test("selects and opens a saved character from the minimal landing page @mobile", async ({
   page,
 }) => {
