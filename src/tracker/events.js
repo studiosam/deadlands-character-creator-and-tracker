@@ -287,6 +287,17 @@ function addSetupEdgeFromCatalog(selectId, creationSource, sourceLabel) {
     return;
   }
 
+  const stillEligible = setupEligibleStartingEdges().some(
+    (edge) => edge.id === catalogEntry.id,
+  );
+  if (!stillEligible) {
+    appToast(
+      `${sourceLabel} is no longer eligible. Reselect it after reviewing Traits, Rank, prerequisites, and selected Edges.`,
+      "danger",
+    );
+    return;
+  }
+
   const duplicate = (character.edges || []).some(
     (edge) => plainEntryName(edge.name) === plainEntryName(catalogEntry.name),
   );
@@ -336,6 +347,21 @@ function addSetupEdgeFromCatalog(selectId, creationSource, sourceLabel) {
   render();
   save();
   appToast(`${catalogEntry.name} added.`, "success");
+}
+
+function ensureSetupStartingEdgesValidForCompletion() {
+  const report = setupStartingEdgeValidationReport();
+  if (!report.editable || !report.invalidEdges.length) return true;
+
+  character.setupStatus = "needsReview";
+  characterSetupReviewOpen = true;
+  characterSetupStep = "edges";
+  render();
+  appToast(
+    "Resolve invalid source-tracked starting Edges before confirming setup.",
+    "danger",
+  );
+  return false;
 }
 
 function removeSetupEdge(id) {
@@ -577,6 +603,7 @@ async function saveCurrentCharacterToLibrary() {
 async function confirmSetupReview() {
   applyConceptInputs();
   if (!(await ensureSetupCharacterHasName())) return false;
+  if (!ensureSetupStartingEdgesValidForCompletion()) return false;
 
   character.setupStatus = "complete";
   characterSetupReviewOpen = false;
@@ -645,6 +672,7 @@ async function ensureSetupCharacterHasName() {
 async function finishSetupAndStartPlaying() {
   applyConceptInputs();
   if (!(await ensureSetupCharacterHasName())) return false;
+  if (!ensureSetupStartingEdgesValidForCompletion()) return false;
 
   const wasFinalized = Boolean(character.creation?.finalized);
   const incompleteSections = incompleteSetupSections();

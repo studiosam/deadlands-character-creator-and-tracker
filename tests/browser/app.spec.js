@@ -2502,6 +2502,305 @@ test("filters starting Edge choices by Rank Trait and prerequisite Edge requirem
   await expect(humanEdgeSelect).not.toContainText("Improved Arcane Resistance");
 });
 
+test("starting Edge validation blocks stale invalid Human free Edge choices", async ({
+  page,
+}) => {
+  await page.locator("#landingCreateBtn").click();
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+  await page.locator("#setupNameInput").fill("Stale Human Edge");
+  await page.locator("[data-setup-step='edges']").click();
+
+  const edgesPanel = page.locator("#setupEdgesPanel");
+  await page
+    .locator("#setupHumanFreeEdgeSelect")
+    .selectOption("swade-edge-alertness");
+  await edgesPanel.getByRole("button", { name: "Add Human Free Edge" }).click();
+  await expect(edgesPanel).toContainText("Alertness");
+  await expect(page.locator("[data-setup-step='edges']")).toContainText(
+    "Complete",
+  );
+
+  await page.evaluate(() => {
+    const brave = EDGE_CATALOG.find((edge) => edge.id === "swade-edge-brave");
+    const humanEdge = character.edges.find(
+      (edge) => setupEdgeCreationSource(edge) === "human-free-edge",
+    );
+    Object.assign(humanEdge, {
+      ...brave,
+      id: humanEdge.id,
+      catalogId: brave.id,
+      source: "Human free Edge",
+      creationSource: "human-free-edge",
+    });
+    save();
+    render();
+  });
+
+  await expect(page.locator("[data-setup-step='edges']")).toContainText(
+    "Needs review",
+  );
+  await expect(edgesPanel).toContainText(
+    "Human free Edge no longer satisfies starting Edge eligibility",
+  );
+  await expect(edgesPanel).toContainText("Spirit d6+");
+
+  await page
+    .locator("#characterSetupPanel [data-setup-action='confirmSetup']")
+    .first()
+    .click();
+  await expect(page.locator("#toastRegion")).toContainText(
+    "Resolve invalid source-tracked starting Edges",
+  );
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("[data-setup-step='edges']")).toContainText(
+    "Needs review",
+  );
+
+  await edgesPanel
+    .locator(".setup-edge-card")
+    .filter({ hasText: "Brave" })
+    .getByRole("button", { name: "Remove" })
+    .click();
+  await expect(edgesPanel).not.toContainText(
+    "no longer satisfies starting Edge eligibility",
+  );
+  await page
+    .locator("#setupHumanFreeEdgeSelect")
+    .selectOption("swade-edge-alertness");
+  await edgesPanel.getByRole("button", { name: "Add Human Free Edge" }).click();
+  await expect(edgesPanel).toContainText("Alertness");
+  await expect(page.locator("[data-setup-step='edges']")).toContainText(
+    "Complete",
+  );
+});
+
+test("starting Edge validation flags stale invalid Hindrance benefit Edge choices", async ({
+  page,
+}) => {
+  await page.locator("#landingCreateBtn").click();
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+  await page.locator("#setupNameInput").fill("Stale Benefit Edge");
+
+  await page.locator("[data-setup-step='hindrances']").click();
+  const hindrancePanel = page.locator("#setupHindrancesPanel");
+  await page
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-bad-luck");
+  await page.locator("#setupAddHindranceBtn").click();
+  await page
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("dl-hindrance-cursed");
+  await page.locator("#setupAddHindranceBtn").click();
+  await hindrancePanel
+    .locator(".setup-trait-editor-row")
+    .filter({ hasText: "Edges" })
+    .getByRole("button", { name: "+" })
+    .click();
+
+  await page.locator("[data-setup-step='edges']").click();
+  const edgesPanel = page.locator("#setupEdgesPanel");
+  await page
+    .locator("#setupHindranceBenefitEdgeSelect")
+    .selectOption("swade-edge-berserk");
+  await edgesPanel
+    .getByRole("button", { name: "Add Hindrance Benefit Edge" })
+    .click();
+  await expect(edgesPanel).toContainText("Berserk");
+
+  const source = await page.evaluate(
+    () =>
+      character.edges.find((edge) => edge.name === "Berserk")?.creationSource ||
+      "",
+  );
+  expect(source).toBe("hindrance-benefit");
+
+  await page.evaluate(() => {
+    const brave = EDGE_CATALOG.find((edge) => edge.id === "swade-edge-brave");
+    const benefitEdge = character.edges.find(
+      (edge) => setupEdgeCreationSource(edge) === "hindrance-benefit",
+    );
+    Object.assign(benefitEdge, {
+      ...brave,
+      id: benefitEdge.id,
+      catalogId: brave.id,
+      source: "Hindrance benefit Edge",
+      creationSource: "hindrance-benefit",
+    });
+    save();
+    render();
+  });
+
+  await expect(page.locator("[data-setup-step='edges']")).toContainText(
+    "Needs review",
+  );
+  await expect(edgesPanel).toContainText(
+    "Hindrance benefit Edge no longer satisfies starting Edge eligibility",
+  );
+  await expect(edgesPanel).toContainText("Spirit d6+");
+});
+
+async function seedPowersSetupCharacter(page, options = {}) {
+  await enterTracker(page);
+  await page.evaluate((seedOptions) => {
+    const edge = EDGE_CATALOG.find(
+      (item) => item.id === "dl-edge-arcane-background-blessed",
+    );
+    const powerRecords = (seedOptions.powerIds || []).map((id) => ({
+      catalogId: id,
+    }));
+    const config = arcaneBackgroundConfigFromEdge(edge.name);
+    const characterData = normalize({
+      source: seedOptions.source || "created",
+      setupStatus: "needsReview",
+      name: seedOptions.name || "Powers Audit Character",
+      rank: "Novice",
+      ancestry: "Human",
+      archetype: "Arcane Tester",
+      attributes: {
+        agility: "d6",
+        smarts: "d6",
+        spirit: "d6",
+        strength: "d6",
+        vigor: "d6",
+      },
+      skills: seedOptions.skills || [],
+      edges: [
+        {
+          ...edge,
+          id: "test-blessed-edge",
+          catalogId: edge.id,
+          source: "setup test",
+          isCustom: false,
+        },
+      ],
+      hindrances: [],
+      powers: powerRecords,
+      resources: seedOptions.resources || [],
+      arcaneBackground: makeArcaneBackgroundState(config),
+      advances: seedOptions.advances || [],
+    });
+    const entry = addCharacterSlot(characterData, {
+      source: "test",
+      preferredId: seedOptions.preferredId || "powers-audit-test",
+    });
+    character = normalize(entry.character);
+    characterSetupReviewOpen = true;
+    characterSetupStep = "powers";
+    characterDraftMode = false;
+    render();
+    renderDemoExperience();
+  }, options);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await page.locator("[data-setup-step='powers']").click();
+}
+
+test("Powers setup audit reports missing requirements for an Arcane Background", async ({
+  page,
+}) => {
+  await seedPowersSetupCharacter(page, {
+    name: "Missing Blessed Powers",
+    preferredId: "missing-blessed-powers",
+  });
+
+  const setupPowersPanel = page.locator("#setupPowersPanel");
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Incomplete",
+  );
+  await expect(setupPowersPanel).toContainText("Blessed");
+  await expect(setupPowersPanel).toContainText("Expected Arcane Skill");
+  await expect(setupPowersPanel).toContainText("Faith d4+ linked to Spirit");
+  await expect(setupPowersPanel).toContainText("Missing Faith d4+ for Blessed");
+  await expect(setupPowersPanel).toContainText("Expected Power Points");
+  await expect(setupPowersPanel).toContainText("15 Power Points");
+  await expect(setupPowersPanel).toContainText(
+    "Expected 15 Power Points; none recorded.",
+  );
+  await expect(setupPowersPanel).toContainText("Expected Starting Powers");
+  await expect(setupPowersPanel).toContainText(
+    "Expected 3 starting powers; 0 recorded.",
+  );
+  await expect(setupPowersPanel).toContainText(
+    "Holy Symbol is required for Blessed and is missing.",
+  );
+
+  const mutationSnapshot = await page.evaluate(() => ({
+    powers: character.powers.length,
+    powerPoints: Boolean(powerPointResource()),
+  }));
+  expect(mutationSnapshot).toEqual({
+    powers: 0,
+    powerPoints: false,
+  });
+});
+
+test("Powers setup audit recognizes a complete starting arcane package", async ({
+  page,
+}) => {
+  await seedPowersSetupCharacter(page, {
+    name: "Complete Blessed Powers",
+    preferredId: "complete-blessed-powers",
+    skills: [{ name: "Faith", die: "d4", linkedAttribute: "Spirit" }],
+    resources: [
+      {
+        id: "power-points",
+        name: "Power Points",
+        current: 15,
+        max: 15,
+        source: "Arcane Background (Blessed)",
+      },
+    ],
+    powerIds: ["power-holy-symbol", "power-barrier", "power-protection"],
+  });
+
+  const setupPowersPanel = page.locator("#setupPowersPanel");
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Complete",
+  );
+  await expect(setupPowersPanel).toContainText("Blessed");
+  await expect(setupPowersPanel).toContainText("Faith d4 linked to Spirit");
+  await expect(setupPowersPanel).toContainText("15 / 15");
+  await expect(setupPowersPanel).toContainText("3 / 3 expected");
+  await expect(setupPowersPanel).toContainText("Holy Symbol: recorded");
+  await expect(setupPowersPanel).toContainText("Barrier");
+  await expect(setupPowersPanel).toContainText("Protection");
+  await expect(setupPowersPanel.getByRole("button")).toHaveCount(0);
+});
+
+test("Powers setup audit flags powers outside the Arcane Background list", async ({
+  page,
+}) => {
+  await seedPowersSetupCharacter(page, {
+    name: "Invalid Blessed Power",
+    preferredId: "invalid-blessed-power",
+    skills: [{ name: "Faith", die: "d4", linkedAttribute: "Spirit" }],
+    resources: [
+      {
+        id: "power-points",
+        name: "Power Points",
+        current: 15,
+        max: 15,
+        source: "Arcane Background (Blessed)",
+      },
+    ],
+    powerIds: ["power-holy-symbol", "power-barrier", "power-bolt"],
+  });
+
+  const setupPowersPanel = page.locator("#setupPowersPanel");
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Needs review",
+  );
+  await expect(setupPowersPanel).toContainText(
+    "Bolt is not in the Blessed allowed power list.",
+  );
+  await expect(setupPowersPanel).toContainText("Bolt");
+
+  const powers = await page.evaluate(() =>
+    character.powers.map((power) => power.name),
+  );
+  expect(powers).toContain("Bolt");
+});
+
 test("loads a bundled sample in demo mode", async ({ page }) => {
   await page.locator("#landingLoadSampleBtn").click();
 
@@ -2611,7 +2910,7 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   await expect(setupPowersPanel).toContainText("Blessed");
   await expect(setupPowersPanel).toContainText("Power Points");
   await expect(setupPowersPanel).toContainText("15 / 15");
-  await expect(setupPowersPanel).toContainText("Starting Powers Expected");
+  await expect(setupPowersPanel).toContainText("Expected Starting Powers");
   await expect(setupPowersPanel).toContainText("Holy Symbol");
   await expect(setupPowersPanel).toContainText("Barrier");
   await expect(setupPowersPanel).toContainText("Protection");

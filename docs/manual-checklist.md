@@ -62,6 +62,16 @@ yet practical to automate.
       preserving `setupStatus`.
 - [ ] Human free Edge and Hindrance benefit Edge selectors hide Edges blocked by
       Rank, simple Trait die requirements, or prerequisite Edge names.
+- [ ] Stale source-tracked Human free Edges that no longer match selector
+      eligibility mark Edges as Needs Review and block setup confirmation.
+- [ ] Stale source-tracked Hindrance benefit Edges use the same Needs Review
+      warning and removal path.
+- [ ] Powers setup audit reports the matched Arcane Background profile, expected
+      Arcane Skill, Power Points, starting power count, required starting
+      powers, and known powers without adding or removing powers.
+- [ ] Powers setup audit flags missing required starting powers and powers
+      outside the matched Arcane Background list while keeping imported or
+      advanced characters audit-only.
 
 # Power Catalog Workflow Tests
 

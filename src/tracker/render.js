@@ -352,15 +352,7 @@ function characterSetupStatus(stepId) {
     return setupEdgeSelectionStatus();
   }
   if (stepId === "powers") {
-    const { arcaneEdges, arcaneConfig, powerPoints, powers } =
-      setupPowerAuditContext();
-    const hasArcaneSignal =
-      arcaneEdges.length || arcaneConfig || powerPoints || powers.length;
-    if (!hasArcaneSignal) return "Not applicable";
-    if (!arcaneConfig && (powerPoints || powers.length)) return "Needs review";
-    if (arcaneEdges.length > 1) return "Needs review";
-    if (!powerPoints) return "Needs review";
-    return powers.length ? "Complete" : "Incomplete";
+    return setupPowerAuditReport().status;
   }
   if (stepId === "gear") {
     const counts = setupGearAuditCounts();
@@ -396,6 +388,278 @@ function setupPowerAuditContext() {
     arcaneConfig: stateConfig || edgeConfig || null,
     powerPoints: powerPointResource(),
     powers: [...(character.powers || [])].filter((power) => power.name),
+  };
+}
+
+function setupPowerProfileFromText(value) {
+  if (
+    typeof arcanePowerProfileKey !== "function" ||
+    typeof ARCANE_BACKGROUND_POWER_PROFILES !== "object"
+  )
+    return null;
+  const key = arcanePowerProfileKey(value);
+  return key ? ARCANE_BACKGROUND_POWER_PROFILES[key] || null : null;
+}
+
+function setupPowerProfileForEdge(edge) {
+  return setupPowerProfileFromText(edge?.name || edge?.edgeName || "");
+}
+
+function setupPowerProfileForState() {
+  return setupPowerProfileFromText(
+    character.arcaneBackground?.edgeName ||
+      character.arcaneBackground?.name ||
+      character.arcaneBackground?.key ||
+      "",
+  );
+}
+
+function setupPowerStartingCount(profile, arcaneConfig = null) {
+  return Math.max(
+    0,
+    Number(
+      profile?.startingPowerCount ??
+        arcaneConfig?.startingPowersCount ??
+        arcaneConfig?.startingPowerCount ??
+        0,
+    ) || 0,
+  );
+}
+
+function setupKnownPowerCatalogEntry(power) {
+  const byId =
+    typeof findPowerCatalogEntryById === "function"
+      ? findPowerCatalogEntryById(power.catalogId || power.id)
+      : null;
+  if (byId) return byId;
+  return typeof findPowerCatalogEntryByName === "function"
+    ? findPowerCatalogEntryByName(power.name)
+    : null;
+}
+
+function setupKnownPowerMatchesCatalog(power, catalog) {
+  if (!catalog) return false;
+  if (power.catalogId || power.id) {
+    return [power.catalogId, power.id].includes(catalog.id);
+  }
+  return plainEntryName(power.name) === plainEntryName(catalog.name);
+}
+
+function setupArcaneSkillAudit(profile) {
+  if (!profile) return null;
+  const expectedSkill = profile.arcaneSkill || "";
+  const expectedAttribute = profile.arcaneSkillAttribute || "";
+  const skill = findCharacterSkillByName(character, expectedSkill);
+  const die = skill?.die || skill?.value || "";
+  const linkedAttribute = skillLinkedAttribute(skill);
+  const messages = [];
+  const incomplete = [];
+
+  if (!skill || getDieStepIndex(die) < getDieStepIndex("d4")) {
+    incomplete.push(`Missing ${expectedSkill} d4+ for ${profile.name}.`);
+  } else if (
+    expectedAttribute &&
+    plainEntryName(linkedAttribute) !== plainEntryName(expectedAttribute)
+  ) {
+    messages.push(
+      `${expectedSkill} should be linked to ${expectedAttribute}; recorded linked attribute is ${linkedAttribute || "unknown"}.`,
+    );
+  }
+
+  return {
+    expectedSkill,
+    expectedAttribute,
+    skill,
+    die,
+    linkedAttribute,
+    recorded: Boolean(skill),
+    complete: Boolean(skill) && getDieStepIndex(die) >= getDieStepIndex("d4"),
+    messages,
+    incomplete,
+    statusText: skill
+      ? `${expectedSkill} ${die || "—"}${linkedAttribute ? ` linked to ${linkedAttribute}` : ""}`
+      : `Missing ${expectedSkill} d4+`,
+  };
+}
+
+function setupPowerPointsAudit(profile, powerPoints) {
+  if (!profile) return null;
+  const expected = Math.max(0, Number(profile.startingPowerPoints) || 0);
+  const max = Number(powerPoints?.max);
+  const current = Number(powerPoints?.current);
+  const messages = [];
+  const incomplete = [];
+
+  if (!powerPoints) {
+    incomplete.push(
+      `Expected ${expected} Power Points; none recorded.`,
+    );
+  } else {
+    if (!Number.isFinite(max) || max <= 0) {
+      messages.push("Power Points max is missing or invalid.");
+    } else if (max !== expected) {
+      messages.push(`Expected ${expected} Power Points; recorded max is ${max}.`);
+    }
+
+    if (!Number.isFinite(current) || current < 0) {
+      messages.push("Current Power Points value is missing or invalid.");
+    } else if (Number.isFinite(max) && current > max) {
+      messages.push(
+        `Current Power Points (${current}) exceeds recorded max (${max}).`,
+      );
+    }
+  }
+
+  return {
+    expected,
+    powerPoints,
+    messages,
+    incomplete,
+    statusText: powerPoints
+      ? `${powerPoints.current} / ${powerPoints.max || "—"}`
+      : "Not recorded",
+  };
+}
+
+function setupRequiredStartingPowerAudits(profile, powerAudits) {
+  const knownPowers = powerAudits.map((audit) => audit.power);
+  return (profile?.requiredStartingPowers || []).map((id) => {
+    const catalog =
+      typeof findPowerCatalogEntryById === "function"
+        ? findPowerCatalogEntryById(id)
+        : null;
+    const recorded = knownPowers.some((power) =>
+      setupKnownPowerMatchesCatalog(power, catalog || { id, name: id }),
+    );
+    return {
+      id,
+      catalog,
+      label: catalog?.name || displayNameFromKey(id.replace(/^power-/, "")),
+      recorded,
+    };
+  });
+}
+
+function setupPowerAuditReport() {
+  const context = setupPowerAuditContext();
+  const { arcaneEdges, arcaneConfig, powerPoints, powers } = context;
+  const editable = setupTraitsEditable();
+  const edgeProfiles = arcaneEdges
+    .map((edge) => ({ edge, profile: setupPowerProfileForEdge(edge) }))
+    .filter((item) => item.profile);
+  const stateProfile = setupPowerProfileForState();
+  const profile = edgeProfiles[0]?.profile || stateProfile || null;
+  const backgroundName =
+    profile?.name ||
+    arcaneConfig?.displayName ||
+    character.arcaneBackground?.name ||
+    arcaneEdges[0]?.name ||
+    "";
+  const powerAudits = powers.map((power) => {
+    const catalog = setupKnownPowerCatalogEntry(power);
+    const allowed = Boolean(
+      profile && catalog && profile.allowedPowerIds?.includes(catalog.id),
+    );
+    const required = Boolean(
+      profile &&
+        catalog &&
+        profile.requiredStartingPowers?.includes(catalog.id),
+    );
+    const messages = [];
+    if (!catalog) {
+      messages.push("Unknown custom power; verify manually.");
+    } else if (profile && !allowed) {
+      messages.push(
+        `${catalog.name} is not in the ${profile.name} allowed power list.`,
+      );
+    }
+    return {
+      power,
+      catalog,
+      allowed,
+      required,
+      messages,
+    };
+  });
+  const requiredPowerAudits = setupRequiredStartingPowerAudits(
+    profile,
+    powerAudits,
+  );
+  const startingPowerCount = setupPowerStartingCount(profile, arcaneConfig);
+  const skillAudit = setupArcaneSkillAudit(profile);
+  const powerPointsAudit = setupPowerPointsAudit(profile, powerPoints);
+  const incompleteItems = [
+    ...(skillAudit?.incomplete || []),
+    ...(powerPointsAudit?.incomplete || []),
+  ];
+  const warnings = [
+    ...(skillAudit?.messages || []),
+    ...(powerPointsAudit?.messages || []),
+    ...powerAudits.flatMap((audit) => audit.messages),
+  ];
+
+  if (arcaneEdges.length > 1) {
+    warnings.push("More than one Arcane Background Edge is recorded.");
+  }
+
+  const hasArcaneSignal =
+    arcaneEdges.length ||
+    stateProfile ||
+    character.arcaneBackground ||
+    powerPoints ||
+    powers.length;
+  if (hasArcaneSignal && !profile) {
+    warnings.push(
+      "Arcane Background is recorded, but no matching power profile was found.",
+    );
+  }
+
+  if (!arcaneEdges.length && !stateProfile && (powerPoints || powers.length)) {
+    warnings.push(
+      "Power Points or known powers are recorded without an Arcane Background.",
+    );
+  }
+
+  if (profile && powers.length < startingPowerCount) {
+    incompleteItems.push(
+      `Expected ${startingPowerCount} starting powers; ${powers.length} recorded.`,
+    );
+  }
+
+  requiredPowerAudits
+    .filter((item) => !item.recorded)
+    .forEach((item) => {
+      incompleteItems.push(
+        `${item.label} is required for ${profile.name} and is missing.`,
+      );
+    });
+
+  const status = !hasArcaneSignal
+    ? "Not applicable"
+    : warnings.length
+      ? "Needs review"
+      : incompleteItems.length
+        ? editable
+          ? "Incomplete"
+          : "Needs review"
+        : "Complete";
+
+  return {
+    ...context,
+    editable,
+    profile,
+    backgroundName,
+    expectedArcaneSkill: profile?.arcaneSkill || "",
+    expectedLinkedAttribute: profile?.arcaneSkillAttribute || "",
+    expectedPowerPoints: profile?.startingPowerPoints || 0,
+    startingPowerCount,
+    skillAudit,
+    powerPointsAudit,
+    powerAudits,
+    requiredPowerAudits,
+    incompleteItems,
+    warnings,
+    status,
   };
 }
 
@@ -718,6 +982,146 @@ function setupHindranceBenefitEdges() {
   );
 }
 
+function setupStartingEdgeSlotCount(source) {
+  if (source === "human-free-edge") return setupExpectedHumanFreeEdges();
+  if (source === "hindrance-benefit")
+    return setupCreationBenefitValue("extraEdgesFromHindrances");
+  return 0;
+}
+
+function setupStartingEdgeSourceLabel(source) {
+  if (source === "human-free-edge") return "Human free Edge";
+  if (source === "hindrance-benefit") return "Hindrance benefit Edge";
+  return "Starting Edge";
+}
+
+function setupSourceTrackedStartingEdges() {
+  return (character.edges || []).filter((edge) =>
+    ["human-free-edge", "hindrance-benefit"].includes(
+      setupEdgeCreationSource(edge),
+    ),
+  );
+}
+
+function setupStartingEdgeDuplicateNames() {
+  const counts = new Map();
+  setupSourceTrackedStartingEdges().forEach((edge) => {
+    const name = plainEntryName(edge.name);
+    if (!name) return;
+    counts.set(name, (counts.get(name) || 0) + 1);
+  });
+  return new Set(
+    [...counts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([name]) => name),
+  );
+}
+
+function validateSetupStartingEdge(edge, options = {}) {
+  const source = options.creationSource || setupEdgeCreationSource(edge);
+  const sourceLabel = setupStartingEdgeSourceLabel(source);
+  const messages = [];
+
+  if (!["human-free-edge", "hindrance-benefit"].includes(source)) {
+    return { valid: true, messages, source, sourceLabel, catalog: null };
+  }
+
+  const catalog = edgeCatalogEntry(edge);
+  if (!catalog) {
+    messages.push(
+      `${sourceLabel} no longer satisfies starting Edge eligibility: catalog match not found.`,
+    );
+  } else {
+    const eligibility = setupEdgeEligibility(catalog);
+    if (!eligibility.eligible) {
+      messages.push(
+        `${sourceLabel} no longer satisfies starting Edge eligibility: ${
+          eligibility.reason || "requirements are not met"
+        }.`,
+      );
+    }
+  }
+
+  const edgeName = plainEntryName(edge.name || catalog?.name);
+  const duplicate = edgeName
+    ? (character.edges || []).some(
+        (item) =>
+          item.id !== edge.id && plainEntryName(item.name) === edgeName,
+      )
+    : false;
+  if (duplicate) {
+    messages.push(
+      `${sourceLabel} duplicates another selected starting Edge.`,
+    );
+  }
+
+  const slotCount = setupStartingEdgeSlotCount(source);
+  const sameSource = source === "human-free-edge"
+    ? setupHumanFreeEdges()
+    : setupHindranceBenefitEdges();
+  const position = sameSource.findIndex((item) => item.id === edge.id);
+  if (position >= 0 && position >= slotCount) {
+    messages.push(
+      `${sourceLabel} is above the available starting Edge slot count.`,
+    );
+  }
+
+  return {
+    valid: messages.length === 0,
+    messages,
+    source,
+    sourceLabel,
+    catalog,
+  };
+}
+
+function setupStartingEdgeValidationReport() {
+  const editable = setupTraitsEditable();
+  const expectedHumanEdges = setupExpectedHumanFreeEdges();
+  const humanFreeEdges = setupHumanFreeEdges();
+  const hindranceEdgeSlots = setupCreationBenefitValue(
+    "extraEdgesFromHindrances",
+  );
+  const hindranceBenefitEdges = setupHindranceBenefitEdges();
+  const invalidEdges = [];
+
+  if (editable) {
+    setupSourceTrackedStartingEdges().forEach((edge) => {
+      const validation = validateSetupStartingEdge(edge);
+      if (!validation.valid) invalidEdges.push({ edge, validation });
+    });
+  }
+
+  return {
+    editable,
+    expectedHumanEdges,
+    humanFreeEdges,
+    hindranceEdgeSlots,
+    hindranceBenefitEdges,
+    missingHumanFreeEdges: Math.max(
+      0,
+      expectedHumanEdges - humanFreeEdges.length,
+    ),
+    missingHindranceBenefitEdges: Math.max(
+      0,
+      hindranceEdgeSlots - hindranceBenefitEdges.length,
+    ),
+    tooManyHumanFreeEdges: Math.max(
+      0,
+      humanFreeEdges.length - expectedHumanEdges,
+    ),
+    tooManyHindranceBenefitEdges: Math.max(
+      0,
+      hindranceBenefitEdges.length - hindranceEdgeSlots,
+    ),
+    duplicateStartingEdgeNames: setupStartingEdgeDuplicateNames(),
+    invalidEdges,
+    ambiguousManualReviewEdges: editable
+      ? []
+      : setupSourceTrackedStartingEdges(),
+  };
+}
+
 function setupEdgeSelectionStatus() {
   const edges = character.edges || [];
   const arcaneEdgeCount = edges.filter((edge) =>
@@ -727,18 +1131,19 @@ function setupEdgeSelectionStatus() {
     if (!edges.length) return "Incomplete";
     return arcaneEdgeCount > 1 ? "Needs review" : "Complete";
   }
-  const expectedHumanEdges = setupExpectedHumanFreeEdges();
-  const humanEdges = setupHumanFreeEdges().length;
-  const hindranceEdgeSlots = setupCreationBenefitValue(
-    "extraEdgesFromHindrances",
-  );
-  const hindranceEdges = setupHindranceBenefitEdges().length;
+  const report = setupStartingEdgeValidationReport();
+  const humanEdges = report.humanFreeEdges.length;
+  const hindranceEdges = report.hindranceBenefitEdges.length;
 
-  if (arcaneEdgeCount > 1 || humanEdges > expectedHumanEdges)
+  if (
+    arcaneEdgeCount > 1 ||
+    report.tooManyHumanFreeEdges ||
+    report.tooManyHindranceBenefitEdges ||
+    report.invalidEdges.length
+  )
     return "Needs review";
-  if (hindranceEdges > hindranceEdgeSlots) return "Needs review";
-  if (humanEdges < expectedHumanEdges) return "Incomplete";
-  if (hindranceEdges < hindranceEdgeSlots) return "Incomplete";
+  if (report.missingHumanFreeEdges) return "Incomplete";
+  if (report.missingHindranceBenefitEdges) return "Incomplete";
   return edges.length ? "Complete" : "Incomplete";
 }
 
@@ -770,6 +1175,13 @@ function setupEdgeAuditCard(edge) {
   const arcaneConfig = arcaneBackgroundConfigFromEdge(edge.name);
   const likelySource = edgeLikelySource(edge);
   const matchedAdvance = edgeMatchedAdvance(edge);
+  const startingEdgeValidation =
+    setupTraitsEditable() &&
+    ["human-free-edge", "hindrance-benefit"].includes(
+      setupEdgeCreationSource(edge),
+    )
+      ? validateSetupStartingEdge(edge)
+      : null;
   const category = catalog?.category || edge.category || "Unknown";
   const rank = catalog?.rank || edge.rank || "Unknown";
   const requirements = catalog?.requirements || edge.requirements || "";
@@ -794,6 +1206,9 @@ function setupEdgeAuditCard(edge) {
     catalog
       ? setupEdgeBadge("Catalog matched", "good")
       : setupEdgeBadge("No catalog match", "warning"),
+    startingEdgeValidation && !startingEdgeValidation.valid
+      ? setupEdgeBadge("Needs review", "warning")
+      : "",
     arcaneConfig ? setupEdgeBadge("Arcane Background", "arcane") : "",
     category && category !== "Unknown" ? setupEdgeBadge(category) : "",
     rank && rank !== "Unknown" ? setupEdgeBadge(rank) : "",
@@ -810,6 +1225,7 @@ function setupEdgeAuditCard(edge) {
     matchedAdvance
       ? `Matched recorded Advance #${matchedAdvance.advanceNumber || matchedAdvance.number || "?"}.`
       : "",
+    ...(startingEdgeValidation?.messages || []),
     arcaneConfig
       ? `${arcaneConfig.displayName} uses ${arcaneConfig.arcaneSkill} and starts with ${arcaneConfig.startingPowerPoints} Power Points.`
       : "",
@@ -1439,12 +1855,11 @@ function setupEdgeCatalogOptions(placeholder) {
 
 function renderSetupEdgeSelectionControls() {
   const canEdit = setupTraitsEditable();
-  const expectedHumanEdges = setupExpectedHumanFreeEdges();
-  const humanEdges = setupHumanFreeEdges().length;
-  const hindranceEdgeSlots = setupCreationBenefitValue(
-    "extraEdgesFromHindrances",
-  );
-  const hindranceEdges = setupHindranceBenefitEdges().length;
+  const report = setupStartingEdgeValidationReport();
+  const expectedHumanEdges = report.expectedHumanEdges;
+  const humanEdges = report.humanFreeEdges.length;
+  const hindranceEdgeSlots = report.hindranceEdgeSlots;
+  const hindranceEdges = report.hindranceBenefitEdges.length;
 
   if (!canEdit) {
     return `<p class="entry-advisory"><strong>Audit only:</strong> imported or advanced characters keep their existing Edge records here. Use Advances for later Edge changes.</p>`;
@@ -1487,12 +1902,11 @@ function renderSetupEdges() {
   const advanceEdges = edges.filter((edge) =>
     edgeLikelySource(edge).includes("Advance"),
   );
-  const expectedHumanEdges = setupExpectedHumanFreeEdges();
-  const humanEdges = setupHumanFreeEdges().length;
-  const hindranceEdgeSlots = setupCreationBenefitValue(
-    "extraEdgesFromHindrances",
-  );
-  const hindranceEdges = setupHindranceBenefitEdges().length;
+  const report = setupStartingEdgeValidationReport();
+  const expectedHumanEdges = report.expectedHumanEdges;
+  const humanEdges = report.humanFreeEdges.length;
+  const hindranceEdgeSlots = report.hindranceEdgeSlots;
+  const hindranceEdges = report.hindranceBenefitEdges.length;
   const edgeSelectionEditable = setupTraitsEditable();
   const status = characterSetupStatus("edges");
 
@@ -1530,6 +1944,15 @@ function renderSetupEdges() {
         : ""
     }
     ${
+      edgeSelectionEditable && report.invalidEdges.length
+        ? `<p class="entry-warning">Needs review: ${esc(
+            report.invalidEdges
+              .map((item) => item.validation.messages.join(" "))
+              .join(" "),
+          )}</p>`
+        : ""
+    }
+    ${
       arcaneEdges.length > 1
         ? '<p class="entry-warning">Needs review: more than one Arcane Background Edge is recorded.</p>'
         : ""
@@ -1564,8 +1987,11 @@ function setupFixedStartingPowerText(config, powers) {
     .join(", ");
 }
 
-function setupPowerAuditCard(power) {
+function setupPowerAuditCard(power, audit = null) {
   const meta = [
+    audit?.catalog ? "Catalog matched" : "Unknown/custom",
+    audit?.allowed ? "Allowed" : "",
+    audit?.required ? "Required" : "",
     power.rank ? `Rank ${power.rank}` : "",
     setupPowerCostLabel(power),
     power.range ? `Range ${power.range}` : "",
@@ -1582,21 +2008,53 @@ function setupPowerAuditCard(power) {
     </div>
     ${summary ? `<p>${esc(summary)}</p>` : ""}
     ${trapping ? `<p>${esc(trapping)}</p>` : ""}
+    ${
+      audit?.messages?.length
+        ? `<div class="setup-edge-advisories">${audit.messages
+            .map((item) => `<p>${esc(item)}</p>`)
+            .join("")}</div>`
+        : ""
+    }
   </article>`;
 }
 
+function setupPowerMessageList(items, emptyText = "") {
+  if (!items.length) return emptyText ? `<p>${esc(emptyText)}</p>` : "";
+  return `<ul>${items.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`;
+}
+
+function setupRequiredPowerChecklist(report) {
+  if (!report.requiredPowerAudits.length) return "None";
+  return report.requiredPowerAudits
+    .map((item) => `${item.label}: ${item.recorded ? "recorded" : "missing"}`)
+    .join(", ");
+}
+
 function renderSetupPowers() {
-  const { arcaneEdges, arcaneConfig, powerPoints, powers } =
-    setupPowerAuditContext();
-  const status = characterSetupStatus("powers");
-  const backgroundName =
-    arcaneConfig?.displayName ||
-    character.arcaneBackground?.name ||
-    arcaneEdges[0]?.name ||
-    "";
-  const powerPointLabel = powerPoints
-    ? `${powerPoints.current} / ${powerPoints.max || "—"}`
-    : "Not recorded";
+  const report = setupPowerAuditReport();
+  const {
+    profile,
+    powers,
+    skillAudit,
+    powerPointsAudit,
+    powerAudits,
+    status,
+  } = report;
+  const arcaneSkillLabel = profile
+    ? `${report.expectedArcaneSkill} d4+${
+        report.expectedLinkedAttribute
+          ? ` linked to ${report.expectedLinkedAttribute}`
+          : ""
+      }`
+    : character.arcaneBackground?.arcaneSkill || "—";
+  const expectedPowerPointsLabel = profile
+    ? `${report.expectedPowerPoints} Power Points`
+    : "—";
+  const recordedPowerPointsLabel =
+    powerPointsAudit?.statusText || "Not recorded";
+  const knownPowerLabel = profile
+    ? `${powers.length} / ${report.startingPowerCount} expected`
+    : `${powers.length}`;
 
   return `<section id="setupPowersPanel" class="setup-step-panel" aria-labelledby="setupPowersHeading">
     <div class="section-title">
@@ -1607,12 +2065,14 @@ function renderSetupPowers() {
       ${setupStatusMarkup(status)}
     </div>
     <div class="setup-review-grid">
-      ${setupDetail("Arcane Background", backgroundName || "None recorded")}
-      ${setupDetail("Arcane Skill", arcaneConfig?.arcaneSkill || character.arcaneBackground?.arcaneSkill || "—")}
-      ${setupDetail("Power Points", powerPointLabel)}
-      ${setupDetail("Known Powers", `${powers.length}`)}
-      ${setupDetail("Starting Powers Expected", arcaneConfig ? `${arcaneConfig.startingPowersCount}` : "—")}
-      ${setupDetail("Fixed Starting Powers", setupFixedStartingPowerText(arcaneConfig, powers))}
+      ${setupDetail("Arcane Background Detected", report.backgroundName || "None recorded")}
+      ${setupDetail("Expected Arcane Skill", arcaneSkillLabel)}
+      ${setupDetail("Recorded Arcane Skill Status", skillAudit?.statusText || "Not recorded")}
+      ${setupDetail("Expected Power Points", expectedPowerPointsLabel)}
+      ${setupDetail("Recorded Power Points Status", recordedPowerPointsLabel)}
+      ${setupDetail("Expected Starting Powers", profile ? `${report.startingPowerCount}` : "—")}
+      ${setupDetail("Recorded Known Powers", knownPowerLabel)}
+      ${setupDetail("Required Starting Powers", setupRequiredPowerChecklist(report))}
     </div>
     ${
       status === "Not applicable"
@@ -1620,19 +2080,43 @@ function renderSetupPowers() {
         : '<p class="entry-advisory"><strong>Audit only:</strong> imported powers may be current known powers rather than the exact creation-time power list. Starting-power editing and advancement separation are deferred.</p>'
     }
     ${
-      status === "Incomplete"
-        ? '<p class="entry-warning">Powers incomplete: an Arcane Background is recorded but no known powers are listed.</p>'
+      report.incompleteItems.length
+        ? `<div class="entry-warning"><strong>Powers incomplete:</strong>${setupPowerMessageList(report.incompleteItems)}</div>`
         : ""
     }
     ${
-      status === "Needs review"
-        ? '<p class="entry-warning">Needs review: the Arcane Background, Power Points, or known powers do not line up cleanly.</p>'
+      report.warnings.length
+        ? `<div class="entry-warning"><strong>Needs review:</strong>${setupPowerMessageList(report.warnings)}</div>`
         : ""
     }
+    <section class="setup-audit-group" aria-label="Required Starting Powers">
+      <h4>Required Starting Powers</h4>
+      <div class="setup-audit-list">
+        ${
+          report.requiredPowerAudits.length
+            ? report.requiredPowerAudits
+                .map(
+                  (item) =>
+                    `<article class="dossier-note${item.recorded ? "" : " warning"}"><strong>${esc(item.label)}</strong><p>${esc(
+                      item.recorded
+                        ? "Recorded"
+                        : `Missing required starting power for ${
+                            profile?.name || "this Arcane Background"
+                          }.`,
+                    )}</p></article>`,
+                )
+                .join("")
+            : emptyState("No required starting powers.")
+        }
+      </div>
+    </section>
     <div class="setup-power-list">
       ${
         powers.length
-          ? powers.sort(comparePowers).map(setupPowerAuditCard).join("")
+          ? powerAudits
+              .sort((left, right) => comparePowers(left.power, right.power))
+              .map((audit) => setupPowerAuditCard(audit.power, audit))
+              .join("")
           : emptyState("No powers recorded.")
       }
     </div>
@@ -1836,12 +2320,11 @@ function renderSetupReview() {
   const arcaneEdgeCount = (character.edges || []).filter((edge) =>
     isArcaneBackgroundEdge(edge.name),
   ).length;
-  const expectedHumanEdges = setupExpectedHumanFreeEdges();
-  const humanEdges = setupHumanFreeEdges().length;
-  const hindranceEdgeSlots = setupCreationBenefitValue(
-    "extraEdgesFromHindrances",
-  );
-  const hindranceEdges = setupHindranceBenefitEdges().length;
+  const edgeReport = setupStartingEdgeValidationReport();
+  const expectedHumanEdges = edgeReport.expectedHumanEdges;
+  const humanEdges = edgeReport.humanFreeEdges.length;
+  const hindranceEdgeSlots = edgeReport.hindranceEdgeSlots;
+  const hindranceEdges = edgeReport.hindranceBenefitEdges.length;
   const edgeSelectionEditable = setupTraitsEditable();
   const powersCount = (character.powers || []).filter(
     (power) => power.name,
@@ -1907,6 +2390,15 @@ function renderSetupReview() {
     ${
       edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
         ? '<p class="entry-warning">Edges incomplete: select all Hindrance benefit Edge slots or adjust Hindrance spending.</p>'
+        : ""
+    }
+    ${
+      edgeSelectionEditable && edgeReport.invalidEdges.length
+        ? `<p class="entry-warning">Edges need review: ${esc(
+            edgeReport.invalidEdges
+              .map((item) => item.validation.messages.join(" "))
+              .join(" "),
+          )}</p>`
         : ""
     }
     ${
