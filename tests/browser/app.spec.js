@@ -1394,6 +1394,46 @@ test("Increase Attribute writes a canonical attribute-increase ledger entry", as
   );
 });
 
+test("blocks a second Increase Attribute advance in the same Rank", async ({
+  page,
+}) => {
+  await seedCanonicalAdvancementCharacter(page);
+
+  const firstTarget = await firstEligibleAttributeAdvance(page);
+  expect(firstTarget).toBeTruthy();
+
+  await openAdvanceEditor(page, "Increase Attribute");
+  await page.locator("#advanceAttributeSelect").selectOption(firstTarget.key);
+  await page.locator("#saveAdvanceBtn").click();
+  await expect(page.locator("#advanceEditorPanel")).toBeHidden();
+
+  const secondTarget = await firstEligibleAttributeAdvance(page);
+  expect(secondTarget).toBeTruthy();
+
+  await openAdvanceEditor(page, "Increase Attribute");
+  await page.locator("#advanceAttributeSelect").selectOption(secondTarget.key);
+
+  await expect(page.locator("#advanceEditorPanel")).toBeVisible();
+  await expect(page.locator("#saveAdvanceBtn")).toBeDisabled();
+  await expect(page.locator("#advanceDynamicWarning")).toContainText(
+    "An Attribute increase has already been recorded for Novice Rank.",
+  );
+
+  const result = await page.evaluate(() => ({
+    attributeIncreaseCount: character.advances.filter(
+      (advance) => advance.type === "attribute-increase",
+    ).length,
+    appliedAttributeIncreaseCount: character.advances.filter(
+      (advance) => advance.type === "attribute-increase" && advance.applied,
+    ).length,
+  }));
+
+  expect(result).toEqual({
+    attributeIncreaseCount: 1,
+    appliedAttributeIncreaseCount: 1,
+  });
+});
+
 test("New Edge writes a canonical edge-gain ledger entry", async ({ page }) => {
   await seedCanonicalAdvancementCharacter(page);
 
@@ -2267,6 +2307,57 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await expect(page.locator("#setupEdgesPanel")).toContainText(
     "Hindrance benefit Edge",
   );
+});
+
+test("filters starting Edge choices by Rank Trait and prerequisite Edge requirements", async ({
+  page,
+}) => {
+  await page.locator("#landingCreateBtn").click();
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+
+  await page.locator("[data-setup-step='edges']").click();
+  const humanEdgeSelect = page.locator("#setupHumanFreeEdgeSelect");
+  await expect(humanEdgeSelect).toBeVisible();
+
+  const eligibility = await page.evaluate(() => {
+    const edgeById = (id) => EDGE_CATALOG.find((edge) => edge.id === id);
+    return {
+      alertness: setupEdgeEligibility(edgeById("swade-edge-alertness")),
+      brave: setupEdgeEligibility(edgeById("swade-edge-brave")),
+      fanTheHammer: setupEdgeEligibility(edgeById("dl-edge-fan-the-hammer")),
+      improvedArcaneResistance: setupEdgeEligibility(
+        edgeById("swade-edge-improved-arcane-resistance"),
+      ),
+    };
+  });
+
+  expect(eligibility.alertness).toEqual({
+    eligible: true,
+    reason: "",
+  });
+  expect(eligibility.brave).toEqual(
+    expect.objectContaining({
+      eligible: false,
+      reason: expect.stringContaining("Spirit d6+"),
+    }),
+  );
+  expect(eligibility.fanTheHammer).toEqual(
+    expect.objectContaining({
+      eligible: false,
+      reason: expect.stringContaining("Seasoned Edge"),
+    }),
+  );
+  expect(eligibility.improvedArcaneResistance).toEqual(
+    expect.objectContaining({
+      eligible: false,
+      reason: expect.stringContaining("Arcane Resistance"),
+    }),
+  );
+
+  await expect(humanEdgeSelect).toContainText("Alertness");
+  await expect(humanEdgeSelect).not.toContainText("Brave");
+  await expect(humanEdgeSelect).not.toContainText("Fan the Hammer");
+  await expect(humanEdgeSelect).not.toContainText("Improved Arcane Resistance");
 });
 
 test("loads a bundled sample in demo mode", async ({ page }) => {

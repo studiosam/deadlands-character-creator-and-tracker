@@ -422,6 +422,24 @@ function advanceDisplaySummary(advance) {
   return compactText(canonicalAdvanceTypeLabel(advance.type), "Advance recorded");
 }
 
+function advanceRankValue(advance) {
+  return advance?.rankAtTime || advance?.rank || "";
+}
+
+function attributeIncreaseRankConflict(currentCharacter, advance, editingId = "") {
+  const rank = advanceRankValue(advance);
+  if (!ADVANCE_RANKS.includes(rank)) return "";
+  const conflict = (currentCharacter.advances || []).some(
+    (item) =>
+      item.id !== editingId &&
+      legacyAdvanceTypeToCanonical(item.type) === "attribute-increase" &&
+      advanceRankValue(item) === rank,
+  );
+  return conflict
+    ? `An Attribute increase has already been recorded for ${rank} Rank.`
+    : "";
+}
+
 function advanceWarnings(currentCharacter, advance, editingId = "") {
   const warnings = [];
   const type = legacyAdvanceTypeToCanonical(advance.type);
@@ -465,6 +483,14 @@ function advanceWarnings(currentCharacter, advance, editingId = "") {
     targets.some((target) => target.before === "d12" || target.after === target.before)
   )
     warnings.push("Selected attribute is already at d12 and cannot increase.");
+  if (type === "attribute-increase") {
+    const conflict = attributeIncreaseRankConflict(
+      currentCharacter,
+      advance,
+      editingId,
+    );
+    if (conflict) warnings.push(conflict);
+  }
 
   const duplicate = (currentCharacter.advances || []).some(
     (item) =>
@@ -532,6 +558,8 @@ function getAdvanceApplicationWarnings(currentCharacter, advance) {
     if (!target?.targetName) warnings.push("Select an attribute before applying.");
     else if (target.before === "d12" || target.after === target.before)
       warnings.push("Selected attribute is already at d12 and cannot increase.");
+    const conflict = attributeIncreaseRankConflict(currentCharacter, advance);
+    if (conflict) warnings.push(conflict);
   }
   return warnings;
 }

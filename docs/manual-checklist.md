@@ -60,6 +60,8 @@ yet practical to automate.
 - [ ] Manage Character opens the Characters panel profile editor.
 - [ ] Characters panel profile edits update the header and Character Sheet while
       preserving `setupStatus`.
+- [ ] Human free Edge and Hindrance benefit Edge selectors hide Edges blocked by
+      Rank, simple Trait die requirements, or prerequisite Edge names.
 
 # Power Catalog Workflow Tests
 
@@ -366,6 +368,8 @@ review, especially edit/remove/undo behavior and deferred rules enforcement.
 - [ ] Attribute dropdown still appears for Increase Attribute.
 - [ ] Attribute before/after preview displays.
 - [ ] Attribute at d12 cannot be increased.
+- [ ] A second Increase Attribute advance in the same Rank is blocked or warned
+      before application.
 
 ## Persistence
 
