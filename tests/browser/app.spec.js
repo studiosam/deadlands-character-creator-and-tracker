@@ -1416,7 +1416,7 @@ test("blocks a second Increase Attribute advance in the same Rank", async ({
   await expect(page.locator("#advanceEditorPanel")).toBeVisible();
   await expect(page.locator("#saveAdvanceBtn")).toBeDisabled();
   await expect(page.locator("#advanceDynamicWarning")).toContainText(
-    "An Attribute increase has already been recorded for Novice Rank.",
+    "You have already increased an Attribute this Rank.",
   );
 
   const result = await page.evaluate(() => ({
@@ -1432,6 +1432,148 @@ test("blocks a second Increase Attribute advance in the same Rank", async ({
     attributeIncreaseCount: 1,
     appliedAttributeIncreaseCount: 1,
   });
+});
+
+test("applies Legendary Attribute cadence without fixed parity", async ({
+  page,
+}) => {
+  await enterTracker(page);
+
+  const results = await page.evaluate(() => {
+    const attributeChange = (attributeName, before = "d6", after = "d8") => ({
+      path: `attributes.${attributeName}`,
+      before,
+      after,
+      displayLabel: displayNameFromKey(attributeName),
+      targetType: "attribute",
+      operation: "update",
+    });
+    const attributeAdvance = (
+      advanceNumber,
+      attributeName,
+      source = "advancement",
+    ) =>
+      normalizeAdvanceEntry({
+        id: `attribute-${advanceNumber}-${attributeName}`,
+        type: "attribute-increase",
+        label: `Increase Attribute: ${displayNameFromKey(attributeName)}`,
+        source,
+        advanceNumber,
+        rankAtTime: rankForAdvanceNumber(advanceNumber),
+        createdAt: "2026-06-27T00:00:00.000Z",
+        changes: [attributeChange(attributeName)],
+        applied: true,
+        appliedByApp: source === "advancement",
+      });
+    const nonAttributeAdvance = (advanceNumber) =>
+      normalizeAdvanceEntry({
+        id: `edge-${advanceNumber}`,
+        type: "edge-gain",
+        label: "New Edge: Alertness",
+        source: "advancement",
+        advanceNumber,
+        rankAtTime: rankForAdvanceNumber(advanceNumber),
+        createdAt: "2026-06-27T00:00:00.000Z",
+        changes: [
+          {
+            path: "edges[alertness]",
+            before: null,
+            after: { id: "alertness", name: "Alertness" },
+            displayLabel: "Alertness",
+            targetType: "edge",
+            operation: "add",
+          },
+        ],
+        applied: true,
+        appliedByApp: true,
+      });
+    const candidate = (advanceNumber, attributeName = "strength") =>
+      normalizeAdvanceEntry({
+        id: `candidate-${advanceNumber}-${attributeName}`,
+        type: "attribute-increase",
+        label: `Increase Attribute: ${displayNameFromKey(attributeName)}`,
+        source: "advancement",
+        advanceNumber,
+        rankAtTime: rankForAdvanceNumber(advanceNumber),
+        createdAt: "2026-06-27T00:00:00.000Z",
+        targetName: displayNameFromKey(attributeName),
+        targetType: "attribute",
+        targets: [
+          {
+            targetType: "attribute",
+            targetName: displayNameFromKey(attributeName),
+            targetId: attributeName,
+            before: "d6",
+            after: "d8",
+          },
+        ],
+      });
+    const warningsFor = (
+      advances,
+      advanceNumber,
+      attributeName = "strength",
+    ) => {
+      const testCharacter = normalize({
+        name: "Legendary Cadence Tester",
+        rank: "Legendary",
+        attributes: {
+          agility: "d6",
+          smarts: "d6",
+          spirit: "d6",
+          strength: "d6",
+          vigor: "d6",
+        },
+        skills: [],
+        advances,
+      });
+      return getAdvanceApplicationWarnings(
+        testCharacter,
+        candidate(advanceNumber, attributeName),
+      );
+    };
+
+    return {
+      heroic15DoesNotBlockLegendary16: warningsFor(
+        [attributeAdvance(15, "agility")],
+        16,
+        "strength",
+      ),
+      legendary16Blocks17: warningsFor(
+        [attributeAdvance(16, "agility")],
+        17,
+        "strength",
+      ),
+      legendary16Allows18: warningsFor(
+        [attributeAdvance(16, "agility")],
+        18,
+        "strength",
+      ),
+      skipped16Allows17: warningsFor([nonAttributeAdvance(16)], 17, "strength"),
+      importedHistoryDoesNotCount: warningsFor(
+        [
+          normalizeAdvanceEntry({
+            id: "imported-attribute-label",
+            type: "imported-history",
+            label: "Raise Attribute: Strength",
+            source: "imported",
+            advanceNumber: 16,
+            rankAtTime: "Legendary",
+            changes: [],
+          }),
+        ],
+        17,
+        "strength",
+      ),
+    };
+  });
+
+  expect(results.heroic15DoesNotBlockLegendary16).toEqual([]);
+  expect(results.legendary16Blocks17).toContain(
+    "Legendary characters may increase an Attribute every other Advance. Take a different Advance before increasing another Attribute.",
+  );
+  expect(results.legendary16Allows18).toEqual([]);
+  expect(results.skipped16Allows17).toEqual([]);
+  expect(results.importedHistoryDoesNotCount).toEqual([]);
 });
 
 test("New Edge writes a canonical edge-gain ledger entry", async ({ page }) => {

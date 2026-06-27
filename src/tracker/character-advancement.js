@@ -554,7 +554,7 @@ function resetAdvanceEditor(advance = null) {
     els.advanceRankInput,
     advance?.rankAtTime ||
       advance?.rank ||
-      getAdvanceRankFromCount(Math.max(0, Number(number) - 1)),
+      rankForAdvanceNumber(number),
     "Novice",
   );
   selectKnownValue(

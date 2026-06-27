@@ -370,6 +370,14 @@ review, especially edit/remove/undo behavior and deferred rules enforcement.
 - [ ] Attribute at d12 cannot be increased.
 - [ ] A second Increase Attribute advance in the same Rank is blocked or warned
       before application.
+- [ ] A Heroic Attribute increase at Advance 15 does not block a Legendary
+      Attribute increase at Advance 16.
+- [ ] A Legendary Attribute increase blocks the immediately following Advance
+      from also increasing an Attribute.
+- [ ] A Legendary Attribute increase allows another Attribute increase two
+      Advances later.
+- [ ] Skipping the first Legendary Attribute increase allows taking it on the
+      next Advance.
 
 ## Persistence
 

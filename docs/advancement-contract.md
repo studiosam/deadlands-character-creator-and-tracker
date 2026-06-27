@@ -140,16 +140,16 @@ Inspected files:
 
 ### Supported Type Classification
 
-| Type                       | Current classification                                                                                      | Current behavior                                                                                                                                                                                                                                                                                                                                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Increase Skill`           | Implemented and auto-applied                                                                                | Uses a generated skill target, validates an existing eligible trained skill equal to or greater than its linked attribute, increases one die step, writes canonical `type: "skill-increase"` with one skill `changes` item, and can safely undo when the current die still matches the recorded `after` value.                                                                                     |
-| `Increase Two Skills`      | Implemented and auto-applied                                                                                | Uses two generated skill targets, validates two different eligible skills below their linked attributes, applies both skill increases as one advance, writes canonical `type: "two-skills-increase"` with two skill `changes` items, and can safely undo both when current values still match. This matches the official one-advance/two-skill model.                                              |
-| `Increase Attribute`       | Implemented and auto-applied; Covered by focused browser tests; Partially implemented; Needs redesign later | Uses a generated attribute target, increases one attribute die step, updates Strength-dependent armor/weapon strength when Strength changes, writes canonical `type: "attribute-increase"` with one attribute `changes` item, blocks a second Attribute increase in the same Rank, and can safely undo when the current die still matches. Legendary every-other-Advance cadence remains deferred. |
-| `New Edge`                 | Implemented and auto-applied; Covered by focused browser tests; Needs redesign later                        | Adds a catalog or custom Edge with `source: "advancement"` and `createdByAdvanceId`, writes canonical `type: "edge-gain"` with one add `changes` item, and can safely undo by removing the same created Edge. Full Rank and requirements enforcement remains deferred.                                                                                                                             |
-| `New Powers`               | Implemented and auto-applied; Covered by focused browser tests; Needs redesign later                        | Adds one or more catalog/custom powers with `source: "advancement"`, `addedReason: "advancement"`, and `createdByAdvanceId`, writes canonical `type: "power-gain"` with one add `changes` item per power, and can safely undo by removing created powers. Power eligibility and starting-vs-advance separation remain deferred.                                                                    |
-| `Power Points`             | Implemented and auto-applied; Covered by focused browser tests; Needs redesign later                        | Increases the max Power Points resource by the selected amount, creates a Power Points resource if missing, writes canonical `type: "power-points-increase"` with one resource `changes` item, and can safely undo when the current max still matches. Whether this belongs in Advancement, Arcane, or a GM exception model remains an open design issue.                                          |
-| `Other / Marshal-approved` | Implemented as manual/history only; Covered by focused browser tests; Needs redesign later                  | Records manual history as canonical `manual-history` or `gm-exception` with `changes: []` unless the UI applies a reliable mutation. It does not auto-apply or undo character mutations.                                                                                                                                                                                                           |
-| Reduce or Remove Hindrance | Needs redesign later                                                                                        | There is no dedicated advancement type for reducing or removing Hindrances. The current app can record a manual history entry, but it does not apply a Minor removal, Major reduction, two-Advance Major removal spend, or GM-approved exception path.                                                                                                                                             |
+| Type                       | Current classification                                                                                      | Current behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Increase Skill`           | Implemented and auto-applied                                                                                | Uses a generated skill target, validates an existing eligible trained skill equal to or greater than its linked attribute, increases one die step, writes canonical `type: "skill-increase"` with one skill `changes` item, and can safely undo when the current die still matches the recorded `after` value.                                                                                                                                                                     |
+| `Increase Two Skills`      | Implemented and auto-applied                                                                                | Uses two generated skill targets, validates two different eligible skills below their linked attributes, applies both skill increases as one advance, writes canonical `type: "two-skills-increase"` with two skill `changes` items, and can safely undo both when current values still match. This matches the official one-advance/two-skill model.                                                                                                                              |
+| `Increase Attribute`       | Implemented and auto-applied; Covered by focused browser tests; Partially implemented; Needs redesign later | Uses a generated attribute target, increases one attribute die step, updates Strength-dependent armor/weapon strength when Strength changes, writes canonical `type: "attribute-increase"` with one attribute `changes` item, blocks a second Attribute increase in the same non-Legendary Rank, applies the Legendary every-other-Advance cadence based on distance since the last reliable Legendary Attribute increase, and can safely undo when the current die still matches. |
+| `New Edge`                 | Implemented and auto-applied; Covered by focused browser tests; Needs redesign later                        | Adds a catalog or custom Edge with `source: "advancement"` and `createdByAdvanceId`, writes canonical `type: "edge-gain"` with one add `changes` item, and can safely undo by removing the same created Edge. Full Rank and requirements enforcement remains deferred.                                                                                                                                                                                                             |
+| `New Powers`               | Implemented and auto-applied; Covered by focused browser tests; Needs redesign later                        | Adds one or more catalog/custom powers with `source: "advancement"`, `addedReason: "advancement"`, and `createdByAdvanceId`, writes canonical `type: "power-gain"` with one add `changes` item per power, and can safely undo by removing created powers. Power eligibility and starting-vs-advance separation remain deferred.                                                                                                                                                    |
+| `Power Points`             | Implemented and auto-applied; Covered by focused browser tests; Needs redesign later                        | Increases the max Power Points resource by the selected amount, creates a Power Points resource if missing, writes canonical `type: "power-points-increase"` with one resource `changes` item, and can safely undo when the current max still matches. Whether this belongs in Advancement, Arcane, or a GM exception model remains an open design issue.                                                                                                                          |
+| `Other / Marshal-approved` | Implemented as manual/history only; Covered by focused browser tests; Needs redesign later                  | Records manual history as canonical `manual-history` or `gm-exception` with `changes: []` unless the UI applies a reliable mutation. It does not auto-apply or undo character mutations.                                                                                                                                                                                                                                                                                           |
+| Reduce or Remove Hindrance | Needs redesign later                                                                                        | There is no dedicated advancement type for reducing or removing Hindrances. The current app can record a manual history entry, but it does not apply a Minor removal, Major reduction, two-Advance Major removal spend, or GM-approved exception path.                                                                                                                                                                                                                             |
 
 ### Official Rules Alignment
 
@@ -163,6 +163,92 @@ from the current legacy UI labels:
 | Increase Two Skills        | Increase two different skills by one die type each when each skill is lower than its linked attribute. This can include new skills the character does not have yet, added at `d4`.  | One advance entry, two skill targets, two `changes` items. Canonical `type` should be `two-skills-increase`, not two separate advances.                                                                     |
 | Increase One Attribute     | Increase one attribute by one die type. This option may be taken only once per Rank. Legendary characters may raise an attribute every other Advance, up to the applicable maximum. | One advance entry, one attribute target, one `changes` item. Track Rank usage so the app can block or warn if already used this Rank.                                                                       |
 | Reduce or Remove Hindrance | Remove a Minor Hindrance, or reduce a Major Hindrance to Minor if that Hindrance can reasonably be reduced. With GM permission, two saved Advances may remove a Major Hindrance.    | One advance entry for Minor removal or Major reduction. Major full removal needs either a two-advance spend model or a GM-approved exception path.                                                          |
+
+### Attribute Increase Cadence Model
+
+Before Legendary, the app should allow at most one reliable
+`attribute-increase` entry per Rank bucket:
+
+- Novice
+- Seasoned
+- Veteran
+- Heroic
+
+At Legendary, the app should allow one Attribute increase every other Advance.
+This must be modeled as distance since the last reliable Legendary Attribute
+increase, not fixed even-numbered or odd-numbered Legendary Advances.
+
+The app rule should be:
+
+- If the current Rank is not Legendary, allow the Attribute increase only when
+  no reliable Attribute increase already exists in that same Rank bucket.
+- If the current Rank is Legendary and there is no previous reliable Legendary
+  Attribute increase, allow it.
+- If the current Rank is Legendary and a previous reliable Legendary Attribute
+  increase exists, allow it only when
+  `currentAdvanceNumber - lastLegendaryAttributeIncreaseAdvanceNumber >= 2`.
+
+This means the Legendary cadence starts fresh at Legendary. A Heroic Attribute
+increase at Advance 15 should not block the first Legendary Attribute increase
+at Advance 16. If a player skips the Attribute increase at Advance 16, they
+should still be allowed to take it at Advance 17; the model is based on the last
+reliable Legendary Attribute increase, not fixed parity.
+
+Examples:
+
+- Advance 12: Heroic Attribute increase is allowed if no other Heroic Attribute
+  increase exists.
+- Advance 15: Heroic Attribute increase is allowed if no other Heroic Attribute
+  increase exists.
+- Advance 16: first Legendary Attribute increase is allowed.
+- Advance 17: blocked if Advance 16 was a Legendary Attribute increase.
+- Advance 18: allowed if Advance 16 was the last Legendary Attribute increase.
+- Advance 19: blocked if Advance 18 was a Legendary Attribute increase.
+- Advance 20: allowed if Advance 18 was the last Legendary Attribute increase.
+- Advance 16: Edge, Advance 17: Attribute increase allowed, Advance 18:
+  blocked, Advance 19: allowed.
+
+Only reliable Attribute increases should count toward this cadence:
+
+- Count canonical `type: "attribute-increase"` entries with a reliable
+  `advanceNumber`.
+- Count entries from `source: "advancement"`, `source: "manual"`, or
+  `source: "marshal-override"` only when they actually changed an Attribute.
+- Count entries with a reliable canonical change path such as
+  `attributes.strength`.
+- Do not count `imported-history` with `changes: []`.
+- Do not count `manual-history` with no mutation.
+- Do not count `gm-exception` with no reliable Attribute change.
+- Do not count old vague imported advancement labels.
+
+Recommended helper shape:
+
+```js
+function canTakeAttributeIncrease(advances, currentAdvanceNumber) {
+  const currentRank = rankForAdvanceNumber(currentAdvanceNumber);
+
+  if (currentRank !== "Legendary") {
+    return !hasAttributeIncreaseInRank(advances, currentRank);
+  }
+
+  const lastLegendaryAttributeAdvance = findLastReliableAttributeIncreaseAtRank(
+    advances,
+    "Legendary",
+  );
+
+  if (!lastLegendaryAttributeAdvance) return true;
+
+  return (
+    currentAdvanceNumber - lastLegendaryAttributeAdvance.advanceNumber >= 2
+  );
+}
+```
+
+Recommended user-facing warnings:
+
+- Non-Legendary duplicate: "You have already increased an Attribute this Rank."
+- Legendary cadence: "Legendary characters may increase an Attribute every
+  other Advance. Take a different Advance before increasing another Attribute."
 
 ### Current Application Model
 
@@ -295,8 +381,8 @@ Implemented migration direction:
 
 The migration should be focused. It should not rewrite Advancement from
 scratch, add new advancement types, or start Edge prerequisite enforcement,
-Power validation, Hindrance reduction/removal, Legendary Attribute cadence
-enforcement, or imported advancement reconstruction.
+Power validation, Hindrance reduction/removal, or imported advancement
+reconstruction.
 
 ### Recommended Test Plan
 
@@ -316,8 +402,8 @@ enforcement, or imported advancement reconstruction.
   reloading.
 - Safe undo uses canonical `changes` if implemented in the first slice.
 - If undo is deferred, canonical advances do not expose unsafe legacy undo.
-- Attribute once-per-Rank blocking is covered; Legendary every-other-Advance
-  cadence remains deferred.
+- Attribute once-per-Rank blocking and Legendary every-other-Advance cadence
+  are covered by focused browser tests.
 - Reduce/remove Hindrance behavior is tested when that dedicated advancement
   type is designed.
 - Imported Savaged.us advancement history is represented as imported history
@@ -411,7 +497,8 @@ The ledger should support these post-creation growth categories:
 - Increase Two Skills as canonical `type: "two-skills-increase"`, represented
   by one advance entry with two skill changes.
 - Increase One Attribute as canonical `type: "attribute-increase"`, with
-  once-per-Rank blocking and Legendary every-other-Advance handling deferred.
+  once-per-Rank blocking and Legendary every-other-Advance handling defined by
+  the Attribute Increase Cadence Model.
 - Reduce or Remove Hindrance.
 - New Power as canonical `type: "power-gain"` when granted through an Edge or
   table-approved advancement path.
@@ -456,10 +543,9 @@ The slice should:
 The slice should not include:
 
 - Edge prerequisite enforcement.
-- Legendary Attribute every-other-Advance cadence enforcement.
+- Imported advancement reconstruction.
 - Hindrance reduction/removal.
 - Power validation.
-- Imported advancement reconstruction.
 
 This slice should be first because:
 

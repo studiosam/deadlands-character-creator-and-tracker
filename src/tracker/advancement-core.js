@@ -268,7 +268,7 @@ function normalizeAdvanceEntry(entry, index = 0) {
   const createdAt = raw.createdAt || raw.dateAdded || raw.appliedAt || "";
   const rankAtTime = ADVANCE_RANKS.includes(rank)
     ? rank
-    : getAdvanceRankFromCount(Math.max(0, advanceNumber - 1));
+    : rankForAdvanceNumber(advanceNumber);
 
   return {
     ...raw,
@@ -422,22 +422,75 @@ function advanceDisplaySummary(advance) {
   return compactText(canonicalAdvanceTypeLabel(advance.type), "Advance recorded");
 }
 
-function advanceRankValue(advance) {
-  return advance?.rankAtTime || advance?.rank || "";
+function rankForAdvanceNumber(advanceNumber) {
+  return getAdvanceRankFromCount(
+    Math.max(0, Math.floor(Number(advanceNumber) || 0)),
+  );
 }
 
-function attributeIncreaseRankConflict(currentCharacter, advance, editingId = "") {
-  const rank = advanceRankValue(advance);
-  if (!ADVANCE_RANKS.includes(rank)) return "";
-  const conflict = (currentCharacter.advances || []).some(
-    (item) =>
-      item.id !== editingId &&
-      legacyAdvanceTypeToCanonical(item.type) === "attribute-increase" &&
-      advanceRankValue(item) === rank,
+function advanceNumberValue(advance) {
+  const number = Math.floor(
+    Number(advance?.advanceNumber ?? advance?.number) || 0,
   );
-  return conflict
-    ? `An Attribute increase has already been recorded for ${rank} Rank.`
-    : "";
+  return number > 0 ? number : 0;
+}
+
+function changeIsReliableAttributeIncrease(change) {
+  return (
+    change &&
+    typeof change === "object" &&
+    /^attributes\.[a-z]+$/i.test(String(change.path || "")) &&
+    change.before !== undefined &&
+    change.after !== undefined &&
+    change.before !== change.after
+  );
+}
+
+function isReliableAttributeIncreaseAdvance(advance) {
+  const source = advance?.source || "manual";
+  return (
+    legacyAdvanceTypeToCanonical(advance?.type) === "attribute-increase" &&
+    ["advancement", "manual", "marshal-override"].includes(source) &&
+    Boolean(advanceNumberValue(advance)) &&
+    (advance.changes || []).some(changeIsReliableAttributeIncrease)
+  );
+}
+
+function attributeIncreaseRankConflict(
+  currentCharacter,
+  advance,
+  editingId = "",
+) {
+  const currentAdvanceNumber = advanceNumberValue(advance);
+  if (!currentAdvanceNumber) return "";
+  const rank = rankForAdvanceNumber(currentAdvanceNumber);
+  const attributeAdvances = (currentCharacter.advances || [])
+    .filter((item) => item.id !== editingId)
+    .filter(isReliableAttributeIncreaseAdvance);
+
+  if (rank !== "Legendary") {
+    const conflict = attributeAdvances.some(
+      (item) => rankForAdvanceNumber(advanceNumberValue(item)) === rank,
+    );
+    return conflict ? "You have already increased an Attribute this Rank." : "";
+  }
+
+  const lastLegendaryAdvanceNumber = Math.max(
+    0,
+    ...attributeAdvances
+      .map(advanceNumberValue)
+      .filter(
+        (number) =>
+          number < currentAdvanceNumber &&
+          rankForAdvanceNumber(number) === "Legendary",
+      ),
+  );
+  if (
+    lastLegendaryAdvanceNumber &&
+    currentAdvanceNumber - lastLegendaryAdvanceNumber < 2
+  )
+    return "Legendary characters may increase an Attribute every other Advance. Take a different Advance before increasing another Attribute.";
+  return "";
 }
 
 function advanceWarnings(currentCharacter, advance, editingId = "") {
@@ -503,8 +556,8 @@ function advanceWarnings(currentCharacter, advance, editingId = "") {
       `Advance #${advance.advanceNumber ?? advance.number} is already used.`,
     );
 
-  const expectedRank = getAdvanceRankFromCount(
-    Math.max(0, Number(advance.advanceNumber ?? advance.number) - 1),
+  const expectedRank = rankForAdvanceNumber(
+    advance.advanceNumber ?? advance.number,
   );
   if (
     (advance.rankAtTime || advance.rank) &&

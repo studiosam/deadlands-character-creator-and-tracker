@@ -2210,7 +2210,7 @@ function renderAdvancement() {
     [
       "Next Advance",
       nextAdvanceNumber(),
-      getAdvanceRankFromCount(summary.count),
+      rankForAdvanceNumber(nextAdvanceNumber()),
     ],
   ]
     .map(
