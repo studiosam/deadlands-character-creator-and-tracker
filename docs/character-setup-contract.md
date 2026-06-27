@@ -14,7 +14,7 @@ Hindrances supports selecting and removing Hindrances from the existing catalog,
 
 Traits is editable for characters created in this tool that do not yet have recorded Advances. It tracks the normal 5 Attribute points, 12 Skill points, Hindrance-granted extras, core skills at free `d4`, and unskilled values at `d4-2`. Trait edits update both the current character values and the stored creation baseline. Imported characters and advanced characters remain read-only audit views; recorded skills use the character's die values, and missing skills are shown as unskilled `d4-2`. Trait cards and skill chips expose short usage notes through hover/focus help.
 
-Edges audits recorded Edges against the current catalog and, for characters created in this tool with no recorded Advances, supports selecting the Human free Edge and any Edge slots bought with Hindrance benefit points. Starting Edge choices are source-tagged as `human-free-edge` or `hindrance-benefit` so they remain distinct from later Advances. Imported and advanced characters remain audit-only. Catalog-matched Edges show category, rank, requirements, and summary text. Arcane Background Edges are called out, and more than one Arcane Background Edge is flagged for review. Full Edge prerequisite enforcement and GM exception bookkeeping are deferred to later setup slices.
+Edges audits recorded Edges against the current catalog and, for characters created in this tool with no recorded Advances, supports selecting the Human free Edge and any Edge slots bought with Hindrance benefit points. Starting Edge choices are source-tagged as `human-free-edge` or `hindrance-benefit` so they remain distinct from later Advances. Imported and advanced characters remain audit-only. Catalog-matched Edges show category, rank, requirements, and summary text. Arcane Background Edges are called out, and more than one Arcane Background Edge is flagged for review. Starting Edge selection partially enforces Rank, simple Trait die requirements, and prerequisite Edge names. Full complex Edge prerequisite enforcement, Advancement Edge prerequisite enforcement, and GM exception bookkeeping are deferred to later setup slices.
 
 Powers is read-only and follows Edges because Arcane Background Edges determine whether Powers are required. It audits the recorded Arcane Background, Arcane Skill, Power Points, known powers, expected starting power count, and fixed starting powers where the profile defines them. Non-arcane characters show this step as not applicable. Full power selection, starting-power validation, and separation of creation powers from powers gained through Advances are deferred to later setup slices.
 
@@ -58,7 +58,7 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 
 - Creation baseline tracking exists for created-character starting Attributes and Skills and should be extended carefully to other setup-time choices.
 - Character Setup Powers and Gear are audit-first. They review current/imported data but do not yet provide full starting-power selection, starting-purchase validation, or source tracking.
-- Advancement has data storage, adaptive forms, application helpers, and validation, but the product direction is paused. Do not treat the current Character-tab Advancement area as the final long-term workflow.
+- Advancement has canonical ledger storage, adaptive forms, application helpers, validation, import history handling, and focused browser coverage. The remaining product boundary question is whether the current Character-tab Advancement area should move behind a more deliberate Advancement workflow.
 
 ### Planned next
 
@@ -150,7 +150,7 @@ Direct changes to Attributes, Skills, Edges, Hindrances, Powers, or Gear after s
 | Equipped summary                              | Move primarily to Combat and Inventory                             | Combat should show current weapons, armor impact, ammo, and active-use equipment. Inventory should own equipment management. The sheet can keep a small read-only equipment summary or omit it if Combat/Inventory already cover it. |
 | Gear summary                                  | Move primarily to Inventory                                        | Full gear, money, ammo, armor, weapons, vehicles, carried state, and add-item forms belong in Inventory. Character Setup Gear remains audit-only until a dedicated starting-purchase slice exists.                                   |
 | Background / Import Notes                     | Move to Notes                                                      | Character background can appear as a short sheet note or excerpt, but long-form background, import notes, reminders, and session notes belong in Notes.                                                                              |
-| Advancement panel and add-advance form        | Move primarily to Advancement later                                | Advancement work is paused. Existing advancement UI should not remain embedded in the normal Character Sheet long term. It should move to a dedicated Advancement workflow later.                                                    |
+| Advancement panel and add-advance form        | Move primarily to Advancement later                                | Advancement now has a canonical app-owned ledger model, but the UI still lives inside the Character tab. It should move to a dedicated Advancement workflow later so it does not compete with the normal Character Sheet.            |
 | Manual Edge and Hindrance add/edit forms      | Hide or postpone                                                   | These are useful escape hatches but should not be prominent in the completed Character Sheet. Prefer setup-source workflows for creation choices and a later Advancement workflow for post-creation changes.                         |
 | Enable Manual Power Points control            | Move primarily to Arcane                                           | Manual Power Points are arcane/resource setup. The normal sheet may show whether Power Points exist, but the control belongs in Arcane or setup review.                                                                              |
 | Source badge and save/setup status indicators | Keep on normal Character Sheet and move to Settings or global menu | Keep a small source/setup-status indicator on the sheet. Detailed local save, import/export, and library management remain Settings/global menu responsibilities.                                                                    |
@@ -185,7 +185,7 @@ Direct changes to Attributes, Skills, Edges, Hindrances, Powers, or Gear after s
 
 ### Do Not Do Yet
 
-- Do not implement more Advancement behavior.
+- Do not implement more Advancement rules behavior until the workflow boundary is settled.
 - Do not make Gear editable from Character Setup.
 - Do not make Powers editable from Character Setup.
 - Do not enforce full Edge prerequisites yet.

@@ -1500,7 +1500,7 @@ function renderSetupEdges() {
     <div class="section-title">
       <div>
         <h3 id="setupEdgesHeading">Edges</h3>
-        <p>Select starting Edges and keep their creation source separate from later Advances. Full prerequisite enforcement is still a manual review item.</p>
+        <p>Select starting Edges and keep their creation source separate from later Advances. The selector enforces Rank, simple Trait die requirements, and prerequisite Edge names; complex prerequisites and GM exceptions remain manual review items.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>

@@ -207,9 +207,12 @@ die from `character.skills`, computes the next die step, mutates `skill.die`,
 and records:
 
 ```js
-{
-  kind: ("skill-increased", skillName, before, after);
-}
+const change = {
+  kind: "skill-increased",
+  skillName,
+  before,
+  after,
+};
 ```
 
 The UI validation requires the selected skill to be trained, not already `d12`,
