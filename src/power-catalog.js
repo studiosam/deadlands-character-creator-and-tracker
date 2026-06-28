@@ -2300,6 +2300,7 @@ function createKnownPowerFromCatalog(catalogPower, character, options = {}) {
     active: Boolean(options.active || options.isActive),
     isActive: Boolean(options.active || options.isActive),
     activeTargets: Array.isArray(options.activeTargets) ? options.activeTargets : [],
+    creationSource: options.creationSource || "",
     addedReason: options.addedReason || "new-powers-edge",
     isCustom: false,
   };

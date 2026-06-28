@@ -836,10 +836,16 @@ function setupFixedStartingPowerText(config, powers) {
 }
 
 function setupPowerAuditCard(power, audit = null) {
+  const removable =
+    setupTraitsEditable() &&
+    setupPowerCreationSource(power) === "setup-starting-power";
   const meta = [
     audit?.catalog ? "Catalog matched" : "Unknown/custom",
     audit?.allowed ? "Allowed" : "",
     audit?.required ? "Required" : "",
+    setupPowerCreationSource(power) === "setup-starting-power"
+      ? "Setup starting Power"
+      : "",
     power.rank ? `Rank ${power.rank}` : "",
     setupPowerCostLabel(power),
     power.range ? `Range ${power.range}` : "",
@@ -863,6 +869,11 @@ function setupPowerAuditCard(power, audit = null) {
             .join("")}</div>`
         : ""
     }
+    ${
+      removable
+        ? `<div class="creator-actions"><button type="button" data-setup-action="removeSetupStartingPower" data-power-id="${esc(power.id)}">Remove</button></div>`
+        : ""
+    }
   </article>`;
 }
 
@@ -876,6 +887,45 @@ function setupRequiredPowerChecklist(report) {
   return report.requiredPowerAudits
     .map((item) => `${item.label}: ${item.recorded ? "recorded" : "missing"}`)
     .join(", ");
+}
+
+function setupStartingPowerSelectOptions(report) {
+  return [
+    '<option value="">Choose starting Power...</option>',
+    ...report.startingPowerOptions.map(
+      (power) =>
+        `<option value="${esc(power.id)}">${esc(power.name)} - ${esc(power.rank)} - ${esc(power.powerPoints)} PP</option>`,
+    ),
+  ].join("");
+}
+
+function renderSetupPowerSelectionControls(report) {
+  if (!report.editable) {
+    return `<p class="entry-advisory"><strong>Audit only:</strong> imported or advanced characters keep their recorded known powers here. Use Advances or Arcane controls for later Power changes.</p>`;
+  }
+  if (!report.profile) {
+    return `<p class="creator-note">Select an Arcane Background Edge before choosing starting Powers.</p>`;
+  }
+
+  const disabled =
+    !report.startingPowerSlotOpen || !report.startingPowerOptions.length;
+  return `<section class="setup-trait-group" aria-labelledby="setupPowerSelectionHeading">
+    <h4 id="setupPowerSelectionHeading">Select Starting Powers</h4>
+    <p class="creator-note">Choose legal starting Powers from the matched Arcane Background profile. Setup-selected Powers are source-tagged separately from later Advancement Powers.</p>
+    <div class="setup-form-grid">
+      <label class="setup-wide">Starting Power<select id="setupStartingPowerSelect"${disabled ? " disabled" : ""}>${setupStartingPowerSelectOptions(report)}</select></label>
+      <div class="creator-actions setup-wide">
+        <button type="button" data-setup-action="addSetupStartingPower"${disabled ? " disabled" : ""}>Add Starting Power</button>
+      </div>
+    </div>
+    ${
+      !report.startingPowerSlotOpen
+        ? '<p class="creator-note">All expected starting Power slots are filled.</p>'
+        : !report.startingPowerOptions.length
+          ? '<p class="creator-note">No additional legal starting Powers are currently available.</p>'
+          : ""
+    }
+  </section>`;
 }
 
 function renderSetupPowers() {
@@ -902,7 +952,7 @@ function renderSetupPowers() {
     <div class="section-title">
       <div>
         <h3 id="setupPowersHeading">Powers</h3>
-        <p>Read-only audit of Arcane Background, Power Points, and known powers. Power selection and full validation come in a later setup slice.</p>
+        <p>Select starting Powers for eligible created characters and audit Arcane Background, Power Points, and known powers for all characters.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>
@@ -916,10 +966,11 @@ function renderSetupPowers() {
       ${setupDetail("Recorded Known Powers", knownPowerLabel)}
       ${setupDetail("Required Starting Powers", setupRequiredPowerChecklist(report))}
     </div>
+    ${renderSetupPowerSelectionControls(report)}
     ${
       status === "Not applicable"
         ? '<p class="creator-note">No Arcane Background is recorded, so this character does not need Powers during setup.</p>'
-        : '<p class="entry-advisory"><strong>Audit only:</strong> imported powers may be current known powers rather than the exact creation-time power list. Starting-power editing and advancement separation are deferred.</p>'
+        : '<p class="entry-advisory"><strong>Power audit:</strong> imported powers may be current known powers rather than the exact creation-time power list. Created pre-advance characters can source-tag setup-selected starting Powers here.</p>'
     }
     ${
       report.incompleteItems.length
@@ -945,7 +996,11 @@ function renderSetupPowers() {
                         : `Missing required starting power for ${
                             profile?.name || "this Arcane Background"
                           }.`,
-                    )}</p></article>`,
+                    )}</p>${
+                      report.editable && !item.recorded
+                        ? `<div class="creator-actions"><button type="button" data-setup-action="addSetupStartingPower" data-power-id="${esc(item.id)}"${report.startingPowerSlotOpen ? "" : " disabled"}>Add ${esc(item.label)}</button></div>`
+                        : ""
+                    }</article>`,
                 )
                 .join("")
             : emptyState("No required starting powers.")

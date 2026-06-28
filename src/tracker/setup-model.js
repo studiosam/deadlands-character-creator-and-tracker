@@ -202,6 +202,46 @@ function setupRequiredStartingPowerAudits(profile, powerAudits) {
     };
   });
 }
+function setupPowerCreationSource(power) {
+  const explicit = plainEntryName(power?.creationSource);
+  if (
+    explicit === "setup starting power" ||
+    explicit === "setup-starting-power"
+  )
+    return "setup-starting-power";
+  return "";
+}
+function setupStartingPowerSlotOpen(profile, arcaneConfig, powers) {
+  const expected = setupPowerStartingCount(profile, arcaneConfig);
+  return expected > 0 && powers.length < expected;
+}
+function setupStartingPowerCatalogOptions(profile, powers) {
+  if (!profile || !Array.isArray(profile.allowedPowerIds)) return [];
+  const knownCatalogIds = new Set(
+    powers
+      .map((power) => setupKnownPowerCatalogEntry(power)?.id)
+      .filter(Boolean),
+  );
+  return profile.allowedPowerIds
+    .map((id) =>
+      typeof findPowerCatalogEntryById === "function"
+        ? findPowerCatalogEntryById(id)
+        : null,
+    )
+    .filter(Boolean)
+    .filter((power) => !knownCatalogIds.has(power.id))
+    .filter((power) =>
+      typeof rankAllowsPower === "function"
+        ? rankAllowsPower(character.rank, power.rank)
+        : true,
+    )
+    .sort(
+      (left, right) =>
+        powerRankValue(left.rank) - powerRankValue(right.rank) ||
+        (left.basePowerPoints ?? 999) - (right.basePowerPoints ?? 999) ||
+        left.name.localeCompare(right.name),
+    );
+}
 function setupPowerAuditReport() {
   const context = setupPowerAuditContext();
   const { arcaneEdges, arcaneConfig, powerPoints, powers } = context;
@@ -250,6 +290,10 @@ function setupPowerAuditReport() {
   const startingPowerCount = setupPowerStartingCount(profile, arcaneConfig);
   const skillAudit = setupArcaneSkillAudit(profile);
   const powerPointsAudit = setupPowerPointsAudit(profile, powerPoints);
+  const startingPowerOptions = setupStartingPowerCatalogOptions(
+    profile,
+    powers,
+  );
   const incompleteItems = [
     ...(skillAudit?.incomplete || []),
     ...(powerPointsAudit?.incomplete || []),
@@ -319,6 +363,12 @@ function setupPowerAuditReport() {
     powerPointsAudit,
     powerAudits,
     requiredPowerAudits,
+    startingPowerOptions,
+    startingPowerSlotOpen: setupStartingPowerSlotOpen(
+      profile,
+      arcaneConfig,
+      powers,
+    ),
     incompleteItems,
     warnings,
     status,

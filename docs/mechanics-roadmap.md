@@ -23,8 +23,8 @@ the rules.
 - Catalogs: substantial Deadlands and SWADE Edges, Hindrances, Powers, Gear,
   Armor, Weapons, and Vehicles.
 - Character Setup shell: Concept, Human ancestry review, Hindrances, Trait
-  spending, partial starting Edge enforcement, Powers audit, Gear audit, and
-  Review.
+  spending, partial starting Edge enforcement, starting Powers selection,
+  Powers audit, Gear audit, and Review.
 - Advancement: canonical ledger entries for current supported advancement
   types, canonical changes, application, persistence, and safe undo model.
 - Arcane support: Arcane Background profiles, Power Points, known powers,
@@ -37,9 +37,12 @@ the rules.
 
 ### Character Creation
 
-- Starting Powers are audit-first. The app can identify Arcane Background
-  expectations, required starting powers, Power Points, and obvious mismatches,
-  but it does not yet provide a complete setup-time power selection workflow.
+- Starting Powers selection is partially implemented. The app can identify
+  Arcane Background expectations, required starting powers, Power Points, and
+  obvious mismatches, and created pre-advance characters can add/remove
+  source-tagged setup starting powers. Remaining work includes stronger Power
+  legality validation, setup Power Point workflows, and creation-baseline
+  coverage.
 - Starting Gear is audit-first. The app tracks equipment and load well, but it
   does not yet validate starting cash, purchases, free gear, organization gear,
   or gear source.
@@ -110,7 +113,7 @@ the rules.
 Goal: make app-created characters explainable from creation baseline plus
 Advancement.
 
-1. Add starting Powers setup selection.
+1. Harden starting Powers setup selection and validation.
 2. Validate Arcane Background power lists, required starting powers, starting
    power counts, and starting Power Points.
 3. Add starting Gear purchase validation and source tracking.

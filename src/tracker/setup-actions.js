@@ -286,6 +286,94 @@ function removeSetupEdge(id) {
   appToast("Edge removed.", "success");
 }
 
+function setupStartingPowerById(powerId) {
+  return typeof findPowerCatalogEntryById === "function" && powerId
+    ? findPowerCatalogEntryById(powerId)
+    : null;
+}
+
+function setupPowerAlreadyKnown(catalogPower) {
+  return (character.powers || []).some((power) =>
+    setupKnownPowerMatchesCatalog(power, catalogPower),
+  );
+}
+
+function addSetupStartingPower(powerId = "") {
+  if (!ensureSetupTraitsEditable()) return;
+  const report = setupPowerAuditReport();
+  const selectedId = powerId || $("#setupStartingPowerSelect")?.value || "";
+  const catalogPower = setupStartingPowerById(selectedId);
+
+  if (!report.profile) {
+    appToast(
+      "Choose an Arcane Background before adding starting Powers.",
+      "danger",
+    );
+    return;
+  }
+  if (!catalogPower) {
+    appToast("Choose a starting Power before adding it.", "danger");
+    return;
+  }
+  if (!report.profile.allowedPowerIds?.includes(catalogPower.id)) {
+    appToast(
+      `${catalogPower.name} is not allowed for ${report.profile.name}.`,
+      "danger",
+    );
+    return;
+  }
+  if (
+    typeof rankAllowsPower === "function" &&
+    !rankAllowsPower(character.rank, catalogPower.rank)
+  ) {
+    appToast(
+      `${catalogPower.name} requires ${catalogPower.rank} rank.`,
+      "danger",
+    );
+    return;
+  }
+  if (setupPowerAlreadyKnown(catalogPower)) {
+    appToast("That Power is already recorded.", "danger");
+    return;
+  }
+  if (!report.startingPowerSlotOpen) {
+    appToast("All starting Power slots are already filled.", "danger");
+    return;
+  }
+
+  if (!Array.isArray(character.powers)) character.powers = [];
+  character.powers.push(
+    normalizePowerRecord(
+      createKnownPowerFromCatalog(catalogPower, character, {
+        addedReason: "setup-starting-power",
+        creationSource: "setup-starting-power",
+      }),
+      character.powers.length,
+      character.arcaneBackground?.edgeName,
+    ),
+  );
+  render();
+  save();
+  appToast(`${catalogPower.name} added as a starting Power.`, "success");
+}
+
+function removeSetupStartingPower(powerId) {
+  if (!ensureSetupTraitsEditable() || !powerId) return;
+  const power = (character.powers || []).find((item) => item.id === powerId);
+  if (!power) return;
+  if (setupPowerCreationSource(power) !== "setup-starting-power") {
+    appToast(
+      "Only setup-selected starting Powers can be removed here.",
+      "danger",
+    );
+    return;
+  }
+  character.powers = character.powers.filter((item) => item.id !== powerId);
+  render();
+  save();
+  appToast("Starting Power removed.", "success");
+}
+
 function ensureSetupTraitsEditable() {
   if (setupTraitsEditable()) return true;
   appToast(

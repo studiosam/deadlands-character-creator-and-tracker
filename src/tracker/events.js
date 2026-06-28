@@ -128,6 +128,10 @@ document.addEventListener("click", async (event) => {
     );
   } else if (setupAction?.dataset.setupAction === "removeSetupEdge") {
     removeSetupEdge(setupAction.dataset.edgeId || "");
+  } else if (setupAction?.dataset.setupAction === "addSetupStartingPower") {
+    addSetupStartingPower(setupAction.dataset.powerId || "");
+  } else if (setupAction?.dataset.setupAction === "removeSetupStartingPower") {
+    removeSetupStartingPower(setupAction.dataset.powerId || "");
   } else if (setupAction?.dataset.setupAction === "incAttribute") {
     changeSetupAttribute(setupAction.dataset.traitName || "", 1);
   } else if (setupAction?.dataset.setupAction === "decAttribute") {

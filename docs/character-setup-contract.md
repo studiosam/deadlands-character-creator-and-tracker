@@ -6,7 +6,7 @@ The first Character Setup implementation creates the shared setup and review she
 
 The normal `Create Character` entry points now create a new `source: "created"` character slot and route directly to Character Setup at Concept. The older all-in-one creator screen is no longer exposed through normal navigation; it remains only as legacy fallback code for older creation-draft imports until that compatibility path is removed or migrated.
 
-Concept edits map to the active character's `name`, `gender`, `age`, `archetype`, `player`, `description`, and `background` fields and save through the normal tracker persistence path. Rank is not edited in Concept; it is shown as recorded or derived advancement context elsewhere. Hindrances, Traits, and starting Edge selection now have functional setup controls for eligible characters. Powers, Gear, and Review are still audit-first slices.
+Concept edits map to the active character's `name`, `gender`, `age`, `archetype`, `player`, `description`, and `background` fields and save through the normal tracker persistence path. Rank is not edited in Concept; it is shown as recorded or derived advancement context elsewhere. Hindrances, Traits, starting Edge selection, and starting Power selection now have functional setup controls for eligible characters. Gear and Review are still audit-first slices.
 
 Race / Ancestry is read-only for the current Deadlands-focused profile. It records Human as the supported race or ancestry and flags imported non-Human values for review instead of offering editing controls.
 
@@ -16,7 +16,7 @@ Traits is editable for characters created in this tool that do not yet have reco
 
 Edges audits recorded Edges against the current catalog and, for characters created in this tool with no recorded Advances, supports selecting the Human free Edge and any Edge slots bought with Hindrance benefit points. Starting Edge choices are source-tagged as `human-free-edge` or `hindrance-benefit` so they remain distinct from later Advances. Imported and advanced characters remain audit-only. Catalog-matched Edges show category, rank, requirements, and summary text. Arcane Background Edges are called out, and more than one Arcane Background Edge is flagged for review. Starting Edge selection, add-time validation, existing source-tracked setup Edge review, and setup confirmation use the same partial eligibility model: catalog match, legal Rank, recognized Trait die requirements, recognized prerequisite Edge names, no duplicate selected Edge, and available Human free or Hindrance benefit slot count. Invalid source-tracked setup Edges on editable pre-advance created characters mark Edges as Needs Review and block setup confirmation until removed or reselected. Missing starting Edge slots may remain incomplete under the current setup flow. Full complex Edge prerequisite enforcement, Advancement Edge prerequisite enforcement, and GM exception bookkeeping are deferred to later setup slices.
 
-Powers is read-only and follows Edges because Arcane Background Edges determine whether Powers are required. It audits the recorded Arcane Background against `ARCANE_BACKGROUND_POWER_PROFILES`, including expected Arcane Skill and linked attribute, Power Points, expected starting power count, required starting powers, known power catalog matches, and obvious powers outside the matched Arcane Background power list. Non-arcane characters show this step as not applicable. Created pre-advance characters show missing Arcane Skill, Power Points, starting power count, or required starting powers as incomplete; imported and advanced characters remain audit-only and use Needs Review for the same gaps. Full starting-power selection, full Power legality validation, and separation of creation powers from powers gained through Advances are deferred to later setup slices.
+Powers follows Edges because Arcane Background Edges determine whether Powers are required. It audits the recorded Arcane Background against `ARCANE_BACKGROUND_POWER_PROFILES`, including expected Arcane Skill and linked attribute, Power Points, expected starting power count, required starting powers, known power catalog matches, and obvious powers outside the matched Arcane Background power list. For characters created in this tool with no recorded Advances, it supports selecting legal starting Powers from the matched Arcane Background profile, including required starting powers, and source-tags those records as `setup-starting-power` so they remain distinct from later Advancement Powers. Non-arcane characters show this step as not applicable. Created pre-advance characters show missing Arcane Skill, Power Points, starting power count, or required starting powers as incomplete; imported and advanced characters remain audit-only and use Needs Review for the same gaps. Full Power effect automation and complex table-dependent Power legality remain deferred.
 
 Gear is read-only and follows Powers. It audits recorded money, weapons, armor, general gear, consumables, ammunition, vehicles, carried/on-body items, equipped/worn items, dropped items, stored/off-person items, container contents, current load, combat load, carrying capacity, and obvious missing or unknown item data. Imported/current equipment may include post-creation purchases, loot, or table adjustments. Starting cash purchase validation, buying workflows, and gear-source tracking are deferred to later setup slices.
 
@@ -57,7 +57,8 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 ### Partially implemented
 
 - Creation baseline tracking exists for created-character starting Attributes and Skills and should be extended carefully to other setup-time choices.
-- Character Setup Powers and Gear are audit-first. Powers now reports Arcane Background profile expectations, Arcane Skill, Power Points, expected starting power count, required starting powers, and obvious known-power mismatches, but does not mutate powers or provide full starting-power selection. Gear now reports money, load, carried/off-person locations, containers, and obvious missing/unknown item data, but does not mutate inventory or provide starting-purchase validation or source tracking.
+- Character Setup Gear is audit-first. Gear now reports money, load, carried/off-person locations, containers, and obvious missing/unknown item data, but does not mutate inventory or provide starting-purchase validation or source tracking.
+- Character Setup Powers selection is partially implemented. Created pre-advance characters can add and remove setup-selected starting Powers from the matched Arcane Background profile, while imported and advanced characters remain audit-only. Full Power effect automation and complex table-dependent Power validation are deferred.
 - Advancement has canonical ledger storage, adaptive forms, application helpers, validation, import history handling, and focused browser coverage. The remaining product boundary question is whether the current Character-tab Advancement area should move behind a more deliberate Advancement workflow.
 
 ### Planned next
@@ -69,7 +70,7 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 ### Deferred
 
 - Full Edge prerequisite validation.
-- Full Power legality validation and starting-power selection.
+- Full Power effect automation and complex table-dependent Power validation.
 - Starting cash purchase validation and gear-source tracking.
 - Reconstruction of original creation baselines for advanced imported characters.
 - Editable campaign/source configuration in `Sources & Rulesets`.
@@ -187,7 +188,7 @@ Direct changes to Attributes, Skills, Edges, Hindrances, Powers, or Gear after s
 
 - Do not implement more Advancement rules behavior until the workflow boundary is settled.
 - Do not make Gear editable from Character Setup.
-- Do not make Powers editable from Character Setup.
+- Do not make Powers broadly editable from Character Setup beyond source-tracked starting Power selection for eligible created pre-advance characters.
 - Do not enforce full Edge prerequisites yet.
 - Do not build a full campaign settings editor.
 - Do not refactor the whole renderer yet.
