@@ -49,8 +49,9 @@ the rules.
   includes free gear, organization gear, and setup exception records.
 - Creation baselines now snapshot finalized eligible created characters across
   Attributes, Skills, Hindrances, starting Edges, Powers, Gear, money, and setup
-  source fields. Remaining work is a deliberate setup exception record workflow
-  and richer free/source-granted gear modeling.
+  source fields. Basic GM/table exception marking now stores metadata on the
+  affected record and in `setupExceptions`. Remaining work is richer exception
+  notes and free/source-granted gear modeling.
 - Imported advanced characters are not reconstructed back to original creation
   state, and that should remain advisory rather than blocking.
 
@@ -123,6 +124,7 @@ Advancement.
 4. Extend creation baselines to Hindrances, starting Edges, Powers, Gear, and
    money. Completed for eligible finalized created characters.
 5. Add explicit GM or table exception records for setup-time deviations.
+   Basic metadata marking is implemented; richer notes remain follow-up work.
 
 Completion criteria:
 
@@ -138,9 +140,8 @@ Completion criteria:
 - Imported and advanced characters remain audit-only unless the app has reliable
   creation-time data.
 - Browser tests cover starting Powers selection, starting Gear purchase
-  validation, creation baseline persistence, setup source persistence, and
-  reload/export/import behavior. Setup exception persistence remains pending
-  until the exception workflow exists.
+  validation, creation baseline persistence, setup source persistence, setup
+  exception persistence, and reload/export/import behavior.
 
 Phase 1 is not complete until the app can answer: "What did this character
 start with, what rule or source granted it, and what later changed?"

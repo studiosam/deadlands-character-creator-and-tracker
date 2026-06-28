@@ -425,6 +425,8 @@ function setupAuditRecord(type, label, record, options = {}) {
   return {
     type,
     label,
+    collection: options.collection || "",
+    recordId: options.recordId || record?.id || "",
     creationSource: descriptor.creationSource,
     sourceLabel: descriptor.label,
     needsException: Boolean(options.requiresSource && !explained),
@@ -436,6 +438,8 @@ function setupSourceAuditReport(currentCharacter = character) {
   (currentCharacter.hindrances || []).forEach((hindrance) =>
     records.push(
       setupAuditRecord("Hindrance", hindrance.name || "Unnamed", hindrance, {
+        collection: "hindrances",
+        recordId: hindrance.id,
         requiresSource: true,
       }),
     ),
@@ -443,6 +447,8 @@ function setupSourceAuditReport(currentCharacter = character) {
   (currentCharacter.edges || []).forEach((edge) =>
     records.push(
       setupAuditRecord("Edge", edge.name || "Unnamed", edge, {
+        collection: "edges",
+        recordId: edge.id,
         requiresSource: true,
       }),
     ),
@@ -450,6 +456,8 @@ function setupSourceAuditReport(currentCharacter = character) {
   (currentCharacter.powers || []).forEach((power) =>
     records.push(
       setupAuditRecord("Power", power.name || "Unnamed", power, {
+        collection: "powers",
+        recordId: power.id,
         requiresSource: true,
       }),
     ),
@@ -457,6 +465,8 @@ function setupSourceAuditReport(currentCharacter = character) {
   (currentCharacter.resources || []).forEach((resource) =>
     records.push(
       setupAuditRecord("Resource", resource.name || "Unnamed", resource, {
+        collection: "resources",
+        recordId: resource.id,
         requiresSource: resource.name === "Power Points",
       }),
     ),
@@ -464,6 +474,8 @@ function setupSourceAuditReport(currentCharacter = character) {
   flattenInventory(currentCharacter.inventory || []).forEach(({ item }) =>
     records.push(
       setupAuditRecord("Gear", item.name || "Gear", item, {
+        collection: "inventory",
+        recordId: item.id,
         requiresSource: true,
       }),
     ),
@@ -471,6 +483,8 @@ function setupSourceAuditReport(currentCharacter = character) {
   (currentCharacter.weapons || []).forEach((weapon) =>
     records.push(
       setupAuditRecord("Weapon", weapon.name || "Weapon", weapon, {
+        collection: "weapons",
+        recordId: weapon.id,
         requiresSource: true,
       }),
     ),
@@ -478,13 +492,17 @@ function setupSourceAuditReport(currentCharacter = character) {
   (currentCharacter.armorInventory || []).forEach((armor) =>
     records.push(
       setupAuditRecord("Armor", armor.name || "Armor", armor, {
+        collection: "armorInventory",
+        recordId: armor.id,
         requiresSource: true,
       }),
     ),
   );
-  Object.values(currentCharacter.ammo || {}).forEach((ammo) =>
+  Object.entries(currentCharacter.ammo || {}).forEach(([key, ammo]) =>
     records.push(
       setupAuditRecord("Ammo", ammo.label || "Ammo", ammo, {
+        collection: "ammo",
+        recordId: key,
         requiresSource: true,
       }),
     ),
@@ -492,6 +510,8 @@ function setupSourceAuditReport(currentCharacter = character) {
   (currentCharacter.vehicles || []).forEach((vehicle) =>
     records.push(
       setupAuditRecord("Vehicle", vehicle.name || "Vehicle", vehicle, {
+        collection: "vehicles",
+        recordId: vehicle.id,
         requiresSource: true,
       }),
     ),

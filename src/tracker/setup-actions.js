@@ -911,6 +911,104 @@ function syncSetupHindranceSeverity() {
   );
 }
 
+function setupExceptionTarget(collection, recordId) {
+  if (!collection || !recordId) return null;
+  if (collection === "inventory")
+    return findInventoryEntry(recordId)?.item || null;
+  if (collection === "ammo") return character.ammo?.[recordId] || null;
+  const records = character[collection];
+  return Array.isArray(records)
+    ? records.find((record) => record.id === recordId) || null
+    : null;
+}
+
+function setupExceptionSourceDetail(
+  collection,
+  recordId,
+  type,
+  label,
+  markedAt,
+) {
+  return {
+    recordCollection: collection,
+    recordId,
+    recordType: type,
+    displayLabel: label,
+    markedAt,
+  };
+}
+
+function recordSetupException(collection, recordId, type, label, markedAt) {
+  if (!Array.isArray(character.setupExceptions)) character.setupExceptions = [];
+  const exceptionId = generateStableEntryId(
+    "setup-exception",
+    `${collection}-${recordId}`,
+  );
+  const sourceDetail = setupSourceDetail("setup-gm-exception", {
+    ...setupExceptionSourceDetail(collection, recordId, type, label, markedAt),
+  });
+  const existing = character.setupExceptions.find(
+    (exception) =>
+      exception.recordCollection === collection &&
+      exception.recordId === recordId,
+  );
+  const entry = {
+    id: existing?.id || exceptionId,
+    type: "setup-exception",
+    label,
+    recordType: type,
+    recordCollection: collection,
+    recordId,
+    creationSource: "setup-gm-exception",
+    source: setupSourceLabel("setup-gm-exception"),
+    sourceDetail,
+    createdAt: existing?.createdAt || markedAt,
+    updatedAt: markedAt,
+    notes: existing?.notes || "",
+  };
+
+  if (existing) Object.assign(existing, entry);
+  else character.setupExceptions.push(entry);
+}
+
+function markSetupRecordAsException(collection, recordId, type, label) {
+  if (!ensureSetupTraitsEditable()) return;
+  const target = setupExceptionTarget(collection, recordId);
+  if (!target) {
+    appToast("That setup record could not be found.", "danger");
+    return;
+  }
+
+  const markedAt = new Date().toISOString();
+  const displayLabel = label || target.name || target.label || "Setup record";
+  applySetupSourceFields(
+    target,
+    "setup-gm-exception",
+    setupExceptionSourceDetail(
+      collection,
+      recordId,
+      type || "Setup Record",
+      displayLabel,
+      markedAt,
+    ),
+  );
+  recordSetupException(
+    collection,
+    recordId,
+    type || "Setup Record",
+    displayLabel,
+    markedAt,
+  );
+
+  if (character.creationBaseline) {
+    character.creationBaseline = buildCreationBaselineSnapshot(character);
+  }
+
+  render();
+  save();
+  appToast(`${displayLabel} marked as a GM/table exception.`, "success");
+}
+
 async function saveDraftCharacterFromSetup() {
   const entry = await saveUnsavedCharacterDraft();
   if (!entry) return false;

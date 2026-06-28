@@ -2229,6 +2229,135 @@ test("finalizing setup snapshots source-tracked creation baseline and round-trip
   expect(reloaded.baselineCapturedAt).toBeTruthy();
 });
 
+test("marks setup source audit records as GM table exceptions", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await page.evaluate(() => {
+    const characterData = normalize({
+      source: "created",
+      setupStatus: "needsReview",
+      name: "Exception Setup Character",
+      rank: "Novice",
+      ancestry: "Human",
+      archetype: "Oddity",
+      attributes: {
+        agility: "d6",
+        smarts: "d6",
+        spirit: "d6",
+        strength: "d6",
+        vigor: "d6",
+      },
+      skills: [],
+      hindrances: [],
+      edges: [],
+      powers: [],
+      resources: [],
+      advances: [],
+      inventory: [
+        {
+          id: "mysterious-relic",
+          name: "Mysterious Relic",
+          count: 1,
+          weight: 1,
+          costCents: 0,
+        },
+      ],
+      ammo: {},
+      weapons: [],
+      armorInventory: [],
+      consumables: [],
+      vehicles: [],
+    });
+    const entry = addCharacterSlot(characterData, {
+      source: "test",
+      preferredId: "exception-setup-character",
+    });
+    character = normalize(entry.character);
+    characterSetupReviewOpen = true;
+    characterSetupStep = "review";
+    characterDraftMode = false;
+    render();
+    renderDemoExperience();
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await page.locator("[data-setup-step='review']").click();
+
+  const relicAuditRow = page.locator("#setupReviewPanel .dossier-note").filter({
+    hasText: "Mysterious Relic",
+  });
+  await expect(relicAuditRow).toContainText("Needs a GM/table exception note");
+  await relicAuditRow.getByRole("button", { name: "Mark Exception" }).click();
+
+  await expect(
+    page.locator("#setupReviewPanel .dossier-note").filter({
+      hasText: "Mysterious Relic",
+    }),
+  ).toContainText("Explained by GM / table exception.");
+
+  const snapshot = await page.evaluate((storageKey) => {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "null");
+    const relic = stored.inventory.find(
+      (item) => item.id === "mysterious-relic",
+    );
+    return {
+      liveSource: relic.creationSource,
+      liveSourceLabel: relic.source,
+      liveSourceDetail: relic.sourceDetail,
+      exception: stored.setupExceptions[0],
+      baselineRelicSource:
+        stored.creationBaseline.gear.inventory[0].creationSource,
+      baselineExceptionSource:
+        stored.creationBaseline.setupExceptions[0].creationSource,
+    };
+  }, STORAGE_KEY);
+  expect(snapshot.liveSource).toBe("setup-gm-exception");
+  expect(snapshot.liveSourceLabel).toBe("GM / table exception");
+  expect(snapshot.liveSourceDetail).toEqual(
+    expect.objectContaining({
+      kind: "setup-exception",
+      recordCollection: "inventory",
+      recordId: "mysterious-relic",
+      recordType: "Gear",
+      displayLabel: "Mysterious Relic",
+    }),
+  );
+  expect(snapshot.exception).toEqual(
+    expect.objectContaining({
+      type: "setup-exception",
+      label: "Mysterious Relic",
+      recordCollection: "inventory",
+      recordId: "mysterious-relic",
+      creationSource: "setup-gm-exception",
+      source: "GM / table exception",
+    }),
+  );
+  expect(snapshot.baselineRelicSource).toBe("setup-gm-exception");
+  expect(snapshot.baselineExceptionSource).toBe("setup-gm-exception");
+
+  const exported = await page.evaluate(() => serializeTrackerExport(character));
+  await page.evaluate((payload) => {
+    localStorage.clear();
+    importJsonText(JSON.stringify(payload));
+  }, exported);
+
+  const imported = await page.evaluate(() => ({
+    relicSource:
+      character.inventory.find((item) => item.id === "mysterious-relic")
+        ?.creationSource || "",
+    exceptionSource: character.setupExceptions?.[0]?.creationSource || "",
+    baselineExceptionSource:
+      character.creationBaseline?.setupExceptions?.[0]?.creationSource || "",
+  }));
+  expect(imported).toEqual({
+    relicSource: "setup-gm-exception",
+    exceptionSource: "setup-gm-exception",
+    baselineExceptionSource: "setup-gm-exception",
+  });
+});
+
 test("settings panel exposes backup and local data controls", async ({
   page,
 }) => {

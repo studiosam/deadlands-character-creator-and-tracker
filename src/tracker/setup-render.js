@@ -1377,6 +1377,7 @@ function renderSetupReview() {
   const gearReport = setupGearAuditReport();
   const gearCounts = gearReport.counts;
   const sourceAudit = setupSourceAuditReport();
+  const sourceExceptionEditable = setupTraitsEditable();
   return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
     <div class="section-title">
       <div>
@@ -1480,7 +1481,11 @@ function renderSetupReview() {
                     record.needsException
                       ? "Needs a GM/table exception note or a specific setup source."
                       : `Explained by ${esc(record.sourceLabel)}.`
-                  }</p></article>`,
+                  }</p>${
+                    record.needsException && sourceExceptionEditable
+                      ? `<button type="button" class="ghost small-action" data-setup-action="markSetupException" data-setup-collection="${esc(record.collection)}" data-setup-record-id="${esc(record.recordId)}" data-setup-record-type="${esc(record.type)}" data-setup-record-label="${esc(record.label)}">Mark Exception</button>`
+                      : ""
+                  }</article>`,
               )
               .join("")
           : emptyState("No source-tracked setup records yet.")

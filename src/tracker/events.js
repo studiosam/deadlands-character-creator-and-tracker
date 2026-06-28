@@ -146,6 +146,13 @@ document.addEventListener("click", async (event) => {
     addSetupWeaponPurchase();
   } else if (setupAction?.dataset.setupAction === "addSetupVehiclePurchase") {
     addSetupVehiclePurchase();
+  } else if (setupAction?.dataset.setupAction === "markSetupException") {
+    markSetupRecordAsException(
+      setupAction.dataset.setupCollection || "",
+      setupAction.dataset.setupRecordId || "",
+      setupAction.dataset.setupRecordType || "",
+      setupAction.dataset.setupRecordLabel || "",
+    );
   } else if (setupAction?.dataset.setupAction === "incAttribute") {
     changeSetupAttribute(setupAction.dataset.traitName || "", 1);
   } else if (setupAction?.dataset.setupAction === "decAttribute") {
