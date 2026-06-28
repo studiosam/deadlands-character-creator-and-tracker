@@ -72,6 +72,13 @@ yet practical to automate.
 - [ ] Powers setup audit flags missing required starting powers and powers
       outside the matched Arcane Background list while keeping imported or
       advanced characters audit-only.
+- [ ] Gear setup audit reports money, Current Load, Combat Load, Carrying
+      Capacity, carried/on-body gear, equipped/worn gear, stored/off-person
+      gear, and container contents without exposing inventory mutation controls.
+- [ ] Gear setup audit flags missing names, unknown locations, suspicious
+      counts, unknown weights, and other obvious data issues as review items.
+- [ ] Starting gear purchase validation and gear-source tracking remain
+      deferred.
 
 # Power Catalog Workflow Tests
 

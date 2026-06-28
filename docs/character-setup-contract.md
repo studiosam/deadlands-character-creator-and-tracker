@@ -18,7 +18,7 @@ Edges audits recorded Edges against the current catalog and, for characters crea
 
 Powers is read-only and follows Edges because Arcane Background Edges determine whether Powers are required. It audits the recorded Arcane Background against `ARCANE_BACKGROUND_POWER_PROFILES`, including expected Arcane Skill and linked attribute, Power Points, expected starting power count, required starting powers, known power catalog matches, and obvious powers outside the matched Arcane Background power list. Non-arcane characters show this step as not applicable. Created pre-advance characters show missing Arcane Skill, Power Points, starting power count, or required starting powers as incomplete; imported and advanced characters remain audit-only and use Needs Review for the same gaps. Full starting-power selection, full Power legality validation, and separation of creation powers from powers gained through Advances are deferred to later setup slices.
 
-Gear is read-only and follows Powers. It audits recorded money, weapons, armor, gear, consumables, ammunition, vehicles, active load, and load limit. Imported/current equipment may include post-creation purchases, loot, or table adjustments. Starting cash, purchase validation, and gear-source tracking are deferred to later setup slices.
+Gear is read-only and follows Powers. It audits recorded money, weapons, armor, general gear, consumables, ammunition, vehicles, carried/on-body items, equipped/worn items, dropped items, stored/off-person items, container contents, current load, combat load, carrying capacity, and obvious missing or unknown item data. Imported/current equipment may include post-creation purchases, loot, or table adjustments. Starting cash purchase validation, buying workflows, and gear-source tracking are deferred to later setup slices.
 
 Review is a simple summary of available setup data and import warnings, not full rules validation.
 
@@ -57,7 +57,7 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 ### Partially implemented
 
 - Creation baseline tracking exists for created-character starting Attributes and Skills and should be extended carefully to other setup-time choices.
-- Character Setup Powers and Gear are audit-first. Powers now reports Arcane Background profile expectations, Arcane Skill, Power Points, expected starting power count, required starting powers, and obvious known-power mismatches, but does not mutate powers or provide full starting-power selection. Gear reviews current/imported data but does not yet provide starting-purchase validation or source tracking.
+- Character Setup Powers and Gear are audit-first. Powers now reports Arcane Background profile expectations, Arcane Skill, Power Points, expected starting power count, required starting powers, and obvious known-power mismatches, but does not mutate powers or provide full starting-power selection. Gear now reports money, load, carried/off-person locations, containers, and obvious missing/unknown item data, but does not mutate inventory or provide starting-purchase validation or source tracking.
 - Advancement has canonical ledger storage, adaptive forms, application helpers, validation, import history handling, and focused browser coverage. The remaining product boundary question is whether the current Character-tab Advancement area should move behind a more deliberate Advancement workflow.
 
 ### Planned next

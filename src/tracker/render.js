@@ -355,8 +355,7 @@ function characterSetupStatus(stepId) {
     return setupPowerAuditReport().status;
   }
   if (stepId === "gear") {
-    const counts = setupGearAuditCounts();
-    return counts.totalItems || counts.moneyCents ? "Complete" : "Incomplete";
+    return setupGearAuditReport().status;
   }
   if (stepId === "review") return "Needs review";
   return "Planned";
@@ -693,6 +692,212 @@ function setupGearAuditCounts() {
     counts.ammo +
     counts.vehicles;
   return counts;
+}
+
+function setupGearCatalogMatch(entry) {
+  const item = entry.item || {};
+  const name = normalizeRuleName(entry.label || item.name || item.label);
+  const matchesName = (catalogItem) => normalizeRuleName(catalogItem.name) === name;
+  if (entry.type === "weapon") {
+    return (
+      WEAPON_CATALOG.find(
+        (catalogItem) =>
+          catalogItem.id === item.catalogId ||
+          catalogItem.id === item.id ||
+          matchesName(catalogItem),
+      ) || null
+    );
+  }
+  if (entry.type === "armor") {
+    return (
+      ARMOR_CATALOG.find(
+        (catalogItem) =>
+          catalogItem.id === item.catalogId ||
+          catalogItem.id === item.id ||
+          matchesName(catalogItem),
+      ) || null
+    );
+  }
+  if (entry.type === "ammo") return catalogAmmoForKey(entry.id, item);
+  if (entry.type === "vehicle") {
+    return (
+      VEHICLE_CATALOG.find(
+        (catalogItem) =>
+          catalogItem.id === item.catalogId ||
+          catalogItem.id === item.id ||
+          matchesName(catalogItem),
+      ) || null
+    );
+  }
+  return (
+    GEAR_CATALOG.find(
+      (catalogItem) =>
+        catalogItem.id === item.catalogId ||
+        catalogItem.id === item.id ||
+        matchesName(catalogItem),
+    ) || null
+  );
+}
+
+function setupInventoryAuditEntries() {
+  return flattenInventory().map(({ item, parent }) => ({
+    type: "gear",
+    id: item.id,
+    label: item.name || "Unnamed gear",
+    item,
+    parent,
+    location: parent ? "container" : item.location || "",
+    storageId: item.storageId || "",
+    containerId: parent?.id || item.containerId || "",
+    weight: inventoryItemTotalWeight(item),
+    count: Number(item.count ?? item.quantity ?? 1),
+  }));
+}
+
+function setupPhysicalAuditEntries() {
+  return physicalItems().map((entry) => ({
+    ...entry,
+    location: entry.item.itemLocation || "",
+    storageId: entry.item.storageId || "",
+    containerId: entry.item.containerId || "",
+    weight: physicalItemWeight(entry),
+    count: Number(entry.item.count ?? entry.item.quantity ?? 1),
+  }));
+}
+
+function setupVehicleAuditEntries() {
+  return (character.vehicles || [])
+    .filter((vehicle) => Number(vehicle.count ?? 1) > 0)
+    .map((vehicle) => ({
+      type: "vehicle",
+      id: vehicle.id,
+      label: vehicle.name || "Unnamed vehicle",
+      item: vehicle,
+      location: "vehicle",
+      storageId: "",
+      containerId: "",
+      weight: 0,
+      count: Number(vehicle.count ?? 1),
+    }));
+}
+
+function setupGearEntryLocationLabel(entry) {
+  if (entry.type === "vehicle") return "Vehicle";
+  if (entry.parent) return `Inside ${entry.parent.name || "Container"}`;
+  if (entry.location === "container") {
+    const parent = findInventoryEntry(entry.containerId)?.item;
+    return parent ? `Inside ${parent.name}` : "Inside Container";
+  }
+  return locationLabel(entry.location || "carried", entry.storageId);
+}
+
+function setupGearEntryWarnings(entry, catalog) {
+  const item = entry.item || {};
+  const warnings = [];
+  const rawName = String(item.name || item.label || "").trim();
+  const rawLocation = String(entry.location || item.location || item.itemLocation || "").trim();
+  const count = Number(item.count ?? item.quantity ?? item.qty ?? 1);
+  const locationKnown =
+    entry.type === "vehicle" ||
+    INVENTORY_LOCATIONS.includes(rawLocation || "carried");
+  const hasExplicitWeight =
+    parseWeightNumber(item.weight) !== null ||
+    parseWeightNumber(item.unitWeight) !== null ||
+    parseWeightNumber(item.totalWeight) !== null ||
+    parseWeightNumber(item.containerOwnWeight) !== null ||
+    catalog?.weight !== undefined;
+
+  if (!rawName) warnings.push("Missing item name.");
+  if (!locationKnown) warnings.push("Unknown or missing location.");
+  if (!Number.isFinite(count) || count < 0) warnings.push("Suspicious count value.");
+  if (entry.type !== "vehicle" && !hasExplicitWeight)
+    warnings.push("Weight is unknown; verify manually.");
+  if (
+    entry.type !== "vehicle" &&
+    item.costCents === undefined &&
+    catalog?.costCents === undefined
+  )
+    warnings.push("Cost is unknown; purchase validation is deferred.");
+
+  return warnings;
+}
+
+function setupGearLocationGroups(entries) {
+  return {
+    equipped: entries.filter((entry) => entry.location === "equipped"),
+    carried: entries.filter(
+      (entry) =>
+        !entry.parent &&
+        ["", "carried"].includes(entry.location) &&
+        entry.type !== "vehicle",
+    ),
+    containers: entries.filter((entry) => entry.location === "container" || entry.parent),
+    dropped: entries.filter((entry) => entry.location === "dropped"),
+    stored: entries.filter((entry) => entry.location === "stored"),
+    vehicles: entries.filter((entry) => entry.type === "vehicle"),
+  };
+}
+
+function setupContainerAudits(entries) {
+  return setupInventoryAuditEntries()
+    .filter((entry) => entry.item.isContainer)
+    .map((entry) => {
+      const contents = entries.filter(
+        (item) =>
+          item.containerId === entry.id ||
+          item.parent?.id === entry.id,
+      );
+      return {
+        ...entry,
+        contents,
+        ownWeight: inventoryItemOwnWeight(entry.item),
+        contentsWeight: inventoryItemContentsWeight(entry.item),
+        totalWeight: inventoryItemTotalWeight(entry.item),
+      };
+    });
+}
+
+function setupGearAuditReport() {
+  const counts = setupGearAuditCounts();
+  const normal = calculateEncumbrance(character);
+  const combat = calculateEncumbrance(character, { combat: true });
+  const entries = [
+    ...setupInventoryAuditEntries(),
+    ...setupPhysicalAuditEntries(),
+    ...setupVehicleAuditEntries(),
+  ].map((entry) => {
+    const catalog = setupGearCatalogMatch(entry);
+    return {
+      ...entry,
+      catalog,
+      warnings: setupGearEntryWarnings(entry, catalog),
+      locationLabel: setupGearEntryLocationLabel(entry),
+    };
+  });
+  const warnings = entries.flatMap((entry) =>
+    entry.warnings.map((warning) => `${entry.label}: ${warning}`),
+  );
+  const incompleteItems = [];
+  if (!counts.moneyCents) incompleteItems.push("Money is missing or zero.");
+  if (!counts.totalItems) incompleteItems.push("No gear is recorded.");
+
+  return {
+    editable: setupTraitsEditable(),
+    counts,
+    moneyCents: counts.moneyCents,
+    normal,
+    combat,
+    entries,
+    locationGroups: setupGearLocationGroups(entries),
+    containers: setupContainerAudits(entries),
+    warnings,
+    incompleteItems,
+    status: warnings.length
+      ? "Needs review"
+      : incompleteItems.length
+        ? "Incomplete"
+        : "Complete",
+  };
 }
 
 function setupCharacterIsCreated() {
@@ -2243,25 +2448,56 @@ function setupVehicleLine(vehicle) {
   );
 }
 
+function setupGearAuditEntryLine(entry) {
+  const item = entry.item || {};
+  const details = [
+    entry.type,
+    setupGearEntryLocationLabel(entry),
+    entry.type === "vehicle" ? "" : `Weight ${formatWeightPounds(entry.weight)}`,
+    entry.catalog ? "Catalog matched" : "Manual review",
+    item.costCents !== undefined ? `Cost ${money(item.costCents)}` : "",
+    item.book || "",
+  ];
+  return setupGearLine(
+    entry.label,
+    details,
+    [
+      item.note || item.notes || "",
+      ...entry.warnings.map((warning) => `Needs review: ${warning}`),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+function setupContainerAuditLine(container) {
+  const contentNames = container.contents.map((entry) => entry.label);
+  return setupGearLine(
+    container.label,
+    [
+      setupGearEntryLocationLabel(container),
+      `Empty ${formatWeightPounds(container.ownWeight)}`,
+      `Contents ${formatWeightPounds(container.contentsWeight)}`,
+      `Total ${formatWeightPounds(container.totalWeight)}`,
+    ],
+    contentNames.length
+      ? `Contains: ${contentNames.join(", ")}`
+      : "No contents recorded.",
+  );
+}
+
+function setupGearWarningMarkup(report) {
+  const messages = [...report.incompleteItems, ...report.warnings];
+  if (!messages.length) return "";
+  return `<div class="entry-warning"><strong>Gear audit:</strong><ul>${messages
+    .map((message) => `<li>${esc(message)}</li>`)
+    .join("")}</ul></div>`;
+}
+
 function renderSetupGear() {
-  const counts = setupGearAuditCounts();
-  const info = calculateEncumbrance(character);
-  const weapons = (character.weapons || []).filter((weapon) => weapon.name);
-  const armor = (character.armorInventory || []).filter(
-    (item) => Number(item.count ?? 1) > 0,
-  );
-  const inventory = (character.inventory || []).filter(
-    (item) => Number(item.count ?? 1) > 0,
-  );
-  const consumables = (character.consumables || []).filter(
-    (item) => Number(item.count ?? 1) > 0,
-  );
-  const ammo = Object.entries(character.ammo || {}).filter(
-    ([, reserve]) => Number(reserve?.count) > 0,
-  );
-  const vehicles = (character.vehicles || []).filter(
-    (vehicle) => Number(vehicle.count ?? 1) > 0,
-  );
+  const report = setupGearAuditReport();
+  const { counts, normal, combat, locationGroups } = report;
+  const byType = (type) => report.entries.filter((entry) => entry.type === type);
 
   return `<section id="setupGearPanel" class="setup-step-panel" aria-labelledby="setupGearHeading">
     <div class="section-title">
@@ -2272,24 +2508,36 @@ function renderSetupGear() {
       ${setupStatusMarkup(characterSetupStatus("gear"))}
     </div>
     <div class="setup-review-grid">
-      ${setupDetail("Money", money(counts.moneyCents))}
+      ${setupDetail("Gear Status", report.status)}
+      ${setupDetail("Recorded Money", money(counts.moneyCents))}
       ${setupDetail("Weapons", `${counts.weapons}`)}
       ${setupDetail("Armor", `${counts.armor}`)}
       ${setupDetail("Gear Items", `${counts.inventory}`)}
       ${setupDetail("Consumables", `${counts.consumables}`)}
       ${setupDetail("Ammo Pools", `${counts.ammo}`)}
       ${setupDetail("Vehicles", `${counts.vehicles}`)}
-      ${setupDetail("Current Load (Combat Load)", compactLoadText(info))}
-      ${setupDetail("Carrying Capacity", formatWeightPounds(info.carryingCapacity))}
+      ${setupDetail("Current Load", formatWeightPounds(normal.normalLoad))}
+      ${setupDetail("Combat Load", formatWeightPounds(combat.combatLoad))}
+      ${setupDetail("Carrying Capacity", formatWeightPounds(normal.carryingCapacity))}
+      ${setupDetail("Normal Status", normal.encumbered ? "Encumbered" : "No encumbrance")}
+      ${setupDetail("Combat Status", combat.encumbered ? "Encumbered" : "No encumbrance")}
+      ${setupDetail("Audit Warnings", `${report.warnings.length}`)}
     </div>
     <p class="entry-advisory"><strong>Audit only:</strong> imported/current inventory may include post-creation purchases, loot, or table adjustments. Starting cash and starting purchase validation are deferred.</p>
+    ${setupGearWarningMarkup(report)}
     <div class="setup-gear-groups">
-      ${setupAuditGroup("Weapons", weapons, "No weapons recorded.", setupWeaponLine)}
-      ${setupAuditGroup("Armor", armor, "No armor recorded.", setupArmorLine)}
-      ${setupAuditGroup("Gear", inventory, "No general gear recorded.", setupInventoryLine)}
-      ${setupAuditGroup("Consumables", consumables, "No consumables recorded.", setupConsumableLine)}
-      ${setupAuditGroup("Ammunition", ammo, "No ammunition reserves recorded.", setupAmmoLine)}
-      ${setupAuditGroup("Vehicles", vehicles, "No vehicles recorded.", setupVehicleLine)}
+      ${setupAuditGroup("Equipped / Worn", locationGroups.equipped, "No equipped or worn items recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("On Body / Carried", locationGroups.carried, "No carried gear recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("Inside Containers", locationGroups.containers, "No container contents recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("Dropped", locationGroups.dropped, "No dropped items recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("Stored / Off-person", locationGroups.stored, "No stored or off-person items recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("Containers", report.containers, "No containers recorded.", setupContainerAuditLine)}
+      ${setupAuditGroup("Weapons", byType("weapon"), "No weapons recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("Armor", byType("armor"), "No armor recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("General Gear", byType("gear"), "No general gear recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("Consumables", byType("consumable"), "No consumables recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("Ammunition", byType("ammo"), "No ammunition reserves recorded.", setupGearAuditEntryLine)}
+      ${setupAuditGroup("Vehicles", locationGroups.vehicles, "No vehicles recorded.", setupGearAuditEntryLine)}
     </div>
   </section>`;
 }
@@ -2330,7 +2578,8 @@ function renderSetupReview() {
     (power) => power.name,
   ).length;
   const powerPoints = powerPointResource();
-  const gearCounts = setupGearAuditCounts();
+  const gearReport = setupGearAuditReport();
+  const gearCounts = gearReport.counts;
   return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
     <div class="section-title">
       <div>
@@ -2359,6 +2608,8 @@ function renderSetupReview() {
       ${setupDetail("Power Points", powerPoints ? `${powerPoints.current} / ${powerPoints.max || "—"}` : "Not recorded")}
       ${setupDetail("Gear Items", `${gearCounts.totalItems}`)}
       ${setupDetail("Money", money(gearCounts.moneyCents))}
+      ${setupDetail("Gear Status", gearReport.status)}
+      ${setupDetail("Gear Warnings", `${gearReport.warnings.length}`)}
       ${setupDetail("Description", character.description)}
       ${setupDetail("Background", character.background)}
     </div>

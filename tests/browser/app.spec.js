@@ -2801,6 +2801,218 @@ test("Powers setup audit flags powers outside the Arcane Background list", async
   expect(powers).toContain("Bolt");
 });
 
+async function seedGearSetupCharacter(page, options = {}) {
+  await enterTracker(page);
+  await page.evaluate((seedOptions) => {
+    const characterData = normalize({
+      source: "created",
+      setupStatus: "needsReview",
+      name: seedOptions.name || "Gear Audit Character",
+      rank: "Novice",
+      ancestry: "Human",
+      archetype: "Gear Tester",
+      moneyCents: seedOptions.moneyCents ?? 25000,
+      attributes: {
+        agility: "d6",
+        smarts: "d6",
+        spirit: "d6",
+        strength: "d6",
+        vigor: "d6",
+      },
+      skills: [],
+      edges: [],
+      hindrances: [],
+      powers: [],
+      resources: [],
+      advances: [],
+      inventory: seedOptions.inventory || [],
+      weapons: seedOptions.weapons || [],
+      armorInventory: seedOptions.armorInventory || [],
+      consumables: seedOptions.consumables || [],
+      ammo: seedOptions.ammo || {},
+      vehicles: seedOptions.vehicles || [],
+    });
+    const entry = addCharacterSlot(characterData, {
+      source: "test",
+      preferredId: seedOptions.preferredId || "gear-audit-test",
+    });
+    character = normalize(entry.character);
+    if (seedOptions.injectInvalidInventory) {
+      character.inventory = seedOptions.injectInvalidInventory;
+    }
+    characterSetupReviewOpen = true;
+    characterSetupStep = "gear";
+    characterDraftMode = false;
+    render();
+    renderDemoExperience();
+  }, options);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await page.locator("[data-setup-step='gear']").click();
+}
+
+test("Gear setup audit separates money carried gear stored gear and load", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Complete Gear Audit",
+    preferredId: "complete-gear-audit",
+    inventory: [
+      {
+        id: "backpack",
+        name: "Backpack",
+        count: 1,
+        unitWeight: 3,
+        containerOwnWeight: 3,
+        totalWeight: 13,
+        costCents: 200,
+        location: "carried",
+        contents: [
+          {
+            id: "bedroll",
+            name: "Bedroll",
+            count: 1,
+            weight: 10,
+            costCents: 400,
+          },
+        ],
+      },
+      {
+        id: "canteen",
+        name: "Canteen",
+        count: 1,
+        weight: 3,
+        costCents: 100,
+        location: "carried",
+      },
+      {
+        id: "stored-rope",
+        name: "Rope (20 yards)",
+        count: 1,
+        weight: 8,
+        costCents: 500,
+        location: "stored",
+        storageId: "home",
+      },
+    ],
+    weapons: [
+      {
+        id: "bowie-knife",
+        name: "Bowie Knife",
+        damage: "Str+d4",
+        range: "—",
+        ap: 0,
+        rof: 1,
+        weight: 1,
+        costCents: 400,
+        itemLocation: "carried",
+      },
+    ],
+    armorInventory: [
+      {
+        id: "duster",
+        name: "Duster",
+        count: 1,
+        armor: 1,
+        location: "torso",
+        equipped: true,
+        itemLocation: "equipped",
+        weight: 4,
+        costCents: 1000,
+      },
+    ],
+  });
+
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await expect(page.locator("[data-setup-step='gear']")).toContainText(
+    "Complete",
+  );
+  await expect(setupGearPanel).toContainText("Recorded Money");
+  await expect(setupGearPanel).toContainText("$250.00");
+  await expect(setupGearPanel).toContainText("Current Load");
+  await expect(setupGearPanel).toContainText("Combat Load");
+  await expect(setupGearPanel).toContainText("Carrying Capacity");
+  await expect(setupGearPanel).toContainText("On Body / Carried");
+  await expect(setupGearPanel).toContainText("Equipped / Worn");
+  await expect(setupGearPanel).toContainText("Stored / Off-person");
+  await expect(setupGearPanel).toContainText("Containers");
+  await expect(setupGearPanel).toContainText("Backpack");
+  await expect(setupGearPanel).toContainText("Empty 3 lb");
+  await expect(setupGearPanel).toContainText("Contents 10 lb");
+  await expect(setupGearPanel).toContainText("Total 13 lb");
+  await expect(setupGearPanel).toContainText("Contains: Bedroll");
+  await expect(setupGearPanel).toContainText("Home");
+  await expect(setupGearPanel).not.toContainText("Add Item");
+  await expect(setupGearPanel).not.toContainText("Save Item");
+  await expect(setupGearPanel).not.toContainText("Purchase");
+  await expect(setupGearPanel).not.toContainText("Apply");
+  await expect(setupGearPanel.getByRole("button")).toHaveCount(0);
+
+  const before = await page.evaluate(() =>
+    JSON.stringify({
+      moneyCents: character.moneyCents,
+      inventory: character.inventory,
+      weapons: character.weapons,
+      armorInventory: character.armorInventory,
+    }),
+  );
+  await page.locator("[data-setup-step='gear']").click();
+  const after = await page.evaluate(() =>
+    JSON.stringify({
+      moneyCents: character.moneyCents,
+      inventory: character.inventory,
+      weapons: character.weapons,
+      armorInventory: character.armorInventory,
+    }),
+  );
+  expect(after).toBe(before);
+
+  await reloadIntoTracker(page);
+  await openCharacterSetupReview(page);
+  await page.locator("[data-setup-step='gear']").click();
+  await expect(page.locator("#setupGearPanel")).toContainText("Backpack");
+});
+
+test("Gear setup audit flags missing or unknown gear data", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Invalid Gear Audit",
+    preferredId: "invalid-gear-audit",
+    moneyCents: 25000,
+    injectInvalidInventory: [
+      {
+        id: "mystery-item",
+        name: "",
+        count: -1,
+        location: "somewhere-unknown",
+        weight: "",
+        unitWeight: "",
+        totalWeight: "",
+      },
+    ],
+  });
+
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await expect(page.locator("[data-setup-step='gear']")).toContainText(
+    "Needs review",
+  );
+  await expect(setupGearPanel).toContainText("Missing item name");
+  await expect(setupGearPanel).toContainText("Unknown or missing location");
+  await expect(setupGearPanel).toContainText("Suspicious count value");
+  await expect(setupGearPanel).toContainText("Weight is unknown");
+
+  const invalidItem = await page.evaluate(() => character.inventory[0]);
+  expect(invalidItem).toEqual(
+    expect.objectContaining({
+      id: "mystery-item",
+      name: "",
+      count: -1,
+      location: "somewhere-unknown",
+    }),
+  );
+});
+
 test("loads a bundled sample in demo mode", async ({ page }) => {
   await page.locator("#landingLoadSampleBtn").click();
 
@@ -2923,7 +3135,8 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   await expect(setupGearPanel).toContainText("Money");
   await expect(setupGearPanel).toContainText("Weapons");
   await expect(setupGearPanel).toContainText("Armor");
-  await expect(setupGearPanel).toContainText("Current Load (Combat Load)");
+  await expect(setupGearPanel).toContainText("Current Load");
+  await expect(setupGearPanel).toContainText("Combat Load");
   await expect(setupGearPanel).toContainText("Carrying Capacity");
   await expect(setupGearPanel).toContainText("Colt Army");
   await expect(setupGearPanel).toContainText("Winchester");
