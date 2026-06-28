@@ -47,8 +47,10 @@ the rules.
   and load well, uses screenshot-aligned catalog data, and created pre-advance
   characters can buy source-tagged catalog gear from setup funds. Remaining work
   includes free gear, organization gear, and setup exception records.
-- Creation baselines exist for Attributes and Skills only. They should expand
-  to Hindrances, Edges, Powers, Gear, money, and explicit table exceptions.
+- Creation baselines now snapshot finalized eligible created characters across
+  Attributes, Skills, Hindrances, starting Edges, Powers, Gear, money, and setup
+  source fields. Remaining work is a deliberate setup exception record workflow
+  and richer free/source-granted gear modeling.
 - Imported advanced characters are not reconstructed back to original creation
   state, and that should remain advisory rather than blocking.
 
@@ -119,14 +121,14 @@ Advancement.
    power counts, and starting Power Points.
 3. Harden starting Gear purchase validation and source tracking.
 4. Extend creation baselines to Hindrances, starting Edges, Powers, Gear, and
-   money.
+   money. Completed for eligible finalized created characters.
 5. Add explicit GM or table exception records for setup-time deviations.
 
 Completion criteria:
 
 - A newly created character can be finalized with a recorded creation baseline
   that explains starting Attributes, Skills, Hindrances, starting Edges, Powers,
-  Gear, money, and setup exceptions.
+  Gear, and money.
 - Created pre-advance characters can choose legal starting Powers from the
   matched Arcane Background profile, including required starting powers.
 - Created pre-advance characters can record starting Gear purchases against
@@ -136,8 +138,9 @@ Completion criteria:
 - Imported and advanced characters remain audit-only unless the app has reliable
   creation-time data.
 - Browser tests cover starting Powers selection, starting Gear purchase
-  validation, creation baseline persistence, setup exception persistence, and
-  reload/export/import behavior.
+  validation, creation baseline persistence, setup source persistence, and
+  reload/export/import behavior. Setup exception persistence remains pending
+  until the exception workflow exists.
 
 Phase 1 is not complete until the app can answer: "What did this character
 start with, what rule or source granted it, and what later changed?"

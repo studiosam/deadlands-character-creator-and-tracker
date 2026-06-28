@@ -2027,6 +2027,208 @@ test("finishes character setup and starts playing with a saved character", async
   ).toHaveText("Start Playing");
 });
 
+test("finalizing setup snapshots source-tracked creation baseline and round-trips import", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await page.evaluate(() => {
+    const arcaneEdge = EDGE_CATALOG.find(
+      (item) => item.id === "dl-edge-arcane-background-blessed",
+    );
+    const config = arcaneBackgroundConfigFromEdge(arcaneEdge.name);
+    const characterData = normalize({
+      source: "created",
+      setupStatus: "needsReview",
+      name: "Baseline Source Character",
+      rank: "Novice",
+      ancestry: "Human",
+      archetype: "Blessed Drifter",
+      attributes: {
+        agility: "d6",
+        smarts: "d6",
+        spirit: "d6",
+        strength: "d6",
+        vigor: "d6",
+      },
+      skills: [
+        { name: "Faith", die: "d4", linkedAttribute: "Spirit" },
+        { name: "Notice", die: "d4", linkedAttribute: "Smarts", core: true },
+      ],
+      hindrances: [
+        {
+          id: "hindrance-big-mouth",
+          name: "Big Mouth",
+          severity: "Minor",
+          notes: "Cannot keep secrets.",
+        },
+      ],
+      edges: [
+        {
+          ...arcaneEdge,
+          id: "baseline-blessed-edge",
+          catalogId: arcaneEdge.id,
+          source: "Human free Edge",
+          isCustom: false,
+        },
+      ],
+      arcaneBackground: makeArcaneBackgroundState(config),
+      powers: [
+        { catalogId: "power-holy-symbol" },
+        { catalogId: "power-barrier" },
+        { catalogId: "power-protection" },
+      ],
+      resources: [
+        {
+          id: "power-points",
+          name: "Power Points",
+          current: 15,
+          max: 15,
+        },
+      ],
+      inventory: [
+        {
+          id: "backpack",
+          name: "Backpack",
+          count: 1,
+          weight: 3,
+          costCents: 200,
+        },
+      ],
+      moneyCents: 24800,
+      ammo: {},
+      weapons: [],
+      armorInventory: [],
+      consumables: [],
+      vehicles: [],
+      advances: [],
+    });
+    const entry = addCharacterSlot(characterData, {
+      source: "test",
+      preferredId: "baseline-source-character",
+    });
+    character = normalize(entry.character);
+    characterSetupReviewOpen = true;
+    characterSetupStep = "review";
+    characterDraftMode = false;
+    render();
+    renderDemoExperience();
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await page.locator("[data-setup-action='finishSetup']").click();
+  await expect(page.locator("#appDialog")).toBeVisible();
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+
+  const finalized = await page.evaluate(
+    (storageKey) => JSON.parse(localStorage.getItem(storageKey) || "null"),
+    STORAGE_KEY,
+  );
+  expect(finalized.creationBaseline).toEqual(
+    expect.objectContaining({
+      version: 1,
+      source: "setup",
+      attributes: expect.objectContaining({ spirit: "d6" }),
+      money: expect.objectContaining({
+        cents: 24800,
+        creationSource: "setup-starting-funds",
+      }),
+    }),
+  );
+  expect(finalized.creationBaseline.capturedAt).toBeTruthy();
+  expect(finalized.hindrances[0]).toEqual(
+    expect.objectContaining({
+      creationSource: "setup-starting-hindrance",
+      source: "Starting Hindrance",
+    }),
+  );
+  expect(finalized.edges[0]).toEqual(
+    expect.objectContaining({
+      creationSource: "human-free-edge",
+      source: "Human free Edge",
+    }),
+  );
+  expect(finalized.resources[0]).toEqual(
+    expect.objectContaining({
+      creationSource: "setup-arcane-background",
+      source: "Setup: Arcane Background (Blessed)",
+    }),
+  );
+  expect(finalized.powers).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        name: "Holy Symbol",
+        creationSource: "setup-starting-power",
+        source: "Starting Power",
+      }),
+    ]),
+  );
+  expect(finalized.inventory[0]).toEqual(
+    expect.objectContaining({
+      creationSource: "setup-starting-gear",
+      source: "Starting Gear Purchase",
+    }),
+  );
+  expect(finalized.creationBaseline.gear.inventory[0]).toEqual(
+    expect.objectContaining({
+      creationSource: "setup-starting-gear",
+    }),
+  );
+
+  await reloadIntoTracker(page);
+  await openCharacterSetupReview(page);
+  await page.locator("[data-setup-step='review']").click();
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Setup Source Audit",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Needs GM/Table Exception",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText("0");
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Explained by Starting Gear Purchase.",
+  );
+
+  const exported = await page.evaluate(() => serializeTrackerExport(character));
+  await page.evaluate((payload) => {
+    localStorage.clear();
+    importJsonText(JSON.stringify(payload));
+  }, exported);
+
+  const imported = await page.evaluate(() => ({
+    name: character.name,
+    setupStatus: character.setupStatus,
+    hindranceSource: character.hindrances[0]?.creationSource || "",
+    powerSource: character.powers[0]?.creationSource || "",
+    gearSource: character.inventory[0]?.creationSource || "",
+    baselineGearSource:
+      character.creationBaseline?.gear?.inventory?.[0]?.creationSource || "",
+    baselineMoneySource:
+      character.creationBaseline?.money?.creationSource || "",
+  }));
+  expect(imported).toEqual({
+    name: "Baseline Source Character",
+    setupStatus: "complete",
+    hindranceSource: "setup-starting-hindrance",
+    powerSource: "setup-starting-power",
+    gearSource: "setup-starting-gear",
+    baselineGearSource: "setup-starting-gear",
+    baselineMoneySource: "setup-starting-funds",
+  });
+
+  await reloadIntoTracker(page);
+  const reloaded = await page.evaluate(() => ({
+    baselinePowers: character.creationBaseline?.powers?.length || 0,
+    baselineResourceSource:
+      character.creationBaseline?.resources?.[0]?.creationSource || "",
+    baselineCapturedAt: character.creationBaseline?.capturedAt || "",
+  }));
+  expect(reloaded.baselinePowers).toBe(3);
+  expect(reloaded.baselineResourceSource).toBe("setup-arcane-background");
+  expect(reloaded.baselineCapturedAt).toBeTruthy();
+});
+
 test("settings panel exposes backup and local data controls", async ({
   page,
 }) => {

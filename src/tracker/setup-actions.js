@@ -71,15 +71,24 @@ function addSetupHindrance() {
     catalogEntry,
     severityInput?.value || "",
   );
-  upsertHindrance(character, {
-    ...catalogEntry,
-    id,
-    catalogId: catalogEntry.id,
-    severity,
-    notes: notesInput?.value.trim() || "",
-    source: catalogEntry.source || "Manual",
-    isCustom: false,
-  });
+  upsertHindrance(
+    character,
+    applySetupSourceFields(
+      {
+        ...catalogEntry,
+        id,
+        catalogId: catalogEntry.id,
+        severity,
+        notes: notesInput?.value.trim() || "",
+        isCustom: false,
+      },
+      "setup-starting-hindrance",
+      {
+        catalogId: catalogEntry.id,
+        severity,
+      },
+    ),
+  );
   render();
   save();
   appToast(`${catalogEntry.name} added.`, "success");
@@ -240,14 +249,22 @@ function addSetupEdgeFromCatalog(selectId, creationSource, sourceLabel) {
     generateStableEntryId("edge", `${creationSource}-${catalogEntry.name}`),
     new Set((character.edges || []).map((edge) => edge.id)),
   );
-  upsertEdge(character, {
-    ...catalogEntry,
-    id,
-    catalogId: catalogEntry.id,
-    source: sourceLabel,
-    creationSource,
-    isCustom: false,
-  });
+  upsertEdge(
+    character,
+    applySetupSourceFields(
+      {
+        ...catalogEntry,
+        id,
+        catalogId: catalogEntry.id,
+        isCustom: false,
+      },
+      creationSource,
+      {
+        catalogId: catalogEntry.id,
+        slotType: creationSource,
+      },
+    ),
+  );
   render();
   save();
   appToast(`${catalogEntry.name} added.`, "success");
@@ -343,13 +360,20 @@ function addSetupStartingPower(powerId = "") {
 
   if (!Array.isArray(character.powers)) character.powers = [];
   character.powers.push(
-    normalizePowerRecord(
-      createKnownPowerFromCatalog(catalogPower, character, {
-        addedReason: "setup-starting-power",
-        creationSource: "setup-starting-power",
-      }),
-      character.powers.length,
-      character.arcaneBackground?.edgeName,
+    applySetupSourceFields(
+      normalizePowerRecord(
+        createKnownPowerFromCatalog(catalogPower, character, {
+          addedReason: "setup-starting-power",
+          creationSource: "setup-starting-power",
+        }),
+        character.powers.length,
+        character.arcaneBackground?.edgeName,
+      ),
+      "setup-starting-power",
+      {
+        catalogId: catalogPower.id,
+        arcaneBackground: report.profile.name,
+      },
     ),
   );
   render();
@@ -396,13 +420,20 @@ function setSetupStartingPowerPoints() {
     return;
   }
 
-  const resource = makePowerPointResource(config, {
-    current: report.expectedPowerPoints,
-    max: report.expectedPowerPoints,
-    source: `Setup: Arcane Background (${report.profile.name})`,
-    creationSource: "setup-arcane-background",
-    note: `${report.profile.name} starting Power Points.`,
-  });
+  const resource = applySetupSourceFields(
+    makePowerPointResource(config, {
+      current: report.expectedPowerPoints,
+      max: report.expectedPowerPoints,
+      source: `Setup: Arcane Background (${report.profile.name})`,
+      creationSource: "setup-arcane-background",
+      note: `${report.profile.name} starting Power Points.`,
+    }),
+    "setup-arcane-background",
+    {
+      arcaneBackground: report.profile.name,
+      startingPowerPoints: report.expectedPowerPoints,
+    },
+  );
   const existingIndex = (character.resources || []).findIndex(
     (item) => item.id === "power-points",
   );
@@ -451,9 +482,11 @@ function updateSetupCreationBaseline() {
     ...(character.creation || {}),
   };
   character.creationBaseline = {
+    ...(character.creationBaseline || {}),
     attributes: clone(character.attributes || {}),
     skills: clone(character.skills || []),
   };
+  normalizeCreationBaselineShape(character);
 }
 
 function recalculateSetupTraitDerivedStats() {
@@ -572,14 +605,11 @@ function applySetupStartingGearSource(
   quantity,
   purchaseType,
 ) {
-  record.creationSource = "setup-starting-gear";
-  record.source = "Starting Gear Purchase";
-  record.sourceDetail = setupStartingGearSourceDetail(
-    catalogItem,
-    quantity,
-    purchaseType,
+  return applySetupSourceFields(
+    record,
+    "setup-starting-gear",
+    setupStartingGearSourceDetail(catalogItem, quantity, purchaseType),
   );
-  return record;
 }
 
 function setupPurchaseQuantity(inputId) {
@@ -631,8 +661,14 @@ function addSetupGearPurchase() {
     (item) =>
       item.id === id && setupGearCreationSource(item) === "setup-starting-gear",
   );
-  if (existing) existing.count += quantity;
-  else {
+  if (existing) {
+    existing.count += quantity;
+    normalizeSetupSourceFields(
+      existing,
+      "setup-starting-gear",
+      setupStartingGearSourceDetail(catalogItem, existing.count, "gear"),
+    );
+  } else {
     const item = normalizeInventoryItem(
       applySetupStartingGearSource(
         {
@@ -697,6 +733,15 @@ function addSetupAmmoPurchase() {
   Object.assign(character.ammo[key], fallback, {
     count: Math.max(0, Number(character.ammo[key].count) || 0) + quantity,
   });
+  normalizeSetupSourceFields(
+    character.ammo[key],
+    "setup-starting-gear",
+    setupStartingGearSourceDetail(
+      catalogItem,
+      character.ammo[key].count,
+      "ammo",
+    ),
+  );
   spendSetupStartingFunds(catalogItem, quantity);
   render();
   save();
@@ -720,8 +765,14 @@ function addSetupArmorPurchase() {
       item.id === catalogItem.id &&
       setupGearCreationSource(item) === "setup-starting-gear",
   );
-  if (existing) existing.count += quantity;
-  else
+  if (existing) {
+    existing.count += quantity;
+    normalizeSetupSourceFields(
+      existing,
+      "setup-starting-gear",
+      setupStartingGearSourceDetail(catalogItem, existing.count, "armor"),
+    );
+  } else
     character.armorInventory.push(
       applySetupStartingGearSource(
         {
@@ -813,8 +864,14 @@ function addSetupVehiclePurchase() {
       item.id === catalogItem.id &&
       setupGearCreationSource(item) === "setup-starting-gear",
   );
-  if (existing) existing.count += quantity;
-  else
+  if (existing) {
+    existing.count += quantity;
+    normalizeSetupSourceFields(
+      existing,
+      "setup-starting-gear",
+      setupStartingGearSourceDetail(catalogItem, existing.count, "vehicle"),
+    );
+  } else
     character.vehicles.push(
       applySetupStartingGearSource(
         {
@@ -918,6 +975,8 @@ async function confirmSetupReview() {
 
   character.setupStatus = "complete";
   characterSetupReviewOpen = false;
+  if (setupTraitsEditable()) snapshotCreationBaseline(character);
+  else normalizeSetupSourceTracking(character);
 
   if (isUnsavedCharacterDraft()) {
     const entry = await saveUnsavedCharacterDraft();
@@ -1011,6 +1070,8 @@ async function finishSetupAndStartPlaying() {
   };
   character.setupStatus = "complete";
   characterSetupReviewOpen = false;
+  if (setupTraitsEditable()) snapshotCreationBaseline(character);
+  else normalizeSetupSourceTracking(character);
 
   if (isUnsavedCharacterDraft()) {
     const entry = await saveUnsavedCharacterDraft();

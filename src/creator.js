@@ -515,17 +515,21 @@ function setCreatorMode(on) {
 }
 
 function coreSetupSkills() {
-  return ["Athletics", "Common Knowledge", "Notice", "Persuasion", "Stealth"].map(
-    (name) => ({
-      name,
-      die: "d4",
-      linkedAttribute: setupSkillAttributeKey(
-        SKILL_LINKED_ATTRIBUTES[name] || "smarts",
-      ),
-      notes: "",
-      core: true,
-    }),
-  );
+  return [
+    "Athletics",
+    "Common Knowledge",
+    "Notice",
+    "Persuasion",
+    "Stealth",
+  ].map((name) => ({
+    name,
+    die: "d4",
+    linkedAttribute: setupSkillAttributeKey(
+      SKILL_LINKED_ATTRIBUTES[name] || "smarts",
+    ),
+    notes: "",
+    core: true,
+  }));
 }
 
 function newSetupCharacterPayload() {
@@ -630,7 +634,10 @@ async function startCharacterSetupCreation() {
   render();
   setAppTab("character");
   renderDemoExperience();
-  $("#characterSetupPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  $("#characterSetupPanel")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
   setSaveState("Draft not saved");
   appToast("Unsaved character draft started in Character Setup.", "success");
 }
@@ -771,7 +778,9 @@ async function loadSampleCharacter(sample) {
   const response = await fetch(encodeURI(sample.source));
   if (!response.ok) throw new Error(`Could not load ${sample.name}.`);
   const data = await response.json();
-  const sampleCharacter = normalize(isSavagedUsExport(data) ? fromSavagedUs(data) : data);
+  const sampleCharacter = normalize(
+    isSavagedUsExport(data) ? fromSavagedUs(data) : data,
+  );
   sampleCharacter.setupStatus = "complete";
   return normalize(sampleCharacter);
 }
@@ -1406,14 +1415,24 @@ function finalizeCreation() {
   const arcaneConfig = draftArcaneConfig();
   const resources = creationDraft.powerPoints.enabled
     ? [
-        {
-          id: "power-points",
-          name: "Power Points",
-          current: creationDraft.powerPoints.current,
-          max: creationDraft.powerPoints.max,
-          source: creationDraft.powerPoints.source || "Arcane Background",
-          note: creationDraft.powerPoints.notes || "Imported from creator.",
-        },
+        applySetupSourceFields(
+          {
+            id: "power-points",
+            name: "Power Points",
+            current: creationDraft.powerPoints.current,
+            max: creationDraft.powerPoints.max,
+            source: creationDraft.powerPoints.source || "Arcane Background",
+            note: creationDraft.powerPoints.notes || "Imported from creator.",
+          },
+          "setup-arcane-background",
+          {
+            arcaneBackground:
+              arcaneConfig?.name ||
+              creationDraft.arcaneBackground?.edgeName ||
+              "",
+            startingPowerPoints: creationDraft.powerPoints.max,
+          },
+        ),
       ]
     : [];
   const reminders = [
@@ -1497,6 +1516,10 @@ function finalizeCreation() {
     reminders,
     notes,
   });
+  normalizeSetupSourceTracking(character, {
+    assumeCurrentRecordsAreSetup: true,
+  });
+  character.creationBaseline = buildCreationBaselineSnapshot(character);
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   addCharacterSlot(character, { source: "created" });
   render();

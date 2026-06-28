@@ -1376,6 +1376,7 @@ function renderSetupReview() {
   const powerPoints = powerPointResource();
   const gearReport = setupGearAuditReport();
   const gearCounts = gearReport.counts;
+  const sourceAudit = setupSourceAuditReport();
   return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
     <div class="section-title">
       <div>
@@ -1406,6 +1407,8 @@ function renderSetupReview() {
       ${setupDetail("Money", money(gearCounts.moneyCents))}
       ${setupDetail("Gear Status", gearReport.status)}
       ${setupDetail("Gear Warnings", `${gearReport.warnings.length}`)}
+      ${setupDetail("Setup Source Records", `${sourceAudit.explained.length} explained`)}
+      ${setupDetail("Needs GM/Table Exception", `${sourceAudit.needsExceptions.length}`)}
       ${setupDetail("Description", character.description)}
       ${setupDetail("Background", character.background)}
     </div>
@@ -1464,6 +1467,23 @@ function renderSetupReview() {
               )
               .join("")
           : emptyState("No Hindrances selected yet.")
+      }
+    </div>
+    <div class="setup-review-list">
+      <h4>Setup Source Audit</h4>
+      ${
+        sourceAudit.records.length
+          ? sourceAudit.records
+              .map(
+                (record) =>
+                  `<article class="dossier-note${record.needsException ? " warning" : ""}"><strong>${esc(record.type)}: ${esc(record.label)}</strong><p>${
+                    record.needsException
+                      ? "Needs a GM/table exception note or a specific setup source."
+                      : `Explained by ${esc(record.sourceLabel)}.`
+                  }</p></article>`,
+              )
+              .join("")
+          : emptyState("No source-tracked setup records yet.")
       }
     </div>
     <div class="setup-review-warnings">

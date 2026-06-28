@@ -91,6 +91,7 @@ function normalize(data, options = {}) {
     )
       ? normalized.creationBaseline.skills
       : [];
+    normalizeCreationBaselineShape(normalized);
   }
 
   normalized.ammo =
@@ -188,6 +189,7 @@ function normalize(data, options = {}) {
     max: Math.max(0, Math.floor(Number(resource.max) || 0)),
     source: resource.source || "",
     creationSource: resource.creationSource || "",
+    sourceDetail: resource.sourceDetail,
     note: resource.note || "",
   }));
   normalized.powers = Array.isArray(normalized.powers)
@@ -219,6 +221,7 @@ function normalize(data, options = {}) {
     ? normalized.consumables
     : [];
   normalizePhysicalInventoryState(normalized);
+  normalizeSetupSourceTracking(normalized);
   normalized.reminders = Array.isArray(normalized.reminders)
     ? normalized.reminders
     : [];

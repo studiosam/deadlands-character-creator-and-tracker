@@ -306,15 +306,24 @@ function normalizePowerRecord(power, index = 0, fallbackSource = "") {
     rank: power.rank || catalogEntry?.rank || "Novice",
     basePowerPoints,
     baseCost:
-      power.baseCost ?? power.cost ?? power.powerPoints ?? catalogEntry?.powerPoints ?? "",
+      power.baseCost ??
+      power.cost ??
+      power.powerPoints ??
+      catalogEntry?.powerPoints ??
+      "",
     powerPoints:
-      power.powerPoints ?? power.baseCost ?? power.cost ?? catalogEntry?.powerPoints ?? "",
+      power.powerPoints ??
+      power.baseCost ??
+      power.cost ??
+      catalogEntry?.powerPoints ??
+      "",
     range,
     originalRange: power.originalRange || "",
     duration,
     active: Boolean(power.active || power.isActive),
     isActive: Boolean(power.active || power.isActive),
     source,
+    sourceDetail: power.sourceDetail,
     arcaneBackground: power.arcaneBackground || "",
     trapping: power.trapping || power.trappings || power.deviceName || "",
     shortSummary,
@@ -332,7 +341,9 @@ function normalizePowerRecord(power, index = 0, fallbackSource = "") {
       : Array.isArray(power.powerModifiers)
         ? power.powerModifiers
         : [],
-    activeTargets: Array.isArray(power.activeTargets) ? power.activeTargets : [],
+    activeTargets: Array.isArray(power.activeTargets)
+      ? power.activeTargets
+      : [],
     createdByAdvanceId: power.createdByAdvanceId || "",
     creationSource: power.creationSource || "",
     addedReason:
