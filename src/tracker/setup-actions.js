@@ -494,16 +494,6 @@ async function deleteActiveCharacterSlotFromSetup() {
   }
 }
 
-async function saveCurrentCharacterToLibrary() {
-  if (isUnsavedCharacterDraft()) {
-    await saveDraftCharacterFromSetup();
-    return;
-  }
-  saveCharacterSlot(character);
-  render();
-  appToast("Current character saved to the library.", "success");
-}
-
 async function confirmSetupReview() {
   applyConceptInputs();
   if (!(await ensureSetupCharacterHasName())) return false;
