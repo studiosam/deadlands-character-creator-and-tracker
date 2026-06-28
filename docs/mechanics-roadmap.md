@@ -118,6 +118,26 @@ Advancement.
    money.
 5. Add explicit GM or table exception records for setup-time deviations.
 
+Completion criteria:
+
+- A newly created character can be finalized with a recorded creation baseline
+  that explains starting Attributes, Skills, Hindrances, starting Edges, Powers,
+  Gear, money, and setup exceptions.
+- Created pre-advance characters can choose legal starting Powers from the
+  matched Arcane Background profile, including required starting powers.
+- Created pre-advance characters can record starting Gear purchases against
+  starting funds and explain free or source-granted gear separately.
+- Setup status reflects missing required choices, overspending, invalid
+  source-tracked choices, and explicit GM exceptions consistently.
+- Imported and advanced characters remain audit-only unless the app has reliable
+  creation-time data.
+- Browser tests cover starting Powers selection, starting Gear purchase
+  validation, creation baseline persistence, setup exception persistence, and
+  reload/export/import behavior.
+
+Phase 1 is not complete until the app can answer: "What did this character
+start with, what rule or source granted it, and what later changed?"
+
 ### Phase 2: Edge And Hindrance Effect Hooks
 
 Goal: move from reference-only entries to explainable mechanical modifiers where
@@ -130,6 +150,25 @@ safe.
 4. Add subchoice storage for Edges that require a selected Trait, weapon, style,
    contact, reputation type, or supernatural option.
 5. Implement Hindrance reduction/removal Advancement.
+
+Completion criteria:
+
+- Catalog entries that affect current character math have structured,
+  machine-readable effect metadata instead of only text summaries.
+- Passive, character-local effects update relevant displayed values or warnings
+  without requiring users to manually remember them.
+- Edge subchoices are stored on the character and survive reload/export/import.
+- Requirement validation distinguishes reliable checks, partial checks,
+  GM-overridable warnings, and unsupported complex requirements.
+- Hindrance reduction/removal is represented in the canonical Advancement
+  ledger and updates the character safely.
+- Browser tests cover at least one representative passive Edge, one Hindrance
+  effect or warning, one subchoice Edge, one complex-prerequisite warning, and
+  Hindrance reduction/removal.
+
+Phase 2 is not complete until common Edges and Hindrances are more than labels:
+they either affect the sheet, produce a specific warning, or are explicitly
+marked as manual/table-only.
 
 ### Phase 3: Power Runtime Improvements
 
@@ -144,6 +183,25 @@ Goal: support powers during play without turning the app into a full VTT.
    options.
 5. Improve Arcane Background-specific consequence helpers.
 
+Completion criteria:
+
+- Known Powers can be activated into explicit active-power records with caster,
+  target label, duration, maintenance state, cost paid, trapping notes, and
+  optional modifier choices.
+- Active powers can expire, be dismissed, or be marked disrupted without losing
+  the underlying Known Power.
+- Common character-local power effects appear in Combat and Character Sheet
+  summaries where the app can safely model them.
+- Variable Power Point controls distinguish structured spend from manual-cost
+  powers and prevent impossible current-PP spending.
+- Arcane Background-specific warnings or helper states appear for the major
+  Deadlands Arcane Backgrounds without forcing full automation.
+- Browser tests cover activation, maintenance/expiration, PP spending,
+  reload/export/import, and at least one Arcane Background-specific restriction.
+
+Phase 3 is not complete until the app can track "this power is active right now,
+what it cost, when it ends, and what character-local effect it has."
+
 ### Phase 4: Combat Helper Systems
 
 Goal: add table-speed helpers while keeping final dice interpretation with the
@@ -156,6 +214,24 @@ player and Marshal.
 4. Add attack/damage helper scaffolds for weapon cards.
 5. Add special combat Edge actions after their prerequisites and subchoices are
    reliable.
+
+Completion criteria:
+
+- The app can track the current combat round state needed by a player: action
+  card, Joker status, On Hold, action count, and key action modifiers.
+- Combat cards show computed reminder stacks for wounds, fatigue, encumbrance,
+  conditions, MAP, stance/action choices, and relevant passive effects.
+- Soak and Incapacitation helpers guide the user through bookkeeping without
+  silently deciding table outcomes that require player or Marshal judgment.
+- Weapon cards can produce an attack/damage helper summary from weapon stats,
+  ammo state, selected action options, and relevant character-local modifiers.
+- Special combat Edge actions are available only when the app can reliably
+  identify the Edge, required subchoice, and eligible weapon or Trait.
+- Browser tests cover round-state persistence, action modifiers, Soak helper
+  state, Incapacitation helper state, and one weapon action helper.
+
+Phase 4 is not complete until Combat can act as a reliable turn assistant, while
+still leaving final roll interpretation with the table.
 
 ### Phase 5: Deadlands-Specific Subsystems
 
@@ -170,6 +246,25 @@ SWADE.
 6. Add travel, ghost rock, superstition, and tale-telling reminders where they
    help player-side table use.
 
+Completion criteria:
+
+- Fear helper state tracks Fear Level context, character-relevant modifiers, and
+  the resulting reminder or table-follow-up without reproducing full tables.
+- Duel support tracks the formal duel state the player needs: participants,
+  hole-card count/modifiers, draw state, and relevant Edge reminders.
+- Harrowed characters can record Harrowed status, manitou-related state, and
+  Harrowed-specific Edges or complications without conflating them with normal
+  living-character rules.
+- Mad Scientist and infernal device helpers track device identity, malfunction
+  reminders, and ghost-rock-related notes where relevant.
+- Organization mechanics track character-facing favors, rank, source, and
+  refresh/spend notes for Agents and Territorial Rangers.
+- Browser tests cover one representative player-facing workflow from Fear,
+  duels, Harrowed, Mad Scientist devices, and organization favors.
+
+Phase 5 is not complete until the app supports the major Weird West-only
+mechanics players repeatedly need at the table.
+
 ### Phase 6: Ruleset Configuration And Marshal Tools
 
 Goal: only expand beyond the player tracker after the player mechanics are
@@ -182,6 +277,23 @@ stable.
    vary.
 4. Consider a separate Marshal mode for encounter, Fear Level, creature, and
    adventure-generator support.
+
+Completion criteria:
+
+- Sources & Rulesets can define an active campaign profile without breaking
+  existing Deadlands-focused saves.
+- Catalog filtering, setup validation, power lists, and advancement choices use
+  the active profile consistently.
+- Optional rules and table rulings are represented as explicit profile toggles
+  or GM exceptions, not hidden assumptions.
+- Player-facing mode remains clean when Marshal tools are disabled.
+- Marshal mode, if added, has a separate information architecture from the
+  player character tracker.
+- Browser tests cover profile persistence, source filtering, profile-sensitive
+  setup validation, and compatibility with existing saved characters.
+
+Phase 6 is not complete until ruleset configuration is reliable enough that a
+user can tell which source profile produced each available choice.
 
 ## Recommended Next Slice
 
@@ -205,6 +317,25 @@ The slice should:
   blocking only where the app has reliable data.
 - Preserve imported and advanced characters as audit-only.
 - Persist the starting power choices and update setup status.
+
+Completion criteria:
+
+- A created pre-advance character with an Arcane Background sees a setup Powers
+  picker limited to the matched Arcane Background's allowed powers by default.
+- Required starting powers are shown clearly and can be added without creating
+  duplicate Known Powers.
+- The setup Powers step distinguishes missing required powers, missing optional
+  starting power slots, complete starting power selection, and audit-only states.
+- Setup-selected starting powers are tagged with a source that distinguishes
+  them from powers gained by Advancement.
+- Removing a setup-selected starting power is allowed only while the character
+  is still eligible for setup mutation.
+- Imported characters, advanced characters, and characters with unreliable
+  Arcane Background data keep the current audit-only behavior.
+- Save/reload and export/import preserve setup-selected starting power metadata.
+- Browser tests cover Blessed or Chi Master required-power selection, a
+  no-required-power Arcane Background, duplicate prevention, source tagging,
+  audit-only imported behavior, and setup status changes.
 
 It should not:
 
