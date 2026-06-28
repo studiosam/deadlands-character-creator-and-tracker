@@ -53,6 +53,12 @@ body {
     linear-gradient(135deg, #07080d 0%, #121018 48%, #090b10 100%);
 }
 
+body.app-booting .landing-page,
+body.app-booting .shell {
+  opacity: 0;
+  visibility: hidden;
+}
+
 body::before {
   content: "";
   position: fixed;
