@@ -225,6 +225,8 @@ pushes and pull requests targeting `main`.
 
 ## Roadmap
 
+- See [Mechanics Roadmap](docs/mechanics-roadmap.md) for the rules-mechanics
+  gap analysis and phased implementation plan.
 - Add final screenshots/GIFs for the hosted demo.
 - Continue converting manual rules-heavy checklist items into automated tests
   without expanding MVP scope.
