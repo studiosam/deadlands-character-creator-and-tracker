@@ -203,6 +203,7 @@ function makePowerPointResource(config, overrides = {}) {
     current: Math.min(current, max || current),
     max,
     source: overrides.source || config?.edgeName || "Manual setup",
+    creationSource: overrides.creationSource || "",
     note:
       overrides.note ||
       (config ? `${config.displayName} uses ${config.arcaneSkill}.` : ""),

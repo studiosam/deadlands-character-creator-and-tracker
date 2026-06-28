@@ -2769,6 +2769,108 @@ test("Powers setup audit recognizes a complete starting arcane package", async (
   ).toBeDisabled();
 });
 
+test("Powers setup creates and persists setup starting Power Points", async ({
+  page,
+}) => {
+  await seedPowersSetupCharacter(page, {
+    name: "Missing Blessed Power Points",
+    preferredId: "missing-blessed-power-points",
+    skills: [{ name: "Faith", die: "d4", linkedAttribute: "Spirit" }],
+    powerIds: ["power-holy-symbol", "power-barrier", "power-protection"],
+  });
+
+  const setupPowersPanel = page.locator("#setupPowersPanel");
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Incomplete",
+  );
+  await expect(setupPowersPanel).toContainText(
+    "Expected 15 Power Points; none recorded.",
+  );
+
+  await setupPowersPanel
+    .getByRole("button", { name: "Add Starting Power Points" })
+    .click();
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Complete",
+  );
+
+  const snapshot = await page.evaluate(() => {
+    const powerPoints = powerPointResource();
+    return {
+      current: powerPoints?.current,
+      max: powerPoints?.max,
+      source: powerPoints?.source,
+      creationSource: powerPoints?.creationSource,
+    };
+  });
+  expect(snapshot).toEqual({
+    current: 15,
+    max: 15,
+    source: "Setup: Arcane Background (Blessed)",
+    creationSource: "setup-arcane-background",
+  });
+
+  await reloadIntoTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await page.locator("[data-setup-step='powers']").click();
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Complete",
+  );
+  const persistedSource = await page.evaluate(
+    () => powerPointResource()?.creationSource,
+  );
+  expect(persistedSource).toBe("setup-arcane-background");
+});
+
+test("Powers setup warns for mismatched Power Points and can reset them", async ({
+  page,
+}) => {
+  await seedPowersSetupCharacter(page, {
+    name: "Mismatched Blessed Power Points",
+    preferredId: "mismatched-blessed-power-points",
+    skills: [{ name: "Faith", die: "d4", linkedAttribute: "Spirit" }],
+    resources: [
+      {
+        id: "power-points",
+        name: "Power Points",
+        current: 10,
+        max: 12,
+        source: "Manual setup",
+      },
+    ],
+    powerIds: ["power-holy-symbol", "power-barrier", "power-protection"],
+  });
+
+  const setupPowersPanel = page.locator("#setupPowersPanel");
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Needs review",
+  );
+  await expect(setupPowersPanel).toContainText(
+    "Expected 15 Power Points; recorded max is 12.",
+  );
+  await expect(setupPowersPanel).toContainText(
+    "Expected 15 current Power Points; recorded current is 10.",
+  );
+
+  await setupPowersPanel
+    .getByRole("button", { name: "Update Starting Power Points" })
+    .click();
+  await expect(page.locator("[data-setup-step='powers']")).toContainText(
+    "Complete",
+  );
+  await expect(setupPowersPanel).toContainText("15 / 15");
+
+  const powerPoints = await page.evaluate(() => powerPointResource());
+  expect(powerPoints).toEqual(
+    expect.objectContaining({
+      current: 15,
+      max: 15,
+      source: "Setup: Arcane Background (Blessed)",
+      creationSource: "setup-arcane-background",
+    }),
+  );
+});
+
 test("Powers setup selection adds removes and persists setup starting powers", async ({
   page,
 }) => {

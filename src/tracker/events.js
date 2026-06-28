@@ -132,6 +132,10 @@ document.addEventListener("click", async (event) => {
     addSetupStartingPower(setupAction.dataset.powerId || "");
   } else if (setupAction?.dataset.setupAction === "removeSetupStartingPower") {
     removeSetupStartingPower(setupAction.dataset.powerId || "");
+  } else if (
+    setupAction?.dataset.setupAction === "setSetupStartingPowerPoints"
+  ) {
+    setSetupStartingPowerPoints();
   } else if (setupAction?.dataset.setupAction === "incAttribute") {
     changeSetupAttribute(setupAction.dataset.traitName || "", 1);
   } else if (setupAction?.dataset.setupAction === "decAttribute") {

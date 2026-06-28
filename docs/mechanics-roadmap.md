@@ -40,9 +40,9 @@ the rules.
 - Starting Powers selection is partially implemented. The app can identify
   Arcane Background expectations, required starting powers, Power Points, and
   obvious mismatches, and created pre-advance characters can add/remove
-  source-tagged setup starting powers. Remaining work includes stronger Power
-  legality validation, setup Power Point workflows, and creation-baseline
-  coverage.
+  source-tagged setup starting powers and set source-tagged starting Power
+  Points. Remaining work includes stronger Power legality validation and
+  creation-baseline coverage.
 - Starting Gear is audit-first. The app tracks equipment and load well, but it
   does not yet validate starting cash, purchases, free gear, organization gear,
   or gear source.

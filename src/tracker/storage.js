@@ -183,6 +183,7 @@ function normalize(data, options = {}) {
     current: Math.max(0, Math.floor(Number(resource.current) || 0)),
     max: Math.max(0, Math.floor(Number(resource.max) || 0)),
     source: resource.source || "",
+    creationSource: resource.creationSource || "",
     note: resource.note || "",
   }));
   normalized.powers = Array.isArray(normalized.powers)

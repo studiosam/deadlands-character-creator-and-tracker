@@ -374,6 +374,48 @@ function removeSetupStartingPower(powerId) {
   appToast("Starting Power removed.", "success");
 }
 
+function setupPowerPointConfig(report) {
+  if (!report?.profile) return null;
+  return {
+    displayName: report.profile.name,
+    arcaneSkill: report.profile.arcaneSkill,
+    startingPowerPoints: report.expectedPowerPoints,
+    edgeName: `Setup: Arcane Background (${report.profile.name})`,
+  };
+}
+
+function setSetupStartingPowerPoints() {
+  if (!ensureSetupTraitsEditable()) return;
+  const report = setupPowerAuditReport();
+  const config = setupPowerPointConfig(report);
+  if (!config || !report.expectedPowerPoints) {
+    appToast(
+      "Choose an Arcane Background before setting Power Points.",
+      "danger",
+    );
+    return;
+  }
+
+  const resource = makePowerPointResource(config, {
+    current: report.expectedPowerPoints,
+    max: report.expectedPowerPoints,
+    source: `Setup: Arcane Background (${report.profile.name})`,
+    creationSource: "setup-arcane-background",
+    note: `${report.profile.name} starting Power Points.`,
+  });
+  const existingIndex = (character.resources || []).findIndex(
+    (item) => item.id === "power-points",
+  );
+
+  if (!Array.isArray(character.resources)) character.resources = [];
+  if (existingIndex >= 0) character.resources[existingIndex] = resource;
+  else character.resources.push(resource);
+
+  render();
+  save();
+  appToast("Starting Power Points set.", "success");
+}
+
 function ensureSetupTraitsEditable() {
   if (setupTraitsEditable()) return true;
   appToast(

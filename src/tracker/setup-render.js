@@ -928,6 +928,27 @@ function renderSetupPowerSelectionControls(report) {
   </section>`;
 }
 
+function renderSetupPowerPointControls(report) {
+  if (!report.editable || !report.profile) return "";
+  const audit = report.powerPointsAudit;
+  const hasExpectedPowerPoints = Boolean(audit?.complete);
+  const buttonLabel = audit?.powerPoints
+    ? "Update Starting Power Points"
+    : "Add Starting Power Points";
+
+  return `<section class="setup-trait-group" aria-labelledby="setupPowerPointsSelectionHeading">
+    <h4 id="setupPowerPointsSelectionHeading">Setup Power Points</h4>
+    <p class="creator-note">Set starting Power Points from the matched Arcane Background profile. Existing Power Points are preserved until you choose to update them.</p>
+    <div class="setup-review-grid">
+      ${setupDetail("Expected", `${report.expectedPowerPoints} Power Points`)}
+      ${setupDetail("Recorded", audit?.statusText || "Not recorded")}
+    </div>
+    <div class="creator-actions">
+      <button type="button" data-setup-action="setSetupStartingPowerPoints"${hasExpectedPowerPoints ? " disabled" : ""}>${hasExpectedPowerPoints ? "Starting Power Points Set" : buttonLabel}</button>
+    </div>
+  </section>`;
+}
+
 function renderSetupPowers() {
   const report = setupPowerAuditReport();
   const { profile, powers, skillAudit, powerPointsAudit, powerAudits, status } =
@@ -966,6 +987,7 @@ function renderSetupPowers() {
       ${setupDetail("Recorded Known Powers", knownPowerLabel)}
       ${setupDetail("Required Starting Powers", setupRequiredPowerChecklist(report))}
     </div>
+    ${renderSetupPowerPointControls(report)}
     ${renderSetupPowerSelectionControls(report)}
     ${
       status === "Not applicable"

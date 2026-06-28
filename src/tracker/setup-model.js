@@ -171,12 +171,23 @@ function setupPowerPointsAudit(profile, powerPoints) {
       messages.push(
         `Current Power Points (${current}) exceeds recorded max (${max}).`,
       );
+    } else if (current !== expected) {
+      messages.push(
+        `Expected ${expected} current Power Points; recorded current is ${current}.`,
+      );
     }
   }
 
   return {
     expected,
     powerPoints,
+    complete: Boolean(
+      powerPoints &&
+      Number.isFinite(max) &&
+      max === expected &&
+      Number.isFinite(current) &&
+      current === expected,
+    ),
     messages,
     incomplete,
     statusText: powerPoints
