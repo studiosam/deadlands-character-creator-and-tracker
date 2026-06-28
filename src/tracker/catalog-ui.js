@@ -505,8 +505,8 @@ function updatePreviews() {
   );
   els.gearPreview.textContent = gear
     ? consumableConversion
-      ? `${gear.name} • Adds ${packageCount * unitsPerPackage} ${consumableConversion.unit} to Consumables`
-      : `${gear.name} • Weight ${wt(gear.weight)} • Cost ${money(gear.costCents)} each`
+      ? `${gear.name} - Adds ${packageCount * unitsPerPackage} ${consumableConversion.unit} to Consumables`
+      : `${gear.name} - ${gear.category || "Gear"} - Weight ${wt(gear.weight)} - Cost ${money(gear.costCents)} each`
     : "Choose gear from the catalog or type custom gear.";
 
   const ammo = chosen(GEAR_CATALOG, els.ammoGearSelect.value);
@@ -547,6 +547,6 @@ function updatePreviews() {
 
   const vehicle = chosen(VEHICLE_CATALOG, els.vehicleCatalogSelect.value);
   els.vehicleCatalogPreview.textContent = vehicle
-    ? `${vehicle.name} • Cost ${money(vehicle.costCents)} each`
+    ? `${vehicle.name} - ${vehicle.category || "Vehicle"} - Size ${vehicle.size || "-"} - Handling ${vehicle.handling || "-"} - Top Speed ${vehicle.topSpeed ?? "-"} MPH - Toughness ${vehicle.toughness || "-"} - Crew ${vehicle.crew || "-"} - Cost ${money(vehicle.costCents)} each`
     : "Choose a vehicle from the catalog or type a custom vehicle.";
 }

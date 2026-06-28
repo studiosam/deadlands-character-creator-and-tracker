@@ -1155,10 +1155,16 @@ function setupVehicleLine(vehicle) {
     vehicle.name,
     [
       setupQuantityText(vehicle),
+      vehicle.category || "",
+      vehicle.size ? `Size ${vehicle.size}` : "",
+      vehicle.handling ? `Handling ${vehicle.handling}` : "",
+      vehicle.topSpeed !== undefined ? `Top Speed ${vehicle.topSpeed} MPH` : "",
+      vehicle.toughness ? `Toughness ${vehicle.toughness}` : "",
+      vehicle.crew ? `Crew ${vehicle.crew}` : "",
       vehicle.costCents !== undefined ? `Cost ${money(vehicle.costCents)}` : "",
       vehicle.book || "",
     ],
-    vehicle.note || "",
+    vehicle.note || vehicle.notes || "",
   );
 }
 

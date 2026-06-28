@@ -394,6 +394,8 @@ function addInventory() {
         weight: catalogItem?.weight,
         costCents: catalogItem?.costCents,
         book: catalogItem?.book,
+        category: catalogItem?.category,
+        notes: catalogItem?.notes,
       },
       character.inventory.length,
       new Set(flattenInventory().map(({ item }) => item.id)),
@@ -439,6 +441,13 @@ function addVehicle() {
       note: els.vehicleNoteInput.value.trim(),
       costCents: catalogItem?.costCents,
       book: catalogItem?.book || "Deadlands",
+      category: catalogItem?.category,
+      size: catalogItem?.size,
+      handling: catalogItem?.handling,
+      topSpeed: catalogItem?.topSpeed,
+      toughness: catalogItem?.toughness,
+      crew: catalogItem?.crew,
+      notes: catalogItem?.notes,
     });
   els.vehicleCatalogSelect.value = "";
   els.vehicleNameInput.value = "";
@@ -517,7 +526,7 @@ function addArmor() {
       minStr: catalogItem?.minStr,
       costCents: catalogItem?.costCents,
       book: catalogItem?.book || "Deadlands",
-      note: "Purchased armor.",
+      note: catalogItem?.notes || "Purchased armor.",
     });
   }
   els.armorCatalogSelect.value = "";
