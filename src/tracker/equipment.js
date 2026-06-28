@@ -92,7 +92,11 @@ function renderWeapons() {
       physicalMoveControl("weapon", weapon.id),
     );
     const strengthInfo = getWeaponStrengthUsageInfo(
-      character.weaponStrength,
+      effectiveStrengthForScope(
+        character,
+        character.weaponStrength,
+        "minimum-strength",
+      ),
       weapon,
     );
     const warning = query(".weapon-warning");

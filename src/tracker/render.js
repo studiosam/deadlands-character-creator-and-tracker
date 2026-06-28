@@ -86,9 +86,21 @@ function render() {
   const location = "best";
   character.selectedArmorLocation = "best";
   const armor = armorValue(location);
+  const toughnessModifier = characterToughnessModifier(character);
+  const sizeModifier = characterSizeModifier(character);
+  if (character.derived.baseSize === undefined) {
+    character.derived.baseSize =
+      Number(character.size ?? character.derived.size) || 0;
+  }
+  const effectiveBaseToughness =
+    (Number(character.derived.baseToughness) || 0) + toughnessModifier;
+  const effectiveSize =
+    (Number(character.derived.baseSize) || 0) + sizeModifier;
   character.derived.armor = armor;
-  character.derived.toughness =
-    (Number(character.derived.baseToughness) || 0) + armor;
+  character.derived.toughness = effectiveBaseToughness + armor;
+  character.derived.size = effectiveSize;
+  character.derived.effectToughnessModifier = toughnessModifier;
+  character.derived.effectSizeModifier = sizeModifier;
   els.paceValue.textContent = character.derived.pace;
   els.parryValue.textContent = character.derived.parry;
   els.toughnessValue.textContent = `${character.derived.toughness} (+${armor})`;
@@ -345,6 +357,7 @@ function renderEncumbrance() {
     ["Owned Gear", formatWeightPounds(info.inventoryTotals.ownedWeight)],
     ["Maximum Normal Carry", formatWeightPounds(info.normalCapacity)],
     ["Effective Strength", info.effectiveStrength],
+    ["Passive Effects", passiveEffectSummaryText("inventory")],
     ["Combat Encumbrance", encumbranceText(combatInfo)],
     ["Normal Encumbrance", encumbranceText(info)],
     ["Next Combat Threshold", nextEncumbranceText(combatInfo)],
@@ -459,7 +472,15 @@ function renderCharacterSummary() {
     [
       "Toughness",
       character.derived.toughness,
-      `Base ${compactText(character.derived.baseToughness)} + Armor ${compactText(character.derived.armor, "0")}`,
+      [
+        `Base ${compactText(character.derived.baseToughness)}`,
+        character.derived.effectToughnessModifier
+          ? `Effects ${character.derived.effectToughnessModifier > 0 ? "+" : ""}${character.derived.effectToughnessModifier}`
+          : "",
+        `Armor ${compactText(character.derived.armor, "0")}`,
+      ]
+        .filter(Boolean)
+        .join(" + "),
     ],
     ["Size", character.derived.size ?? character.size, ""],
     ["Armor", `+${compactText(character.derived.armor, "0")}`, "Best equipped"],
@@ -472,6 +493,10 @@ function renderCharacterSummary() {
         `<div class="derived-scan-card"><span>${esc(label)}</span><strong>${esc(value ?? "—")}</strong>${note ? `<small>${esc(note)}</small>` : ""}</div>`,
     )
     .join("");
+  els.characterDerivedDetails.insertAdjacentHTML(
+    "beforeend",
+    passiveEffectDerivedCards("character"),
+  );
 
   const background = character.arcaneBackground;
   els.characterArcaneSummary.innerHTML = background

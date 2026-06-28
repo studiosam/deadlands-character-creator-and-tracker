@@ -1155,6 +1155,194 @@ test("shows a clean reference sheet for confirmed characters", async ({
     });
 });
 
+async function seedEffectHookCharacter(page, options = {}) {
+  await enterTracker(page);
+  await page.evaluate((seedOptions) => {
+    const edgeIds = seedOptions.edgeIds || [];
+    const hindranceIds = seedOptions.hindranceIds || [];
+    const edges = edgeIds.map((id) => {
+      const edge = EDGE_CATALOG.find((item) => item.id === id);
+      return {
+        ...edge,
+        id,
+        catalogId: edge.id,
+        source: "Effect hook test",
+        isCustom: false,
+      };
+    });
+    const hindrances = hindranceIds.map((id) => {
+      const hindrance = HINDRANCE_CATALOG.find((item) => item.id === id);
+      return {
+        ...hindrance,
+        id,
+        catalogId: hindrance.id,
+        source: "Effect hook test",
+        isCustom: false,
+      };
+    });
+    const characterData = normalize({
+      source: "created",
+      setupStatus: "complete",
+      name: seedOptions.name || "Effect Hook Character",
+      rank: "Novice",
+      ancestry: "Human",
+      archetype: "Tester",
+      attributes: {
+        agility: "d6",
+        smarts: "d6",
+        spirit: "d6",
+        strength: "d6",
+        vigor: "d6",
+      },
+      skills: [],
+      edges,
+      hindrances,
+      advances: [],
+      derived: {
+        pace: 6,
+        parry: 2,
+        baseToughness: 5,
+        toughness: 5,
+        armor: 0,
+        baseSize: 0,
+      },
+      armorStrength: "d6",
+      weaponStrength: "d6",
+      inventory: seedOptions.inventory || [],
+      weapons: seedOptions.weapons || [],
+      armorInventory: [],
+      ammo: {},
+      consumables: [],
+      vehicles: [],
+      powers: [],
+      resources: [],
+    });
+    const entry = addCharacterSlot(characterData, {
+      source: "test",
+      preferredId: seedOptions.preferredId || "effect-hook-test",
+    });
+    character = normalize(entry.character);
+    characterSetupReviewOpen = false;
+    characterDraftMode = false;
+    render();
+    renderDemoExperience();
+  }, options);
+}
+
+test("Brawny passive effect updates Character Combat and Inventory surfaces", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Brawny Effect Tester",
+    preferredId: "brawny-effect-tester",
+    edgeIds: ["swade-edge-brawny"],
+    inventory: [
+      {
+        id: "test-load",
+        name: "Test Load",
+        count: 1,
+        weight: 55,
+        location: "carried",
+      },
+    ],
+    weapons: [
+      {
+        id: "heavy-test-weapon",
+        name: "Heavy Test Weapon",
+        damage: "2d8",
+        range: "12/24/48",
+        ap: 0,
+        rof: 1,
+        shotsMax: null,
+        shotsLoaded: null,
+        ammoType: null,
+        minStr: "d8",
+        weight: 1,
+        itemLocation: "carried",
+      },
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Brawny");
+  await expect(derived).toContainText("Size +1");
+  await expect(derived).toContainText("Toughness +1");
+  await expect(derived).toContainText("Toughness");
+  await expect(derived).toContainText("6");
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Brawny: Toughness +1",
+  );
+
+  await openInventory(page);
+  const encumbrance = page.locator("#encumbranceDetails");
+  await expect(encumbrance).toContainText("Effective Strength");
+  await expect(encumbrance).toContainText("d8");
+  await expect(encumbrance).toContainText("Passive Effects");
+  await expect(encumbrance).toContainText(
+    "Brawny: Strength counts one die higher",
+  );
+  await expect(page.locator("#weaponList")).not.toContainText(
+    "Strength too low",
+  );
+
+  const computed = await page.evaluate(() => ({
+    effectiveStrength: calculateEncumbrance(character).effectiveStrength,
+    capacity: calculateEncumbrance(character).carryingCapacity,
+    toughness: character.derived.toughness,
+    size: character.derived.size,
+    minStrengthMessage: getWeaponStrengthUsageInfo(
+      effectiveStrengthForScope(
+        character,
+        character.weaponStrength,
+        "minimum-strength",
+      ),
+      character.weapons[0],
+    ).message,
+  }));
+  expect(computed).toEqual({
+    effectiveStrength: "d8",
+    capacity: 60,
+    toughness: 6,
+    size: 1,
+    minStrengthMessage: "",
+  });
+});
+
+test("Small passive effect reduces displayed Size and Toughness", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Small Effect Tester",
+    preferredId: "small-effect-tester",
+    hindranceIds: ["swade-hindrance-small"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Small");
+  await expect(derived).toContainText("Size -1");
+  await expect(derived).toContainText("Toughness -1");
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Small: Toughness -1",
+  );
+
+  const computed = await page.evaluate(() => ({
+    toughness: character.derived.toughness,
+    size: character.derived.size,
+    hooks: activeEffectHooks(character).map((hook) => hook.id),
+  }));
+  expect(computed).toEqual({
+    toughness: 4,
+    size: -1,
+    hooks: ["hindrance-small"],
+  });
+});
+
 test("Increase Skill writes a canonical ledger entry", async ({ page }) => {
   await seedCanonicalAdvancementCharacter(page);
 

@@ -125,6 +125,9 @@ function combatPenaltyInfo() {
   conditionNotes.forEach(([key, text]) => {
     if (character.conditions[key]) modifiers.push(text);
   });
+  passiveEffectSummaryItems("combat").forEach((effect) =>
+    modifiers.push(effect),
+  );
 
   const total = traitPenalties.reduce(
     (sum, penalty) => sum + Math.abs(penalty.value),

@@ -151,6 +151,16 @@ start with, what rule or source granted it, and what later changed?"
 Goal: move from reference-only entries to explainable mechanical modifiers where
 safe.
 
+Current implementation:
+
+- `src/tracker/effect-hooks.js` defines a small deterministic metadata registry
+  for passive character-local hooks.
+- Brawny and Small now adjust displayed Size and Toughness where applicable.
+- Brawny and Soldier now share the same registry path for effective Strength
+  used by Encumbrance and Minimum Strength checks.
+- Character, Combat, and Inventory surfaces show passive-effect explanations
+  instead of relying only on catalog text.
+
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.
 3. Add warnings, not hard blocks, for complex requirements and table-dependent

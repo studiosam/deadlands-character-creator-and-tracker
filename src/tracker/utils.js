@@ -194,7 +194,12 @@ function getWeaponStrengthUsageInfo(characterStrength, weapon) {
 }
 
 function weaponStrengthWarningMarkup(weapon) {
-  const info = getWeaponStrengthUsageInfo(character.weaponStrength, weapon);
+  const effectiveStrength = effectiveStrengthForScope(
+    character,
+    character.weaponStrength,
+    "minimum-strength",
+  );
+  const info = getWeaponStrengthUsageInfo(effectiveStrength, weapon);
   return info.message
     ? `<p class="weapon-warning">${esc(info.message)}</p>`
     : "";

@@ -42,12 +42,11 @@ function effectiveStrengthForEncumbrance(currentCharacter) {
     currentCharacter.weaponStrength ||
     currentCharacter.armorStrength ||
     "d4";
-  const baseStep = dieStepIndex(baseStrength);
-  const edgeSteps =
-    (hasEdgeNamed(currentCharacter, "Brawny") ? 1 : 0) +
-    (hasEdgeNamed(currentCharacter, "Soldier") ? 1 : 0);
-  const effectiveStep = Math.max(0, baseStep < 0 ? 0 : baseStep) + edgeSteps;
-  return dieStepLabel(effectiveStep);
+  return effectiveStrengthForScope(
+    currentCharacter,
+    baseStrength,
+    "encumbrance",
+  );
 }
 
 function loadLimitForStrength(strengthDie) {

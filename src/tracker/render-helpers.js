@@ -30,6 +30,26 @@ function statusPipMarkup(label, value, note = "") {
   return `<div class="status-pip"><span>${esc(label)}</span><strong>${esc(value)}</strong>${note ? `<small>${esc(note)}</small>` : ""}</div>`;
 }
 
+function passiveEffectSummaryItems(surface, currentCharacter = character) {
+  return effectHookSummariesForSurface(currentCharacter, surface).map(
+    (effect) => `${effect.sourceName}: ${effect.displayLabel}`,
+  );
+}
+
+function passiveEffectSummaryText(surface, emptyText = "None") {
+  const items = passiveEffectSummaryItems(surface);
+  return items.length ? items.join("; ") : emptyText;
+}
+
+function passiveEffectDerivedCards(surface) {
+  return effectHookSummariesForSurface(character, surface)
+    .map(
+      (effect) =>
+        `<div class="derived-scan-card passive-effect-card"><span>${esc(effect.sourceName)}</span><strong>${esc(effect.displayLabel)}</strong><small>${esc(`${displayNameFromKey(effect.sourceType)} effect`)}</small></div>`,
+    )
+    .join("");
+}
+
 function tagCardMarkup(item, kind = "") {
   const controls = item.id
     ? `<div class="tag-actions"><button class="ghost tag-action" type="button" data-entry-type="${esc(kind)}" data-entry-action="edit" data-entry-id="${esc(item.id)}">Edit</button><button class="ghost tag-action danger-lite" type="button" data-entry-type="${esc(kind)}" data-entry-action="remove" data-entry-id="${esc(item.id)}">Remove</button></div>`
