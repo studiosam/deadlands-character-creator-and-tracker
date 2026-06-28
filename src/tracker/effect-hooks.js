@@ -32,6 +32,28 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-fleet-footed",
+    sourceType: "edge",
+    matchName: "Fleet-Footed",
+    label: "Fleet-Footed",
+    summary: "Pace +2 and running die increases one step.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "pace",
+        value: 2,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Pace +2",
+      },
+      {
+        type: "reminder",
+        target: "running-die",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Running die increases one step",
+      },
+    ],
+  },
+  {
     id: "edge-soldier",
     sourceType: "edge",
     matchName: "Soldier",
@@ -76,6 +98,50 @@ const EFFECT_HOOK_REGISTRY = [
         value: -1,
         appliesTo: ["character", "combat"],
         displayLabel: "Toughness -1",
+      },
+    ],
+  },
+  {
+    id: "hindrance-obese",
+    sourceType: "hindrance",
+    matchName: "Obese",
+    label: "Obese",
+    summary:
+      "Size +1, Pace -1, running die d4, and Strength counts one die lower for Minimum Strength.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "size",
+        value: 1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Size +1",
+      },
+      {
+        type: "numeric-modifier",
+        target: "toughness",
+        value: 1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Toughness +1 from Size",
+      },
+      {
+        type: "numeric-modifier",
+        target: "pace",
+        value: -1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Pace -1",
+      },
+      {
+        type: "die-step-modifier",
+        target: "strength",
+        value: -1,
+        appliesTo: ["minimum-strength", "inventory"],
+        displayLabel: "Strength counts one die lower for Minimum Strength",
+      },
+      {
+        type: "reminder",
+        target: "running-die",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Running die is d4",
       },
     ],
   },
@@ -142,6 +208,14 @@ function characterToughnessModifier(currentCharacter = character) {
   return effectHookModifierTotal(currentCharacter, {
     type: "numeric-modifier",
     target: "toughness",
+    scope: "character",
+  });
+}
+
+function characterPaceModifier(currentCharacter = character) {
+  return effectHookModifierTotal(currentCharacter, {
+    type: "numeric-modifier",
+    target: "pace",
     scope: "character",
   });
 }

@@ -1343,6 +1343,119 @@ test("Small passive effect reduces displayed Size and Toughness", async ({
   });
 });
 
+test("Fleet-Footed passive effect updates Pace and reminders", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Fleet-Footed Effect Tester",
+    preferredId: "fleet-footed-effect-tester",
+    edgeIds: ["swade-edge-fleet-footed"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Fleet-Footed");
+  await expect(derived).toContainText("Pace +2");
+  await expect(derived).toContainText("Running die increases one step");
+  await expect(derived).toContainText("8");
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Fleet-Footed: Pace +2",
+  );
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Fleet-Footed: Running die increases one step",
+  );
+
+  const computed = await page.evaluate(() => ({
+    pace: character.derived.pace,
+    paceModifier: character.derived.effectPaceModifier,
+    hooks: activeEffectHooks(character).map((hook) => hook.id),
+  }));
+  expect(computed).toEqual({
+    pace: 8,
+    paceModifier: 2,
+    hooks: ["edge-fleet-footed"],
+  });
+});
+
+test("Obese passive effect updates Pace Size Toughness and Minimum Strength", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Obese Effect Tester",
+    preferredId: "obese-effect-tester",
+    hindranceIds: ["swade-hindrance-obese"],
+    weapons: [
+      {
+        id: "minimum-strength-test-rifle",
+        name: "Minimum Strength Test Rifle",
+        damage: "2d8",
+        range: "12/24/48",
+        ap: 0,
+        rof: 1,
+        shotsMax: null,
+        shotsLoaded: null,
+        ammoType: null,
+        minStr: "d6",
+        weight: 1,
+        itemLocation: "carried",
+      },
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Obese");
+  await expect(derived).toContainText("Pace -1");
+  await expect(derived).toContainText("Size +1");
+  await expect(derived).toContainText("Toughness +1 from Size");
+  await expect(derived).toContainText("Running die is d4");
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Obese: Pace -1",
+  );
+
+  await openInventory(page);
+  await expect(page.locator("#encumbranceDetails")).toContainText(
+    "Obese: Strength counts one die lower for Minimum Strength",
+  );
+  await expect(page.locator("#weaponList")).toContainText(
+    "Strength too low: ranged attacks suffer -1.",
+  );
+
+  const computed = await page.evaluate(() => ({
+    pace: character.derived.pace,
+    toughness: character.derived.toughness,
+    size: character.derived.size,
+    minimumStrength: effectiveStrengthForScope(
+      character,
+      character.weaponStrength,
+      "minimum-strength",
+    ),
+    encumbranceStrength: calculateEncumbrance(character).effectiveStrength,
+    minStrengthMessage: getWeaponStrengthUsageInfo(
+      effectiveStrengthForScope(
+        character,
+        character.weaponStrength,
+        "minimum-strength",
+      ),
+      character.weapons[0],
+    ).message,
+    hooks: activeEffectHooks(character).map((hook) => hook.id),
+  }));
+  expect(computed).toEqual({
+    pace: 5,
+    toughness: 6,
+    size: 1,
+    minimumStrength: "d4",
+    encumbranceStrength: "d6",
+    minStrengthMessage: "Strength too low: ranged attacks suffer -1.",
+    hooks: ["hindrance-obese"],
+  });
+});
+
 test("Increase Skill writes a canonical ledger entry", async ({ page }) => {
   await seedCanonicalAdvancementCharacter(page);
 

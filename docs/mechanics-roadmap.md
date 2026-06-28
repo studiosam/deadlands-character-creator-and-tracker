@@ -155,9 +155,14 @@ Current implementation:
 
 - `src/tracker/effect-hooks.js` defines a small deterministic metadata registry
   for passive character-local hooks.
-- Brawny and Small now adjust displayed Size and Toughness where applicable.
+- Brawny, Small, and Obese now adjust displayed Size and Toughness where
+  applicable.
+- Fleet-Footed and Obese now adjust displayed Pace and show running-die
+  reminders.
 - Brawny and Soldier now share the same registry path for effective Strength
   used by Encumbrance and Minimum Strength checks.
+- Obese uses the same registry path to lower effective Strength for Minimum
+  Strength checks without lowering Encumbrance capacity.
 - Character, Combat, and Inventory surfaces show passive-effect explanations
   instead of relying only on catalog text.
 

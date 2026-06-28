@@ -88,17 +88,27 @@ function render() {
   const armor = armorValue(location);
   const toughnessModifier = characterToughnessModifier(character);
   const sizeModifier = characterSizeModifier(character);
+  const paceModifier = characterPaceModifier(character);
+  if (character.derived.basePace === undefined) {
+    character.derived.basePace = Number(character.derived.pace) || 6;
+  }
   if (character.derived.baseSize === undefined) {
     character.derived.baseSize =
       Number(character.size ?? character.derived.size) || 0;
   }
+  const effectivePace = Math.max(
+    1,
+    (Number(character.derived.basePace) || 6) + paceModifier,
+  );
   const effectiveBaseToughness =
     (Number(character.derived.baseToughness) || 0) + toughnessModifier;
   const effectiveSize =
     (Number(character.derived.baseSize) || 0) + sizeModifier;
   character.derived.armor = armor;
+  character.derived.pace = effectivePace;
   character.derived.toughness = effectiveBaseToughness + armor;
   character.derived.size = effectiveSize;
+  character.derived.effectPaceModifier = paceModifier;
   character.derived.effectToughnessModifier = toughnessModifier;
   character.derived.effectSizeModifier = sizeModifier;
   els.paceValue.textContent = character.derived.pace;
@@ -467,7 +477,18 @@ function renderCharacterSummary() {
     : emptyState("No Hindrances added yet.");
 
   els.characterDerivedDetails.innerHTML = [
-    ["Pace", character.derived.pace, ""],
+    [
+      "Pace",
+      character.derived.pace,
+      [
+        `Base ${compactText(character.derived.basePace)}`,
+        character.derived.effectPaceModifier
+          ? `Effects ${character.derived.effectPaceModifier > 0 ? "+" : ""}${character.derived.effectPaceModifier}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" + "),
+    ],
     ["Parry", character.derived.parry, ""],
     [
       "Toughness",
