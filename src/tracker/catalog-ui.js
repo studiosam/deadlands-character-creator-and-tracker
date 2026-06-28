@@ -135,11 +135,12 @@ function catalogSearchText(value) {
 }
 
 function catalogUniqueValues(values) {
-  return [...new Set(values.map(catalogText).filter(Boolean))].sort((left, right) =>
-    left.localeCompare(right, undefined, {
-      numeric: true,
-      sensitivity: "base",
-    }),
+  return [...new Set(values.map(catalogText).filter(Boolean))].sort(
+    (left, right) =>
+      left.localeCompare(right, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }),
   );
 }
 
@@ -190,12 +191,7 @@ function catalogItemSearchFields(item, type) {
     ];
   }
   if (type === "hindrances") {
-    return [
-      item.name,
-      item.severity,
-      item.source,
-      item.shortSummary,
-    ];
+    return [item.name, item.severity, item.source, item.shortSummary];
   }
   return [
     item.name,
@@ -210,9 +206,9 @@ function catalogItemSearchFields(item, type) {
 
 function catalogItemMatchesSearch(item, type, query) {
   if (!query) return true;
-  return catalogSearchText(catalogItemSearchFields(item, type).join(" ")).includes(
-    query,
-  );
+  return catalogSearchText(
+    catalogItemSearchFields(item, type).join(" "),
+  ).includes(query);
 }
 
 function catalogCurrentFilters() {
@@ -229,10 +225,14 @@ function catalogRenderFilters(type, filters) {
   if (!els.catalogFilterFields) return;
   if (type === "edges") {
     const categories = catalogUniqueValues(
-      catalogBrowserConfig(type).records().map((item) => item.category),
+      catalogBrowserConfig(type)
+        .records()
+        .map((item) => item.category),
     );
     const ranks = catalogUniqueValues(
-      catalogBrowserConfig(type).records().map((item) => item.rank),
+      catalogBrowserConfig(type)
+        .records()
+        .map((item) => item.rank),
     );
     els.catalogFilterFields.innerHTML = `
       <label>Category<select id="catalogEdgeCategoryFilter" data-catalog-filter="edgeCategory">${catalogOptionList(categories, filters.edgeCategory, "All categories")}</select></label>
@@ -242,7 +242,9 @@ function catalogRenderFilters(type, filters) {
   }
   if (type === "hindrances") {
     const severities = catalogUniqueValues(
-      catalogBrowserConfig(type).records().map((item) => item.severity),
+      catalogBrowserConfig(type)
+        .records()
+        .map((item) => item.severity),
     );
     els.catalogFilterFields.innerHTML = `
       <label>Severity<select id="catalogHindranceSeverityFilter" data-catalog-filter="hindranceSeverity">${catalogOptionList(severities, filters.hindranceSeverity, "All severities")}</select></label>
@@ -251,7 +253,9 @@ function catalogRenderFilters(type, filters) {
   }
 
   const ranks = catalogUniqueValues(
-    catalogBrowserConfig(type).records().map((item) => item.rank),
+    catalogBrowserConfig(type)
+      .records()
+      .map((item) => item.rank),
   );
   els.catalogFilterFields.innerHTML = `
     <label>Rank<select id="catalogPowerRankFilter" data-catalog-filter="powerRank">${catalogOptionList(ranks, filters.powerRank, "All ranks")}</select></label>
@@ -276,7 +280,11 @@ function catalogFilterItems(items, type, filters, query) {
       item.severity !== filters.hindranceSeverity
     )
       return false;
-    if (type === "powers" && filters.powerRank && item.rank !== filters.powerRank)
+    if (
+      type === "powers" &&
+      filters.powerRank &&
+      item.rank !== filters.powerRank
+    )
       return false;
     if (
       type === "powers" &&
@@ -378,8 +386,14 @@ function catalogRenderPowerDetail(power) {
       ["Power Points", power.powerPoints],
       ["Range", power.range],
       ["Duration", power.duration],
-      ["Allowed Arcane Backgrounds", (power.allowedBackgrounds || []).join(", ")],
-      ["Required Arcane Backgrounds", catalogPowerRequiredText(power) || "None"],
+      [
+        "Allowed Arcane Backgrounds",
+        (power.allowedBackgrounds || []).join(", "),
+      ],
+      [
+        "Required Arcane Backgrounds",
+        catalogPowerRequiredText(power) || "None",
+      ],
       ["Restrictions", catalogRenderRestrictionList(power)],
       ["Source", power.source],
     ])}
@@ -471,7 +485,9 @@ function updatePreviews() {
   );
   if (consumableConversion?.unitsLabel) {
     els.inventoryUnitsLabel.textContent = consumableConversion.unitsLabel;
-    els.inventoryUnitsInput.placeholder = String(consumableConversion.multiplier);
+    els.inventoryUnitsInput.placeholder = String(
+      consumableConversion.multiplier,
+    );
   } else {
     els.inventoryUnitsInput.value = "";
   }

@@ -53,7 +53,9 @@ function powerCatalogEntries() {
 }
 
 function knownPowerCatalogIds() {
-  return new Set(character.powers.map((power) => power.catalogId).filter(Boolean));
+  return new Set(
+    character.powers.map((power) => power.catalogId).filter(Boolean),
+  );
 }
 
 function missingRequiredPower(profile) {
@@ -71,23 +73,25 @@ function filteredCatalogPowers() {
   const rank = els.powerRankFilter.value;
   const validOnly = els.powerValidOnlyInput.checked;
   const allowedIds = new Set(profile?.allowedPowerIds || []);
-  return powerCatalogEntries().filter((power) => {
-    if (validOnly && profile && !allowedIds.has(power.id)) return false;
-    if (rank && power.rank !== rank) return false;
-    if (
-      query &&
-      !normalizePowerCatalogText(
-        `${power.name} ${power.shortSummary} ${power.variableCostNotes}`,
-      ).includes(query)
-    )
-      return false;
-    return true;
-  }).sort(
-    (left, right) =>
-      powerRankValue(left.rank) - powerRankValue(right.rank) ||
-      (left.basePowerPoints ?? 999) - (right.basePowerPoints ?? 999) ||
-      left.name.localeCompare(right.name),
-  );
+  return powerCatalogEntries()
+    .filter((power) => {
+      if (validOnly && profile && !allowedIds.has(power.id)) return false;
+      if (rank && power.rank !== rank) return false;
+      if (
+        query &&
+        !normalizePowerCatalogText(
+          `${power.name} ${power.shortSummary} ${power.variableCostNotes}`,
+        ).includes(query)
+      )
+        return false;
+      return true;
+    })
+    .sort(
+      (left, right) =>
+        powerRankValue(left.rank) - powerRankValue(right.rank) ||
+        (left.basePowerPoints ?? 999) - (right.basePowerPoints ?? 999) ||
+        left.name.localeCompare(right.name),
+    );
 }
 
 function selectedCatalogPower() {
@@ -97,7 +101,9 @@ function selectedCatalogPower() {
 
 function getKnownPowerWarnings(character, power) {
   const warnings = [];
-  const profile = hasPowerCatalog() ? getArcaneBackgroundProfile(character) : null;
+  const profile = hasPowerCatalog()
+    ? getArcaneBackgroundProfile(character)
+    : null;
   if (!profile) {
     warnings.push("No Arcane Background is selected.");
     return warnings;
@@ -122,7 +128,9 @@ function catalogPowerPreviewMarkup(power) {
 
 function renderPowerSetupNotice() {
   if (!els.powerSetupNotice || !els.addRequiredPowerBtn) return;
-  const profile = hasPowerCatalog() ? getArcaneBackgroundProfile(character) : null;
+  const profile = hasPowerCatalog()
+    ? getArcaneBackgroundProfile(character)
+    : null;
   if (!profile) {
     els.powerSetupNotice.classList.remove("hidden");
     els.powerSetupNotice.textContent =
@@ -134,7 +142,8 @@ function renderPowerSetupNotice() {
   els.powerSetupNotice.classList.remove("hidden");
   els.powerSetupNotice.textContent = `${profile.notes} Known powers: ${character.powers.length} / ${profile.startingPowerCount} starting powers.`;
   els.addRequiredPowerBtn.classList.toggle("hidden", !missing);
-  if (missing) els.addRequiredPowerBtn.textContent = `Add Required Power: ${missing.name}`;
+  if (missing)
+    els.addRequiredPowerBtn.textContent = `Add Required Power: ${missing.name}`;
 }
 
 function renderPowerCatalogPicker() {

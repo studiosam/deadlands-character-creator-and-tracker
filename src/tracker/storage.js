@@ -36,7 +36,8 @@ function normalize(data, options = {}) {
       ? normalized.creation
       : null;
   normalized.creationBaseline =
-    normalized.creationBaseline && typeof normalized.creationBaseline === "object"
+    normalized.creationBaseline &&
+    typeof normalized.creationBaseline === "object"
       ? normalized.creationBaseline
       : null;
   normalized.conditions = {
@@ -268,7 +269,8 @@ function characterSlotFromCharacter(data, existing = {}, metadata = {}) {
     name: metadata.name || storedCharacter.name || "Unnamed Character",
     rank: storedCharacter.rank || "",
     archetype: storedCharacter.archetype || "",
-    source: metadata.source || storedCharacter.source || existing.source || "local",
+    source:
+      metadata.source || storedCharacter.source || existing.source || "local",
     isDemo: Boolean(metadata.isDemo ?? existing.isDemo),
     sampleId: metadata.sampleId || existing.sampleId || "",
     createdAt: existing.createdAt || metadata.createdAt || now,
@@ -332,9 +334,13 @@ function loadCharacterLibrary() {
 
   const migratedCharacter = normalize(legacy);
   const library = emptyCharacterLibrary();
-  const entry = characterSlotFromCharacter(migratedCharacter, {}, {
-    source: migratedCharacter.source || "migrated",
-  });
+  const entry = characterSlotFromCharacter(
+    migratedCharacter,
+    {},
+    {
+      source: migratedCharacter.source || "migrated",
+    },
+  );
   library.charactersById[entry.id] = entry;
   library.activeCharacterId = entry.id;
   characterLibrary = library;
@@ -344,7 +350,8 @@ function loadCharacterLibrary() {
 
 function activeCharacterSlot() {
   return (
-    characterLibrary?.charactersById?.[characterLibrary.activeCharacterId] || null
+    characterLibrary?.charactersById?.[characterLibrary.activeCharacterId] ||
+    null
   );
 }
 
@@ -353,7 +360,11 @@ function isUnsavedCharacterDraft() {
 }
 
 function placeholderSetupCharacterName(name = character?.name || "") {
-  return String(name || "").trim().toLowerCase() === "untitled character";
+  return (
+    String(name || "")
+      .trim()
+      .toLowerCase() === "untitled character"
+  );
 }
 
 function draftCharacterSaveName() {
@@ -368,7 +379,11 @@ function setSaveState(message) {
 
 function saveCharacterSlot(data = character, metadata = {}) {
   if (!data) return null;
-  if (isUnsavedCharacterDraft() && data === character && !metadata.forceDraftSave)
+  if (
+    isUnsavedCharacterDraft() &&
+    data === character &&
+    !metadata.forceDraftSave
+  )
     return null;
   if (data === character) characterDraftMode = false;
   if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
@@ -407,7 +422,10 @@ async function saveUnsavedCharacterDraft() {
   }
 
   if (!name || placeholderSetupCharacterName(name)) {
-    appToast("A character name is required before saving this draft.", "danger");
+    appToast(
+      "A character name is required before saving this draft.",
+      "danger",
+    );
     return null;
   }
 
@@ -471,7 +489,9 @@ function addCharacterSlot(data, metadata = {}) {
       )?.id || ""
     : "";
   const id = existingId || uniqueCharacterSlotId(data?.name, preferredId);
-  const existing = existingId ? characterLibrary.charactersById[existingId] : {};
+  const existing = existingId
+    ? characterLibrary.charactersById[existingId]
+    : {};
   const entry = characterSlotFromCharacter(normalize(data), existing, {
     ...metadata,
     id,
@@ -492,7 +512,10 @@ function activateCharacterSlot(id) {
   characterLibrary.activeCharacterId = id;
   character = normalize(entry.character);
   persistCharacterLibrary();
-  storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
+  storageAdapter.writeJson(
+    STORAGE_KEY,
+    serializeCharacterForStorage(character),
+  );
   return true;
 }
 
@@ -506,11 +529,16 @@ function removeCharacterSlot(id) {
     const next = characterLibraryEntries()[0];
     characterLibrary.activeCharacterId = next?.id || "";
     if (!isUnsavedCharacterDraft())
-      character = next ? normalize(next.character) : normalize(clone(defaultCharacter));
+      character = next
+        ? normalize(next.character)
+        : normalize(clone(defaultCharacter));
   }
   persistCharacterLibrary();
   if (characterLibrary.activeCharacterId && !isUnsavedCharacterDraft())
-    storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
+    storageAdapter.writeJson(
+      STORAGE_KEY,
+      serializeCharacterForStorage(character),
+    );
   else if (!isUnsavedCharacterDraft()) storageAdapter.remove(STORAGE_KEY);
   return true;
 }
@@ -525,7 +553,10 @@ function renameCharacterSlot(id, name) {
   if (characterLibrary.activeCharacterId === id) character.name = nextName;
   persistCharacterLibrary();
   if (characterLibrary.activeCharacterId === id)
-    storageAdapter.writeJson(STORAGE_KEY, serializeCharacterForStorage(character));
+    storageAdapter.writeJson(
+      STORAGE_KEY,
+      serializeCharacterForStorage(character),
+    );
   return true;
 }
 
@@ -543,7 +574,9 @@ function duplicateCharacterSlot(id) {
 function loadCharacter() {
   characterLibrary = loadCharacterLibrary();
   const active = activeCharacterSlot();
-  return active ? normalize(active.character) : normalize(clone(defaultCharacter));
+  return active
+    ? normalize(active.character)
+    : normalize(clone(defaultCharacter));
 }
 
 function save() {

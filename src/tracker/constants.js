@@ -176,8 +176,7 @@ const SKILL_USE_NOTES = {
     "Everyday facts, local customs, rumors, practical judgment, and general know-how.",
   Driving:
     "Operating wagons, coaches, carts, steam vehicles, and other ground vehicles.",
-  Faith:
-    "Calling on divine power for Blessed or similar Arcane Backgrounds.",
+  Faith: "Calling on divine power for Blessed or similar Arcane Backgrounds.",
   Fighting:
     "Melee attacks, close combat defense, brawling, blades, clubs, and other hand-to-hand violence.",
   Focus:

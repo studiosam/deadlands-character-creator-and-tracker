@@ -51,7 +51,8 @@ function appendPowerPointControls(
   row.innerHTML = `<div><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<span>${value}</span>` : "<span>Current / Max</span>"}${resource.source ? `<span>${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls resource-recovery-actions"><button data-recover="5" type="button">Rest +5</button><button data-recover="10" type="button">Rest +10</button><button data-recover="15" type="button">Rest +15</button><button data-recover="max" type="button">Max</button></div>`;
   row.querySelectorAll("[data-recover]").forEach((button) => {
     const atMax = Boolean(resource.max && resource.current >= resource.max);
-    button.disabled = atMax || (button.dataset.recover === "max" && !resource.max);
+    button.disabled =
+      atMax || (button.dataset.recover === "max" && !resource.max);
     button.onclick = () => {
       if (button.dataset.recover === "max") {
         if (resource.max) {
@@ -141,9 +142,7 @@ function renderCombatPenalties() {
   )}. Carrying Capacity: ${esc(formatWeightPounds(encumbrance.carryingCapacity))}`;
   const encumbranceWarning = esc(encumbranceWarningText(encumbrance));
   const entries = [
-    ...traitPenalties.map(
-      (penalty) => `${penalty.label} ${penalty.value}`,
-    ),
+    ...traitPenalties.map((penalty) => `${penalty.label} ${penalty.value}`),
     ...modifiers,
   ];
 
@@ -152,10 +151,8 @@ function renderCombatPenalties() {
     ? "Trait penalty total"
     : "No trait penalties";
   els.combatPenaltyBreakdown.innerHTML = entries.length
-    ? entries
-        .map((entry) => `<span>${esc(entry)}</span>`)
-        .join("")
-    : '<span>No active penalty causes.</span>';
+    ? entries.map((entry) => `<span>${esc(entry)}</span>`).join("")
+    : "<span>No active penalty causes.</span>";
   els.combatEncumbranceSummary.innerHTML = encumbrance.overloaded
     ? `<strong>Encumbrance: Overloaded</strong><span>${loadText}. ${encumbranceWarning}</span>`
     : encumbrance.encumbered
@@ -484,7 +481,8 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
   });
 
   variableInputs.forEach((input) => {
-    input.oninput = () => updateVariableSpendButton(power, article, powerPoints);
+    input.oninput = () =>
+      updateVariableSpendButton(power, article, powerPoints);
   });
   if (variableSpendButton) {
     updateVariableSpendButton(power, article, powerPoints);
@@ -592,8 +590,7 @@ function addConsumableFromGear(item, packageCount, unitsPerPackage) {
     Math.floor(Number(unitsPerPackage) || conversion.multiplier || 1),
   );
   const count =
-    Math.max(1, Math.floor(Number(packageCount) || 1)) *
-    safeUnitsPerPackage;
+    Math.max(1, Math.floor(Number(packageCount) || 1)) * safeUnitsPerPackage;
   addConsumableCount(
     conversion.id,
     conversion.name,
@@ -680,11 +677,7 @@ function renderCombatConsumables() {
     const input = row.querySelector("input");
     const [use, add] = row.querySelectorAll("button");
     use.onclick = () => {
-      const amount = clamp(
-        Math.floor(Number(input.value) || 1),
-        1,
-        item.count,
-      );
+      const amount = clamp(Math.floor(Number(input.value) || 1), 1, item.count);
       consumeItem(source, item, amount);
       render();
       save();

@@ -25,7 +25,12 @@ function renderArmor() {
   character.armorInventory.forEach((armor) => {
     const row = document.createElement("div");
     row.className = "row";
-    const entry = { type: "armor", id: armor.id, label: armor.name, item: armor };
+    const entry = {
+      type: "armor",
+      id: armor.id,
+      label: armor.name,
+      item: armor,
+    };
     row.innerHTML = `<div><strong>${esc(armor.name)}</strong><span>+${armor.armor} • ${armorLabel(armor.location)} • ${esc(physicalItemLocationLabel(entry))} • Min Str ${esc(armor.minStr)} • Weight ${formatWeightPounds(physicalItemWeight(entry))} • Cost ${armor.costCents !== undefined ? money(armor.costCents) : "—"} each</span>${armor.note ? `<span>${esc(armor.note)}</span>` : ""}</div><div class="controls"><button>${armor.equipped ? "Equipped" : "Equip"}</button><button>&minus;</button><strong>${armor.count}</strong><button>+</button>${physicalMoveControl("armor", armor.id)}<button class="delete-small">×</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
@@ -82,7 +87,10 @@ function renderWeapons() {
     const reload = query(".reload-btn");
     const unload = query(".unload-btn");
     const remove = query(".remove-btn");
-    remove.insertAdjacentHTML("beforebegin", physicalMoveControl("weapon", weapon.id));
+    remove.insertAdjacentHTML(
+      "beforebegin",
+      physicalMoveControl("weapon", weapon.id),
+    );
     const strengthInfo = getWeaponStrengthUsageInfo(
       character.weaponStrength,
       weapon,
@@ -95,7 +103,12 @@ function renderWeapons() {
       const reserve = character.ammo[weapon.ammoType];
       const reserveCount = reserve?.count || 0;
       const reserveEntry = reserve
-        ? { type: "ammo", id: weapon.ammoType, label: reserve.label, item: reserve }
+        ? {
+            type: "ammo",
+            id: weapon.ammoType,
+            label: reserve.label,
+            item: reserve,
+          }
         : null;
       query(".loaded").textContent =
         `Loaded ${weapon.shotsLoaded} / ${weapon.shotsMax}`;

@@ -155,14 +155,14 @@ function setupPowerPointsAudit(profile, powerPoints) {
   const incomplete = [];
 
   if (!powerPoints) {
-    incomplete.push(
-      `Expected ${expected} Power Points; none recorded.`,
-    );
+    incomplete.push(`Expected ${expected} Power Points; none recorded.`);
   } else {
     if (!Number.isFinite(max) || max <= 0) {
       messages.push("Power Points max is missing or invalid.");
     } else if (max !== expected) {
-      messages.push(`Expected ${expected} Power Points; recorded max is ${max}.`);
+      messages.push(
+        `Expected ${expected} Power Points; recorded max is ${max}.`,
+      );
     }
 
     if (!Number.isFinite(current) || current < 0) {
@@ -224,8 +224,8 @@ function setupPowerAuditReport() {
     );
     const required = Boolean(
       profile &&
-        catalog &&
-        profile.requiredStartingPowers?.includes(catalog.id),
+      catalog &&
+      profile.requiredStartingPowers?.includes(catalog.id),
     );
     const messages = [];
     if (!catalog) {
@@ -358,7 +358,8 @@ function setupGearAuditCounts() {
 function setupGearCatalogMatch(entry) {
   const item = entry.item || {};
   const name = normalizeRuleName(entry.label || item.name || item.label);
-  const matchesName = (catalogItem) => normalizeRuleName(catalogItem.name) === name;
+  const matchesName = (catalogItem) =>
+    normalizeRuleName(catalogItem.name) === name;
   if (entry.type === "weapon") {
     return (
       WEAPON_CATALOG.find(
@@ -451,7 +452,9 @@ function setupGearEntryWarnings(entry, catalog) {
   const item = entry.item || {};
   const warnings = [];
   const rawName = String(item.name || item.label || "").trim();
-  const rawLocation = String(entry.location || item.location || item.itemLocation || "").trim();
+  const rawLocation = String(
+    entry.location || item.location || item.itemLocation || "",
+  ).trim();
   const count = Number(item.count ?? item.quantity ?? item.qty ?? 1);
   const locationKnown =
     entry.type === "vehicle" ||
@@ -465,7 +468,8 @@ function setupGearEntryWarnings(entry, catalog) {
 
   if (!rawName) warnings.push("Missing item name.");
   if (!locationKnown) warnings.push("Unknown or missing location.");
-  if (!Number.isFinite(count) || count < 0) warnings.push("Suspicious count value.");
+  if (!Number.isFinite(count) || count < 0)
+    warnings.push("Suspicious count value.");
   if (entry.type !== "vehicle" && !hasExplicitWeight)
     warnings.push("Weight is unknown; verify manually.");
   if (
@@ -486,7 +490,9 @@ function setupGearLocationGroups(entries) {
         ["", "carried"].includes(entry.location) &&
         entry.type !== "vehicle",
     ),
-    containers: entries.filter((entry) => entry.location === "container" || entry.parent),
+    containers: entries.filter(
+      (entry) => entry.location === "container" || entry.parent,
+    ),
     dropped: entries.filter((entry) => entry.location === "dropped"),
     stored: entries.filter((entry) => entry.location === "stored"),
     vehicles: entries.filter((entry) => entry.type === "vehicle"),
@@ -497,9 +503,7 @@ function setupContainerAudits(entries) {
     .filter((entry) => entry.item.isContainer)
     .map((entry) => {
       const contents = entries.filter(
-        (item) =>
-          item.containerId === entry.id ||
-          item.parent?.id === entry.id,
+        (item) => item.containerId === entry.id || item.parent?.id === entry.id,
       );
       return {
         ...entry,
@@ -793,20 +797,18 @@ function validateSetupStartingEdge(edge, options = {}) {
   const edgeName = plainEntryName(edge.name || catalog?.name);
   const duplicate = edgeName
     ? (character.edges || []).some(
-        (item) =>
-          item.id !== edge.id && plainEntryName(item.name) === edgeName,
+        (item) => item.id !== edge.id && plainEntryName(item.name) === edgeName,
       )
     : false;
   if (duplicate) {
-    messages.push(
-      `${sourceLabel} duplicates another selected starting Edge.`,
-    );
+    messages.push(`${sourceLabel} duplicates another selected starting Edge.`);
   }
 
   const slotCount = setupStartingEdgeSlotCount(source);
-  const sameSource = source === "human-free-edge"
-    ? setupHumanFreeEdges()
-    : setupHindranceBenefitEdges();
+  const sameSource =
+    source === "human-free-edge"
+      ? setupHumanFreeEdges()
+      : setupHindranceBenefitEdges();
   const position = sameSource.findIndex((item) => item.id === edge.id);
   if (position >= 0 && position >= slotCount) {
     messages.push(

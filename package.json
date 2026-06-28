@@ -14,8 +14,8 @@
     "test:quick": "npm run test:static && npm run test:browser:fast",
     "test:clean": "node -e \"const fs=require('fs'); for (const dir of ['test-results','playwright-report']) fs.rmSync(dir,{recursive:true,force:true});\"",
     "test": "npm run test:static && npm run test:browser",
-    "format": "prettier --write README.md NOTICE.md PRIVACY.md docs/case-study.md docs/character-setup-contract.md docs/advancement-contract.md package.json playwright.config.cjs \"tests/**/*.{js,cjs}\" src/persistence.js src/app-ui.js",
-    "format:check": "prettier --check README.md NOTICE.md PRIVACY.md docs/case-study.md docs/character-setup-contract.md docs/advancement-contract.md package.json playwright.config.cjs \"tests/**/*.{js,cjs}\" src/persistence.js src/app-ui.js"
+    "format": "prettier --write README.md NOTICE.md PRIVACY.md docs/case-study.md docs/character-setup-contract.md docs/advancement-contract.md index.html package.json playwright.config.cjs \"tests/**/*.{js,cjs}\" src/persistence.js src/app-ui.js \"src/tracker/**/*.js\"",
+    "format:check": "prettier --check README.md NOTICE.md PRIVACY.md docs/case-study.md docs/character-setup-contract.md docs/advancement-contract.md index.html package.json playwright.config.cjs \"tests/**/*.{js,cjs}\" src/persistence.js src/app-ui.js \"src/tracker/**/*.js\""
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0",

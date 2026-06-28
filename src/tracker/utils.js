@@ -39,7 +39,11 @@ function parseWeightNumber(weight) {
   if (fractionMatch) {
     const numerator = Number(fractionMatch[1]);
     const denominator = Number(fractionMatch[2]);
-    if (Number.isFinite(numerator) && Number.isFinite(denominator) && denominator)
+    if (
+      Number.isFinite(numerator) &&
+      Number.isFinite(denominator) &&
+      denominator
+    )
       return Math.max(0, numerator / denominator);
   }
 
@@ -107,7 +111,11 @@ function isTrackedWeapon(weapon) {
 }
 
 function getDieStep(die) {
-  return STRENGTH_DIE_STEPS.indexOf(String(die || "").trim().toLowerCase());
+  return STRENGTH_DIE_STEPS.indexOf(
+    String(die || "")
+      .trim()
+      .toLowerCase(),
+  );
 }
 
 function getStrengthShortfall(characterStrength, minStr) {

@@ -22,7 +22,9 @@ function hasEdgeNamed(currentCharacter, edgeName) {
 }
 
 function dieStepIndex(die) {
-  const text = String(die || "").trim().toLowerCase();
+  const text = String(die || "")
+    .trim()
+    .toLowerCase();
   const extended = text.match(/^d12\s*\+\s*(\d+)$/);
   if (extended) return STRENGTH_DIE_STEPS.indexOf("d12") + Number(extended[1]);
   return STRENGTH_DIE_STEPS.indexOf(text);
@@ -49,7 +51,9 @@ function effectiveStrengthForEncumbrance(currentCharacter) {
 }
 
 function loadLimitForStrength(strengthDie) {
-  const label = String(strengthDie || "").trim().toLowerCase();
+  const label = String(strengthDie || "")
+    .trim()
+    .toLowerCase();
   if (LOAD_LIMIT_BY_STRENGTH[label]) return LOAD_LIMIT_BY_STRENGTH[label];
 
   const step = dieStepIndex(label);
@@ -103,17 +107,22 @@ function ammoUnitWeight(key, ammo = {}) {
 
 function carriedAmmoWeight(currentCharacter) {
   const reserveWeight = Object.entries(currentCharacter.ammo || {}).reduce(
-    (sum, [key, ammo]) => sum + ammoUnitWeight(key, ammo) * carriedQuantity(ammo),
+    (sum, [key, ammo]) =>
+      sum + ammoUnitWeight(key, ammo) * carriedQuantity(ammo),
     0,
   );
-  const loadedWeight = (currentCharacter.weapons || []).reduce((sum, weapon) => {
-    if (!isTrackedWeapon(weapon)) return sum;
-    const reserve = currentCharacter.ammo?.[weapon.ammoType] || {};
-    return sum + ammoUnitWeight(weapon.ammoType, reserve) * carriedQuantity(
-      { count: weapon.shotsLoaded },
-      0,
-    );
-  }, 0);
+  const loadedWeight = (currentCharacter.weapons || []).reduce(
+    (sum, weapon) => {
+      if (!isTrackedWeapon(weapon)) return sum;
+      const reserve = currentCharacter.ammo?.[weapon.ammoType] || {};
+      return (
+        sum +
+        ammoUnitWeight(weapon.ammoType, reserve) *
+          carriedQuantity({ count: weapon.shotsLoaded }, 0)
+      );
+    },
+    0,
+  );
   return reserveWeight + loadedWeight;
 }
 
@@ -132,10 +141,12 @@ function isNormalClothingItem(item) {
 
 function equipmentIdentitySet(currentCharacter) {
   const keys = new Set();
-  [...(currentCharacter.weapons || []), ...(currentCharacter.armorInventory || [])]
+  [
+    ...(currentCharacter.weapons || []),
+    ...(currentCharacter.armorInventory || []),
+  ]
     .filter(
-      (item) =>
-        carriedQuantity(item) > 0 && physicalItemIsTopLevelActive(item),
+      (item) => carriedQuantity(item) > 0 && physicalItemIsTopLevelActive(item),
     )
     .forEach((item) => {
       const key = carriedItemKey(item);
@@ -239,8 +250,9 @@ function calculateEncumbrance(currentCharacter, options = {}) {
     : heavyOverload
       ? loadLimit * 4
       : loadLimit * 3;
-  const remainingBeforeNext =
-    overloaded ? 0 : Math.max(0, nextThreshold - carriedWeight);
+  const remainingBeforeNext = overloaded
+    ? 0
+    : Math.max(0, nextThreshold - carriedWeight);
 
   return {
     carriedWeight,

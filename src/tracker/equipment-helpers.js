@@ -33,9 +33,7 @@ function ammoKindFromWeapon(weapon) {
   )
     return "pistol";
   if (
-    /rifle|winchester|sharps|spencer|ballard|bullard|musket|carbine/.test(
-      text,
-    )
+    /rifle|winchester|sharps|spencer|ballard|bullard|musket|carbine/.test(text)
   )
     return "rifle";
   return "";

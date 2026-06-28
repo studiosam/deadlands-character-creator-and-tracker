@@ -71,10 +71,12 @@ function closeEdgeEditor() {
 function edgeDraftFromForm() {
   const existing = character.edges.find((edge) => edge.id === edgeEditingId);
   const catalogEntry = chosen(EDGE_CATALOG, els.edgeCatalogSelect.value);
-  const id = edgeEditingId || uniqueEntryId(
-    generateStableEntryId("edge", els.edgeNameInput.value.trim() || "edge"),
-    new Set(character.edges.map((edge) => edge.id)),
-  );
+  const id =
+    edgeEditingId ||
+    uniqueEntryId(
+      generateStableEntryId("edge", els.edgeNameInput.value.trim() || "edge"),
+      new Set(character.edges.map((edge) => edge.id)),
+    );
   return {
     ...(existing || {}),
     id,
@@ -88,7 +90,11 @@ function edgeDraftFromForm() {
     source: els.edgeSourceInput.value.trim() || "Manual",
     subchoice: els.edgeSubchoiceInput.value.trim(),
     catalogId: catalogEntry?.id || existing?.catalogId || "",
-    isCustom: catalogEntry ? false : existing ? Boolean(existing.isCustom) : true,
+    isCustom: catalogEntry
+      ? false
+      : existing
+        ? Boolean(existing.isCustom)
+        : true,
   };
 }
 
@@ -144,14 +150,19 @@ function hindranceDraftFromForm() {
   const existing = character.hindrances.find(
     (hindrance) => hindrance.id === hindranceEditingId,
   );
-  const catalogEntry = chosen(HINDRANCE_CATALOG, els.hindranceCatalogSelect.value);
-  const id = hindranceEditingId || uniqueEntryId(
-    generateStableEntryId(
-      "hindrance",
-      els.hindranceNameInput.value.trim() || "hindrance",
-    ),
-    new Set(character.hindrances.map((hindrance) => hindrance.id)),
+  const catalogEntry = chosen(
+    HINDRANCE_CATALOG,
+    els.hindranceCatalogSelect.value,
   );
+  const id =
+    hindranceEditingId ||
+    uniqueEntryId(
+      generateStableEntryId(
+        "hindrance",
+        els.hindranceNameInput.value.trim() || "hindrance",
+      ),
+      new Set(character.hindrances.map((hindrance) => hindrance.id)),
+    );
   return {
     ...(existing || {}),
     id,
@@ -162,7 +173,11 @@ function hindranceDraftFromForm() {
     notes: els.hindranceNotesInput.value.trim(),
     source: els.hindranceSourceInput.value.trim() || "Manual",
     catalogId: catalogEntry?.id || existing?.catalogId || "",
-    isCustom: catalogEntry ? false : existing ? Boolean(existing.isCustom) : true,
+    isCustom: catalogEntry
+      ? false
+      : existing
+        ? Boolean(existing.isCustom)
+        : true,
   };
 }
 
@@ -217,18 +232,24 @@ function skillAdvanceBeforeLabel(target) {
 }
 
 function skillOptionSort(left, right) {
-  return String(left.name || "").localeCompare(String(right.name || ""), undefined, {
-    sensitivity: "base",
-  });
+  return String(left.name || "").localeCompare(
+    String(right.name || ""),
+    undefined,
+    {
+      sensitivity: "base",
+    },
+  );
 }
 
 function deadlandsSkillLibraryOptions() {
-  return Object.entries(SKILL_LINKED_ATTRIBUTES).map(([name, linkedAttribute]) => ({
-    name,
-    die: "",
-    linkedAttribute,
-    unskilled: true,
-  }));
+  return Object.entries(SKILL_LINKED_ATTRIBUTES).map(
+    ([name, linkedAttribute]) => ({
+      name,
+      die: "",
+      linkedAttribute,
+      unskilled: true,
+    }),
+  );
 }
 
 function twoSkillAdvanceCandidates() {
@@ -250,13 +271,16 @@ function twoSkillAdvanceCandidates() {
 function eligibleSkillsForAdvanceMode(mode, excludedNames = []) {
   const excluded = new Set(excludedNames.map(plainEntryName).filter(Boolean));
   const sourceSkills =
-    mode === "two" ? twoSkillAdvanceCandidates() : [...(character.skills || [])];
+    mode === "two"
+      ? twoSkillAdvanceCandidates()
+      : [...(character.skills || [])];
   return sourceSkills
     .filter((skill) => {
       if (!skill.name || excluded.has(plainEntryName(skill.name))) return false;
       if (mode === "single")
         return canUseSingleSkillAdvance(character, skill.name).ok;
-      if (mode === "two") return canUseTwoSkillAdvance(character, skill.name).ok;
+      if (mode === "two")
+        return canUseTwoSkillAdvance(character, skill.name).ok;
       return true;
     })
     .sort(skillOptionSort);
@@ -274,7 +298,11 @@ function skillSelectMarkup(
     mode === "all" ? skills : eligibleSkillsForAdvanceMode(mode, excludedNames);
   return `<label>${esc(label)}<select id="${esc(id)}">${optionMarkup("", "Choose skill", !selectedName)}${eligibleSkills
     .map((skill) =>
-      optionMarkup(skill.name, skillOptionLabel(skill), skill.name === selectedName),
+      optionMarkup(
+        skill.name,
+        skillOptionLabel(skill),
+        skill.name === selectedName,
+      ),
     )
     .join("")}</select></label>`;
 }
@@ -334,7 +362,10 @@ function advanceGeneratedValues() {
       targetName: targets.map((target) => target.targetName).join(", "),
       summary: targets.length
         ? `Increase Two Skills: ${targets
-            .map((target) => `${target.targetName} ${skillAdvanceBeforeLabel(target)} → ${target.after}`)
+            .map(
+              (target) =>
+                `${target.targetName} ${skillAdvanceBeforeLabel(target)} → ${target.after}`,
+            )
             .join(", ")}`
         : "",
       preview: targets.length
@@ -422,7 +453,9 @@ function syncAdvanceGeneratedFields() {
   const preview = $("#advanceGeneratedSummary");
   if (preview) {
     preview.textContent =
-      generated.preview || generated.summary || "Choose a target to generate the advance summary.";
+      generated.preview ||
+      generated.summary ||
+      "Choose a target to generate the advance summary.";
   }
   const warning = $("#advanceDynamicWarning");
   if (warning) {
@@ -452,15 +485,29 @@ function renderAdvanceDynamicFields(advance = null) {
   const type = els.advanceTypeInput.value;
   const applied = Boolean(advance?.applied);
   els.saveAdvanceBtn.disabled = false;
-  const targets = advanceTargetsForLegacy(advance || {
-    type,
-    targetName: els.advanceTargetNameInput.value,
-    targets: [],
-  });
-  els.advanceTargetTypeField.classList.toggle("hidden", type !== "Other / Marshal-approved");
-  els.advanceTargetNameField.classList.toggle("hidden", type !== "Other / Marshal-approved");
-  els.advanceSummaryField.classList.toggle("hidden", type !== "Other / Marshal-approved");
-  els.advancePowerPointAmountField.classList.toggle("hidden", type !== "Power Points");
+  const targets = advanceTargetsForLegacy(
+    advance || {
+      type,
+      targetName: els.advanceTargetNameInput.value,
+      targets: [],
+    },
+  );
+  els.advanceTargetTypeField.classList.toggle(
+    "hidden",
+    type !== "Other / Marshal-approved",
+  );
+  els.advanceTargetNameField.classList.toggle(
+    "hidden",
+    type !== "Other / Marshal-approved",
+  );
+  els.advanceSummaryField.classList.toggle(
+    "hidden",
+    type !== "Other / Marshal-approved",
+  );
+  els.advancePowerPointAmountField.classList.toggle(
+    "hidden",
+    type !== "Power Points",
+  );
 
   if (type === "New Edge") {
     const selected = targets[0]?.catalogId || targets[0]?.targetId || "";
@@ -484,16 +531,31 @@ function renderAdvanceDynamicFields(advance = null) {
         : '<p class="entry-warning full">Not enough skills are eligible for a two-skill advance. Each selected skill must be below its linked attribute.</p>';
     els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid">${skillSelectMarkup("advanceSkillOneSelect", "Skill 1", firstSelected, "two", [secondSelected])}${skillSelectMarkup("advanceSkillTwoSelect", "Skill 2", secondSelected, "two", [firstSelected])}${emptyMessage}<p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
   } else if (type === "Increase Attribute") {
-    const selected = normalizeAttributeKey(targets[0]?.targetName || targets[0]?.targetId) || "";
+    const selected =
+      normalizeAttributeKey(targets[0]?.targetName || targets[0]?.targetId) ||
+      "";
     els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid"><label>Attribute<select id="advanceAttributeSelect">${optionMarkup("", "Choose attribute", !selected)}${ATTRIBUTE_ORDER.map((key) => optionMarkup(key, `${displayNameFromKey(key)} (${character.attributes?.[key] || "d4"})`, key === selected)).join("")}</select></label><p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
   } else if (type === "New Powers") {
     const selectedIds = new Set(advancePowerTargetIds);
     const selectedMarkup = advancePowerTargetIds
       .map((id) => findPowerCatalogEntryById(id))
       .filter(Boolean)
-      .map((power) => `<span class="selected-target-pill">${esc(power.name)} <button type="button" data-remove-advance-power="${esc(power.id)}">×</button></span>`)
+      .map(
+        (power) =>
+          `<span class="selected-target-pill">${esc(power.name)} <button type="button" data-remove-advance-power="${esc(power.id)}">×</button></span>`,
+      )
       .join("");
-    els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid"><label class="full">Power<select id="advancePowerSelect">${optionMarkup("", "Choose power", true)}${powerCatalogEntries().map((power) => optionMarkup(power.id, `${power.name} • ${power.rank} • ${power.powerPoints || "—"} PP`, false)).join("")}</select></label><button id="advanceAddPowerTargetBtn" type="button">Add Power</button><div class="selected-target-list full">${selectedMarkup || emptyState("No powers selected.")}</div><p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
+    els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid"><label class="full">Power<select id="advancePowerSelect">${optionMarkup("", "Choose power", true)}${powerCatalogEntries()
+      .map((power) =>
+        optionMarkup(
+          power.id,
+          `${power.name} • ${power.rank} • ${power.powerPoints || "—"} PP`,
+          false,
+        ),
+      )
+      .join(
+        "",
+      )}</select></label><button id="advanceAddPowerTargetBtn" type="button">Add Power</button><div class="selected-target-list full">${selectedMarkup || emptyState("No powers selected.")}</div><p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
   } else if (type === "Power Points") {
     els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid"><p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
   } else {
@@ -526,7 +588,8 @@ function renderAdvanceDynamicFields(advance = null) {
   });
   $("#advanceAddPowerTargetBtn")?.addEventListener("click", () => {
     const id = $("#advancePowerSelect")?.value || "";
-    if (id && !advancePowerTargetIds.includes(id)) advancePowerTargetIds.push(id);
+    if (id && !advancePowerTargetIds.includes(id))
+      advancePowerTargetIds.push(id);
     renderAdvanceDynamicFields(advance);
   });
   els.advanceDynamicFields
@@ -543,7 +606,8 @@ function renderAdvanceDynamicFields(advance = null) {
 }
 
 function resetAdvanceEditor(advance = null) {
-  const number = advance?.advanceNumber || advance?.number || nextAdvanceNumber();
+  const number =
+    advance?.advanceNumber || advance?.number || nextAdvanceNumber();
   const alreadyApplied = Boolean(advance?.applied);
   const existing = Boolean(advance);
   advanceEditingId = advance?.id || "";
@@ -552,9 +616,7 @@ function resetAdvanceEditor(advance = null) {
   els.advanceNumberInput.value = number;
   selectKnownValue(
     els.advanceRankInput,
-    advance?.rankAtTime ||
-      advance?.rank ||
-      rankForAdvanceNumber(number),
+    advance?.rankAtTime || advance?.rank || rankForAdvanceNumber(number),
     "Novice",
   );
   selectKnownValue(
@@ -570,10 +632,13 @@ function resetAdvanceEditor(advance = null) {
     "",
   );
   els.advancePowerPointAmountInput.value =
-    advance?.powerPointAmount || (els.advanceTypeInput.value === "Power Points" ? 5 : "");
+    advance?.powerPointAmount ||
+    (els.advanceTypeInput.value === "Power Points" ? 5 : "");
   advanceManualEdgeMode =
     els.advanceTypeInput.value === "New Edge" &&
-    Boolean(advanceTargetsForLegacy(advance || { type: "New Edge" })[0]?.targetName) &&
+    Boolean(
+      advanceTargetsForLegacy(advance || { type: "New Edge" })[0]?.targetName,
+    ) &&
     !advanceTargetsForLegacy(advance || { type: "New Edge" })[0]?.catalogId &&
     !advanceTargetsForLegacy(advance || { type: "New Edge" })[0]?.targetId;
   advancePowerTargetIds =
@@ -650,10 +715,12 @@ function advanceDraftFromForm() {
   const summary = isApplied
     ? els.advanceSummaryInput.value.trim()
     : generated.summary || els.advanceSummaryInput.value.trim();
-  const id = advanceEditingId || uniqueEntryId(
-    generateAdvanceId(number, type, targetName || summary),
-    new Set(character.advances.map((advance) => advance.id)),
-  );
+  const id =
+    advanceEditingId ||
+    uniqueEntryId(
+      generateAdvanceId(number, type, targetName || summary),
+      new Set(character.advances.map((advance) => advance.id)),
+    );
   const createdAt = existing?.createdAt || new Date().toISOString();
 
   return {

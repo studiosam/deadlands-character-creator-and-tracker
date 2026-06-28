@@ -66,13 +66,10 @@ async function addCatalogPower(power = selectedCatalogPower(), options = {}) {
   )
     return;
   if (warnings.length && !marshalOverride) {
-    const proceed = await appConfirm(
-      warnings.join("\n"),
-      {
-        title: "Add anyway as a Marshal override?",
-        confirmText: "Add Override",
-      },
-    );
+    const proceed = await appConfirm(warnings.join("\n"), {
+      title: "Add anyway as a Marshal override?",
+      confirmText: "Add Override",
+    });
     if (!proceed) return;
     marshalOverride = true;
   }
@@ -93,7 +90,8 @@ async function addCatalogPower(power = selectedCatalogPower(), options = {}) {
 
 async function addRequiredPower() {
   const missing = missingRequiredPower(getArcaneBackgroundProfile(character));
-  if (missing) await addCatalogPower(missing, { addedReason: "starting-power" });
+  if (missing)
+    await addCatalogPower(missing, { addedReason: "starting-power" });
 }
 
 function openPowerEditor(power) {

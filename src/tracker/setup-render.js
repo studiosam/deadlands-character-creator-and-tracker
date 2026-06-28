@@ -880,14 +880,8 @@ function setupRequiredPowerChecklist(report) {
 
 function renderSetupPowers() {
   const report = setupPowerAuditReport();
-  const {
-    profile,
-    powers,
-    skillAudit,
-    powerPointsAudit,
-    powerAudits,
-    status,
-  } = report;
+  const { profile, powers, skillAudit, powerPointsAudit, powerAudits, status } =
+    report;
   const arcaneSkillLabel = profile
     ? `${report.expectedArcaneSkill} d4+${
         report.expectedLinkedAttribute
@@ -1096,7 +1090,9 @@ function setupGearAuditEntryLine(entry) {
   const details = [
     entry.type,
     setupGearEntryLocationLabel(entry),
-    entry.type === "vehicle" ? "" : `Weight ${formatWeightPounds(entry.weight)}`,
+    entry.type === "vehicle"
+      ? ""
+      : `Weight ${formatWeightPounds(entry.weight)}`,
     entry.catalog ? "Catalog matched" : "Manual review",
     item.costCents !== undefined ? `Cost ${money(item.costCents)}` : "",
     item.book || "",
@@ -1140,7 +1136,8 @@ function setupGearWarningMarkup(report) {
 function renderSetupGear() {
   const report = setupGearAuditReport();
   const { counts, normal, combat, locationGroups } = report;
-  const byType = (type) => report.entries.filter((entry) => entry.type === type);
+  const byType = (type) =>
+    report.entries.filter((entry) => entry.type === type);
 
   return `<section id="setupGearPanel" class="setup-step-panel" aria-labelledby="setupGearHeading">
     <div class="section-title">
@@ -1328,4 +1325,3 @@ function renderSetupReview() {
     </div>
   </section>`;
 }
-

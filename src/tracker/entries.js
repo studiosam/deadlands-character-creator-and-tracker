@@ -33,7 +33,9 @@ function normalizeEdgeEntry(entry) {
 }
 
 function canonicalHindranceSeverity(value) {
-  const severity = String(value || "").trim().toLowerCase();
+  const severity = String(value || "")
+    .trim()
+    .toLowerCase();
   if (severity === "major") return "Major";
   if (severity === "minor") return "Minor";
   return "";
@@ -86,7 +88,8 @@ function normalizeHindranceEntry(entry) {
   return {
     ...source,
     id:
-      source.id || generateStableEntryId("hindrance", source.name || "hindrance"),
+      source.id ||
+      generateStableEntryId("hindrance", source.name || "hindrance"),
     name: source.name || "Unnamed Hindrance",
     type: source.type || "hindrance",
     severity: inferHindranceSeverity(source) || "Unknown",
@@ -181,7 +184,11 @@ function getEdgeWarnings(currentCharacter, draftEdge, editingId = "") {
   return warnings;
 }
 
-function getHindranceWarnings(currentCharacter, draftHindrance, editingId = "") {
+function getHindranceWarnings(
+  currentCharacter,
+  draftHindrance,
+  editingId = "",
+) {
   const warnings = [];
   if (!draftHindrance.name.trim()) warnings.push("Hindrance name is blank.");
   if (!draftHindrance.severity || draftHindrance.severity === "Unknown")
@@ -221,7 +228,9 @@ function upsertHindrance(currentCharacter, hindrance) {
   );
   if (index >= 0) currentCharacter.hindrances[index] = normalized;
   else currentCharacter.hindrances.push(normalized);
-  currentCharacter.hindrances = normalizeHindrances(currentCharacter.hindrances);
+  currentCharacter.hindrances = normalizeHindrances(
+    currentCharacter.hindrances,
+  );
 }
 
 function removeHindrance(currentCharacter, hindranceId) {

@@ -62,11 +62,7 @@ function renderConsumables() {
     const input = row.querySelector("input");
     const [use, add, remove] = row.querySelectorAll("button");
     use.onclick = () => {
-      const amount = clamp(
-        Math.floor(Number(input.value) || 1),
-        1,
-        item.count,
-      );
+      const amount = clamp(Math.floor(Number(input.value) || 1), 1, item.count);
       consumeItem(character.consumables, item, amount);
       render();
       save();
@@ -188,7 +184,9 @@ function renderPhysicalNestedRow(entry, depth = 1, parent = null) {
   const row = document.createElement("div");
   row.className = `row inventory-row physical-row depth-${Math.min(depth, 4)}`;
   const weight = physicalItemWeight(entry);
-  const location = parent ? `Inside ${parent.name}` : physicalItemLocationLabel(entry);
+  const location = parent
+    ? `Inside ${parent.name}`
+    : physicalItemLocationLabel(entry);
   row.innerHTML = `<div class="inventory-item-main" style="--depth:${depth}"><strong>${esc(entry.label)}</strong><span>${esc(location)} • ${esc(entry.type)} • Weight ${formatWeightPounds(weight)}</span></div><div class="controls inventory-actions">${physicalMoveControl(entry.type, entry.id)}</div>`;
   bindPhysicalMoveControls(row);
   els.inventoryList.appendChild(row);
@@ -230,7 +228,11 @@ function renderInventoryItemRow(item, depth = 0, parent = null) {
   let deleteIndex = 2;
   if (parent) {
     buttons[2].onclick = () => {
-      moveInventoryItem(item.id, parent.location || "carried", parent.storageId || "");
+      moveInventoryItem(
+        item.id,
+        parent.location || "carried",
+        parent.storageId || "",
+      );
       render();
       save();
     };
@@ -277,7 +279,10 @@ function renderStorageLocations() {
     ...location,
     builtin: true,
   }));
-  const locations = [...builtin, ...custom.map((location) => ({ ...location }))];
+  const locations = [
+    ...builtin,
+    ...custom.map((location) => ({ ...location })),
+  ];
   els.storageLocationList.innerHTML = "";
   locations.forEach((location) => {
     const storedGear = (character.inventory || []).filter(
@@ -285,7 +290,10 @@ function renderStorageLocations() {
     );
     const storedPhysical = physicalItemsInStorage(location.id);
     const weight =
-      storedGear.reduce((sum, item) => sum + inventoryItemTotalWeight(item), 0) +
+      storedGear.reduce(
+        (sum, item) => sum + inventoryItemTotalWeight(item),
+        0,
+      ) +
       storedPhysical.reduce((sum, entry) => sum + physicalItemWeight(entry), 0);
     const itemNames = [
       ...storedGear.map((item) => item.name),
@@ -304,7 +312,10 @@ function renderStorageLocations() {
       };
       buttons[1].onclick = () => {
         if (!deleteStorageLocation(location.id)) {
-          appToast("Storage location must be empty before deleting it.", "danger");
+          appToast(
+            "Storage location must be empty before deleting it.",
+            "danger",
+          );
           return;
         }
         render();
@@ -376,13 +387,13 @@ function addInventory() {
   else {
     const item = normalizeInventoryItem(
       {
-      id,
-      name,
-      count,
-      note: els.inventoryNoteInput.value.trim(),
-      weight: catalogItem?.weight,
-      costCents: catalogItem?.costCents,
-      book: catalogItem?.book,
+        id,
+        name,
+        count,
+        note: els.inventoryNoteInput.value.trim(),
+        weight: catalogItem?.weight,
+        costCents: catalogItem?.costCents,
+        book: catalogItem?.book,
       },
       character.inventory.length,
       new Set(flattenInventory().map(({ item }) => item.id)),
