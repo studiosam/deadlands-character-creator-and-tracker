@@ -70,6 +70,24 @@ function inferHindranceSeverity(source) {
   return canonicalHindranceSeverity(catalogEntry?.severity);
 }
 
+function hindranceSeverity(source) {
+  return (inferHindranceSeverity(source) || "Unknown").toLowerCase();
+}
+
+function hindranceMatchesSeverity(source, expected) {
+  const expectedValues = Array.isArray(expected) ? expected : [expected];
+  const normalizedExpected = expectedValues
+    .map((value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase(),
+    )
+    .filter(Boolean);
+  if (!normalizedExpected.length || normalizedExpected.includes("any"))
+    return true;
+  return normalizedExpected.includes(hindranceSeverity(source));
+}
+
 function normalizeHindranceEntry(entry) {
   if (typeof entry === "string") {
     return {

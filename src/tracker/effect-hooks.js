@@ -102,6 +102,59 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "hindrance-slow-minor",
+    sourceType: "hindrance",
+    matchName: "Slow",
+    severity: "minor",
+    label: "Slow (Minor)",
+    summary: "Pace -1 and running die d4.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "pace",
+        value: -1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Pace -1",
+      },
+      {
+        type: "reminder",
+        target: "running-die",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Running die is d4",
+      },
+    ],
+  },
+  {
+    id: "hindrance-slow-major",
+    sourceType: "hindrance",
+    matchName: "Slow",
+    severity: "major",
+    label: "Slow (Major)",
+    summary:
+      "Pace -2, running die d4, and Athletics or resisting Athletics -2.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "pace",
+        value: -2,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Pace -2",
+      },
+      {
+        type: "reminder",
+        target: "running-die",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Running die is d4",
+      },
+      {
+        type: "reminder",
+        target: "athletics",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Athletics and rolls to resist Athletics -2",
+      },
+    ],
+  },
+  {
     id: "hindrance-obese",
     sourceType: "hindrance",
     matchName: "Obese",
@@ -161,13 +214,24 @@ function effectHookRecordCollection(currentCharacter, sourceType) {
   return [];
 }
 
+function effectHookRecordMatches(hook, record) {
+  if (
+    normalizeEffectHookName(record?.name) !==
+    normalizeEffectHookName(hook.matchName)
+  )
+    return false;
+  if (hook.sourceType === "hindrance" && hook.severity) {
+    return hindranceMatchesSeverity(record, hook.severity);
+  }
+  return true;
+}
+
 function activeEffectHooks(currentCharacter = character) {
   return EFFECT_HOOK_REGISTRY.map((hook) => {
-    const target = normalizeEffectHookName(hook.matchName);
     const record = effectHookRecordCollection(
       currentCharacter,
       hook.sourceType,
-    ).find((item) => normalizeEffectHookName(item.name) === target);
+    ).find((item) => effectHookRecordMatches(hook, item));
     return record ? { ...hook, record } : null;
   }).filter(Boolean);
 }

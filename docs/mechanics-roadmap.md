@@ -163,6 +163,8 @@ Current implementation:
   used by Encumbrance and Minimum Strength checks.
 - Obese uses the same registry path to lower effective Strength for Minimum
   Strength checks without lowering Encumbrance capacity.
+- Hindrance severity now has helper-level matching for `minor`, `major`, and
+  `unknown`; Slow uses this to apply different Minor and Major passive effects.
 - Character, Combat, and Inventory surfaces show passive-effect explanations
   instead of relying only on catalog text.
 

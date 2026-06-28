@@ -1172,10 +1172,12 @@ async function seedEffectHookCharacter(page, options = {}) {
     });
     const hindrances = hindranceIds.map((id) => {
       const hindrance = HINDRANCE_CATALOG.find((item) => item.id === id);
+      const severity = seedOptions.hindranceSeverities?.[id];
       return {
         ...hindrance,
         id,
         catalogId: hindrance.id,
+        severity: severity || hindrance.severity,
         source: "Effect hook test",
         isCustom: false,
       };
@@ -1453,6 +1455,93 @@ test("Obese passive effect updates Pace Size Toughness and Minimum Strength", as
     encumbranceStrength: "d6",
     minStrengthMessage: "Strength too low: ranged attacks suffer -1.",
     hooks: ["hindrance-obese"],
+  });
+});
+
+test("Minor Slow passive effect uses normalized Hindrance severity", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Minor Slow Effect Tester",
+    preferredId: "minor-slow-effect-tester",
+    hindranceIds: ["swade-hindrance-slow"],
+    hindranceSeverities: {
+      "swade-hindrance-slow": "Minor",
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Slow (Minor)");
+  await expect(derived).toContainText("Pace -1");
+  await expect(derived).toContainText("Running die is d4");
+  await expect(derived).not.toContainText("Athletics and rolls to resist");
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Slow (Minor): Pace -1");
+  await expect(combatBreakdown).toContainText(
+    "Slow (Minor): Running die is d4",
+  );
+  await expect(combatBreakdown).not.toContainText(
+    "Athletics and rolls to resist",
+  );
+
+  const computed = await page.evaluate(() => ({
+    severity: hindranceSeverity(character.hindrances[0]),
+    minorMatch: hindranceMatchesSeverity(character.hindrances[0], "minor"),
+    majorMatch: hindranceMatchesSeverity(character.hindrances[0], "major"),
+    pace: character.derived.pace,
+    hooks: activeEffectHooks(character).map((hook) => hook.id),
+  }));
+  expect(computed).toEqual({
+    severity: "minor",
+    minorMatch: true,
+    majorMatch: false,
+    pace: 5,
+    hooks: ["hindrance-slow-minor"],
+  });
+});
+
+test("Major Slow passive effect adds Athletics reminder", async ({ page }) => {
+  await seedEffectHookCharacter(page, {
+    name: "Major Slow Effect Tester",
+    preferredId: "major-slow-effect-tester",
+    hindranceIds: ["swade-hindrance-slow"],
+    hindranceSeverities: {
+      "swade-hindrance-slow": "Major",
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Slow (Major)");
+  await expect(derived).toContainText("Pace -2");
+  await expect(derived).toContainText("Running die is d4");
+  await expect(derived).toContainText(
+    "Athletics and rolls to resist Athletics -2",
+  );
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Slow (Major): Pace -2");
+  await expect(combatBreakdown).toContainText(
+    "Slow (Major): Athletics and rolls to resist Athletics -2",
+  );
+
+  const computed = await page.evaluate(() => ({
+    severity: hindranceSeverity(character.hindrances[0]),
+    minorMatch: hindranceMatchesSeverity(character.hindrances[0], "minor"),
+    majorMatch: hindranceMatchesSeverity(character.hindrances[0], "major"),
+    pace: character.derived.pace,
+    hooks: activeEffectHooks(character).map((hook) => hook.id),
+  }));
+  expect(computed).toEqual({
+    severity: "major",
+    minorMatch: false,
+    majorMatch: true,
+    pace: 4,
+    hooks: ["hindrance-slow-major"],
   });
 });
 
