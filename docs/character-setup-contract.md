@@ -6,7 +6,7 @@ The first Character Setup implementation creates the shared setup and review she
 
 The normal `Create Character` entry points now create a new `source: "created"` character slot and route directly to Character Setup at Concept. The older all-in-one creator screen is no longer exposed through normal navigation; it remains only as legacy fallback code for older creation-draft imports until that compatibility path is removed or migrated.
 
-Concept edits map to the active character's `name`, `gender`, `age`, `archetype`, `player`, `description`, and `background` fields and save through the normal tracker persistence path. Rank is not edited in Concept; it is shown as recorded or derived advancement context elsewhere. Hindrances, Traits, starting Edge selection, and starting Power selection now have functional setup controls for eligible characters. Gear and Review are still audit-first slices.
+Concept edits map to the active character's `name`, `gender`, `age`, `archetype`, `player`, `description`, and `background` fields and save through the normal tracker persistence path. Rank is not edited in Concept; it is shown as recorded or derived advancement context elsewhere. Hindrances, Traits, starting Edge selection, starting Power selection, and starting Gear purchases now have functional setup controls for eligible characters. Review is still an audit-first slice.
 
 Race / Ancestry is read-only for the current Deadlands-focused profile. It records Human as the supported race or ancestry and flags imported non-Human values for review instead of offering editing controls.
 
@@ -18,7 +18,7 @@ Edges audits recorded Edges against the current catalog and, for characters crea
 
 Powers follows Edges because Arcane Background Edges determine whether Powers are required. It audits the recorded Arcane Background against `ARCANE_BACKGROUND_POWER_PROFILES`, including expected Arcane Skill and linked attribute, Power Points, expected starting power count, required starting powers, known power catalog matches, and obvious powers outside the matched Arcane Background power list. For characters created in this tool with no recorded Advances, it supports setting the profile's starting Power Points and selecting legal starting Powers from the matched Arcane Background profile, including required starting powers. Setup-created Power Points are source-tagged as `setup-arcane-background`, and setup-selected Powers are source-tagged as `setup-starting-power` so they remain distinct from later Advancement changes. Non-arcane characters show this step as not applicable. Created pre-advance characters show missing Arcane Skill, Power Points, starting power count, or required starting powers as incomplete; imported and advanced characters remain audit-only and use Needs Review for the same gaps. Full Power effect automation and complex table-dependent Power legality remain deferred.
 
-Gear is read-only and follows Powers. It audits recorded money, weapons, armor, general gear, consumables, ammunition, vehicles, carried/on-body items, equipped/worn items, dropped items, stored/off-person items, container contents, current load, combat load, carrying capacity, and obvious missing or unknown item data. Imported/current equipment may include post-creation purchases, loot, or table adjustments. Starting cash purchase validation, buying workflows, and gear-source tracking are deferred to later setup slices.
+Gear follows Powers. It audits recorded money, weapons, armor, general gear, consumables, ammunition, vehicles, carried/on-body items, equipped/worn items, dropped items, stored/off-person items, container contents, current load, combat load, carrying capacity, and obvious missing or unknown item data. For characters created in this tool with no recorded Advances, it supports buying catalog gear, ammunition, armor, weapons, and vehicles from remaining setup funds. Setup-created purchases reduce `moneyCents`, are source-tagged as `setup-starting-gear`, and preserve purchase metadata in `sourceDetail`. Imported and advanced characters remain audit-only because their equipment may include post-creation purchases, loot, or table adjustments. Free/granted starting gear and explicit setup exception records remain later slices.
 
 Review is a simple summary of available setup data and import warnings, not full rules validation.
 
@@ -57,7 +57,7 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 ### Partially implemented
 
 - Creation baseline tracking exists for created-character starting Attributes and Skills and should be extended carefully to other setup-time choices.
-- Character Setup Gear is audit-first. Gear now reports money, load, carried/off-person locations, containers, and obvious missing/unknown item data, but does not mutate inventory or provide starting-purchase validation or source tracking.
+- Character Setup Gear purchase tracking is partially implemented. Created pre-advance characters can buy catalog gear, ammunition, armor, weapons, and vehicles from setup funds with `setup-starting-gear` source tags. Gear also reports money, load, carried/off-person locations, containers, and obvious missing/unknown item data. Free/granted gear, organization gear, and explicit setup exceptions are deferred.
 - Character Setup Powers selection is partially implemented. Created pre-advance characters can set source-tracked starting Power Points and add or remove setup-selected starting Powers from the matched Arcane Background profile, while imported and advanced characters remain audit-only. Full Power effect automation and complex table-dependent Power validation are deferred.
 - Advancement has canonical ledger storage, adaptive forms, application helpers, validation, import history handling, and focused browser coverage. The remaining product boundary question is whether the current Character-tab Advancement area should move behind a more deliberate Advancement workflow.
 
@@ -71,7 +71,7 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 
 - Full Edge prerequisite validation.
 - Full Power effect automation and complex table-dependent Power validation.
-- Starting cash purchase validation and gear-source tracking.
+- Free/granted starting gear, organization gear, and setup exception records.
 - Reconstruction of original creation baselines for advanced imported characters.
 - Editable campaign/source configuration in `Sources & Rulesets`.
 
@@ -187,7 +187,7 @@ Direct changes to Attributes, Skills, Edges, Hindrances, Powers, or Gear after s
 ### Do Not Do Yet
 
 - Do not implement more Advancement rules behavior until the workflow boundary is settled.
-- Do not make Gear editable from Character Setup.
+- Do not make Gear broadly editable from Character Setup beyond source-tracked starting purchases for eligible created pre-advance characters.
 - Do not make Powers broadly editable from Character Setup beyond source-tracked starting Power selection for eligible created pre-advance characters.
 - Do not enforce full Edge prerequisites yet.
 - Do not build a full campaign settings editor.

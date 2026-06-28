@@ -170,6 +170,10 @@ function normalize(data, options = {}) {
     storageId: armor.storageId,
     storageLocationId: armor.storageLocationId,
     containerId: armor.containerId,
+    creationSource: armor.creationSource || "",
+    source: armor.source || "",
+    sourceDetail: armor.sourceDetail,
+    category: armor.category || "",
     equipped: Boolean(armor.equipped),
     note: armor.note || "",
   }));

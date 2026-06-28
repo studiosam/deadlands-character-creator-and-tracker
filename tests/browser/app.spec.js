@@ -2995,7 +2995,7 @@ async function seedGearSetupCharacter(page, options = {}) {
   await enterTracker(page);
   await page.evaluate((seedOptions) => {
     const characterData = normalize({
-      source: "created",
+      source: seedOptions.source || "created",
       setupStatus: "needsReview",
       name: seedOptions.name || "Gear Audit Character",
       rank: "Novice",
@@ -3014,7 +3014,7 @@ async function seedGearSetupCharacter(page, options = {}) {
       hindrances: [],
       powers: [],
       resources: [],
-      advances: [],
+      advances: seedOptions.advances || [],
       inventory: seedOptions.inventory || [],
       weapons: seedOptions.weapons || [],
       armorInventory: seedOptions.armorInventory || [],
@@ -3134,9 +3134,8 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   await expect(setupGearPanel).toContainText("Home");
   await expect(setupGearPanel).not.toContainText("Add Item");
   await expect(setupGearPanel).not.toContainText("Save Item");
-  await expect(setupGearPanel).not.toContainText("Purchase");
   await expect(setupGearPanel).not.toContainText("Apply");
-  await expect(setupGearPanel.getByRole("button")).toHaveCount(0);
+  await expect(setupGearPanel).toContainText("Buy Starting Gear");
 
   const before = await page.evaluate(() =>
     JSON.stringify({
@@ -3161,6 +3160,187 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   await openCharacterSetupReview(page);
   await page.locator("[data-setup-step='gear']").click();
   await expect(page.locator("#setupGearPanel")).toContainText("Backpack");
+});
+
+test("Gear setup purchases source-track starting gear and reduce funds", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Starting Gear Purchaser",
+    preferredId: "starting-gear-purchaser",
+    moneyCents: 25000,
+  });
+
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await page.locator("#setupGearPurchaseSelect").selectOption("backpack");
+  await setupGearPanel.getByRole("button", { name: "Buy Gear" }).click();
+  await page
+    .locator("#setupAmmoPurchaseSelect")
+    .selectOption("pistol-ammunition-large-40-50-caliber");
+  await page.locator("#setupAmmoPurchaseCaliber").selectOption(".45");
+  await page.locator("#setupAmmoPurchaseQty").fill("6");
+  await setupGearPanel.getByRole("button", { name: "Buy Ammunition" }).click();
+  await page.locator("#setupArmorPurchaseSelect").selectOption("native-armor");
+  await setupGearPanel.getByRole("button", { name: "Buy Armor" }).click();
+  await page
+    .locator("#setupWeaponPurchaseSelect")
+    .selectOption("ww-colt-peacemaker-45");
+  await setupGearPanel.getByRole("button", { name: "Buy Weapon" }).click();
+  await page.locator("#setupVehiclePurchaseSelect").selectOption("bateaux");
+  await setupGearPanel.getByRole("button", { name: "Buy Vehicle" }).click();
+
+  await expect(page.locator("[data-setup-step='gear']")).toContainText(
+    "Complete",
+  );
+  await expect(setupGearPanel).toContainText("Remaining");
+  await expect(setupGearPanel).toContainText("$180.64");
+  await expect(setupGearPanel).toContainText("Starting Gear Purchase");
+  await expect(setupGearPanel).toContainText("Bateaux");
+
+  const snapshot = await page.evaluate(() => ({
+    moneyCents: character.moneyCents,
+    backpack: character.inventory.find((item) => item.id === "backpack"),
+    ammo: Object.values(character.ammo)[0],
+    weapon: character.weapons.find(
+      (weapon) => weapon.catalogId === "ww-colt-peacemaker-45",
+    ),
+    armor: character.armorInventory.find((item) => item.id === "native-armor"),
+    vehicle: character.vehicles.find((item) => item.id === "bateaux"),
+  }));
+  expect(snapshot.moneyCents).toBe(18064);
+  expect(snapshot.backpack).toEqual(
+    expect.objectContaining({
+      creationSource: "setup-starting-gear",
+      source: "Starting Gear Purchase",
+      category: "General Equipment",
+    }),
+  );
+  expect(snapshot.backpack.sourceDetail).toEqual(
+    expect.objectContaining({
+      kind: "starting-funds",
+      purchaseType: "gear",
+      catalogId: "backpack",
+      costCents: 200,
+      quantity: 1,
+    }),
+  );
+  expect(snapshot.ammo).toEqual(
+    expect.objectContaining({
+      label: "Pistol ammo (.45)",
+      count: 6,
+      creationSource: "setup-starting-gear",
+      source: "Starting Gear Purchase",
+    }),
+  );
+  expect(snapshot.weapon).toEqual(
+    expect.objectContaining({
+      name: "Colt Peacemaker (.45)",
+      creationSource: "setup-starting-gear",
+      source: "Starting Gear Purchase",
+      shotsLoaded: 6,
+    }),
+  );
+  expect(snapshot.armor).toEqual(
+    expect.objectContaining({
+      name: "Native Armor",
+      creationSource: "setup-starting-gear",
+      source: "Starting Gear Purchase",
+    }),
+  );
+  expect(snapshot.vehicle).toEqual(
+    expect.objectContaining({
+      name: "Bateaux",
+      creationSource: "setup-starting-gear",
+      source: "Starting Gear Purchase",
+      category: "Water Vehicles",
+      topSpeed: 2,
+    }),
+  );
+
+  await reloadIntoTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await page.locator("[data-setup-step='gear']").click();
+  const persisted = await page.evaluate(() => ({
+    moneyCents: character.moneyCents,
+    armorSource: character.armorInventory.find(
+      (item) => item.id === "native-armor",
+    )?.creationSource,
+    vehicleSource: character.vehicles.find((item) => item.id === "bateaux")
+      ?.creationSource,
+  }));
+  expect(persisted).toEqual({
+    moneyCents: 18064,
+    armorSource: "setup-starting-gear",
+    vehicleSource: "setup-starting-gear",
+  });
+});
+
+test("Gear setup blocks purchases that exceed remaining starting funds", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Overspend Gear Purchaser",
+    preferredId: "overspend-gear-purchaser",
+    moneyCents: 100,
+  });
+
+  await page
+    .locator("#setupWeaponPurchaseSelect")
+    .selectOption("ww-colt-peacemaker-45");
+  await page
+    .locator("#setupGearPanel")
+    .getByRole("button", { name: "Buy Weapon" })
+    .click();
+  await expect(page.locator("#toastRegion")).toContainText(
+    "Not enough starting funds",
+  );
+
+  const snapshot = await page.evaluate(() => ({
+    moneyCents: character.moneyCents,
+    weapons: character.weapons.length,
+  }));
+  expect(snapshot).toEqual({
+    moneyCents: 100,
+    weapons: 0,
+  });
+});
+
+test("Gear setup keeps imported and advanced characters audit only", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Imported Gear Audit",
+    preferredId: "imported-gear-audit",
+    source: "imported",
+    inventory: [
+      {
+        id: "backpack",
+        name: "Backpack",
+        count: 1,
+        weight: 3,
+        costCents: 200,
+      },
+    ],
+  });
+
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await expect(setupGearPanel).not.toContainText("Buy Starting Gear");
+  await expect(setupGearPanel.locator("#setupGearPurchaseSelect")).toHaveCount(
+    0,
+  );
+  await expect(setupGearPanel).toContainText("Audit only");
+
+  await page.evaluate(() => {
+    character.source = "created";
+    character.name = "Advanced Gear Audit";
+    character.advances = [
+      { id: "advance-1", type: "gm-exception", label: "Played" },
+    ];
+    render();
+  });
+  await expect(page.locator("#setupGearPanel")).not.toContainText(
+    "Buy Starting Gear",
+  );
 });
 
 test("Gear setup audit flags missing or unknown gear data", async ({

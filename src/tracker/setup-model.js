@@ -542,6 +542,33 @@ function setupGearEntryWarnings(entry, catalog) {
 
   return warnings;
 }
+function setupGearCreationSource(item) {
+  const explicit = plainEntryName(item?.creationSource);
+  if (explicit === "setup starting gear" || explicit === "setup-starting-gear")
+    return "setup-starting-gear";
+  return "";
+}
+function setupGearStartingPurchaseEntries() {
+  return [
+    ...setupInventoryAuditEntries(),
+    ...setupPhysicalAuditEntries(),
+    ...setupVehicleAuditEntries(),
+  ].filter(
+    (entry) => setupGearCreationSource(entry.item) === "setup-starting-gear",
+  );
+}
+function setupGearStartingPurchaseSpent() {
+  return setupGearStartingPurchaseEntries().reduce((sum, entry) => {
+    const item = entry.item || {};
+    const count =
+      entry.type === "weapon" ? 1 : Math.max(0, Number(entry.count) || 0);
+    const unitCost = Math.max(
+      0,
+      Number(item.sourceDetail?.costCents ?? item.costCents) || 0,
+    );
+    return sum + unitCost * count;
+  }, 0);
+}
 function setupGearLocationGroups(entries) {
   return {
     equipped: entries.filter((entry) => entry.location === "equipped"),
@@ -596,13 +623,17 @@ function setupGearAuditReport() {
     entry.warnings.map((warning) => `${entry.label}: ${warning}`),
   );
   const incompleteItems = [];
-  if (!counts.moneyCents) incompleteItems.push("Money is missing or zero.");
+  const startingPurchaseSpent = setupGearStartingPurchaseSpent();
+  if (!counts.moneyCents && !startingPurchaseSpent)
+    incompleteItems.push("Money is missing or zero.");
   if (!counts.totalItems) incompleteItems.push("No gear is recorded.");
 
   return {
     editable: setupTraitsEditable(),
     counts,
     moneyCents: counts.moneyCents,
+    startingPurchaseSpent,
+    startingFundsAvailable: counts.moneyCents + startingPurchaseSpent,
     normal,
     combat,
     entries,

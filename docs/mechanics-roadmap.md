@@ -24,7 +24,7 @@ the rules.
   Armor, Weapons, and Vehicles.
 - Character Setup shell: Concept, Human ancestry review, Hindrances, Trait
   spending, partial starting Edge enforcement, starting Powers selection,
-  Powers audit, Gear audit, and Review.
+  Powers audit, starting Gear purchases, Gear audit, and Review.
 - Advancement: canonical ledger entries for current supported advancement
   types, canonical changes, application, persistence, and safe undo model.
 - Arcane support: Arcane Background profiles, Power Points, known powers,
@@ -43,9 +43,10 @@ the rules.
   source-tagged setup starting powers and set source-tagged starting Power
   Points. Remaining work includes stronger Power legality validation and
   creation-baseline coverage.
-- Starting Gear is audit-first. The app tracks equipment and load well, but it
-  does not yet validate starting cash, purchases, free gear, organization gear,
-  or gear source.
+- Starting Gear purchases are partially implemented. The app tracks equipment
+  and load well, uses screenshot-aligned catalog data, and created pre-advance
+  characters can buy source-tagged catalog gear from setup funds. Remaining work
+  includes free gear, organization gear, and setup exception records.
 - Creation baselines exist for Attributes and Skills only. They should expand
   to Hindrances, Edges, Powers, Gear, money, and explicit table exceptions.
 - Imported advanced characters are not reconstructed back to original creation
@@ -116,7 +117,7 @@ Advancement.
 1. Harden starting Powers setup selection and validation.
 2. Validate Arcane Background power lists, required starting powers, starting
    power counts, and starting Power Points.
-3. Add starting Gear purchase validation and source tracking.
+3. Harden starting Gear purchase validation and source tracking.
 4. Extend creation baselines to Hindrances, starting Edges, Powers, Gear, and
    money.
 5. Add explicit GM or table exception records for setup-time deviations.

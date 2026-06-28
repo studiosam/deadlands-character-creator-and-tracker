@@ -136,6 +136,16 @@ document.addEventListener("click", async (event) => {
     setupAction?.dataset.setupAction === "setSetupStartingPowerPoints"
   ) {
     setSetupStartingPowerPoints();
+  } else if (setupAction?.dataset.setupAction === "addSetupGearPurchase") {
+    addSetupGearPurchase();
+  } else if (setupAction?.dataset.setupAction === "addSetupAmmoPurchase") {
+    addSetupAmmoPurchase();
+  } else if (setupAction?.dataset.setupAction === "addSetupArmorPurchase") {
+    addSetupArmorPurchase();
+  } else if (setupAction?.dataset.setupAction === "addSetupWeaponPurchase") {
+    addSetupWeaponPurchase();
+  } else if (setupAction?.dataset.setupAction === "addSetupVehiclePurchase") {
+    addSetupVehiclePurchase();
   } else if (setupAction?.dataset.setupAction === "incAttribute") {
     changeSetupAttribute(setupAction.dataset.traitName || "", 1);
   } else if (setupAction?.dataset.setupAction === "decAttribute") {

@@ -556,6 +556,293 @@ function changeSetupSkill(name, direction) {
   commitSetupTraitChange();
 }
 
+function setupStartingGearSourceDetail(catalogItem, quantity, purchaseType) {
+  return {
+    kind: "starting-funds",
+    purchaseType,
+    catalogId: catalogItem?.id || "",
+    costCents: Math.max(0, Number(catalogItem?.costCents) || 0),
+    quantity: Math.max(1, Number(quantity) || 1),
+  };
+}
+
+function applySetupStartingGearSource(
+  record,
+  catalogItem,
+  quantity,
+  purchaseType,
+) {
+  record.creationSource = "setup-starting-gear";
+  record.source = "Starting Gear Purchase";
+  record.sourceDetail = setupStartingGearSourceDetail(
+    catalogItem,
+    quantity,
+    purchaseType,
+  );
+  return record;
+}
+
+function setupPurchaseQuantity(inputId) {
+  return Math.max(1, Math.floor(Number($(inputId)?.value) || 1));
+}
+
+function setupPurchaseCost(catalogItem, quantity) {
+  return Math.max(0, Number(catalogItem?.costCents) || 0) * quantity;
+}
+
+function ensureSetupCanAffordPurchase(catalogItem, quantity) {
+  const cost = setupPurchaseCost(catalogItem, quantity);
+  if (cost <= Math.max(0, Number(character.moneyCents) || 0)) return true;
+  appToast(
+    `Not enough starting funds. ${catalogItem.name} costs ${money(cost)}.`,
+    "danger",
+  );
+  return false;
+}
+
+function spendSetupStartingFunds(catalogItem, quantity) {
+  character.moneyCents = Math.max(
+    0,
+    Math.round(
+      (Number(character.moneyCents) || 0) -
+        setupPurchaseCost(catalogItem, quantity),
+    ),
+  );
+}
+
+function setupStartingGearNote(catalogItem, fallback = "") {
+  return catalogItem?.notes || fallback || "";
+}
+
+function addSetupGearPurchase() {
+  if (!ensureSetupTraitsEditable()) return;
+  const catalogItem = chosen(
+    GEAR_CATALOG,
+    $("#setupGearPurchaseSelect")?.value || "",
+  );
+  const quantity = setupPurchaseQuantity("#setupGearPurchaseQty");
+  if (!catalogItem) {
+    appToast("Choose gear before purchasing it.", "danger");
+    return;
+  }
+  if (!ensureSetupCanAffordPurchase(catalogItem, quantity)) return;
+  const id = catalogItem.id;
+  const existing = (character.inventory || []).find(
+    (item) =>
+      item.id === id && setupGearCreationSource(item) === "setup-starting-gear",
+  );
+  if (existing) existing.count += quantity;
+  else {
+    const item = normalizeInventoryItem(
+      applySetupStartingGearSource(
+        {
+          id,
+          name: catalogItem.name,
+          count: quantity,
+          note: setupStartingGearNote(catalogItem),
+          weight: catalogItem.weight,
+          costCents: catalogItem.costCents,
+          book: catalogItem.book,
+          category: catalogItem.category,
+          notes: catalogItem.notes,
+        },
+        catalogItem,
+        quantity,
+        "gear",
+      ),
+      character.inventory.length,
+      new Set(flattenInventory().map(({ item }) => item.id)),
+    );
+    character.inventory.push(item);
+  }
+  spendSetupStartingFunds(catalogItem, quantity);
+  render();
+  save();
+  appToast(`${catalogItem.name} purchased.`, "success");
+}
+
+function addSetupAmmoPurchase() {
+  if (!ensureSetupTraitsEditable()) return;
+  const catalogItem = chosen(
+    GEAR_CATALOG,
+    $("#setupAmmoPurchaseSelect")?.value || "",
+  );
+  const quantity = setupPurchaseQuantity("#setupAmmoPurchaseQty");
+  if (!catalogItem || !isAmmo(catalogItem)) {
+    appToast("Choose ammunition before purchasing it.", "danger");
+    return;
+  }
+  if (!ensureSetupCanAffordPurchase(catalogItem, quantity)) return;
+  const selectedCaliber = $("#setupAmmoPurchaseCaliber")?.value || "";
+  const key = exactAmmoTypeForCatalogAmmo(catalogItem, selectedCaliber);
+  const fallback = applySetupStartingGearSource(
+    {
+      label:
+        AMMO_KIND_BY_CATALOG_ID[catalogItem.id] && selectedCaliber
+          ? ammoLabel(AMMO_KIND_BY_CATALOG_ID[catalogItem.id], selectedCaliber)
+          : catalogItem.name,
+      count: 0,
+      caliber: normalizeCaliber(selectedCaliber) || undefined,
+      kind: AMMO_KIND_BY_CATALOG_ID[catalogItem.id],
+      note: setupStartingGearNote(catalogItem),
+      weight: catalogItem.weight,
+      costCents: catalogItem.costCents,
+      itemLocation: "carried",
+    },
+    catalogItem,
+    quantity,
+    "ammo",
+  );
+  ensureAmmoReserve(key, fallback);
+  Object.assign(character.ammo[key], fallback, {
+    count: Math.max(0, Number(character.ammo[key].count) || 0) + quantity,
+  });
+  spendSetupStartingFunds(catalogItem, quantity);
+  render();
+  save();
+  appToast(`${catalogItem.name} purchased.`, "success");
+}
+
+function addSetupArmorPurchase() {
+  if (!ensureSetupTraitsEditable()) return;
+  const catalogItem = chosen(
+    ARMOR_CATALOG,
+    $("#setupArmorPurchaseSelect")?.value || "",
+  );
+  const quantity = setupPurchaseQuantity("#setupArmorPurchaseQty");
+  if (!catalogItem) {
+    appToast("Choose armor before purchasing it.", "danger");
+    return;
+  }
+  if (!ensureSetupCanAffordPurchase(catalogItem, quantity)) return;
+  const existing = (character.armorInventory || []).find(
+    (item) =>
+      item.id === catalogItem.id &&
+      setupGearCreationSource(item) === "setup-starting-gear",
+  );
+  if (existing) existing.count += quantity;
+  else
+    character.armorInventory.push(
+      applySetupStartingGearSource(
+        {
+          id: catalogItem.id,
+          name: catalogItem.name,
+          count: quantity,
+          armor: catalogItem.armor,
+          location: catalogItem.location || "torso",
+          equipped: false,
+          itemLocation: "carried",
+          weight: catalogItem.weight,
+          minStr: catalogItem.minStr,
+          costCents: catalogItem.costCents,
+          book: catalogItem.book || "Deadlands",
+          note: setupStartingGearNote(catalogItem, "Starting armor."),
+        },
+        catalogItem,
+        quantity,
+        "armor",
+      ),
+    );
+  spendSetupStartingFunds(catalogItem, quantity);
+  render();
+  save();
+  appToast(`${catalogItem.name} purchased.`, "success");
+}
+
+function addSetupWeaponPurchase() {
+  if (!ensureSetupTraitsEditable()) return;
+  const catalogItem = chosen(
+    WEAPON_CATALOG,
+    $("#setupWeaponPurchaseSelect")?.value || "",
+  );
+  const quantity = setupPurchaseQuantity("#setupWeaponPurchaseQty");
+  if (!catalogItem) {
+    appToast("Choose a weapon before purchasing it.", "danger");
+    return;
+  }
+  if (!ensureSetupCanAffordPurchase(catalogItem, quantity)) return;
+  for (let index = 0; index < quantity; index += 1) {
+    const ammoType = exactAmmoTypeForWeapon(catalogItem);
+    if (ammoType) ensureAmmoReserve(ammoType);
+    character.weapons.push(
+      applySetupStartingGearSource(
+        {
+          id: `${catalogItem.id}-${Date.now()}-${index}`,
+          catalogId: catalogItem.id,
+          name: catalogItem.name,
+          damage: catalogItem.damage || "â€”",
+          range: catalogItem.range || "â€”",
+          ap: catalogItem.ap || "â€”",
+          rof: catalogItem.rof || "â€”",
+          shotsMax: catalogItem.shotsMax || null,
+          shotsLoaded: catalogItem.shotsMax || null,
+          ammoType: ammoType || null,
+          notes: catalogItem.notes || "",
+          weight: catalogItem.weight,
+          itemLocation: "carried",
+          costCents: catalogItem.costCents,
+          minStr: catalogItem.minStr,
+          book: catalogItem.book || "Deadlands",
+        },
+        catalogItem,
+        1,
+        "weapon",
+      ),
+    );
+  }
+  spendSetupStartingFunds(catalogItem, quantity);
+  render();
+  save();
+  appToast(`${catalogItem.name} purchased.`, "success");
+}
+
+function addSetupVehiclePurchase() {
+  if (!ensureSetupTraitsEditable()) return;
+  const catalogItem = chosen(
+    VEHICLE_CATALOG,
+    $("#setupVehiclePurchaseSelect")?.value || "",
+  );
+  const quantity = setupPurchaseQuantity("#setupVehiclePurchaseQty");
+  if (!catalogItem) {
+    appToast("Choose a vehicle before purchasing it.", "danger");
+    return;
+  }
+  if (!ensureSetupCanAffordPurchase(catalogItem, quantity)) return;
+  const existing = (character.vehicles || []).find(
+    (item) =>
+      item.id === catalogItem.id &&
+      setupGearCreationSource(item) === "setup-starting-gear",
+  );
+  if (existing) existing.count += quantity;
+  else
+    character.vehicles.push(
+      applySetupStartingGearSource(
+        {
+          id: catalogItem.id,
+          name: catalogItem.name,
+          count: quantity,
+          note: catalogItem.notes || "",
+          costCents: catalogItem.costCents,
+          book: catalogItem.book || "Deadlands",
+          category: catalogItem.category,
+          size: catalogItem.size,
+          handling: catalogItem.handling,
+          topSpeed: catalogItem.topSpeed,
+          toughness: catalogItem.toughness,
+          crew: catalogItem.crew,
+          notes: catalogItem.notes,
+        },
+        catalogItem,
+        quantity,
+        "vehicle",
+      ),
+    );
+  spendSetupStartingFunds(catalogItem, quantity);
+  render();
+  save();
+  appToast(`${catalogItem.name} purchased.`, "success");
+}
+
 function syncSetupHindranceSeverity() {
   const catalogSelect = $("#setupHindranceCatalogSelect");
   const severityInput = $("#setupHindranceSeverityInput");

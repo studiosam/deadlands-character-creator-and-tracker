@@ -1177,6 +1177,7 @@ function setupGearAuditEntryLine(entry) {
       ? ""
       : `Weight ${formatWeightPounds(entry.weight)}`,
     entry.catalog ? "Catalog matched" : "Manual review",
+    item.source || "",
     item.costCents !== undefined ? `Cost ${money(item.costCents)}` : "",
     item.book || "",
   ];
@@ -1216,6 +1217,76 @@ function setupGearWarningMarkup(report) {
     .join("")}</ul></div>`;
 }
 
+function setupPurchaseOptions(items, placeholder) {
+  return [
+    `<option value="">${esc(placeholder)}</option>`,
+    ...items.map(
+      (item) =>
+        `<option value="${esc(item.id)}">${esc(item.name)} - ${esc(item.category || item.book || "Catalog")} - ${esc(money(item.costCents || 0))}</option>`,
+    ),
+  ].join("");
+}
+
+function setupQuantityInput(id) {
+  return `<input id="${esc(id)}" class="creator-small" type="number" min="1" value="1" />`;
+}
+
+function setupPurchaseControl(title, selectId, qtyId, action, items) {
+  return `<div class="setup-form-grid">
+    <label class="setup-wide">${esc(title)}<select id="${esc(selectId)}">${setupPurchaseOptions(items, `Choose ${title.toLowerCase()}...`)}</select></label>
+    <label>Qty ${setupQuantityInput(qtyId)}</label>
+    <div class="creator-actions">
+      <button type="button" data-setup-action="${esc(action)}">Buy ${esc(title)}</button>
+    </div>
+  </div>`;
+}
+
+function setupAmmoCaliberOptions() {
+  const calibers = [
+    ...new Set(
+      Object.values(AMMO_CALIBERS_BY_CATALOG_ID).flat().filter(Boolean),
+    ),
+  ];
+  return [
+    '<option value="">Default caliber</option>',
+    ...calibers.map(
+      (caliber) => `<option value="${esc(caliber)}">${esc(caliber)}</option>`,
+    ),
+  ].join("");
+}
+
+function renderSetupGearPurchaseControls(report) {
+  if (!report.editable) {
+    return `<p class="entry-advisory"><strong>Audit only:</strong> imported or advanced characters keep their recorded gear here. Use Inventory for current possessions and future correction workflows for uncertain starting gear.</p>`;
+  }
+
+  return `<section class="setup-trait-group" aria-labelledby="setupGearPurchaseHeading">
+    <h4 id="setupGearPurchaseHeading">Buy Starting Gear</h4>
+    <p class="creator-note">Purchases use current setup funds, reduce remaining money, and source-tag records as setup starting gear.</p>
+    <div class="setup-review-grid">
+      ${setupDetail("Starting Funds Accounted", money(report.startingFundsAvailable))}
+      ${setupDetail("Spent On Setup Gear", money(report.startingPurchaseSpent))}
+      ${setupDetail("Remaining", money(report.moneyCents))}
+    </div>
+    ${setupPurchaseControl(
+      "Gear",
+      "setupGearPurchaseSelect",
+      "setupGearPurchaseQty",
+      "addSetupGearPurchase",
+      GEAR_CATALOG.filter((item) => !isAmmo(item)),
+    )}
+    <div class="setup-form-grid">
+      <label class="setup-wide">Ammunition<select id="setupAmmoPurchaseSelect">${setupPurchaseOptions(GEAR_CATALOG.filter(isAmmo), "Choose ammunition...")}</select></label>
+      <label>Caliber<select id="setupAmmoPurchaseCaliber">${setupAmmoCaliberOptions()}</select></label>
+      <label>Qty ${setupQuantityInput("setupAmmoPurchaseQty")}</label>
+      <div class="creator-actions"><button type="button" data-setup-action="addSetupAmmoPurchase">Buy Ammunition</button></div>
+    </div>
+    ${setupPurchaseControl("Armor", "setupArmorPurchaseSelect", "setupArmorPurchaseQty", "addSetupArmorPurchase", ARMOR_CATALOG)}
+    ${setupPurchaseControl("Weapon", "setupWeaponPurchaseSelect", "setupWeaponPurchaseQty", "addSetupWeaponPurchase", WEAPON_CATALOG)}
+    ${setupPurchaseControl("Vehicle", "setupVehiclePurchaseSelect", "setupVehiclePurchaseQty", "addSetupVehiclePurchase", VEHICLE_CATALOG)}
+  </section>`;
+}
+
 function renderSetupGear() {
   const report = setupGearAuditReport();
   const { counts, normal, combat, locationGroups } = report;
@@ -1226,7 +1297,7 @@ function renderSetupGear() {
     <div class="section-title">
       <div>
         <h3 id="setupGearHeading">Gear</h3>
-        <p>Read-only audit of recorded equipment, money, and load. Starting purchases and gear-source tracking come in a later setup slice.</p>
+        <p>Buy starting gear for eligible created characters and audit recorded equipment, money, and load for all characters.</p>
       </div>
       ${setupStatusMarkup(characterSetupStatus("gear"))}
     </div>
@@ -1244,9 +1315,11 @@ function renderSetupGear() {
       ${setupDetail("Carrying Capacity", formatWeightPounds(normal.carryingCapacity))}
       ${setupDetail("Normal Status", normal.encumbered ? "Encumbered" : "No encumbrance")}
       ${setupDetail("Combat Status", combat.encumbered ? "Encumbered" : "No encumbrance")}
+      ${setupDetail("Setup Gear Spent", money(report.startingPurchaseSpent))}
       ${setupDetail("Audit Warnings", `${report.warnings.length}`)}
     </div>
-    <p class="entry-advisory"><strong>Audit only:</strong> imported/current inventory may include post-creation purchases, loot, or table adjustments. Starting cash and starting purchase validation are deferred.</p>
+    ${renderSetupGearPurchaseControls(report)}
+    <p class="entry-advisory"><strong>Gear audit:</strong> imported/current inventory may include post-creation purchases, loot, or table adjustments. Setup purchases created here are source-tagged as starting gear.</p>
     ${setupGearWarningMarkup(report)}
     <div class="setup-gear-groups">
       ${setupAuditGroup("Equipped / Worn", locationGroups.equipped, "No equipped or worn items recorded.", setupGearAuditEntryLine)}
