@@ -1545,6 +1545,182 @@ test("Major Slow passive effect adds Athletics reminder", async ({ page }) => {
   });
 });
 
+test("Edge roll modifier effects render on Character and Combat", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Edge Roll Modifier Tester",
+    preferredId: "edge-roll-modifier-tester",
+    edgeIds: [
+      "swade-edge-alertness",
+      "swade-edge-brave",
+      "swade-edge-danger-sense",
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Alertness");
+  await expect(derived).toContainText("Notice +2");
+  await expect(derived).toContainText("Brave");
+  await expect(derived).toContainText("Fear checks +2");
+  await expect(derived).toContainText("Fear Table rolls -2");
+  await expect(derived).toContainText("Danger Sense");
+  await expect(derived).toContainText(
+    "Notice +2 to sense ambushes or similar danger",
+  );
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Alertness: Notice +2");
+  await expect(combatBreakdown).toContainText("Brave: Fear checks +2");
+  await expect(combatBreakdown).toContainText("Brave: Fear Table rolls -2");
+  await expect(combatBreakdown).toContainText(
+    "Danger Sense: Notice +2 to sense ambushes or similar danger",
+  );
+
+  const computed = await page.evaluate(() =>
+    effectHookSummariesForSurface(character, "character")
+      .filter((effect) => effect.type === "roll-modifier")
+      .map((effect) => ({
+        sourceName: effect.sourceName,
+        target: effect.target,
+        trait: effect.trait,
+        context: effect.context,
+        value: effect.value,
+        displayLabel: effect.displayLabel,
+      })),
+  );
+  expect(computed).toEqual([
+    {
+      sourceName: "Alertness",
+      target: "notice",
+      trait: "Notice",
+      context: "all Notice rolls",
+      value: 2,
+      displayLabel: "Notice +2",
+    },
+    {
+      sourceName: "Brave",
+      target: "fear-checks",
+      trait: "Spirit",
+      context: "Fear checks",
+      value: 2,
+      displayLabel: "Fear checks +2",
+    },
+    {
+      sourceName: "Brave",
+      target: "fear-table",
+      trait: "Fear Table",
+      context: "Fear Table rolls",
+      value: -2,
+      displayLabel: "Fear Table rolls -2",
+    },
+    {
+      sourceName: "Danger Sense",
+      target: "notice-danger",
+      trait: "Notice",
+      context: "ambushes or similar danger",
+      value: 2,
+      displayLabel: "Notice +2 to sense ambushes or similar danger",
+    },
+  ]);
+});
+
+test("Hindrance roll modifier effects render on Character and Combat", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Hindrance Roll Modifier Tester",
+    preferredId: "hindrance-roll-modifier-tester",
+    hindranceIds: [
+      "swade-hindrance-all-thumbs",
+      "swade-hindrance-anemic",
+      "swade-hindrance-mean",
+      "swade-hindrance-mild-mannered",
+      "swade-hindrance-yellow",
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("All Thumbs");
+  await expect(derived).toContainText(
+    "Mechanical or electrical device rolls -2",
+  );
+  await expect(derived).toContainText("Anemic");
+  await expect(derived).toContainText("Vigor to resist Fatigue -2");
+  await expect(derived).toContainText("Mean");
+  await expect(derived).toContainText("Persuasion -1");
+  await expect(derived).toContainText("Mild Mannered");
+  await expect(derived).toContainText("Intimidation -2");
+  await expect(derived).toContainText("Yellow");
+  await expect(derived).toContainText("Fear checks -2");
+  await expect(derived).toContainText("Resist Intimidation -2");
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText(
+    "All Thumbs: Mechanical or electrical device rolls -2",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Anemic: Vigor to resist Fatigue -2",
+  );
+  await expect(combatBreakdown).toContainText("Mean: Persuasion -1");
+  await expect(combatBreakdown).toContainText("Mild Mannered: Intimidation -2");
+  await expect(combatBreakdown).toContainText("Yellow: Fear checks -2");
+  await expect(combatBreakdown).toContainText("Yellow: Resist Intimidation -2");
+
+  const computed = await page.evaluate(() =>
+    effectHookSummariesForSurface(character, "combat")
+      .filter((effect) => effect.type === "roll-modifier")
+      .map((effect) => ({
+        sourceName: effect.sourceName,
+        target: effect.target,
+        value: effect.value,
+        displayLabel: effect.displayLabel,
+      })),
+  );
+  expect(computed).toEqual([
+    {
+      sourceName: "All Thumbs",
+      target: "mechanical-electrical-devices",
+      value: -2,
+      displayLabel: "Mechanical or electrical device rolls -2",
+    },
+    {
+      sourceName: "Anemic",
+      target: "resist-fatigue",
+      value: -2,
+      displayLabel: "Vigor to resist Fatigue -2",
+    },
+    {
+      sourceName: "Mean",
+      target: "persuasion",
+      value: -1,
+      displayLabel: "Persuasion -1",
+    },
+    {
+      sourceName: "Mild Mannered",
+      target: "intimidation",
+      value: -2,
+      displayLabel: "Intimidation -2",
+    },
+    {
+      sourceName: "Yellow",
+      target: "fear-checks",
+      value: -2,
+      displayLabel: "Fear checks -2",
+    },
+    {
+      sourceName: "Yellow",
+      target: "resist-intimidation",
+      value: -2,
+      displayLabel: "Resist Intimidation -2",
+    },
+  ]);
+});
+
 test("Increase Skill writes a canonical ledger entry", async ({ page }) => {
   await seedCanonicalAdvancementCharacter(page);
 

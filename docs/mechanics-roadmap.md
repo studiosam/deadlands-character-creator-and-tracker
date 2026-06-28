@@ -165,23 +165,28 @@ Current implementation:
   Strength checks without lowering Encumbrance capacity.
 - Hindrance severity now has helper-level matching for `minor`, `major`, and
   `unknown`; Slow uses this to apply different Minor and Major passive effects.
+- Structured `roll-modifier` effects now render as passive Character and Combat
+  reminders for Alertness, Brave, Danger Sense, All Thumbs, Anemic, Mean, Mild
+  Mannered, and Yellow.
 - Character, Combat, and Inventory surfaces show passive-effect explanations
   instead of relying only on catalog text.
 
 Effect Hook Candidate Audit:
 
-- Already implemented: Brawny, Soldier, Fleet-Footed, Small, Slow, and Obese.
+- Already implemented: Alertness, Brave, Brawny, Danger Sense, Soldier,
+  Fleet-Footed, All Thumbs, Anemic, Mean, Mild Mannered, Small, Slow, Yellow,
+  and Obese.
 - Passive math, high confidence: Block, Improved Block, Brawler, Nerves of
   Steel, Improved Nerves of Steel, Tough as Nails, Tougher than Nails, Weapon
   Master, and Master of Arms. These should be baseline-aware before they mutate
   derived values so imported totals are not double-counted.
-- Roll modifier reminders, high confidence: All Thumbs, Anemic, Clueless,
-  Clumsy, Mean, Mild Mannered, One Eye, Tongue-Tied, Yellow, Alertness,
-  Arcane Resistance, Improved Arcane Resistance, Aristocrat, Attractive, Very
-  Attractive, Brave, Elan, Fast Healer, Healer, Iron Jaw, Investigator, Mr. Fix
-  It, Streetwise, Strong Willed, Thief, Woodsman, Menacing, Danger Sense, Guts,
-  Grit, True Grit, and Whateley Blood. These should use structured
-  `roll-modifier` or reminder metadata before deeper roll automation exists.
+- Roll modifier reminders, high confidence: Clueless, Clumsy, One Eye,
+  Tongue-Tied, Arcane Resistance, Improved Arcane Resistance, Aristocrat,
+  Attractive, Very Attractive, Elan, Fast Healer, Healer, Iron Jaw,
+  Investigator, Mr. Fix It, Streetwise, Strong Willed, Thief, Woodsman,
+  Menacing, Guts, Grit, True Grit, and Whateley Blood. These should use
+  structured `roll-modifier` or reminder metadata before deeper roll automation
+  exists.
 - Initiative and Action Card reminders: Bad Luck, Hesitant, Luck, Great Luck,
   Quick, Level Headed, Improved Level Headed, Calculating, Dead Shot, Mighty
   Blow, Tactician, Master Tactician, Quick Draw, and Fast as Lightning. These
@@ -204,10 +209,10 @@ Effect Hook Candidate Audit:
   Ways Oath, Tenderfoot, Tale-Teller, organization rank/favor Edges, Harrowed
   powers, Mad Scientist device Edges, Shaman restriction Edges, Behold a Pale
   Horse, and most story or Marshal-facing effects.
-- Next safest code slice: add a structured `roll-modifier` effect type, render
-  those modifiers as passive Character and Combat reminders, and implement a
-  small set of deterministic entries such as Alertness, Brave, Mean, Mild
-  Mannered, Anemic, All Thumbs, Yellow, and Danger Sense.
+- Next safest code slice: either expand `roll-modifier` coverage to the
+  remaining high-confidence reminders or add baseline-aware passive math for
+  Block, Improved Block, Brawler, Nerves of Steel, and Improved Nerves of
+  Steel.
 
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.
