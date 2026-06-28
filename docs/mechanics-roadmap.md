@@ -168,6 +168,47 @@ Current implementation:
 - Character, Combat, and Inventory surfaces show passive-effect explanations
   instead of relying only on catalog text.
 
+Effect Hook Candidate Audit:
+
+- Already implemented: Brawny, Soldier, Fleet-Footed, Small, Slow, and Obese.
+- Passive math, high confidence: Block, Improved Block, Brawler, Nerves of
+  Steel, Improved Nerves of Steel, Tough as Nails, Tougher than Nails, Weapon
+  Master, and Master of Arms. These should be baseline-aware before they mutate
+  derived values so imported totals are not double-counted.
+- Roll modifier reminders, high confidence: All Thumbs, Anemic, Clueless,
+  Clumsy, Mean, Mild Mannered, One Eye, Tongue-Tied, Yellow, Alertness,
+  Arcane Resistance, Improved Arcane Resistance, Aristocrat, Attractive, Very
+  Attractive, Brave, Elan, Fast Healer, Healer, Iron Jaw, Investigator, Mr. Fix
+  It, Streetwise, Strong Willed, Thief, Woodsman, Menacing, Danger Sense, Guts,
+  Grit, True Grit, and Whateley Blood. These should use structured
+  `roll-modifier` or reminder metadata before deeper roll automation exists.
+- Initiative and Action Card reminders: Bad Luck, Hesitant, Luck, Great Luck,
+  Quick, Level Headed, Improved Level Headed, Calculating, Dead Shot, Mighty
+  Blow, Tactician, Master Tactician, Quick Draw, and Fast as Lightning. These
+  should remain reminders until Combat has action-card state.
+- Resource or session-start effects: Bad Luck, Luck, Great Luck, Power Points,
+  Rapid Recharge, Improved Rapid Recharge, Power Surge, Soul Drain, Tough as
+  Nails, Tougher than Nails, and Behold a Pale Horse. These need source-tracked
+  resource/session handling rather than one-time silent mutations.
+- Subchoice or target-required effects: Scholar, Trademark Weapon, Improved
+  Trademark Weapon, Reputation, Martial Artist, Martial Warrior, Chi, Champion,
+  Assassin, Giant Killer, Double Tap, Dodge, Improved Dodge, Marksman, Rapid
+  Fire, Improved Rapid Fire, Rich, Filthy Rich, and Arcane Background. These
+  need stored choices or action context before reliable automation.
+- Severity-dependent Hindrances after Slow: Ailin', Bad Eyes, Enemy, Habit,
+  Hard of Hearing, Obligation, Outsider, Pacifist, Phobia, Ruthless, Secret,
+  Shamed, Suspicious, Thin Skinned, Ugly, Vengeful, Vow, Wanted, Young,
+  Talisman, and Trouble Magnet. Most should begin as reminders until the app has
+  the relevant roll/resource/creation model.
+- Manual or table-only for now: Berserk, Cursed, Grim Servant o' Death, Old
+  Ways Oath, Tenderfoot, Tale-Teller, organization rank/favor Edges, Harrowed
+  powers, Mad Scientist device Edges, Shaman restriction Edges, Behold a Pale
+  Horse, and most story or Marshal-facing effects.
+- Next safest code slice: add a structured `roll-modifier` effect type, render
+  those modifiers as passive Character and Combat reminders, and implement a
+  small set of deterministic entries such as Alertness, Brave, Mean, Mild
+  Mannered, Anemic, All Thumbs, Yellow, and Danger Sense.
+
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.
 3. Add warnings, not hard blocks, for complex requirements and table-dependent
