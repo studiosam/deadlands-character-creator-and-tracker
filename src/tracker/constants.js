@@ -1,3 +1,10 @@
+/**
+ * Shared tracker constants.
+ *
+ * Keep stable app vocabularies here when multiple modules need the same labels,
+ * IDs, or ordering. Feature-specific rule logic belongs with the feature module
+ * that owns the calculation.
+ */
 const AMMO_CALIBERS_BY_CATALOG_ID = {
   "pistol-ammunition-small-22-38-caliber": [".22", ".32", ".36", ".38"],
   "pistol-ammunition-large-40-50-caliber": [".40", ".41", ".44", ".45", ".50"],

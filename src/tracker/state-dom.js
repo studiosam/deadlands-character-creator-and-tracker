@@ -1,3 +1,10 @@
+/**
+ * Shared tracker state and cached DOM references.
+ *
+ * This file centralizes mutable top-level state and element lookups for the
+ * script-based app architecture. Feature modules may read these values, but
+ * should keep domain-specific behavior in their own files.
+ */
 let character = null;
 let characterLibrary = null;
 let characterDraftMode = false;

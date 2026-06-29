@@ -1,3 +1,10 @@
+/**
+ * Shared app chrome helpers.
+ *
+ * Toasts and custom dialogs provide consistent non-native feedback across the
+ * tracker, creator, import, and settings flows. Keep these helpers UI-generic
+ * so feature modules can supply their own messages and decisions.
+ */
 let activeDialogResolve = null;
 
 function appToast(message, tone = "info") {

@@ -1,4 +1,10 @@
-// Canonical Character Setup source and creation-baseline helpers.
+/**
+ * Character Setup source tracking and creation-baseline helpers.
+ *
+ * Source metadata explains why a starting record exists and whether the app can
+ * trust it. Creation baselines capture the finished starting state so later
+ * advancement and audit logic can distinguish setup from play changes.
+ */
 
 const SETUP_SOURCE_DEFINITIONS = {
   "setup-starting-hindrance": {

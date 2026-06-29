@@ -1,3 +1,10 @@
+/**
+ * Equipment tab rendering for weapons, ammo, armor, and vehicles.
+ *
+ * This file owns tracker-facing equipment lists and add/remove controls after
+ * records have already been normalized. Physical location and load rules are
+ * delegated to inventory-model.js and encumbrance.js.
+ */
 function renderArmor() {
   els.armorLocationList.innerHTML = ARMOR_LOCATIONS.filter(
     (location) => location.id !== "shield",

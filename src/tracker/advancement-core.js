@@ -1,3 +1,10 @@
+/**
+ * Advancement ledger and application primitives.
+ *
+ * This module owns advancement data-shape construction, rule validation, and
+ * safe mutation helpers. Keep DOM/editor concerns in character-advancement.js
+ * so the ledger model can be tested without UI coupling.
+ */
 function generateStableEntryId(type, name) {
   return `${type}-${slugify(name || type)}`;
 }
@@ -240,6 +247,13 @@ function normalizeAdvanceTarget(target) {
   };
 }
 
+/**
+ * Normalize imported, legacy, and canonical advancement records.
+ *
+ * App-owned advances should converge on the canonical ledger shape, while
+ * imported history can remain non-undoable when reliable before/after changes
+ * are unavailable.
+ */
 function normalizeAdvanceEntry(entry, index = 0) {
   const raw =
     typeof entry === "string"
@@ -479,6 +493,13 @@ function isReliableAttributeIncreaseAdvance(advance) {
   );
 }
 
+/**
+ * Enforce the app's Attribute advance cadence.
+ *
+ * Non-Legendary ranks allow one Attribute increase per rank bucket. Legendary
+ * cadence is based on distance from the last reliable Legendary Attribute
+ * increase, not fixed even/odd advance numbers.
+ */
 function attributeIncreaseRankConflict(
   currentCharacter,
   advance,
@@ -979,6 +1000,13 @@ function increasePowerPointsForAdvance(advance) {
   };
 }
 
+/**
+ * Apply a supported advancement to character state and ledger metadata.
+ *
+ * This is the mutation boundary for app-owned advances. It must update the
+ * character and record enough canonical before/after data for later safe undo
+ * checks.
+ */
 function applyAdvanceToCharacter(advance) {
   if (advance.applied) return advance;
   if (!isSupportedAppliedAdvance(advance.type)) return advance;
@@ -1142,6 +1170,13 @@ function canUndoAdvanceChange(advance, change) {
   };
 }
 
+/**
+ * Build a safe undo plan from canonical advancement changes.
+ *
+ * Undo is allowed only when the current character still matches the recorded
+ * after-state. This prevents old ledger entries from deleting or downgrading
+ * records that were changed later by another workflow.
+ */
 function getAdvanceUndoPlan(advance) {
   const changes = Array.isArray(advance.changes) ? advance.changes : [];
   const checks = changes.map((change) => canUndoAdvanceChange(advance, change));

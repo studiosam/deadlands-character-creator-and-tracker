@@ -1,3 +1,10 @@
+/**
+ * Manual power editing controls.
+ *
+ * This file supports tracker-side add/edit/remove of powers after setup or
+ * import. Starting-power legality and Arcane Background package validation stay
+ * in the setup and arcane model helpers.
+ */
 function addPower() {
   const name = els.powerNameInput.value.trim();
   if (!name) return;

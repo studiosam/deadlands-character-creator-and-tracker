@@ -1,3 +1,10 @@
+/**
+ * Browser-local persistence and JSON export helpers.
+ *
+ * This file is the only layer that should directly wrap localStorage and file
+ * download mechanics. Schema normalization belongs in tracker/creator modules
+ * so transport stays separate from domain migration.
+ */
 const APP_EXPORT_NAME = "deadlands-character-tracker";
 
 function plainClone(value) {

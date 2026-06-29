@@ -1,3 +1,10 @@
+/**
+ * Equipment normalization and catalog lookup helpers.
+ *
+ * These utilities keep weapons, ammo, armor, and gear records comparable across
+ * manual entries, catalog purchases, imports, and legacy saves. UI-specific
+ * inventory behavior belongs in inventory.js or equipment.js.
+ */
 function normalizeCaliber(value) {
   const match = String(value || "").match(/\.?\d{2}/);
   if (!match) return "";

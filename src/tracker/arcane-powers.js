@@ -1,3 +1,10 @@
+/**
+ * Arcane resource and power rendering.
+ *
+ * This file renders tracker-owned Power Points, known powers, and active power
+ * controls. It should display existing arcane state, while setup-time legality
+ * and starting-power selection stay in the setup modules.
+ */
 function renderResources() {
   els.resourcesList.innerHTML = "";
   if (!character.resources.length) {

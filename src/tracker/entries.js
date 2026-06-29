@@ -1,3 +1,10 @@
+/**
+ * Entry normalization and editor helpers for character records.
+ *
+ * Edges, Hindrances, Powers, Advances, and other repeated records pass through
+ * this layer before rendering or persistence. Keep these helpers tolerant of
+ * imported or older app-owned shapes.
+ */
 function normalizeEdgeEntry(entry) {
   if (typeof entry === "string") {
     return {

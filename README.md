@@ -190,6 +190,7 @@ deadlands-character-creator-and-tracker/
       ...
   docs/
     case-study.md
+    project-documentation-guide.md
     manual-checklist.md
     Sample Characters/
   tests/
@@ -218,6 +219,9 @@ Scripts:
 - `npm test`: run static checks and the Playwright browser suite.
 - `npm run format`: format project files with Prettier.
 - `npm run format:check`: check formatting without rewriting files.
+
+See [docs/project-documentation-guide.md](docs/project-documentation-guide.md)
+for the source comment and project documentation standard.
 
 GitHub Actions runs `npm ci`, installs Playwright browsers, then runs
 `npm run test:static`, `npm run format:check`, and `npm run test:browser` on

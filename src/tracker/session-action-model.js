@@ -1,3 +1,10 @@
+/**
+ * Session resource and Action Card model helpers.
+ *
+ * This module turns Luck/Bad Luck and action-card Edges or Hindrances into
+ * concrete session state. It intentionally records player-entered cards rather
+ * than simulating a deck or replacing table adjudication.
+ */
 const DEFAULT_ACTION_CARD_STATE = {
   current: "",
   secondary: "",
@@ -67,6 +74,13 @@ function characterStartingBennies(currentCharacter = character) {
   );
 }
 
+/**
+ * Recompute starting Bennies from the stable baseline plus session modifiers.
+ *
+ * current Bennies are intentionally not set here. Start Session performs that
+ * reset explicitly so render-time recalculation cannot spend or grant Bennies
+ * during active play.
+ */
 function syncCharacterStartingBennies(currentCharacter = character) {
   if (!currentCharacter.bennies) currentCharacter.bennies = {};
   currentCharacter.bennies.normalStarting =
@@ -121,6 +135,12 @@ function actionCardRankValue(value) {
   return Number(rank);
 }
 
+/**
+ * Report Quick redraw eligibility for the manually recorded Action Card.
+ *
+ * The app records the card and explains the deterministic redraw trigger; it
+ * does not simulate a deck or decide replacement-card timing for the table.
+ */
 function quickRedrawStatus(currentCharacter = character) {
   const capabilities = actionCardCapabilities(currentCharacter);
   const state = normalizeActionCardState(currentCharacter?.actionCards);

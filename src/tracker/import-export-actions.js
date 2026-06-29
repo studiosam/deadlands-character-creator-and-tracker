@@ -1,4 +1,10 @@
-// Import, export, and paste-import panel helpers.
+/**
+ * Import, export, and paste-import panel helpers.
+ *
+ * This module owns JSON transport actions and confirmation flow. Payload
+ * normalization remains in storage/import helpers so imports stay consistent
+ * no matter which UI path receives the data.
+ */
 function exportJson(name, data) {
   downloadJsonFile(name, data);
   appToast(`Exported ${name}.`, "success");

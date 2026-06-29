@@ -1,3 +1,10 @@
+/**
+ * Notes and summary rendering for secondary tracker panels.
+ *
+ * These renderers collect already-normalized character data into readable
+ * summaries. They should avoid introducing new state mutations beyond explicit
+ * notes editing handled by events.js.
+ */
 function renderArcaneSummary() {
   const background = character.arcaneBackground;
   const powerPoints = powerPointResource();

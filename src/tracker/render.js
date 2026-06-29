@@ -1,3 +1,10 @@
+/**
+ * Main tracker render orchestration.
+ *
+ * render() derives display state from the normalized character, updates shared
+ * UI surfaces, and delegates feature-specific sections to focused renderers.
+ * Keep long-lived data migration in storage.js rather than hiding it here.
+ */
 const CHARACTER_SETUP_STEPS = [
   { id: "concept", label: "Concept" },
   { id: "ancestry", label: "Race / Ancestry" },

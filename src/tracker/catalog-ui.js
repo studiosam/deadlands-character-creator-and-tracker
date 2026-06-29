@@ -1,3 +1,10 @@
+/**
+ * Read-only catalog and picker UI helpers.
+ *
+ * Catalog data is treated as app metadata used for selection, preview, and
+ * setup validation. This module should not mutate character state directly
+ * except through explicit caller-owned actions.
+ */
 function ammoOptions(selected = "") {
   const ammoMap = character?.ammo || {};
   const selectedMissing = selected && !ammoMap[selected];

@@ -1,3 +1,11 @@
+/**
+ * Advancement editor and UI integration.
+ *
+ * This module adapts form input to the core advancement ledger helpers and owns
+ * editor visibility, dynamic fields, warnings, and user-triggered application.
+ * The app should not rebuild advancement rules here when a core helper can own
+ * the behavior.
+ */
 function setEntryWarning(element, warnings) {
   element.textContent = warnings.join(" ");
   element.classList.toggle("hidden", !warnings.length);

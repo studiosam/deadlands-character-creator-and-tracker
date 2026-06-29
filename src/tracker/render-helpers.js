@@ -1,3 +1,10 @@
+/**
+ * Shared markup helpers.
+ *
+ * These helpers produce small, escaped HTML fragments used across renderers.
+ * Keep them presentation-focused; rule calculations and state mutations belong
+ * in feature modules.
+ */
 function reminderMarkup(reminder) {
   return `<article class="reminder"><div class="topline"><h3>${esc(reminder.name)}</h3><small>${esc(reminder.type)}</small></div><p>${esc(reminder.text)}</p></article>`;
 }

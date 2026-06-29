@@ -1,3 +1,10 @@
+/**
+ * Small shared utility helpers.
+ *
+ * Keep this file limited to generic string, number, escaping, and lightweight
+ * equipment utility functions. Feature-specific rule decisions should live in
+ * the module that owns that feature.
+ */
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }

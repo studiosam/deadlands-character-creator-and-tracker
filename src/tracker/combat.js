@@ -1,3 +1,10 @@
+/**
+ * Live combat dashboard rendering and controls.
+ *
+ * Combat state changes frequently during play: resources, cards, conditions,
+ * loaded ammunition, active powers, and reminders. This module should render
+ * session-facing controls without changing permanent character setup semantics.
+ */
 function renderResourceControls(container, resources) {
   container.innerHTML = "";
   if (!resources.length) {

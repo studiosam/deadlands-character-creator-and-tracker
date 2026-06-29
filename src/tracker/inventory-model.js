@@ -1,3 +1,10 @@
+/**
+ * Physical inventory location and container model.
+ *
+ * This module translates item records into stable carried, backpack, container,
+ * and off-person meanings. Encumbrance, combat load, and storage UI depend on
+ * these helpers staying conservative and backward-compatible.
+ */
 const INVENTORY_LOCATIONS = [
   "equipped",
   "carried",
@@ -280,6 +287,13 @@ function normalizeInventoryState(currentCharacter) {
   );
 }
 
+/**
+ * Normalize every physical item collection to the shared location model.
+ *
+ * Weapons, armor, ammo, vehicles, and gear all need to move between carried,
+ * backpack/container, and off-person locations. This pass keeps those records
+ * interoperable before encumbrance or inventory UI reads them.
+ */
 function normalizePhysicalInventoryState(currentCharacter) {
   (currentCharacter.weapons || []).forEach((weapon) =>
     normalizePhysicalItemLocation(weapon, "carried", currentCharacter),

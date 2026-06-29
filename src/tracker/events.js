@@ -1,3 +1,10 @@
+/**
+ * DOM event wiring for the tracker shell.
+ *
+ * Keep raw event listeners and element onclick assignments here. Feature logic
+ * should live in action/helper modules so this file remains the composition
+ * layer instead of becoming the application model.
+ */
 function updateHucksterDealField(field, value) {
   if (!character.hucksterDeal) character.hucksterDeal = makeHucksterDeal();
   character.hucksterDeal[field] = value;

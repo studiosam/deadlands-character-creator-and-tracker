@@ -1,3 +1,10 @@
+/**
+ * Encumbrance and carried-load calculations.
+ *
+ * This module owns normal carried load, combat load, backpack/container drop
+ * behavior, and carrying-capacity thresholds. It should consume normalized item
+ * locations from the inventory model rather than interpreting raw UI fields.
+ */
 const LOAD_LIMIT_BY_STRENGTH = {
   d4: 20,
   d6: 40,
@@ -227,6 +234,13 @@ function calculateEncumbrancePenalty(carriedWeight, loadLimit) {
   return carriedWeight > loadLimit ? -2 : 0;
 }
 
+/**
+ * Calculate load state for normal carry or combat carry.
+ *
+ * Combat mode subtracts auto-dropped backpack/container load while normal mode
+ * treats that same gear as carried. Keep this distinction explicit so table-use
+ * combat penalties do not corrupt the character's real inventory state.
+ */
 function calculateEncumbrance(currentCharacter, options = {}) {
   const inventoryTotals = inventoryWeightBreakdown(currentCharacter);
   const effectiveStrength = effectiveStrengthForEncumbrance(currentCharacter);

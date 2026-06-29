@@ -1,4 +1,10 @@
-// Shared Character Setup status, validation, and audit helpers.
+/**
+ * Character Setup status, validation, and audit helpers.
+ *
+ * This module decides whether a character can be edited through setup, which
+ * setup records are explained, and which records need review. Keep UI markup in
+ * setup-render.js and mutations in setup-actions.js.
+ */
 
 function characterSetupStatus(stepId) {
   if (stepId === "concept") {

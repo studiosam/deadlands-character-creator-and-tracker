@@ -1,7 +1,22 @@
+/**
+ * Character normalization, persistence migration, and library helpers.
+ *
+ * Every loaded, imported, reset, or saved character should pass through
+ * normalize() before rendering. This boundary stays tolerant of old saves and
+ * imports; stricter rule warnings belong in setup or feature audits.
+ */
 function normalizeSetupStatus(value, fallback = "complete") {
   return value === "needsReview" || value === "complete" ? value : fallback;
 }
 
+/**
+ * Return a fully shaped character payload safe for rendering and saving.
+ *
+ * Normalization is intentionally forgiving: older app saves, Savaged.us imports,
+ * and partially constructed creator drafts all pass through this boundary. Do
+ * not add hard rule failures here; surface those as audits or warnings so
+ * player data remains recoverable.
+ */
 function normalize(data, options = {}) {
   const defaults = clone(defaultCharacter);
   const normalized =

@@ -1,3 +1,10 @@
+/**
+ * Deterministic passive effects and rule reminders.
+ *
+ * Effect hooks convert known Edges and Hindrances into safe app-visible effects:
+ * numeric modifiers when the rule is deterministic, reminders when table context
+ * is required, and status markers when player subchoices are still missing.
+ */
 function automationStatusEffect(
   status,
   target,
@@ -1211,6 +1218,13 @@ function dominantEffectValue(currentValue, nextValue) {
   return currentValue;
 }
 
+/**
+ * Sum matching deterministic effects, respecting exclusive groups.
+ *
+ * Improved Edges often replace lower-tier versions instead of stacking. The
+ * exclusiveGroup mechanism keeps the strongest applicable value while allowing
+ * unrelated modifiers to stack normally.
+ */
 function effectHookModifierTotal(
   currentCharacter,
   { type = "", target = "", scope = "" } = {},

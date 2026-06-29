@@ -1,4 +1,10 @@
-// Character library and profile action helpers.
+/**
+ * Character library and profile action helpers.
+ *
+ * This module owns save-slot mutations and stable identity/profile edits. It
+ * should not reach into feature-specific rule workflows such as setup,
+ * advancement, inventory, or powers except through existing character state.
+ */
 const CHARACTER_PROFILE_FIELDS = [
   "name",
   "gender",

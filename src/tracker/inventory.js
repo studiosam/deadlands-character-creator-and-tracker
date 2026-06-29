@@ -1,3 +1,10 @@
+/**
+ * Inventory, conditions, reminders, and storage-location rendering.
+ *
+ * This module owns user-facing inventory controls after physical item records
+ * have been normalized. Load math belongs in encumbrance.js; raw item location
+ * semantics belong in inventory-model.js.
+ */
 function renderConditions() {
   if (!els.conditionsList) return;
   els.conditionsList.innerHTML = "";

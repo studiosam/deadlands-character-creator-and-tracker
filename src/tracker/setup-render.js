@@ -1,4 +1,10 @@
-// Character Setup rendering helpers.
+/**
+ * Character Setup rendering helpers.
+ *
+ * This module renders the setup workflow and audit UI from existing setup
+ * state. It should call setup-actions.js for mutations and setup-model.js for
+ * eligibility, warnings, and completion status.
+ */
 function setupStatusMarkup(status) {
   const className = slugify(status);
   return `<span class="setup-status ${className}">${esc(status)}</span>`;

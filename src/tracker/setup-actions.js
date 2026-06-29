@@ -1,4 +1,10 @@
-// Character Setup action and mutation helpers.
+/**
+ * Character Setup action and mutation helpers.
+ *
+ * Setup actions mutate draft character records, apply source tracking, and
+ * coordinate audit remediation. Rendering stays in setup-render.js, while
+ * validation and status helpers stay in setup-model.js.
+ */
 function applyConceptField(input) {
   const field = input.dataset.conceptField;
   if (
