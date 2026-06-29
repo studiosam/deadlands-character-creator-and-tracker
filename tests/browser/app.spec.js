@@ -2617,7 +2617,7 @@ test("Session and action-card effects render concrete model hooks", async ({
   );
   await expect(derived).toContainText("Level Headed");
   await expect(derived).toContainText(
-    "Draw an additional Action Card and choose which to use",
+    "Draw one additional Action Card and choose which to use",
   );
 
   await openCombat(page);
@@ -2632,10 +2632,13 @@ test("Session and action-card effects render concrete model hooks", async ({
     "Hesitant: Draw two Action Cards and keep the lowest, except Jokers",
   );
   await expect(combatBreakdown).toContainText(
-    "Level Headed: Draw an additional Action Card and choose which to use",
+    "Level Headed: Draw one additional Action Card and choose which to use",
   );
   const actionCardPanel = page.locator("#actionCardPanel");
   await expect(actionCardPanel).toBeVisible();
+  await expect(actionCardPanel).toContainText(
+    "Draw 2 Action Cards; Hesitant keeps the lowest except Jokers, with Level Headed extra draw included.",
+  );
   await expect(actionCardPanel).toContainText(
     "Quick: record an Action Card to check redraw.",
   );
@@ -2684,8 +2687,8 @@ test("Session and action-card effects render concrete model hooks", async ({
       sourceName: "Level Headed",
       target: "level-headed-draw",
       type: "action-card-rule",
-      value: undefined,
-      displayLabel: "Draw an additional Action Card and choose which to use",
+      value: 1,
+      displayLabel: "Draw one additional Action Card and choose which to use",
     },
     {
       sourceName: "Bad Luck",
@@ -2751,10 +2754,13 @@ test("Action Card model tracks Quick redraw state and persists cards", async ({
     "Quick: record an Action Card to check redraw.",
   );
   await expect(panel).toContainText(
-    "Level Headed: Draw an additional Action Card and choose which to use",
+    "Level Headed: Draw one additional Action Card and choose which to use",
   );
   await expect(panel).toContainText(
     "Hesitant: Draw two Action Cards and keep the lowest, except Jokers",
+  );
+  await expect(panel).toContainText(
+    "Draw 2 Action Cards; Hesitant keeps the lowest except Jokers, with Level Headed extra draw included.",
   );
 
   await page.locator("#actionCardInput").fill("5H");
@@ -2782,6 +2788,63 @@ test("Action Card model tracks Quick redraw state and persists cards", async ({
     current: "",
     secondary: "",
     notes: "",
+  });
+});
+
+test("Improved Level Headed replaces Level Headed Action Card draw count", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Improved Level Headed Tester",
+    preferredId: "improved-level-headed-tester",
+    edgeIds: ["swade-edge-level-headed", "swade-edge-improved-level-headed"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Improved Level Headed");
+  await expect(derived).toContainText(
+    "Draw two additional Action Cards and choose which to use",
+  );
+  await expect(derived).not.toContainText("Draw one additional Action Card");
+
+  await openCombat(page);
+  const panel = page.locator("#actionCardPanel");
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText(
+    "Draw 3 Action Cards and choose which to use.",
+  );
+  await expect(panel).toContainText("Improved Level Headed");
+  await expect(panel).not.toContainText(
+    "Level Headed: Draw one additional Action Card",
+  );
+
+  expect(
+    await page.evaluate(() => {
+      const capabilities = actionCardCapabilities(character);
+      return {
+        levelHeadedExtraCards: capabilities.levelHeadedExtraCards,
+        drawCount: capabilities.drawCount,
+        drawInstruction: capabilities.drawInstruction,
+        effects: actionCardRuleSummaries(character).map((effect) => ({
+          sourceName: effect.sourceName,
+          value: effect.value,
+          displayLabel: effect.displayLabel,
+        })),
+      };
+    }),
+  ).toEqual({
+    levelHeadedExtraCards: 2,
+    drawCount: 3,
+    drawInstruction: "Draw 3 Action Cards and choose which to use.",
+    effects: [
+      {
+        sourceName: "Improved Level Headed",
+        value: 2,
+        displayLabel:
+          "Draw two additional Action Cards and choose which to use",
+      },
+    ],
   });
 });
 

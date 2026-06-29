@@ -104,14 +104,51 @@ function actionCardCapabilities(currentCharacter = character) {
   const effects = actionCardRuleSummaries(currentCharacter);
   const hasTarget = (target) =>
     effects.some((effect) => effect.target === target);
+  const levelHeadedEffect = effects.find(
+    (effect) => effect.target === "level-headed-draw",
+  );
+  const levelHeadedExtraCards = Math.max(
+    0,
+    Math.floor(Number(levelHeadedEffect?.value) || 0),
+  );
+  const hesitant = hasTarget("hesitant-draw");
+  const drawCount = hesitant
+    ? Math.max(2, 1 + levelHeadedExtraCards)
+    : 1 + levelHeadedExtraCards;
   return {
     effects,
     quick: hasTarget("quick-redraw"),
-    hesitant: hasTarget("hesitant-draw"),
-    levelHeaded: hasTarget("level-headed-draw"),
-    recordsMultipleCards:
-      hasTarget("hesitant-draw") || hasTarget("level-headed-draw"),
+    hesitant,
+    levelHeaded: levelHeadedExtraCards > 0,
+    levelHeadedExtraCards,
+    drawCount,
+    drawInstruction: actionCardDrawInstruction({
+      drawCount,
+      hesitant,
+      levelHeadedExtraCards,
+    }),
+    recordsMultipleCards: drawCount > 1,
   };
+}
+
+function actionCardDrawInstruction({
+  drawCount = 1,
+  hesitant = false,
+  levelHeadedExtraCards = 0,
+} = {}) {
+  const safeDrawCount = Math.max(1, Math.floor(Number(drawCount) || 1));
+  const cardLabel =
+    safeDrawCount === 1 ? "1 Action Card" : `${safeDrawCount} Action Cards`;
+  if (hesitant && levelHeadedExtraCards) {
+    return `Draw ${cardLabel}; Hesitant keeps the lowest except Jokers, with Level Headed extra draw included.`;
+  }
+  if (hesitant) {
+    return `Draw ${cardLabel} and keep the lowest, except Jokers.`;
+  }
+  if (levelHeadedExtraCards) {
+    return `Draw ${cardLabel} and choose which to use.`;
+  }
+  return "Draw 1 Action Card.";
 }
 
 function actionCardIsJoker(value) {

@@ -114,11 +114,9 @@ function renderActionCards() {
   els.actionCardStatusPill.textContent = quickStatus.available
     ? "Redraw"
     : capabilities.effects.length
-      ? "Tracked"
+      ? `Draw ${capabilities.drawCount}`
       : "Manual";
-  els.actionCardSummary.textContent = capabilities.recordsMultipleCards
-    ? "Record the current round's Action Cards for draw/keep rules."
-    : "Record the current Action Card for redraw checks.";
+  els.actionCardSummary.textContent = capabilities.drawInstruction;
   els.actionCardRules.innerHTML = rules.length
     ? rules.map((rule) => `<span>${esc(rule)}</span>`).join("")
     : "<span>No Action Card Edges or Hindrances detected.</span>";

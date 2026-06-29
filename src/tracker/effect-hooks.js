@@ -511,7 +511,29 @@ const EFFECT_HOOK_REGISTRY = [
     effects: [
       actionCardRuleEffect(
         "level-headed-draw",
-        "Draw an additional Action Card and choose which to use",
+        "Draw one additional Action Card and choose which to use",
+        {
+          value: 1,
+          exclusiveGroup: "level-headed-action-card-draw",
+        },
+      ),
+    ],
+  },
+  {
+    id: "edge-improved-level-headed",
+    sourceType: "edge",
+    matchName: "Improved Level Headed",
+    label: "Improved Level Headed",
+    summary:
+      "Draw two additional Action Cards each round and choose which to use.",
+    effects: [
+      actionCardRuleEffect(
+        "level-headed-draw",
+        "Draw two additional Action Cards and choose which to use",
+        {
+          value: 2,
+          exclusiveGroup: "level-headed-action-card-draw",
+        },
       ),
     ],
   },
