@@ -178,6 +178,9 @@ Current implementation:
 - Nerves of Steel and Improved Nerves of Steel now reduce displayed active
   wound penalties, with Improved Nerves replacing rather than stacking with the
   base Edge.
+- Explicit `automation-status` markers now surface entries that are known but
+  not safely automated yet, including manual/table-only, resource-model,
+  action-state, and subchoice-required effects.
 - Character, Combat, and Inventory surfaces show passive-effect explanations
   instead of relying only on catalog text.
 
@@ -186,6 +189,8 @@ Effect Hook Candidate Audit:
 - Already implemented: Alertness, Block, Brave, Brawler, Brawny, Danger Sense,
   Improved Block, Improved Nerves of Steel, Soldier, Fleet-Footed, All Thumbs,
   Anemic, Mean, Mild Mannered, Nerves of Steel, Small, Slow, Yellow, and Obese.
+- Explicitly marked but not automated: Berserk, Luck, Great Luck, Bad Luck,
+  Quick, Hesitant, Level Headed, Trademark Weapon, and Reputation.
 - Passive math, high confidence: Tough as Nails, Tougher than Nails, Weapon
   Master, and Master of Arms. These should be baseline-aware before they mutate
   derived values so imported totals are not double-counted.
@@ -218,9 +223,10 @@ Effect Hook Candidate Audit:
   Ways Oath, Tenderfoot, Tale-Teller, organization rank/favor Edges, Harrowed
   powers, Mad Scientist device Edges, Shaman restriction Edges, Behold a Pale
   Horse, and most story or Marshal-facing effects.
-- Next safest code slice: either expand `roll-modifier` coverage to the
-  remaining high-confidence reminders or add baseline-aware passive math for
-  Tough as Nails, Tougher than Nails, Weapon Master, and Master of Arms.
+- Next safest code slice: either add subchoice storage for marked entries such
+  as Trademark Weapon and Reputation, add session/action-card resource models
+  for marked entries such as Luck and Quick, or expand `roll-modifier` coverage
+  to the remaining high-confidence reminders.
 
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.

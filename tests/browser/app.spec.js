@@ -2039,6 +2039,183 @@ test("Hindrance roll modifier effects render on Character and Combat", async ({
   ]);
 });
 
+test("Automation status effects mark resource action and table-dependent entries", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Automation Status Tester",
+    preferredId: "automation-status-tester",
+    edgeIds: [
+      "swade-edge-berserk",
+      "swade-edge-luck",
+      "swade-edge-great-luck",
+      "swade-edge-quick",
+      "swade-edge-level-headed",
+    ],
+    hindranceIds: ["swade-hindrance-bad-luck", "swade-hindrance-hesitant"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Berserk");
+  await expect(derived).toContainText(
+    "Manual/table: track Berserk state and uncontrolled attacks",
+  );
+  await expect(derived).toContainText("Luck");
+  await expect(derived).toContainText(
+    "Resource model needed: +1 session Benny not auto-applied",
+  );
+  await expect(derived).toContainText("Great Luck");
+  await expect(derived).toContainText(
+    "Resource model needed: +2 session Bennies not auto-applied",
+  );
+  await expect(derived).toContainText("Bad Luck");
+  await expect(derived).toContainText(
+    "Resource model needed: -1 session Benny not auto-applied",
+  );
+  await expect(derived).toContainText("Quick");
+  await expect(derived).toContainText(
+    "Action state needed: redraw Action Cards of 5 or lower",
+  );
+  await expect(derived).toContainText("Hesitant");
+  await expect(derived).toContainText(
+    "Action state needed: draw two Action Cards and keep the lowest",
+  );
+  await expect(derived).toContainText("Level Headed");
+  await expect(derived).toContainText(
+    "Action state needed: draw an additional Action Card",
+  );
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText(
+    "Berserk: Manual/table: track Berserk state and uncontrolled attacks",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Quick: Action state needed: redraw Action Cards of 5 or lower",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Hesitant: Action state needed: draw two Action Cards and keep the lowest",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Level Headed: Action state needed: draw an additional Action Card",
+  );
+
+  const computed = await page.evaluate(() =>
+    effectHookSummariesForSurface(character, "character")
+      .filter((effect) => effect.type === "automation-status")
+      .map((effect) => ({
+        sourceName: effect.sourceName,
+        target: effect.target,
+        status: effect.status,
+        displayLabel: effect.displayLabel,
+      })),
+  );
+  expect(computed).toEqual([
+    {
+      sourceName: "Berserk",
+      target: "berserk-state",
+      status: "table-dependent",
+      displayLabel:
+        "Manual/table: track Berserk state and uncontrolled attacks",
+    },
+    {
+      sourceName: "Luck",
+      target: "session-bennies",
+      status: "resource-model-needed",
+      displayLabel: "Resource model needed: +1 session Benny not auto-applied",
+    },
+    {
+      sourceName: "Great Luck",
+      target: "session-bennies",
+      status: "resource-model-needed",
+      displayLabel:
+        "Resource model needed: +2 session Bennies not auto-applied",
+    },
+    {
+      sourceName: "Quick",
+      target: "action-card-redraw",
+      status: "action-state-needed",
+      displayLabel: "Action state needed: redraw Action Cards of 5 or lower",
+    },
+    {
+      sourceName: "Level Headed",
+      target: "action-card-draw",
+      status: "action-state-needed",
+      displayLabel: "Action state needed: draw an additional Action Card",
+    },
+    {
+      sourceName: "Bad Luck",
+      target: "session-bennies",
+      status: "resource-model-needed",
+      displayLabel: "Resource model needed: -1 session Benny not auto-applied",
+    },
+    {
+      sourceName: "Hesitant",
+      target: "action-card-draw",
+      status: "action-state-needed",
+      displayLabel:
+        "Action state needed: draw two Action Cards and keep the lowest",
+    },
+  ]);
+});
+
+test("Automation status effects mark subchoice-required entries", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Subchoice Status Tester",
+    preferredId: "subchoice-status-tester",
+    edgeIds: ["swade-edge-trademark-weapon", "dl-edge-reputation"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Trademark Weapon");
+  await expect(derived).toContainText(
+    "Subchoice required: choose the specific weapon before attack/Parry bonus can be automated",
+  );
+  await expect(derived).toContainText("Reputation");
+  await expect(derived).toContainText(
+    "Subchoice required: choose good or bad reputation before social effect can be automated",
+  );
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Trademark Weapon: Subchoice required: choose the specific weapon before attack/Parry bonus can be automated",
+  );
+  await expect(page.locator("#combatPenaltyBreakdown")).not.toContainText(
+    "Reputation: Subchoice required",
+  );
+
+  const computed = await page.evaluate(() =>
+    effectHookSummariesForSurface(character, "character")
+      .filter((effect) => effect.type === "automation-status")
+      .map((effect) => ({
+        sourceName: effect.sourceName,
+        target: effect.target,
+        status: effect.status,
+        displayLabel: effect.displayLabel,
+      })),
+  );
+  expect(computed).toEqual([
+    {
+      sourceName: "Trademark Weapon",
+      target: "chosen-weapon",
+      status: "subchoice-required",
+      displayLabel:
+        "Subchoice required: choose the specific weapon before attack/Parry bonus can be automated",
+    },
+    {
+      sourceName: "Reputation",
+      target: "reputation-choice",
+      status: "subchoice-required",
+      displayLabel:
+        "Subchoice required: choose good or bad reputation before social effect can be automated",
+    },
+  ]);
+});
+
 test("Increase Skill writes a canonical ledger entry", async ({ page }) => {
   await seedCanonicalAdvancementCharacter(page);
 

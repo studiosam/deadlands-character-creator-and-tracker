@@ -1,3 +1,18 @@
+function automationStatusEffect(
+  status,
+  target,
+  displayLabel,
+  appliesTo = ["character"],
+) {
+  return {
+    type: "automation-status",
+    status,
+    target,
+    appliesTo,
+    displayLabel,
+  };
+}
+
 const EFFECT_HOOK_REGISTRY = [
   {
     id: "edge-alertness",
@@ -74,6 +89,22 @@ const EFFECT_HOOK_REGISTRY = [
         displayLabel:
           "Strength counts one die higher for Encumbrance and Minimum Strength",
       },
+    ],
+  },
+  {
+    id: "edge-berserk",
+    sourceType: "edge",
+    matchName: "Berserk",
+    label: "Berserk",
+    summary:
+      "Berserk changes require active rage state and table adjudication before automation is safe.",
+    effects: [
+      automationStatusEffect(
+        "table-dependent",
+        "berserk-state",
+        "Manual/table: track Berserk state and uncontrolled attacks",
+        ["character", "combat"],
+      ),
     ],
   },
   {
@@ -190,6 +221,67 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-luck",
+    sourceType: "edge",
+    matchName: "Luck",
+    label: "Luck",
+    summary: "Starts each session with one additional Benny.",
+    effects: [
+      automationStatusEffect(
+        "resource-model-needed",
+        "session-bennies",
+        "Resource model needed: +1 session Benny not auto-applied",
+        ["character", "combat"],
+      ),
+    ],
+  },
+  {
+    id: "edge-great-luck",
+    sourceType: "edge",
+    matchName: "Great Luck",
+    label: "Great Luck",
+    summary: "Starts each session with two additional Bennies.",
+    effects: [
+      automationStatusEffect(
+        "resource-model-needed",
+        "session-bennies",
+        "Resource model needed: +2 session Bennies not auto-applied",
+        ["character", "combat"],
+      ),
+    ],
+  },
+  {
+    id: "edge-quick",
+    sourceType: "edge",
+    matchName: "Quick",
+    label: "Quick",
+    summary: "May discard and redraw Action Cards of 5 or lower.",
+    effects: [
+      automationStatusEffect(
+        "action-state-needed",
+        "action-card-redraw",
+        "Action state needed: redraw Action Cards of 5 or lower",
+        ["character", "combat"],
+      ),
+    ],
+  },
+  {
+    id: "edge-level-headed",
+    sourceType: "edge",
+    matchName: "Level Headed",
+    label: "Level Headed",
+    summary:
+      "Draw an additional Action Card each round and choose which to use.",
+    effects: [
+      automationStatusEffect(
+        "action-state-needed",
+        "action-card-draw",
+        "Action state needed: draw an additional Action Card",
+        ["character", "combat"],
+      ),
+    ],
+  },
+  {
     id: "edge-improved-nerves-of-steel",
     sourceType: "edge",
     matchName: "Improved Nerves of Steel",
@@ -249,6 +341,21 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-trademark-weapon",
+    sourceType: "edge",
+    matchName: "Trademark Weapon",
+    label: "Trademark Weapon",
+    summary: "Attack and Parry bonus applies to one specific chosen weapon.",
+    effects: [
+      automationStatusEffect(
+        "subchoice-required",
+        "chosen-weapon",
+        "Subchoice required: choose the specific weapon before attack/Parry bonus can be automated",
+        ["character", "combat"],
+      ),
+    ],
+  },
+  {
     id: "hindrance-all-thumbs",
     sourceType: "hindrance",
     matchName: "All Thumbs",
@@ -282,6 +389,36 @@ const EFFECT_HOOK_REGISTRY = [
         appliesTo: ["character", "combat"],
         displayLabel: "Vigor to resist Fatigue -2",
       },
+    ],
+  },
+  {
+    id: "hindrance-bad-luck",
+    sourceType: "hindrance",
+    matchName: "Bad Luck",
+    label: "Bad Luck",
+    summary: "Starts each session with one fewer Benny.",
+    effects: [
+      automationStatusEffect(
+        "resource-model-needed",
+        "session-bennies",
+        "Resource model needed: -1 session Benny not auto-applied",
+        ["character", "combat"],
+      ),
+    ],
+  },
+  {
+    id: "hindrance-hesitant",
+    sourceType: "hindrance",
+    matchName: "Hesitant",
+    label: "Hesitant",
+    summary: "Draws two Action Cards and keeps the lowest, except Jokers.",
+    effects: [
+      automationStatusEffect(
+        "action-state-needed",
+        "action-card-draw",
+        "Action state needed: draw two Action Cards and keep the lowest",
+        ["character", "combat"],
+      ),
     ],
   },
   {
@@ -421,6 +558,21 @@ const EFFECT_HOOK_REGISTRY = [
         appliesTo: ["character", "combat"],
         displayLabel: "Resist Intimidation -2",
       },
+    ],
+  },
+  {
+    id: "edge-reputation",
+    sourceType: "edge",
+    matchName: "Reputation",
+    label: "Reputation",
+    summary:
+      "Good or bad reputation subchoice determines social automation behavior.",
+    effects: [
+      automationStatusEffect(
+        "subchoice-required",
+        "reputation-choice",
+        "Subchoice required: choose good or bad reputation before social effect can be automated",
+      ),
     ],
   },
   {
@@ -696,6 +848,7 @@ function effectHookSummariesForSurface(
           context: effect.context,
           value: effect.value,
           type: effect.type,
+          status: effect.status,
           exclusiveGroup: effect.exclusiveGroup,
           displayLabel: effect.displayLabel,
           summary: hook.summary,
