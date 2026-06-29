@@ -1,21 +1,57 @@
-MIT License
+Deadlands Character Creator and Tracker Source-Available Non-Commercial License
 
-Copyright (c) 2026 Robert Hall
+Copyright (c) 2026 Robert Hall. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This license applies to the original software source code, application UI,
+project documentation, and other original project materials in this repository,
+except where a file or asset states otherwise.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This project also contains or references Deadlands: The Weird West, Savage
+Worlds Adventure Edition, SWADE, and related names, summaries, catalog metadata,
+and compatibility information. Those names and materials are owned by their
+respective rights holders. Nothing in this license grants any trademark,
+copyright, publishing, or commercial rights in third-party game material.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Permitted non-commercial uses:
+
+- You may view, download, clone, and run the project for personal,
+  non-commercial use.
+- You may study the source code and documentation for portfolio review,
+  educational review, and technical evaluation.
+- You may modify the project for private, non-commercial use.
+- You may share non-commercial patches, forks, or pull requests for review or
+  contribution, provided this license, copyright notice, and fan-tool notice are
+  preserved.
+
+Prohibited uses without prior written permission from the copyright holder:
+
+- Selling, renting, sublicensing, or commercially distributing this project or
+  derivative works.
+- Offering this project or derivative works as a paid product, paid service,
+  paid hosted tool, or paid bundled feature.
+- Bundling this project or derivative works into a commercial product,
+  marketplace listing, Patreon perk, subscription benefit, or commissioned
+  deliverable.
+- Removing or obscuring copyright, license, attribution, privacy, or fan-tool
+  disclaimer notices.
+- Using Deadlands, Savage Worlds, SWADE, Pinnacle Entertainment Group names,
+  logos, trademarks, or setting material in a way that implies affiliation,
+  endorsement, sponsorship, or permission.
+- Commercially redistributing bundled rules summaries, catalog metadata,
+  setting-specific content, sample characters, or compatibility data unless you
+  have separately resolved all necessary rights with the relevant rights
+  holders.
+
+Contributions:
+
+Unless otherwise agreed in writing, any contribution submitted to this project
+is licensed under the same terms as this repository so it can be maintained as a
+single project.
+
+No warranty:
+
+The project is provided "as is", without warranty of any kind, express or
+implied, including but not limited to warranties of merchantability, fitness for
+a particular purpose, noninfringement, correctness, or availability. The author
+is not liable for any claim, damages, or other liability arising from use of the
+project.

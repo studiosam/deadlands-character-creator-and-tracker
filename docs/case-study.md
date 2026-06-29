@@ -101,4 +101,6 @@ Recent polish adds:
   normal Character Sheet.
 - Gather user feedback from real sessions before investing in paid-product
   packaging.
-- Resolve licensing before selling bundled Deadlands-specific content.
+- Maintain the source-available non-commercial posture unless the generic app
+  core is split from setting-specific content and all required licensing is
+  resolved.

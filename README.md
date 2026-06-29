@@ -163,8 +163,9 @@ need the official books to play. The app should avoid reproducing long rules
 text and should treat catalog summaries as practical app metadata, not a
 replacement for the rulebooks.
 
-See [NOTICE.md](NOTICE.md). Do not sell bundled Deadlands-specific rules/catalog
-content unless licensing or written permission is resolved.
+See [NOTICE.md](NOTICE.md). The repository is source-available for
+non-commercial use only, and bundled Deadlands/SWADE-specific rules/catalog
+metadata is not licensed for sale or commercial redistribution.
 
 ## Project Structure
 
@@ -243,4 +244,9 @@ pushes and pull requests targeting `main`.
 
 ## License
 
-Code is available under the MIT License. See [LICENSE](LICENSE).
+This repository is source-available for non-commercial use only. It is not
+licensed under MIT, Apache, GPL, or another open-source license.
+
+See [LICENSE](LICENSE) for the project-specific terms. Third-party Deadlands,
+Savage Worlds, SWADE, and related names or setting material remain owned by
+their respective rights holders and are not licensed by this project.

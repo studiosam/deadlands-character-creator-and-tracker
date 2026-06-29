@@ -13,6 +13,8 @@ official books to create and play characters correctly. The app should avoid
 copying long rules text; short summaries and mechanical reminders are included
 only to support table workflow.
 
-Do not sell bundled Deadlands-specific rules/catalog content from this project
-unless licensing, written permission, or a clearly permitted commercial path has
-been resolved.
+This repository is source-available for non-commercial use only. Do not sell,
+bundle commercially, host as a paid service, or otherwise commercially
+redistribute this project or its bundled Deadlands/SWADE-specific rules/catalog
+metadata unless separate written permission and any required third-party rights
+have been resolved.

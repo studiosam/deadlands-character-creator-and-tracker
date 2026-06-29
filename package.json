@@ -2,6 +2,7 @@
   "name": "deadlands-character-creator-and-tracker",
   "version": "0.1.0",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "description": "Unofficial local-first Deadlands/SWADE character creator and table tracker.",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
