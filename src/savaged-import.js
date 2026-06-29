@@ -1,3 +1,10 @@
+/**
+ * Savaged.us JSON import adapter.
+ *
+ * This adapter maps a third-party export into the app's normalized tracker
+ * shape. Imported records remain reviewable setup data when reliable app-owned
+ * before/after state is unavailable.
+ */
 function arr(value) {
   return Array.isArray(value) ? value : value ? [value] : [];
 }
@@ -33,13 +40,22 @@ function savagedAdvanceLabel(advance) {
   );
 }
 
+/**
+ * Preserve Savaged.us advancement text as canonical imported history.
+ *
+ * The export does not provide trusted before/after mutations for undo, so these
+ * entries carry labels and advance numbers but intentionally have empty changes.
+ */
 function savagedAdvances(data) {
   return arr(data.advances).map((advance, index) => {
     const advanceNumber = Math.max(
       1,
-      Math.floor(Number(advance?.advanceNumber ?? advance?.number) || index + 1),
+      Math.floor(
+        Number(advance?.advanceNumber ?? advance?.number) || index + 1,
+      ),
     );
-    const label = savagedAdvanceLabel(advance) || `Imported Advance ${advanceNumber}`;
+    const label =
+      savagedAdvanceLabel(advance) || `Imported Advance ${advanceNumber}`;
     return {
       id: slugify(
         advance?.uuid ||
@@ -228,6 +244,13 @@ function shouldEnablePowerPointsFromImport(data) {
   );
 }
 
+/**
+ * Infer imported Power Point resources without assuming every arcane-looking
+ * character actually has Power Points.
+ *
+ * Deadlands has arcane and supernatural concepts that do not use normal Power
+ * Points, so ambiguous imports produce warnings rather than automatic resources.
+ */
 function savagedResources(data) {
   const resources = [];
   const importConfig = savagedArcaneBackgroundConfig(data);
@@ -396,6 +419,13 @@ function savagedImportWarnings(data, resources, config) {
   return warnings;
 }
 
+/**
+ * Convert a Savaged.us payload into the tracker character model.
+ *
+ * This function performs source-specific extraction only. The returned payload
+ * still passes through normalize(), where app-wide defaults, migrations, and
+ * physical inventory location rules are applied consistently.
+ */
 function fromSavagedUs(data) {
   const strength =
     arr(data.attributes).find((attribute) => attribute.name === "strength")
@@ -406,7 +436,9 @@ function fromSavagedUs(data) {
 
   arr(data.gear).forEach((item) => {
     const count = Math.max(1, Math.floor(Number(item.quantity) || 1));
-    const isContainer = Boolean(item.container || arr(item?.contains?.gear).length);
+    const isContainer = Boolean(
+      item.container || arr(item?.contains?.gear).length,
+    );
 
     if (isContainer) {
       inventory.push(savagedInventoryItem(item));
@@ -446,7 +478,9 @@ function fromSavagedUs(data) {
         name: "Matches",
         count: count * (/100/.test(item.name) ? 100 : 1),
         unit: "matches",
-        weight: parseWeight(item.weight) / (count * (/100/.test(item.name) ? 100 : 1)),
+        weight:
+          parseWeight(item.weight) /
+          (count * (/100/.test(item.name) ? 100 : 1)),
         itemLocation: "carried",
       });
     else if (/elixir|oil|tobacco/i.test(item.name))

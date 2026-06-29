@@ -1,3 +1,10 @@
+/**
+ * Built-in sample and fallback character.
+ *
+ * Dusty acts as the local demo payload, the reset fallback, and a schema-shape
+ * reference for normalization. Treat this object as seed data; loaded
+ * characters should still pass through normalize() before rendering.
+ */
 const defaultCharacter = {
   name: "Dusty McCaw",
   rank: "Novice",

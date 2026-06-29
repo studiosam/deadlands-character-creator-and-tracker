@@ -1,3 +1,10 @@
+/**
+ * Legacy standalone character creator flow.
+ *
+ * The creator builds a draft character, validates setup choices, and finalizes
+ * into the tracker state. New setup work generally lives under src/tracker/,
+ * but this file remains the bridge for the original creator workflow.
+ */
 const DICE = [4, 6, 8, 10, 12];
 const CONCEPTS = [
   "Blessed",
@@ -1397,6 +1404,13 @@ function creatorBuy() {
   renderCreator();
 }
 
+/**
+ * Convert the creator draft into a normalized tracker character.
+ *
+ * This is the creator/tracker handoff. It applies setup source metadata,
+ * snapshots the creation baseline, saves the character-library slot, and then
+ * switches the app into tracker mode.
+ */
 function finalizeCreation() {
   const checks = creationChecks();
   if (!checks.valid && !creationDraft.creation.allowIncomplete) {

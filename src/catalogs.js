@@ -1,3 +1,10 @@
+/**
+ * Catalog metadata for Edges, Hindrances, gear, weapons, armor, and vehicles.
+ *
+ * These records support selection, setup validation, and concise app summaries.
+ * They are not a replacement for the official rulebooks and should avoid long
+ * reproduced rules text.
+ */
 const DEADLANDS_HINDRANCE_CATALOG = [
   ["dl-hindrance-ailin", "Ailin’", "Minor or Major", "Penalty to rolls made to resist Fatigue. Minor is worse than normal by 1; Major by 2. A Critical Failure can worsen the condition or create a terminal story moment at Major severity."],
   ["dl-hindrance-cursed", "Cursed", "Major", "For each player character with this Hindrance, the Marshal starts with one additional Benny."],

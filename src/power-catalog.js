@@ -1,4 +1,10 @@
-// Catalog-backed Deadlands powers. Generated from docs/deadlands_weird_west_powers_catalog.md and kept as classic-script globals.
+/**
+ * Catalog-backed Deadlands powers.
+ *
+ * Generated from docs/deadlands_weird_west_powers_catalog.md and kept as
+ * classic-script globals for the static app. Avoid hand-editing large generated
+ * sections unless the source catalog is updated at the same time.
+ */
 const ARCANE_BACKGROUND_POWER_PROFILES = {
   "blessed": {
     "id": "blessed",

@@ -1,3 +1,10 @@
+/**
+ * Arcane Background, Power Point, and power-record model helpers.
+ *
+ * This module defines high-confidence Deadlands arcane profiles and the shared
+ * data shape used by setup, import, advancement, and combat views. It should
+ * model deterministic package data, not replace table-specific trappings.
+ */
 const ARCANE_BACKGROUNDS = {
   blessed: {
     key: "blessed",
@@ -188,6 +195,12 @@ function makeArcaneBackgroundState(config) {
   };
 }
 
+/**
+ * Create the canonical Power Points resource for an Arcane Background.
+ *
+ * Power Points are stored as a normal tracker resource so setup, combat, import,
+ * and advancement workflows can all read the same current/max values.
+ */
 function makePowerPointResource(config, overrides = {}) {
   const max = Math.max(
     0,
@@ -269,6 +282,12 @@ function makeHucksterDeal() {
   };
 }
 
+/**
+ * Normalize a power from setup, import, catalog selection, or manual entry.
+ *
+ * Catalog metadata fills missing display fields, while source and creation
+ * metadata stay attached so setup audits can explain why a power exists.
+ */
 function normalizePowerRecord(power, index = 0, fallbackSource = "") {
   if (typeof power === "string") power = { name: power };
   if (!power || typeof power !== "object") power = {};
