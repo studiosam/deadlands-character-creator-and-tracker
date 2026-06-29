@@ -387,6 +387,111 @@ function normalizePowerRecord(power, index = 0, fallbackSource = "") {
   };
 }
 
+const ACTIVE_POWER_STATUSES = ["active", "dismissed", "expired", "disrupted"];
+
+function normalizeActivePowerStatus(status) {
+  return ACTIVE_POWER_STATUSES.includes(status) ? status : "active";
+}
+
+function activePowerKnownPower(activePower, knownPowers = []) {
+  if (!activePower || !Array.isArray(knownPowers)) return null;
+  const powerId = String(activePower.powerId || "").trim();
+  const catalogId = String(activePower.catalogId || "").trim();
+  const name = normalizeArcaneText(activePower.name);
+  return (
+    knownPowers.find((power) => power.id && power.id === powerId) ||
+    knownPowers.find(
+      (power) => power.catalogId && power.catalogId === catalogId,
+    ) ||
+    knownPowers.find(
+      (power) => name && normalizeArcaneText(power.name) === name,
+    ) ||
+    null
+  );
+}
+
+function activePowerSlug(value) {
+  return normalizeArcaneText(value).replace(/\s+/g, "-") || "power";
+}
+
+function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
+  if (typeof activePower === "string") activePower = { name: activePower };
+  if (!activePower || typeof activePower !== "object") activePower = {};
+  const knownPower = activePowerKnownPower(activePower, knownPowers);
+  const status = normalizeActivePowerStatus(activePower.status);
+  const cost = Math.max(
+    0,
+    Math.floor(
+      Number(
+        activePower.cost ??
+          activePower.powerPointCost ??
+          activePower.powerPoints ??
+          0,
+      ) || 0,
+    ),
+  );
+  return {
+    id:
+      activePower.id ||
+      `active-power-${activePowerSlug(activePower.name || knownPower?.name)}-${index + 1}`,
+    powerId: activePower.powerId || knownPower?.id || "",
+    catalogId:
+      activePower.catalogId ||
+      activePower.powerCatalogId ||
+      knownPower?.catalogId ||
+      "",
+    name: activePower.name || knownPower?.name || "Unnamed power",
+    status,
+    cost,
+    duration: activePower.duration ?? knownPower?.duration ?? "",
+    maintenance: Boolean(activePower.maintenance || activePower.maintained),
+    targetLabel: activePower.targetLabel || activePower.target || "",
+    trappingNotes:
+      activePower.trappingNotes ||
+      activePower.trapping ||
+      knownPower?.trapping ||
+      "",
+    notes: activePower.notes || activePower.description || "",
+    optionName: activePower.optionName || "",
+    source: activePower.source || knownPower?.source || "",
+    activatedAt: activePower.activatedAt || "",
+    endedAt: status === "active" ? "" : activePower.endedAt || "",
+  };
+}
+
+function makeActivePowerRecord(power, option = {}, overrides = {}) {
+  const now = new Date().toISOString();
+  const cost = Math.max(
+    0,
+    Math.floor(Number(overrides.cost ?? option.cost ?? 0) || 0),
+  );
+  return normalizeActivePowerRecord(
+    {
+      id: `active-power-${activePowerSlug(power?.name)}-${Date.now()}`,
+      powerId: power?.id || "",
+      catalogId: power?.catalogId || "",
+      name: power?.name || "Unnamed power",
+      status: "active",
+      cost,
+      duration: overrides.duration ?? power?.duration ?? "",
+      maintenance: false,
+      targetLabel: overrides.targetLabel || "",
+      trappingNotes: overrides.trappingNotes ?? power?.trapping ?? "",
+      notes: overrides.notes ?? option.description ?? power?.shortSummary ?? "",
+      optionName: overrides.optionName ?? option.name ?? "",
+      source: power?.source || "",
+      activatedAt: now,
+      endedAt: "",
+    },
+    0,
+    power ? [power] : [],
+  );
+}
+
+function activePowerIsCurrent(activePower) {
+  return normalizeActivePowerStatus(activePower?.status) === "active";
+}
+
 function normalizeHucksterDeal(deal) {
   if (!deal) return null;
   return {

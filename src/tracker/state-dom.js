@@ -175,6 +175,7 @@ const els = {
   powerSummaryInput: $("#powerSummaryInput"),
   powerNotesInput: $("#powerNotesInput"),
   addPowerBtn: $("#addPowerBtn"),
+  activePowersList: $("#activePowersList"),
   hucksterDealPanel: $("#hucksterDealPanel"),
   hucksterSelectedPower: $("#hucksterSelectedPower"),
   hucksterRequiredPowerPoints: $("#hucksterRequiredPowerPoints"),

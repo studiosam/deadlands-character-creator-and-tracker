@@ -295,8 +295,21 @@ marked as manual/table-only.
 
 Goal: support powers during play without turning the app into a full VTT.
 
+Current implementation:
+
+- Known Powers can be activated from Arcane or Combat power cards into
+  normalized `activePowers` runtime records.
+- Active Power records track source power, Power Point cost, duration/remaining
+  text, maintenance state, target label, trapping notes, runtime notes,
+  activation time, end time, and status.
+- Active Powers can be marked dismissed, expired, or disrupted without deleting
+  the underlying Known Power.
+- Active Power records persist through reload and tracker JSON export/import.
+- Power effect automation is intentionally deferred; active records currently
+  display concise manual-effect reminders.
+
 1. Track active powers with duration, maintenance, targets, trapping notes, and
-   Power Point cost.
+   Power Point cost. Initial runtime records are implemented.
 2. Add Disruption and expiration reminders.
 3. Add common character-local power effects such as armor, defense penalties,
    Trait boosts, movement changes, and visibility state.
@@ -422,24 +435,22 @@ user can tell which source profile produced each available choice.
 
 ## Recommended Next Slice
 
-Close Phase 2 with a small classification pass before starting Phase 3.
+Continue Phase 3 with active-power duration and maintenance helpers.
 
 The slice should:
 
-- Add explicit `manual/table-only` or `needs-action-context` markers for the
-  remaining common Edge and Hindrance entries that are still only catalog text.
-- Avoid implementing combat-action Edges until Phase 4 has turn, Joker, attack,
-  weapon, and target context.
-- Keep Hindrance reduction/removal in the Advancement backlog instead of the
-  passive effect hook system.
-- Update tests only where new markers are displayed or persisted.
+- Add lightweight active-power countdown or reminder fields without simulating
+  full turn order.
+- Surface maintenance reminders for active powers that require ongoing attention.
+- Keep target labels and trapping notes player-entered.
+- Add tests for duration and maintenance reminder behavior.
 
 It should not:
 
 - Add attack resolution.
-- Add power runtime tracking.
-- Add Hindrance mutation through Phase 2 hooks.
-- Reopen completed Character Setup slices.
+- Automate full power effects.
+- Add target stat blocks or multi-target VTT behavior.
+- Add full Deal with the Devil resolution.
 
 ## Maintenance Notes
 

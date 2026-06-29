@@ -204,6 +204,7 @@ function render() {
   renderAmmo();
   renderResources();
   renderPowers();
+  renderActivePowers();
   renderHucksterDeal();
   renderKeyConditions();
   renderConditions();
@@ -795,7 +796,8 @@ function renderPlaySummary() {
   els.playResourcesCard.classList.toggle("hidden", !activeResources.length);
   renderResourceControls(els.playResourcesList, activeResources);
 
-  const showPowers = character.powers.length > 0;
+  const showPowers =
+    character.powers.length > 0 || character.activePowers.length > 0;
   els.playActivePowersCard.classList.toggle("hidden", !showPowers);
   if (showPowers) renderCombatPowers();
 

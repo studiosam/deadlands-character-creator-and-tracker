@@ -225,6 +225,14 @@ function renderPowers() {
   });
 }
 
+function renderActivePowers() {
+  if (!els.activePowersList) return;
+  renderActivePowersList(
+    els.activePowersList,
+    "No active power records. Activate a known power to track runtime state.",
+  );
+}
+
 function renderHucksterDeal() {
   const deal = character.hucksterDeal;
   els.hucksterDealPanel.classList.toggle("hidden", !deal?.enabled);

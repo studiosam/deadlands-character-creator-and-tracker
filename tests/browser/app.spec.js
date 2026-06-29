@@ -137,6 +137,11 @@ async function openCombat(page) {
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
 }
 
+async function openArcane(page) {
+  await page.getByRole("button", { name: "Arcane", exact: true }).click();
+  await expect(page.locator("#arcanePanel")).toHaveClass(/active/);
+}
+
 async function openCharacterSetupReview(page) {
   await page.getByRole("button", { name: "Character", exact: true }).click();
   const setupPanel = page.locator("#characterSetupPanel");
@@ -1230,6 +1235,70 @@ async function seedEffectHookCharacter(page, options = {}) {
     const entry = addCharacterSlot(characterData, {
       source: "test",
       preferredId: seedOptions.preferredId || "effect-hook-test",
+    });
+    character = normalize(entry.character);
+    characterSetupReviewOpen = false;
+    characterDraftMode = false;
+    render();
+    renderDemoExperience();
+  }, options);
+}
+
+async function seedActivePowerCharacter(page, options = {}) {
+  await enterTracker(page);
+  await page.evaluate((seedOptions) => {
+    const config = ARCANE_BACKGROUNDS.blessed;
+    const baseCharacter = {
+      arcaneBackground: makeArcaneBackgroundState(config),
+    };
+    const powerIds = seedOptions.powerIds || ["power-protection"];
+    const powers = powerIds
+      .map((id) => findPowerCatalogEntryById(id))
+      .filter(Boolean)
+      .map((power, index) =>
+        normalizePowerRecord(
+          createKnownPowerFromCatalog(power, baseCharacter, {
+            id: `active-power-known-${index + 1}`,
+            addedReason: "test-known-power",
+          }),
+          index,
+          config.edgeName,
+        ),
+      );
+    const characterData = normalize({
+      source: "test",
+      setupStatus: "complete",
+      name: seedOptions.name || "Active Power Tester",
+      rank: "Novice",
+      ancestry: "Human",
+      archetype: "Arcane Tester",
+      attributes: {
+        agility: "d6",
+        smarts: "d6",
+        spirit: "d8",
+        strength: "d6",
+        vigor: "d6",
+      },
+      skills: [{ name: "Faith", die: "d6", linkedAttribute: "spirit" }],
+      edges: [],
+      hindrances: [],
+      powers,
+      activePowers: seedOptions.activePowers || [],
+      resources: [
+        {
+          id: "power-points",
+          name: "Power Points",
+          current: seedOptions.powerPointsCurrent ?? 15,
+          max: 15,
+          source: "Active power test",
+        },
+      ],
+      arcaneBackground: makeArcaneBackgroundState(config),
+      advances: [],
+    });
+    const entry = addCharacterSlot(characterData, {
+      source: "test",
+      preferredId: seedOptions.preferredId || "active-power-test",
     });
     character = normalize(entry.character);
     characterSetupReviewOpen = false;
@@ -2939,6 +3008,144 @@ test("Rapid Recharge effects set hourly Power Point recovery controls", async ({
   await expect(page.locator("#playPowerPointsList")).toContainText(
     "Recovery: 20 / hour",
   );
+});
+
+test("Known powers activate into editable active power records", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Active Power Activation Tester",
+    preferredId: "active-power-activation-tester",
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await expect(knownPower).toContainText("Protection");
+  await knownPower.getByRole("button", { name: /Activate/ }).click();
+
+  const activePower = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Protection" }),
+    });
+  await expect(activePower).toContainText("Active");
+  await expect(activePower).toContainText("Power effect reminder only");
+  await activePower
+    .locator("[data-active-power-field='targetLabel']")
+    .fill("Dusty");
+  await activePower
+    .locator("[data-active-power-field='duration']")
+    .fill("4 rounds");
+  await activePower.locator("[data-active-power-field='maintenance']").check();
+  await activePower
+    .locator("[data-active-power-field='trappingNotes']")
+    .fill("Glowing sigils");
+  await activePower
+    .locator("[data-active-power-field='notes']")
+    .fill("Raise applied manually");
+  await activePower.getByRole("button", { name: "Expire" }).click();
+  await expect(activePower).toContainText("Expired");
+
+  const state = await page.evaluate(() => ({
+    powerPoints: powerPointResource().current,
+    activePowers: character.activePowers,
+  }));
+  expect(state.powerPoints).toBeLessThan(15);
+  expect(state.activePowers).toEqual([
+    expect.objectContaining({
+      name: "Protection",
+      status: "expired",
+      cost: expect.any(Number),
+      duration: "4 rounds",
+      maintenance: true,
+      targetLabel: "Dusty",
+      trappingNotes: "Glowing sigils",
+      notes: "Raise applied manually",
+      activatedAt: expect.any(String),
+      endedAt: expect.any(String),
+    }),
+  ]);
+
+  await reloadIntoTracker(page);
+  await openArcane(page);
+  await expect(page.locator("#activePowersList")).toContainText("Protection");
+  await expect(page.locator("#activePowersList")).toContainText("Expired");
+  await expect(page.locator("#activePowersList")).toContainText(
+    "Glowing sigils",
+  );
+
+  const exportedText = await page.evaluate(() =>
+    JSON.stringify(serializeTrackerExport(character)),
+  );
+  await page.evaluate((text) => importJsonText(text), exportedText);
+  await openArcane(page);
+  expect(
+    await page.evaluate(() =>
+      character.activePowers.map((power) => power.status),
+    ),
+  ).toEqual(["expired"]);
+  await expect(page.locator("#activePowersList")).toContainText(
+    "Raise applied manually",
+  );
+});
+
+test("Active powers can be dismissed and disrupted without deleting records", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Active Power Status Tester",
+    preferredId: "active-power-status-tester",
+    activePowers: [
+      {
+        id: "dismissable-power",
+        name: "Dismissable Power",
+        status: "active",
+        cost: 1,
+        duration: "5 rounds",
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      {
+        id: "disruptable-power",
+        name: "Disruptable Power",
+        status: "active",
+        cost: 2,
+        duration: "3 rounds",
+        activatedAt: "2026-01-01T00:01:00.000Z",
+      },
+    ],
+  });
+
+  await openArcane(page);
+  const dismissable = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Dismissable Power" }),
+    });
+  const disruptable = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Disruptable Power" }),
+    });
+
+  await dismissable.getByRole("button", { name: "Dismiss" }).click();
+  await expect(dismissable).toContainText("Dismissed");
+  await disruptable.getByRole("button", { name: "Disrupt" }).click();
+  await expect(disruptable).toContainText("Disrupted");
+
+  expect(
+    await page.evaluate(() =>
+      character.activePowers.map((power) => ({
+        id: power.id,
+        status: power.status,
+        ended: Boolean(power.endedAt),
+      })),
+    ),
+  ).toEqual([
+    { id: "dismissable-power", status: "dismissed", ended: true },
+    { id: "disruptable-power", status: "disrupted", ended: true },
+  ]);
 });
 
 test("Luck and Bad Luck update starting Bennies and Start Session reset", async ({

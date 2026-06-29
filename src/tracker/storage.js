@@ -228,6 +228,11 @@ function normalize(data, options = {}) {
         ),
       )
     : [];
+  normalized.activePowers = Array.isArray(normalized.activePowers)
+    ? normalized.activePowers.map((activePower, index) =>
+        normalizeActivePowerRecord(activePower, index, normalized.powers),
+      )
+    : [];
   normalized.hucksterDeal = normalizeHucksterDeal(normalized.hucksterDeal);
   if (
     normalized.arcaneBackground?.key === "huckster" &&

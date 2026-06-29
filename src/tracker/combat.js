@@ -374,10 +374,9 @@ function comparePowers(left, right) {
 
 function powerCastOptions(power) {
   const baseCost = powerCost(power);
-  const baseName = power.modifiers?.length ? "Basic" : "Cast";
   const options = [
     {
-      name: baseName,
+      name: "Activate",
       cost: baseCost,
       description: power.notes || "",
       base: true,
@@ -459,6 +458,14 @@ function updateVariableSpendButton(power, article, powerPoints) {
       : `Spend ${total} Power Points`;
 }
 
+function addActivePowerFromCast(power, option = {}) {
+  if (!Array.isArray(character.activePowers)) character.activePowers = [];
+  const activePower = makeActivePowerRecord(power, option);
+  character.activePowers.push(activePower);
+  appToast(`Activated ${activePower.name}.`, "success");
+  return activePower;
+}
+
 function powerDescriptionMarkup(power, castOptions, powerPoints) {
   const parts = [];
   if (power.shortSummary || power.notes) {
@@ -537,6 +544,7 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
       if (powerPoints && option.cost) {
         powerPoints.current = Math.max(0, powerPoints.current - option.cost);
       }
+      addActivePowerFromCast(power, option);
       render();
       save();
     };
@@ -553,6 +561,12 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
       if (powerPoints && total) {
         powerPoints.current = Math.max(0, powerPoints.current - total);
       }
+      addActivePowerFromCast(power, {
+        name: "Variable Spend",
+        cost: total,
+        description:
+          "Variable Power Point spend; track selected options manually.",
+      });
       render();
       save();
     };
@@ -575,11 +589,108 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
   return article;
 }
 
+function activePowerStatusLabel(status) {
+  if (status === "dismissed") return "Dismissed";
+  if (status === "expired") return "Expired";
+  if (status === "disrupted") return "Disrupted";
+  return "Active";
+}
+
+function compareActivePowers(left, right) {
+  return (
+    Number(activePowerIsCurrent(right)) - Number(activePowerIsCurrent(left)) ||
+    String(right.activatedAt || "").localeCompare(
+      String(left.activatedAt || ""),
+    ) ||
+    String(left.name || "").localeCompare(String(right.name || ""))
+  );
+}
+
+function updateActivePowerField(activePower, field, value) {
+  if (field === "maintenance") activePower.maintenance = Boolean(value);
+  else activePower[field] = String(value || "").trim();
+  save();
+}
+
+function finishActivePower(activePower, status) {
+  activePower.status = normalizeActivePowerStatus(status);
+  activePower.endedAt = new Date().toISOString();
+  render();
+  save();
+}
+
+function activePowerDetailText(activePower) {
+  return [
+    activePower.cost ? `Cost ${activePower.cost} PP` : "Cost 0 PP",
+    activePower.duration ? `Duration ${activePower.duration}` : "Duration —",
+    activePower.optionName ? `Option ${activePower.optionName}` : "",
+    activePower.maintenance ? "Maintained" : "No maintenance marked",
+  ]
+    .filter(Boolean)
+    .join(" | ");
+}
+
+function renderActivePowerCard(activePower) {
+  const article = document.createElement("article");
+  const status = normalizeActivePowerStatus(activePower.status);
+  const current = status === "active";
+  article.className = `weapon-card power-card active-power-card ${status}`;
+  article.innerHTML = `<div class="topline"><div><h3>${esc(activePower.name || "Unnamed power")}</h3><p class="meta">${esc(activePowerDetailText(activePower))}</p></div><span class="loaded">${esc(activePowerStatusLabel(status))}</span></div><p class="muted">Power effect reminder only: apply table effects manually.</p><div class="creator-grid active-power-fields"><label>Target label<input data-active-power-field="targetLabel" value="${esc(activePower.targetLabel)}" placeholder="Self, ally, target, group"></label><label>Duration / remaining<input data-active-power-field="duration" value="${esc(activePower.duration)}" placeholder="Duration or rounds left"></label><label class="checkline"><input data-active-power-field="maintenance" type="checkbox" ${activePower.maintenance ? "checked" : ""}> Maintenance marked</label><label class="creator-wide">Trapping notes<textarea data-active-power-field="trappingNotes">${esc(activePower.trappingNotes)}</textarea></label><label class="creator-wide">Runtime notes<textarea data-active-power-field="notes">${esc(activePower.notes)}</textarea></label></div><div class="weapon-actions power-actions"><button class="ghost" type="button" data-active-power-status="dismissed" ${current ? "" : "disabled"}>Dismiss</button><button class="ghost" type="button" data-active-power-status="expired" ${current ? "" : "disabled"}>Expire</button><button class="delete-small" type="button" data-active-power-status="disrupted" ${current ? "" : "disabled"}>Disrupt</button></div>`;
+
+  article.querySelectorAll("[data-active-power-field]").forEach((input) => {
+    const field = input.dataset.activePowerField;
+    const handler = () =>
+      updateActivePowerField(
+        activePower,
+        field,
+        input.type === "checkbox" ? input.checked : input.value,
+      );
+    input.oninput = handler;
+    input.onchange = handler;
+  });
+
+  article.querySelectorAll("[data-active-power-status]").forEach((button) => {
+    button.onclick = () =>
+      finishActivePower(activePower, button.dataset.activePowerStatus);
+  });
+
+  return article;
+}
+
+function renderActivePowersList(container, emptyText = "No active powers.") {
+  container.innerHTML = "";
+  const activePowers = Array.isArray(character.activePowers)
+    ? character.activePowers
+    : [];
+  if (!activePowers.length) {
+    container.innerHTML = emptyState(emptyText);
+    return;
+  }
+  [...activePowers]
+    .sort(compareActivePowers)
+    .forEach((activePower) =>
+      container.appendChild(renderActivePowerCard(activePower)),
+    );
+}
+
 function renderCombatPowers() {
   els.playActivePowersList.innerHTML = "";
-  if (!character.powers.length) {
-    els.playActivePowersList.innerHTML = emptyState("No known powers.");
+  const hasActivePowers = Boolean(character.activePowers?.length);
+  const hasKnownPowers = Boolean(character.powers.length);
+  if (!hasActivePowers && !hasKnownPowers) {
+    els.playActivePowersList.innerHTML = emptyState("No powers tracked.");
     return;
+  }
+
+  if (hasActivePowers) {
+    const activeSection = document.createElement("div");
+    activeSection.className = "active-power-stack";
+    activeSection.innerHTML = "<h3>Active Power Records</h3>";
+    const activeList = document.createElement("div");
+    activeList.className = "grid powers";
+    renderActivePowersList(activeList);
+    activeSection.appendChild(activeList);
+    els.playActivePowersList.appendChild(activeSection);
   }
 
   [...character.powers].sort(comparePowers).forEach((power) => {
