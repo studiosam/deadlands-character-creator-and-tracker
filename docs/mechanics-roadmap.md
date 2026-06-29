@@ -181,6 +181,9 @@ Current implementation:
 - Explicit `automation-status` markers now surface entries that are known but
   not safely automated yet, including manual/table-only, resource-model,
   action-state, and subchoice-required effects.
+- Trademark Weapon and Reputation now store explicit subchoice metadata; their
+  status markers change from `subchoice-required` to `subchoice-selected` once
+  the chosen weapon or reputation type is recorded.
 - Character, Combat, and Inventory surfaces show passive-effect explanations
   instead of relying only on catalog text.
 
@@ -189,8 +192,11 @@ Effect Hook Candidate Audit:
 - Already implemented: Alertness, Block, Brave, Brawler, Brawny, Danger Sense,
   Improved Block, Improved Nerves of Steel, Soldier, Fleet-Footed, All Thumbs,
   Anemic, Mean, Mild Mannered, Nerves of Steel, Small, Slow, Yellow, and Obese.
-- Explicitly marked but not automated: Berserk, Luck, Great Luck, Bad Luck,
-  Quick, Hesitant, Level Headed, Trademark Weapon, and Reputation.
+- Explicitly marked but not fully automated: Berserk, Luck, Great Luck, Bad
+  Luck, Quick, Hesitant, Level Headed, unresolved Trademark Weapon, and
+  unresolved Reputation.
+- Subchoice storage implemented: Trademark Weapon chosen weapon and Reputation
+  good/bad type.
 - Passive math, high confidence: Tough as Nails, Tougher than Nails, Weapon
   Master, and Master of Arms. These should be baseline-aware before they mutate
   derived values so imported totals are not double-counted.
@@ -223,10 +229,10 @@ Effect Hook Candidate Audit:
   Ways Oath, Tenderfoot, Tale-Teller, organization rank/favor Edges, Harrowed
   powers, Mad Scientist device Edges, Shaman restriction Edges, Behold a Pale
   Horse, and most story or Marshal-facing effects.
-- Next safest code slice: either add subchoice storage for marked entries such
-  as Trademark Weapon and Reputation, add session/action-card resource models
-  for marked entries such as Luck and Quick, or expand `roll-modifier` coverage
-  to the remaining high-confidence reminders.
+- Next safest code slice: either add session/action-card resource models for
+  marked entries such as Luck and Quick, expand `roll-modifier` coverage to the
+  remaining high-confidence reminders, or add subchoice storage for the next
+  target-required Edge group.
 
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.

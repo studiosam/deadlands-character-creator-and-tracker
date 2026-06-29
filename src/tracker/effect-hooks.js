@@ -831,6 +831,46 @@ function dominantEffectSummaryEntries(entries) {
   return result;
 }
 
+function effectHookSubchoiceDetail(record) {
+  if (!record || typeof record !== "object") return null;
+  if (typeof normalizeEdgeSubchoiceDetail === "function") {
+    return normalizeEdgeSubchoiceDetail(record);
+  }
+  const label = String(record.subchoice || "").trim();
+  return label ? { label, value: label } : null;
+}
+
+function effectHookResolvedSubchoiceLabel(record, target) {
+  const detail = effectHookSubchoiceDetail(record);
+  if (!detail?.label) return "";
+  if (target === "chosen-weapon") {
+    return `Chosen weapon: ${detail.label}; apply attack/Parry bonus manually until attack context exists`;
+  }
+  if (target === "reputation-choice") {
+    if (detail.value === "good") {
+      return "Good reputation selected: Persuasion reroll reminder";
+    }
+    if (detail.value === "bad") {
+      return "Bad reputation selected: Intimidation bonus reminder";
+    }
+  }
+  return "";
+}
+
+function effectHookDisplayLabel(effect, hook) {
+  return (
+    effectHookResolvedSubchoiceLabel(hook.record, effect.target) ||
+    effect.displayLabel
+  );
+}
+
+function effectHookStatus(effect, hook) {
+  if (effect.status !== "subchoice-required") return effect.status;
+  return effectHookResolvedSubchoiceLabel(hook.record, effect.target)
+    ? "subchoice-selected"
+    : effect.status;
+}
+
 function effectHookSummariesForSurface(
   currentCharacter = character,
   surface = "character",
@@ -848,9 +888,9 @@ function effectHookSummariesForSurface(
           context: effect.context,
           value: effect.value,
           type: effect.type,
-          status: effect.status,
+          status: effectHookStatus(effect, hook),
           exclusiveGroup: effect.exclusiveGroup,
-          displayLabel: effect.displayLabel,
+          displayLabel: effectHookDisplayLabel(effect, hook),
           summary: hook.summary,
         })),
     ),

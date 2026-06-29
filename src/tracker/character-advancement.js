@@ -3,6 +3,73 @@ function setEntryWarning(element, warnings) {
   element.classList.toggle("hidden", !warnings.length);
 }
 
+function edgeSubchoiceInputValue(edge) {
+  const value = String(edge?.subchoice || "").trim();
+  return value.toLowerCase() === "required" ? "" : value;
+}
+
+function edgeSubchoiceDefinitionFromForm() {
+  const catalogEntry = chosen(EDGE_CATALOG, els.edgeCatalogSelect.value);
+  return edgeSubchoiceDefinition({
+    ...(catalogEntry || {}),
+    name: els.edgeNameInput.value.trim() || catalogEntry?.name || "",
+    catalogId: catalogEntry?.id || "",
+  });
+}
+
+function edgeSubchoiceOptions(definition) {
+  if (!definition) return [];
+  if (definition.type === "reputation") return definition.options || [];
+  if (definition.type === "weapon") {
+    return (character.weapons || [])
+      .filter((weapon) => weapon.name)
+      .map((weapon) => ({
+        value: weapon.id || weapon.name,
+        label: weapon.name,
+      }));
+  }
+  return [];
+}
+
+function renderEdgeSubchoiceControls() {
+  const definition = edgeSubchoiceDefinitionFromForm();
+  if (els.edgeSubchoiceOptions) {
+    els.edgeSubchoiceOptions.innerHTML = edgeSubchoiceOptions(definition)
+      .map((option) => `<option value="${esc(option.label)}"></option>`)
+      .join("");
+  }
+  if (els.edgeSubchoiceHelp) {
+    els.edgeSubchoiceHelp.textContent = definition
+      ? definition.help
+      : "Use this for Edges that require a selected weapon, reputation type, style, contact, or similar choice.";
+  }
+  if (els.edgeSubchoiceInput) {
+    els.edgeSubchoiceInput.placeholder = definition
+      ? definition.label
+      : "Optional choice";
+  }
+}
+
+function edgeSubchoiceDetailFromForm(draftEdge) {
+  const definition = edgeSubchoiceDefinition(draftEdge);
+  if (!definition || !draftEdge.subchoice) return null;
+  const selectedLabel = draftEdge.subchoice.trim();
+  const selectedOption = edgeSubchoiceOptions(definition).find(
+    (option) => plainEntryName(option.label) === plainEntryName(selectedLabel),
+  );
+  const sourceId =
+    definition.type === "weapon" ? selectedOption?.value || "" : "";
+  return normalizeEdgeSubchoiceDetail({
+    ...draftEdge,
+    subchoiceDetail: {
+      type: definition.type,
+      value: selectedOption?.value || selectedLabel,
+      label: selectedOption?.label || selectedLabel,
+      sourceId,
+    },
+  });
+}
+
 function applyEdgeCatalogSelection(edge) {
   els.edgeCatalogSelect.value = edge.catalogId || "";
   els.edgeNameInput.value = edge.name || "";
@@ -10,9 +77,10 @@ function applyEdgeCatalogSelection(edge) {
   selectKnownValue(els.edgeRankInput, edge.rank, "Unknown");
   els.edgeSourceInput.value = edge.source || "Deadlands: The Weird West";
   els.edgeRequirementsInput.value = entryTextValue(edge.requirements);
-  els.edgeSubchoiceInput.value = edge.subchoice || "";
+  els.edgeSubchoiceInput.value = edgeSubchoiceInputValue(edge);
   els.edgeSummaryInput.value = edge.shortSummary || edge.summary || "";
   els.edgeNotesInput.value = edge.notes || "";
+  renderEdgeSubchoiceControls();
   setEntryWarning(els.edgeWarningText, []);
 }
 
@@ -50,9 +118,10 @@ function resetEdgeEditor(edge = null) {
   selectKnownValue(els.edgeRankInput, edge?.rank, "Unknown");
   els.edgeSourceInput.value = edge?.source || "Manual";
   els.edgeRequirementsInput.value = entryTextValue(edge?.requirements);
-  els.edgeSubchoiceInput.value = edge?.subchoice || "";
+  els.edgeSubchoiceInput.value = edgeSubchoiceInputValue(edge);
   els.edgeSummaryInput.value = edge?.shortSummary || edge?.summary || "";
   els.edgeNotesInput.value = edge?.notes || edge?.text || "";
+  renderEdgeSubchoiceControls();
   setEntryWarning(els.edgeWarningText, []);
 }
 
@@ -77,7 +146,7 @@ function edgeDraftFromForm() {
       generateStableEntryId("edge", els.edgeNameInput.value.trim() || "edge"),
       new Set(character.edges.map((edge) => edge.id)),
     );
-  return {
+  const draft = {
     ...(existing || {}),
     id,
     name: els.edgeNameInput.value.trim(),
@@ -96,6 +165,8 @@ function edgeDraftFromForm() {
         ? Boolean(existing.isCustom)
         : true,
   };
+  draft.subchoiceDetail = edgeSubchoiceDetailFromForm(draft);
+  return draft;
 }
 
 async function saveEdgeEditor() {

@@ -11,11 +11,13 @@ function normalizeEdgeEntry(entry) {
       notes: "",
       source: "Imported",
       subchoice: "",
+      subchoiceDetail: null,
       isCustom: false,
     };
   }
 
   const source = entry && typeof entry === "object" ? entry : {};
+  const subchoice = entrySubchoiceLabel(source);
   return {
     ...source,
     id: source.id || generateStableEntryId("edge", source.name || "edge"),
@@ -27,9 +29,94 @@ function normalizeEdgeEntry(entry) {
     shortSummary: source.shortSummary || source.summary || "",
     notes: source.notes || source.text || "",
     source: source.source || "Imported",
-    subchoice: source.subchoice || "",
+    subchoice,
+    subchoiceDetail: normalizeEdgeSubchoiceDetail(source),
     isCustom: Boolean(source.isCustom),
   };
+}
+
+function edgeSubchoiceDefinition(edge) {
+  const name = plainEntryName(edge?.name);
+  const catalogId = String(edge?.catalogId || edge?.id || "");
+  if (
+    name === "trademark weapon" ||
+    catalogId === "swade-edge-trademark-weapon"
+  ) {
+    return {
+      type: "weapon",
+      label: "Chosen Weapon",
+      required: true,
+      help: "Choose the specific weapon this Edge applies to.",
+    };
+  }
+  if (name === "reputation" || catalogId === "dl-edge-reputation") {
+    return {
+      type: "reputation",
+      label: "Reputation Type",
+      required: true,
+      options: [
+        { value: "good", label: "Good" },
+        { value: "bad", label: "Bad" },
+      ],
+      help: "Choose Good for the Persuasion reroll or Bad for the Intimidation bonus.",
+    };
+  }
+  return null;
+}
+
+function entrySubchoiceLabel(source) {
+  const detail =
+    source?.subchoiceDetail && typeof source.subchoiceDetail === "object"
+      ? source.subchoiceDetail
+      : null;
+  const value = detail?.label || detail?.value || source?.subchoice;
+  const text = typeof value === "string" ? value.trim() : "";
+  return text.toLowerCase() === "required" ? "" : text;
+}
+
+function normalizeEdgeSubchoiceDetail(source) {
+  const definition = edgeSubchoiceDefinition(source);
+  const detail =
+    source?.subchoiceDetail && typeof source.subchoiceDetail === "object"
+      ? source.subchoiceDetail
+      : {};
+  const label = entrySubchoiceLabel(source);
+  if (!definition || !label) return null;
+
+  const normalizedValue = plainEntryName(detail.value || label).replace(
+    /\s+/g,
+    "-",
+  );
+  let value = normalizedValue;
+  let resolvedLabel = label;
+
+  if (definition.type === "reputation") {
+    if (plainEntryName(label) === "good") {
+      value = "good";
+      resolvedLabel = "Good";
+    } else if (plainEntryName(label) === "bad") {
+      value = "bad";
+      resolvedLabel = "Bad";
+    }
+  }
+
+  return {
+    type: definition.type,
+    value,
+    label: resolvedLabel,
+    ...(detail.sourceId ? { sourceId: detail.sourceId } : {}),
+  };
+}
+
+function edgeSubchoiceIsResolved(edge) {
+  const definition = edgeSubchoiceDefinition(edge);
+  if (!definition) return true;
+  const detail = normalizeEdgeSubchoiceDetail(edge);
+  if (!detail?.label) return false;
+  if (definition.type === "reputation") {
+    return detail.value === "good" || detail.value === "bad";
+  }
+  return true;
 }
 
 function canonicalHindranceSeverity(value) {
@@ -182,6 +269,10 @@ function sourceMeta(entry) {
 function getEdgeWarnings(currentCharacter, draftEdge, editingId = "") {
   const warnings = [];
   if (!draftEdge.name.trim()) warnings.push("Edge name is blank.");
+  const subchoiceDefinition = edgeSubchoiceDefinition(draftEdge);
+  if (subchoiceDefinition?.required && !edgeSubchoiceIsResolved(draftEdge)) {
+    warnings.push(`${draftEdge.name} requires ${subchoiceDefinition.label}.`);
+  }
 
   if (isArcaneBackgroundEdge(draftEdge.name)) {
     const hasOtherArcaneBackground = currentCharacter.edges.some(

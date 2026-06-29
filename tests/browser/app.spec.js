@@ -2216,6 +2216,185 @@ test("Automation status effects mark subchoice-required entries", async ({
   ]);
 });
 
+test("Trademark Weapon and Reputation subchoices persist and resolve status markers", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Resolved Subchoice Tester",
+    preferredId: "resolved-subchoice-tester",
+    edgeIds: ["swade-edge-trademark-weapon", "dl-edge-reputation"],
+    weapons: [
+      {
+        id: "colt-peacemaker",
+        name: "Colt Peacemaker",
+        damage: "2d6+1",
+        range: "12/24/48",
+        ap: 1,
+        rof: 1,
+        shotsMax: 6,
+        shotsLoaded: 6,
+        ammoType: "pistol-large",
+        minStr: "d4",
+        weight: 4,
+        itemLocation: "carried",
+      },
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const trademarkCard = page
+    .locator("#edgesList .dossier-tag.edge")
+    .filter({ hasText: "Trademark Weapon" });
+  await trademarkCard.getByRole("button", { name: "Edit" }).click();
+  await expect(page.locator("#edgeEditorPanel")).toBeVisible();
+  await expect(page.locator("#edgeSubchoiceHelp")).toContainText(
+    "Choose the specific weapon",
+  );
+  await page.locator("#edgeSubchoiceInput").fill("Colt Peacemaker");
+  await page.locator("#saveEdgeBtn").click();
+  await expect(page.locator("#edgeEditorPanel")).toBeHidden();
+
+  const reputationCard = page
+    .locator("#edgesList .dossier-tag.edge")
+    .filter({ hasText: "Reputation" });
+  await reputationCard.getByRole("button", { name: "Edit" }).click();
+  await expect(page.locator("#edgeSubchoiceHelp")).toContainText("Choose Good");
+  await page.locator("#edgeSubchoiceInput").fill("Good");
+  await page.locator("#saveEdgeBtn").click();
+  await expect(page.locator("#edgeEditorPanel")).toBeHidden();
+
+  await expect(trademarkCard).toContainText("Choice: Colt Peacemaker");
+  await expect(reputationCard).toContainText("Choice: Good");
+
+  const stored = await page.evaluate(() => {
+    const trademark = character.edges.find(
+      (edge) => edge.name === "Trademark Weapon",
+    );
+    const reputation = character.edges.find(
+      (edge) => edge.name === "Reputation",
+    );
+    return {
+      trademark: {
+        subchoice: trademark?.subchoice || "",
+        subchoiceDetail: trademark?.subchoiceDetail || null,
+      },
+      reputation: {
+        subchoice: reputation?.subchoice || "",
+        subchoiceDetail: reputation?.subchoiceDetail || null,
+      },
+      statusMarkers: effectHookSummariesForSurface(character, "character")
+        .filter((effect) => effect.type === "automation-status")
+        .map((effect) => ({
+          sourceName: effect.sourceName,
+          status: effect.status,
+          displayLabel: effect.displayLabel,
+        })),
+    };
+  });
+  expect(stored).toEqual({
+    trademark: {
+      subchoice: "Colt Peacemaker",
+      subchoiceDetail: {
+        type: "weapon",
+        value: "colt-peacemaker",
+        label: "Colt Peacemaker",
+        sourceId: "colt-peacemaker",
+      },
+    },
+    reputation: {
+      subchoice: "Good",
+      subchoiceDetail: {
+        type: "reputation",
+        value: "good",
+        label: "Good",
+      },
+    },
+    statusMarkers: [
+      {
+        sourceName: "Trademark Weapon",
+        status: "subchoice-selected",
+        displayLabel:
+          "Chosen weapon: Colt Peacemaker; apply attack/Parry bonus manually until attack context exists",
+      },
+      {
+        sourceName: "Reputation",
+        status: "subchoice-selected",
+        displayLabel: "Good reputation selected: Persuasion reroll reminder",
+      },
+    ],
+  });
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Trademark Weapon: Chosen weapon: Colt Peacemaker; apply attack/Parry bonus manually until attack context exists",
+  );
+
+  const payloadText = await page.evaluate(() =>
+    JSON.stringify(serializeTrackerExport(character)),
+  );
+  await reloadIntoTracker(page);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#edgesList")).toContainText(
+    "Choice: Colt Peacemaker",
+  );
+  await expect(page.locator("#edgesList")).toContainText("Choice: Good");
+
+  const imported = await page.evaluate((text) => {
+    importJsonText(text);
+    return {
+      choices: character.edges.map((edge) => ({
+        name: edge.name,
+        subchoice: edge.subchoice || "",
+        subchoiceDetail: edge.subchoiceDetail || null,
+      })),
+      markers: effectHookSummariesForSurface(character, "character")
+        .filter((effect) => effect.type === "automation-status")
+        .map((effect) => ({
+          sourceName: effect.sourceName,
+          status: effect.status,
+          displayLabel: effect.displayLabel,
+        })),
+    };
+  }, payloadText);
+  expect(imported.choices).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        name: "Trademark Weapon",
+        subchoice: "Colt Peacemaker",
+        subchoiceDetail: expect.objectContaining({
+          type: "weapon",
+          value: "colt-peacemaker",
+          label: "Colt Peacemaker",
+        }),
+      }),
+      expect.objectContaining({
+        name: "Reputation",
+        subchoice: "Good",
+        subchoiceDetail: {
+          type: "reputation",
+          value: "good",
+          label: "Good",
+        },
+      }),
+    ]),
+  );
+  expect(imported.markers).toEqual(
+    expect.arrayContaining([
+      {
+        sourceName: "Trademark Weapon",
+        status: "subchoice-selected",
+        displayLabel:
+          "Chosen weapon: Colt Peacemaker; apply attack/Parry bonus manually until attack context exists",
+      },
+      {
+        sourceName: "Reputation",
+        status: "subchoice-selected",
+        displayLabel: "Good reputation selected: Persuasion reroll reminder",
+      },
+    ]),
+  );
+});
+
 test("Increase Skill writes a canonical ledger entry", async ({ page }) => {
   await seedCanonicalAdvancementCharacter(page);
 

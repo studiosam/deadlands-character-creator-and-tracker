@@ -201,6 +201,7 @@ function setupEdgeAuditCard(edge) {
       ${setupDetail("Category", category)}
       ${setupDetail("Rank", rank)}
       ${setupDetail("Requirements", requirements || "None recorded")}
+      ${setupDetail("Subchoice", edge.subchoice || "None recorded")}
       ${setupDetail("Likely Source", likelySource)}
     </div>
     ${summary ? `<p class="setup-edge-summary">${esc(summary)}</p>` : ""}

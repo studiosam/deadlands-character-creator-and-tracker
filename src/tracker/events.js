@@ -261,6 +261,7 @@ els.reviewSetupBtn.onclick = reopenSetupReview;
 els.manageCharacterBtn.onclick = () => setAppTab("library");
 els.showEdgeFormBtn.onclick = () => openEdgeEditor();
 els.edgeCatalogSelect.onchange = chooseEdgeCatalogEntry;
+els.edgeNameInput.oninput = renderEdgeSubchoiceControls;
 els.saveEdgeBtn.onclick = saveEdgeEditor;
 els.cancelEdgeEditBtn.onclick = closeEdgeEditor;
 els.showHindranceFormBtn.onclick = () => openHindranceEditor();

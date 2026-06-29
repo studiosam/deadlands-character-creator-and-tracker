@@ -114,6 +114,8 @@ const els = {
   edgeSourceInput: $("#edgeSourceInput"),
   edgeRequirementsInput: $("#edgeRequirementsInput"),
   edgeSubchoiceInput: $("#edgeSubchoiceInput"),
+  edgeSubchoiceOptions: $("#edgeSubchoiceOptions"),
+  edgeSubchoiceHelp: $("#edgeSubchoiceHelp"),
   edgeSummaryInput: $("#edgeSummaryInput"),
   edgeNotesInput: $("#edgeNotesInput"),
   edgeWarningText: $("#edgeWarningText"),
