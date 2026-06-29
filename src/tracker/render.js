@@ -89,26 +89,45 @@ function render() {
   const toughnessModifier = characterToughnessModifier(character);
   const sizeModifier = characterSizeModifier(character);
   const paceModifier = characterPaceModifier(character);
+  const parryModifier = characterParryModifier(character);
   if (character.derived.basePace === undefined) {
     character.derived.basePace = Number(character.derived.pace) || 6;
+  }
+  if (
+    character.derived.baseParry === undefined &&
+    character.source === "created"
+  ) {
+    character.derived.baseParry = Number(character.derived.parry) || 2;
   }
   if (character.derived.baseSize === undefined) {
     character.derived.baseSize =
       Number(character.size ?? character.derived.size) || 0;
   }
+  const baseParry = Number(character.derived.baseParry);
+  const canApplyParryModifier = Number.isFinite(baseParry) && baseParry > 0;
   const effectivePace = Math.max(
     1,
     (Number(character.derived.basePace) || 6) + paceModifier,
   );
+  const effectiveParry = canApplyParryModifier
+    ? baseParry + parryModifier
+    : Number(character.derived.parry) || 2;
   const effectiveBaseToughness =
     (Number(character.derived.baseToughness) || 0) + toughnessModifier;
   const effectiveSize =
     (Number(character.derived.baseSize) || 0) + sizeModifier;
   character.derived.armor = armor;
   character.derived.pace = effectivePace;
+  character.derived.parry = effectiveParry;
   character.derived.toughness = effectiveBaseToughness + armor;
   character.derived.size = effectiveSize;
   character.derived.effectPaceModifier = paceModifier;
+  character.derived.effectParryModifier = canApplyParryModifier
+    ? parryModifier
+    : 0;
+  character.derived.effectParryPendingModifier = canApplyParryModifier
+    ? 0
+    : parryModifier;
   character.derived.effectToughnessModifier = toughnessModifier;
   character.derived.effectSizeModifier = sizeModifier;
   els.paceValue.textContent = character.derived.pace;
@@ -489,7 +508,23 @@ function renderCharacterSummary() {
         .filter(Boolean)
         .join(" + "),
     ],
-    ["Parry", character.derived.parry, ""],
+    [
+      "Parry",
+      character.derived.parry,
+      [
+        character.derived.baseParry !== undefined
+          ? `Base ${compactText(character.derived.baseParry)}`
+          : "",
+        character.derived.effectParryModifier
+          ? `Effects ${character.derived.effectParryModifier > 0 ? "+" : ""}${character.derived.effectParryModifier}`
+          : "",
+        character.derived.effectParryPendingModifier
+          ? "Recorded total; passive Parry effect shown below"
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" + "),
+    ],
     [
       "Toughness",
       character.derived.toughness,

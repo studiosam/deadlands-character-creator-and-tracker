@@ -168,18 +168,22 @@ Current implementation:
 - Structured `roll-modifier` effects now render as passive Character and Combat
   reminders for Alertness, Brave, Danger Sense, All Thumbs, Anemic, Mean, Mild
   Mannered, and Yellow.
+- Block and Improved Block now apply baseline-aware Parry math when a trusted
+  `baseParry` is available or the character is app-created; imported characters
+  without a baseline keep recorded Parry and show the passive effect as a
+  reminder only.
 - Character, Combat, and Inventory surfaces show passive-effect explanations
   instead of relying only on catalog text.
 
 Effect Hook Candidate Audit:
 
-- Already implemented: Alertness, Brave, Brawny, Danger Sense, Soldier,
-  Fleet-Footed, All Thumbs, Anemic, Mean, Mild Mannered, Small, Slow, Yellow,
-  and Obese.
-- Passive math, high confidence: Block, Improved Block, Brawler, Nerves of
-  Steel, Improved Nerves of Steel, Tough as Nails, Tougher than Nails, Weapon
-  Master, and Master of Arms. These should be baseline-aware before they mutate
-  derived values so imported totals are not double-counted.
+- Already implemented: Alertness, Block, Brave, Brawny, Danger Sense, Improved
+  Block, Soldier, Fleet-Footed, All Thumbs, Anemic, Mean, Mild Mannered, Small,
+  Slow, Yellow, and Obese.
+- Passive math, high confidence: Brawler, Nerves of Steel, Improved Nerves of
+  Steel, Tough as Nails, Tougher than Nails, Weapon Master, and Master of Arms.
+  These should be baseline-aware before they mutate derived values so imported
+  totals are not double-counted.
 - Roll modifier reminders, high confidence: Clueless, Clumsy, One Eye,
   Tongue-Tied, Arcane Resistance, Improved Arcane Resistance, Aristocrat,
   Attractive, Very Attractive, Elan, Fast Healer, Healer, Iron Jaw,
@@ -211,8 +215,7 @@ Effect Hook Candidate Audit:
   Horse, and most story or Marshal-facing effects.
 - Next safest code slice: either expand `roll-modifier` coverage to the
   remaining high-confidence reminders or add baseline-aware passive math for
-  Block, Improved Block, Brawler, Nerves of Steel, and Improved Nerves of
-  Steel.
+  Brawler, Nerves of Steel, and Improved Nerves of Steel.
 
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.

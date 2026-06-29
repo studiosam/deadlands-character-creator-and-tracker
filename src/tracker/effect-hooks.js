@@ -77,6 +77,31 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-block",
+    sourceType: "edge",
+    matchName: "Block",
+    label: "Block",
+    summary: "+1 Parry and ignore 1 point of Gang Up bonus.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "parry",
+        value: 1,
+        exclusiveGroup: "block-parry",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Parry +1",
+      },
+      {
+        type: "reminder",
+        target: "gang-up",
+        exclusiveGroup: "block-gang-up",
+        value: 1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Ignore 1 point of Gang Up bonus",
+      },
+    ],
+  },
+  {
     id: "edge-fleet-footed",
     sourceType: "edge",
     matchName: "Fleet-Footed",
@@ -113,6 +138,31 @@ const EFFECT_HOOK_REGISTRY = [
         value: 2,
         appliesTo: ["character", "combat"],
         displayLabel: "Notice +2 to sense ambushes or similar danger",
+      },
+    ],
+  },
+  {
+    id: "edge-improved-block",
+    sourceType: "edge",
+    matchName: "Improved Block",
+    label: "Improved Block",
+    summary: "+2 Parry and ignore 2 points of Gang Up bonus.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "parry",
+        value: 2,
+        exclusiveGroup: "block-parry",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Parry +2",
+      },
+      {
+        type: "reminder",
+        target: "gang-up",
+        exclusiveGroup: "block-gang-up",
+        value: 2,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Ignore 2 points of Gang Up bonus",
       },
     ],
   },
@@ -402,24 +452,45 @@ function effectAppliesTo(effect, scope = "") {
   return !scope || (effect.appliesTo || []).includes(scope);
 }
 
+function dominantEffectValue(currentValue, nextValue) {
+  if (currentValue === undefined) return nextValue;
+  const currentMagnitude = Math.abs(Number(currentValue) || 0);
+  const nextMagnitude = Math.abs(Number(nextValue) || 0);
+  if (nextMagnitude > currentMagnitude) return nextValue;
+  if (nextMagnitude === currentMagnitude)
+    return Math.max(currentValue, nextValue);
+  return currentValue;
+}
+
 function effectHookModifierTotal(
   currentCharacter,
   { type = "", target = "", scope = "" } = {},
 ) {
-  return activeEffectHooks(currentCharacter).reduce((sum, hook) => {
-    const hookTotal = (hook.effects || [])
-      .filter(
-        (effect) =>
-          (!type || effect.type === type) &&
-          (!target || effect.target === target) &&
-          effectAppliesTo(effect, scope),
-      )
-      .reduce(
-        (effectSum, effect) => effectSum + (Number(effect.value) || 0),
-        0,
+  const groupedTotals = {};
+  const ungroupedTotal = activeEffectHooks(currentCharacter)
+    .flatMap((hook) => hook.effects || [])
+    .filter(
+      (effect) =>
+        (!type || effect.type === type) &&
+        (!target || effect.target === target) &&
+        effectAppliesTo(effect, scope),
+    )
+    .reduce((effectSum, effect) => {
+      const value = Number(effect.value) || 0;
+      if (!effect.exclusiveGroup) return effectSum + value;
+      groupedTotals[effect.exclusiveGroup] = dominantEffectValue(
+        groupedTotals[effect.exclusiveGroup],
+        value,
       );
-    return sum + hookTotal;
-  }, 0);
+      return effectSum;
+    }, 0);
+  return (
+    ungroupedTotal +
+    Object.values(groupedTotals).reduce(
+      (groupSum, value) => groupSum + value,
+      0,
+    )
+  );
 }
 
 function characterSizeModifier(currentCharacter = character) {
@@ -442,6 +513,14 @@ function characterPaceModifier(currentCharacter = character) {
   return effectHookModifierTotal(currentCharacter, {
     type: "numeric-modifier",
     target: "pace",
+    scope: "character",
+  });
+}
+
+function characterParryModifier(currentCharacter = character) {
+  return effectHookModifierTotal(currentCharacter, {
+    type: "numeric-modifier",
+    target: "parry",
     scope: "character",
   });
 }
@@ -481,24 +560,48 @@ function effectiveStrengthForScope(
   );
 }
 
+function dominantEffectSummaryEntries(entries) {
+  const groupedIndexes = {};
+  const result = [];
+  entries.forEach((entry) => {
+    if (!entry.exclusiveGroup) {
+      result.push(entry);
+      return;
+    }
+    const groupedIndex = groupedIndexes[entry.exclusiveGroup];
+    if (groupedIndex === undefined) {
+      groupedIndexes[entry.exclusiveGroup] = result.length;
+      result.push(entry);
+      return;
+    }
+    const current = result[groupedIndex];
+    const dominantValue = dominantEffectValue(current.value, entry.value);
+    if (dominantValue === entry.value) result[groupedIndex] = entry;
+  });
+  return result;
+}
+
 function effectHookSummariesForSurface(
   currentCharacter = character,
   surface = "character",
 ) {
-  return activeEffectHooks(currentCharacter).flatMap((hook) =>
-    (hook.effects || [])
-      .filter((effect) => effectAppliesTo(effect, surface))
-      .map((effect) => ({
-        id: `${hook.id}-${effect.target || effect.type}`,
-        sourceType: hook.sourceType,
-        sourceName: hook.label,
-        target: effect.target,
-        trait: effect.trait,
-        context: effect.context,
-        value: effect.value,
-        type: effect.type,
-        displayLabel: effect.displayLabel,
-        summary: hook.summary,
-      })),
+  return dominantEffectSummaryEntries(
+    activeEffectHooks(currentCharacter).flatMap((hook) =>
+      (hook.effects || [])
+        .filter((effect) => effectAppliesTo(effect, surface))
+        .map((effect) => ({
+          id: `${hook.id}-${effect.target || effect.type}`,
+          sourceType: hook.sourceType,
+          sourceName: hook.label,
+          target: effect.target,
+          trait: effect.trait,
+          context: effect.context,
+          value: effect.value,
+          type: effect.type,
+          exclusiveGroup: effect.exclusiveGroup,
+          displayLabel: effect.displayLabel,
+          summary: hook.summary,
+        })),
+    ),
   );
 }

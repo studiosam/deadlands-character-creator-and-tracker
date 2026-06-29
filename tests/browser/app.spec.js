@@ -1183,7 +1183,7 @@ async function seedEffectHookCharacter(page, options = {}) {
       };
     });
     const characterData = normalize({
-      source: "created",
+      source: seedOptions.source || "created",
       setupStatus: "complete",
       name: seedOptions.name || "Effect Hook Character",
       rank: "Novice",
@@ -1207,6 +1207,7 @@ async function seedEffectHookCharacter(page, options = {}) {
         toughness: 5,
         armor: 0,
         baseSize: 0,
+        ...(seedOptions.derived || {}),
       },
       armorStrength: "d6",
       weaponStrength: "d6",
@@ -1378,6 +1379,136 @@ test("Fleet-Footed passive effect updates Pace and reminders", async ({
     pace: 8,
     paceModifier: 2,
     hooks: ["edge-fleet-footed"],
+  });
+});
+
+test("Block passive math increases Parry from a trusted baseline", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Block Effect Tester",
+    preferredId: "block-effect-tester",
+    edgeIds: ["swade-edge-block"],
+    derived: {
+      parry: 5,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Parry");
+  await expect(derived).toContainText("Base 5 + Effects +1");
+  await expect(derived).toContainText("Block");
+  await expect(derived).toContainText("Parry +1");
+  await expect(derived).toContainText("Ignore 1 point of Gang Up bonus");
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Block: Parry +1");
+  await expect(combatBreakdown).toContainText(
+    "Block: Ignore 1 point of Gang Up bonus",
+  );
+
+  const computed = await page.evaluate(() => ({
+    parry: character.derived.parry,
+    baseParry: character.derived.baseParry,
+    parryModifier: character.derived.effectParryModifier,
+    pendingParryModifier: character.derived.effectParryPendingModifier,
+    summaries: effectHookSummariesForSurface(character, "character")
+      .filter((effect) => effect.target === "parry")
+      .map((effect) => effect.displayLabel),
+  }));
+  expect(computed).toEqual({
+    parry: 6,
+    baseParry: 5,
+    parryModifier: 1,
+    pendingParryModifier: 0,
+    summaries: ["Parry +1"],
+  });
+});
+
+test("Improved Block passive math replaces Block bonus instead of stacking", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Improved Block Effect Tester",
+    preferredId: "improved-block-effect-tester",
+    edgeIds: ["swade-edge-block", "swade-edge-improved-block"],
+    derived: {
+      parry: 5,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Base 5 + Effects +2");
+  await expect(derived).toContainText("Improved Block");
+  await expect(derived).toContainText("Parry +2");
+  await expect(derived).not.toContainText("Parry +1");
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Improved Block: Parry +2");
+  await expect(combatBreakdown).toContainText(
+    "Improved Block: Ignore 2 points of Gang Up bonus",
+  );
+  await expect(combatBreakdown).not.toContainText("Block: Parry +1");
+
+  const computed = await page.evaluate(() => ({
+    parry: character.derived.parry,
+    baseParry: character.derived.baseParry,
+    parryModifier: character.derived.effectParryModifier,
+    activeHooks: activeEffectHooks(character).map((hook) => hook.id),
+    summaries: effectHookSummariesForSurface(character, "character")
+      .filter((effect) => ["parry", "gang-up"].includes(effect.target))
+      .map((effect) => `${effect.sourceName}: ${effect.displayLabel}`),
+  }));
+  expect(computed).toEqual({
+    parry: 7,
+    baseParry: 5,
+    parryModifier: 2,
+    activeHooks: ["edge-block", "edge-improved-block"],
+    summaries: [
+      "Improved Block: Parry +2",
+      "Improved Block: Ignore 2 points of Gang Up bonus",
+    ],
+  });
+});
+
+test("Block passive math does not double-count imported Parry without a baseline", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Imported Block Effect Tester",
+    preferredId: "imported-block-effect-tester",
+    source: "savaged.us",
+    edgeIds: ["swade-edge-block"],
+    derived: {
+      parry: 7,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Parry");
+  await expect(derived).toContainText("7");
+  await expect(derived).toContainText(
+    "Recorded total; passive Parry effect shown below",
+  );
+  await expect(derived).toContainText("Block");
+  await expect(derived).toContainText("Parry +1");
+
+  const computed = await page.evaluate(() => ({
+    parry: character.derived.parry,
+    hasBaseParry: Object.hasOwn(character.derived, "baseParry"),
+    parryModifier: character.derived.effectParryModifier,
+    pendingParryModifier: character.derived.effectParryPendingModifier,
+  }));
+  expect(computed).toEqual({
+    parry: 7,
+    hasBaseParry: false,
+    parryModifier: 0,
+    pendingParryModifier: 1,
   });
 });
 
