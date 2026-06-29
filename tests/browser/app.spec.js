@@ -2302,6 +2302,285 @@ test("Hindrance roll modifier effects render on Character and Combat", async ({
   ]);
 });
 
+test("Expanded Edge roll modifier effects render and replace improved variants", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Expanded Edge Modifier Tester",
+    preferredId: "expanded-edge-modifier-tester",
+    edgeIds: [
+      "swade-edge-arcane-resistance",
+      "swade-edge-improved-arcane-resistance",
+      "swade-edge-aristocrat",
+      "swade-edge-attractive",
+      "swade-edge-very-attractive",
+      "swade-edge-elan",
+      "swade-edge-fast-healer",
+      "swade-edge-healer",
+      "swade-edge-iron-jaw",
+      "swade-edge-investigator",
+      "swade-edge-mr-fix-it",
+      "swade-edge-menacing",
+      "swade-edge-streetwise",
+      "swade-edge-strong-willed",
+      "swade-edge-iron-will",
+      "swade-edge-thief",
+      "swade-edge-woodsman",
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Improved Arcane Resistance");
+  await expect(derived).toContainText("Resist magical effects +4");
+  await expect(derived).toContainText("Magical damage reduced by 4");
+  await expect(derived).not.toContainText("Resist magical effects +2");
+  await expect(derived).toContainText("Very Attractive");
+  await expect(derived).toContainText("Performance +2 when appearance matters");
+  await expect(derived).toContainText("Persuasion +2 when appearance matters");
+  await expect(derived).not.toContainText(
+    "Performance +1 when appearance matters",
+  );
+  await expect(derived).toContainText("Iron Will");
+  await expect(derived).toContainText("Resist Smarts or Spirit-based Tests +4");
+  await expect(derived).not.toContainText(
+    "Resist Smarts or Spirit-based Tests +2",
+  );
+  await expect(derived).toContainText("Aristocrat");
+  await expect(derived).toContainText(
+    "Common Knowledge +2 with the upper class",
+  );
+  await expect(derived).toContainText("Elan");
+  await expect(derived).toContainText("Trait rerolls with a Benny +2");
+  await expect(derived).toContainText("Fast Healer");
+  await expect(derived).toContainText("Natural healing rolls +2");
+  await expect(derived).toContainText(
+    "Natural healing checks occur more often",
+  );
+  await expect(derived).toContainText("Healer");
+  await expect(derived).toContainText("Healing rolls +2");
+  await expect(derived).toContainText("Iron Jaw");
+  await expect(derived).toContainText("Soak rolls +2");
+  await expect(derived).toContainText("Avoid Knockout Blows +2");
+  await expect(derived).toContainText("Investigator");
+  await expect(derived).toContainText("Research +2");
+  await expect(derived).toContainText("Notice +2 for clues");
+  await expect(derived).toContainText("Mr. Fix It");
+  await expect(derived).toContainText("Repair +2");
+  await expect(derived).toContainText("Repairs take less time with a raise");
+  await expect(derived).toContainText("Menacing");
+  await expect(derived).toContainText(
+    "Intimidation +2 using bad looks or attitude",
+  );
+  await expect(derived).toContainText("Streetwise");
+  await expect(derived).toContainText(
+    "Common Knowledge +2 for criminal networking",
+  );
+  await expect(derived).toContainText("Thief");
+  await expect(derived).toContainText("Thievery +1");
+  await expect(derived).toContainText("Woodsman");
+  await expect(derived).toContainText("Survival +2");
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText(
+    "Improved Arcane Resistance: Resist magical effects +4",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Very Attractive: Persuasion +2 when appearance matters",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Iron Will: Resist Smarts or Spirit-based Tests +4",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Thief: Athletics +1 when climbing",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Woodsman: Stealth +2 in the wilderness",
+  );
+
+  const computed = await page.evaluate(() =>
+    effectHookSummariesForSurface(character, "character").map((effect) => ({
+      sourceName: effect.sourceName,
+      target: effect.target,
+      type: effect.type,
+      value: effect.value,
+      displayLabel: effect.displayLabel,
+    })),
+  );
+  expect(computed).toEqual(
+    expect.arrayContaining([
+      {
+        sourceName: "Improved Arcane Resistance",
+        target: "resist-magical-effects",
+        type: "roll-modifier",
+        value: 4,
+        displayLabel: "Resist magical effects +4",
+      },
+      {
+        sourceName: "Improved Arcane Resistance",
+        target: "magical-damage-reduction",
+        type: "reminder",
+        value: 4,
+        displayLabel: "Magical damage reduced by 4",
+      },
+      {
+        sourceName: "Very Attractive",
+        target: "appearance-performance",
+        type: "roll-modifier",
+        value: 2,
+        displayLabel: "Performance +2 when appearance matters",
+      },
+      {
+        sourceName: "Iron Will",
+        target: "resist-smarts-spirit-tests",
+        type: "roll-modifier",
+        value: 4,
+        displayLabel: "Resist Smarts or Spirit-based Tests +4",
+      },
+      {
+        sourceName: "Thief",
+        target: "urban-stealth",
+        type: "roll-modifier",
+        value: 1,
+        displayLabel: "Stealth +1 in urban areas",
+      },
+      {
+        sourceName: "Woodsman",
+        target: "wilderness-stealth",
+        type: "roll-modifier",
+        value: 2,
+        displayLabel: "Stealth +2 in the wilderness",
+      },
+    ]),
+  );
+  expect(computed).not.toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        sourceName: "Arcane Resistance",
+        target: "resist-magical-effects",
+      }),
+      expect.objectContaining({
+        sourceName: "Attractive",
+        target: "appearance-performance",
+      }),
+      expect.objectContaining({
+        sourceName: "Strong Willed",
+        target: "resist-smarts-spirit-tests",
+      }),
+    ]),
+  );
+});
+
+test("Expanded Hindrance roll modifier effects render on Character and Combat", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Expanded Hindrance Modifier Tester",
+    preferredId: "expanded-hindrance-modifier-tester",
+    hindranceIds: [
+      "swade-hindrance-clueless",
+      "swade-hindrance-clumsy",
+      "swade-hindrance-one-eye",
+      "swade-hindrance-tongue-tied",
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Clueless");
+  await expect(derived).toContainText("Common Knowledge -1");
+  await expect(derived).toContainText("Notice -1");
+  await expect(derived).toContainText("Clumsy");
+  await expect(derived).toContainText("Athletics -2");
+  await expect(derived).toContainText("Stealth -2");
+  await expect(derived).toContainText("One Eye");
+  await expect(derived).toContainText(
+    "Actions at 5 inches / 10 yards or more -2",
+  );
+  await expect(derived).toContainText("Tongue-Tied");
+  await expect(derived).toContainText("Speech-based Persuasion -1");
+  await expect(derived).toContainText("Speech-based Taunt -1");
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Clueless: Common Knowledge -1");
+  await expect(combatBreakdown).toContainText("Clumsy: Athletics -2");
+  await expect(combatBreakdown).toContainText(
+    "One Eye: Actions at 5 inches / 10 yards or more -2",
+  );
+  await expect(combatBreakdown).toContainText(
+    "Tongue-Tied: Speech-based Intimidation -1",
+  );
+
+  const computed = await page.evaluate(() =>
+    effectHookSummariesForSurface(character, "character")
+      .filter((effect) => effect.type === "roll-modifier")
+      .map((effect) => ({
+        sourceName: effect.sourceName,
+        target: effect.target,
+        value: effect.value,
+        displayLabel: effect.displayLabel,
+      })),
+  );
+  expect(computed).toEqual([
+    {
+      sourceName: "Clueless",
+      target: "common-knowledge",
+      value: -1,
+      displayLabel: "Common Knowledge -1",
+    },
+    {
+      sourceName: "Clueless",
+      target: "notice",
+      value: -1,
+      displayLabel: "Notice -1",
+    },
+    {
+      sourceName: "Clumsy",
+      target: "athletics",
+      value: -2,
+      displayLabel: "Athletics -2",
+    },
+    {
+      sourceName: "Clumsy",
+      target: "stealth",
+      value: -2,
+      displayLabel: "Stealth -2",
+    },
+    {
+      sourceName: "One Eye",
+      target: "distance-actions",
+      value: -2,
+      displayLabel: "Actions at 5 inches / 10 yards or more -2",
+    },
+    {
+      sourceName: "Tongue-Tied",
+      target: "speech-intimidation",
+      value: -1,
+      displayLabel: "Speech-based Intimidation -1",
+    },
+    {
+      sourceName: "Tongue-Tied",
+      target: "speech-performance",
+      value: -1,
+      displayLabel: "Speech-based Performance -1",
+    },
+    {
+      sourceName: "Tongue-Tied",
+      target: "speech-persuasion",
+      value: -1,
+      displayLabel: "Speech-based Persuasion -1",
+    },
+    {
+      sourceName: "Tongue-Tied",
+      target: "speech-taunt",
+      value: -1,
+      displayLabel: "Speech-based Taunt -1",
+    },
+  ]);
+});
+
 test("Automation status effects mark resource action and table-dependent entries", async ({
   page,
 }) => {

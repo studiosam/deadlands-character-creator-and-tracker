@@ -13,6 +13,41 @@ function automationStatusEffect(
   };
 }
 
+function rollModifierEffect(
+  target,
+  trait,
+  context,
+  value,
+  displayLabel,
+  options = {},
+) {
+  return {
+    type: "roll-modifier",
+    target,
+    trait,
+    context,
+    value,
+    appliesTo: options.appliesTo || ["character", "combat"],
+    displayLabel,
+    ...(options.exclusiveGroup
+      ? { exclusiveGroup: options.exclusiveGroup }
+      : {}),
+  };
+}
+
+function reminderEffect(target, displayLabel, options = {}) {
+  return {
+    type: "reminder",
+    target,
+    value: options.value,
+    appliesTo: options.appliesTo || ["character", "combat"],
+    displayLabel,
+    ...(options.exclusiveGroup
+      ? { exclusiveGroup: options.exclusiveGroup }
+      : {}),
+  };
+}
+
 const EFFECT_HOOK_REGISTRY = [
   {
     id: "edge-alertness",
@@ -30,6 +65,116 @@ const EFFECT_HOOK_REGISTRY = [
         appliesTo: ["character", "combat"],
         displayLabel: "Notice +2",
       },
+    ],
+  },
+  {
+    id: "edge-arcane-resistance",
+    sourceType: "edge",
+    matchName: "Arcane Resistance",
+    label: "Arcane Resistance",
+    summary: "+2 to resist magical effects; magical damage reduced by 2.",
+    effects: [
+      rollModifierEffect(
+        "resist-magical-effects",
+        "Resist magic",
+        "resisting magical effects",
+        2,
+        "Resist magical effects +2",
+        { exclusiveGroup: "arcane-resistance-roll" },
+      ),
+      reminderEffect(
+        "magical-damage-reduction",
+        "Magical damage reduced by 2",
+        { value: 2, exclusiveGroup: "arcane-resistance-damage" },
+      ),
+    ],
+  },
+  {
+    id: "edge-improved-arcane-resistance",
+    sourceType: "edge",
+    matchName: "Improved Arcane Resistance",
+    label: "Improved Arcane Resistance",
+    summary: "+4 to resist magical effects; magical damage reduced by 4.",
+    effects: [
+      rollModifierEffect(
+        "resist-magical-effects",
+        "Resist magic",
+        "resisting magical effects",
+        4,
+        "Resist magical effects +4",
+        { exclusiveGroup: "arcane-resistance-roll" },
+      ),
+      reminderEffect(
+        "magical-damage-reduction",
+        "Magical damage reduced by 4",
+        { value: 4, exclusiveGroup: "arcane-resistance-damage" },
+      ),
+    ],
+  },
+  {
+    id: "edge-aristocrat",
+    sourceType: "edge",
+    matchName: "Aristocrat",
+    label: "Aristocrat",
+    summary: "+2 to Common Knowledge and networking with the upper class.",
+    effects: [
+      rollModifierEffect(
+        "upper-class-common-knowledge",
+        "Common Knowledge",
+        "upper-class knowledge and networking",
+        2,
+        "Common Knowledge +2 with the upper class",
+      ),
+    ],
+  },
+  {
+    id: "edge-attractive",
+    sourceType: "edge",
+    matchName: "Attractive",
+    label: "Attractive",
+    summary: "+1 to Performance and Persuasion when appearance matters.",
+    effects: [
+      rollModifierEffect(
+        "appearance-performance",
+        "Performance",
+        "when appearance matters",
+        1,
+        "Performance +1 when appearance matters",
+        { exclusiveGroup: "appearance-performance" },
+      ),
+      rollModifierEffect(
+        "appearance-persuasion",
+        "Persuasion",
+        "when appearance matters",
+        1,
+        "Persuasion +1 when appearance matters",
+        { exclusiveGroup: "appearance-persuasion" },
+      ),
+    ],
+  },
+  {
+    id: "edge-very-attractive",
+    sourceType: "edge",
+    matchName: "Very Attractive",
+    label: "Very Attractive",
+    summary: "+2 to Performance and Persuasion when appearance matters.",
+    effects: [
+      rollModifierEffect(
+        "appearance-performance",
+        "Performance",
+        "when appearance matters",
+        2,
+        "Performance +2 when appearance matters",
+        { exclusiveGroup: "appearance-performance" },
+      ),
+      rollModifierEffect(
+        "appearance-persuasion",
+        "Persuasion",
+        "when appearance matters",
+        2,
+        "Persuasion +2 when appearance matters",
+        { exclusiveGroup: "appearance-persuasion" },
+      ),
     ],
   },
   {
@@ -196,6 +341,58 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-elan",
+    sourceType: "edge",
+    matchName: "Elan",
+    label: "Elan",
+    summary: "+2 when spending a Benny to reroll a Trait roll.",
+    effects: [
+      rollModifierEffect(
+        "benny-trait-reroll",
+        "Trait",
+        "Benny rerolls",
+        2,
+        "Trait rerolls with a Benny +2",
+      ),
+    ],
+  },
+  {
+    id: "edge-fast-healer",
+    sourceType: "edge",
+    matchName: "Fast Healer",
+    label: "Fast Healer",
+    summary: "+2 to natural healing rolls and checks more often.",
+    effects: [
+      rollModifierEffect(
+        "natural-healing",
+        "Vigor",
+        "natural healing rolls",
+        2,
+        "Natural healing rolls +2",
+      ),
+      reminderEffect(
+        "natural-healing-frequency",
+        "Natural healing checks occur more often",
+      ),
+    ],
+  },
+  {
+    id: "edge-healer",
+    sourceType: "edge",
+    matchName: "Healer",
+    label: "Healer",
+    summary: "+2 to Healing rolls, magical or mundane.",
+    effects: [
+      rollModifierEffect(
+        "healing-rolls",
+        "Healing",
+        "magical or mundane Healing rolls",
+        2,
+        "Healing rolls +2",
+      ),
+    ],
+  },
+  {
     id: "edge-improved-block",
     sourceType: "edge",
     matchName: "Improved Block",
@@ -218,6 +415,46 @@ const EFFECT_HOOK_REGISTRY = [
         appliesTo: ["character", "combat"],
         displayLabel: "Ignore 2 points of Gang Up bonus",
       },
+    ],
+  },
+  {
+    id: "edge-investigator",
+    sourceType: "edge",
+    matchName: "Investigator",
+    label: "Investigator",
+    summary: "+2 to Research and clue-related Notice rolls.",
+    effects: [
+      rollModifierEffect(
+        "research",
+        "Research",
+        "Research rolls",
+        2,
+        "Research +2",
+      ),
+      rollModifierEffect(
+        "clue-notice",
+        "Notice",
+        "clue-related Notice rolls",
+        2,
+        "Notice +2 for clues",
+      ),
+    ],
+  },
+  {
+    id: "edge-iron-jaw",
+    sourceType: "edge",
+    matchName: "Iron Jaw",
+    label: "Iron Jaw",
+    summary: "+2 to Soak rolls and to avoid Knockout Blows.",
+    effects: [
+      rollModifierEffect("soak", "Vigor", "Soak rolls", 2, "Soak rolls +2"),
+      rollModifierEffect(
+        "avoid-knockout-blows",
+        "Vigor",
+        "avoiding Knockout Blows",
+        2,
+        "Avoid Knockout Blows +2",
+      ),
     ],
   },
   {
@@ -282,6 +519,33 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-menacing",
+    sourceType: "edge",
+    matchName: "Menacing",
+    label: "Menacing",
+    summary: "+2 to Intimidation using bad looks or attitude.",
+    effects: [
+      rollModifierEffect(
+        "menacing-intimidation",
+        "Intimidation",
+        "using bad looks or attitude",
+        2,
+        "Intimidation +2 using bad looks or attitude",
+      ),
+    ],
+  },
+  {
+    id: "edge-mr-fix-it",
+    sourceType: "edge",
+    matchName: "Mr. Fix It",
+    label: "Mr. Fix It",
+    summary: "+2 to Repair rolls; repairs take less time with a raise.",
+    effects: [
+      rollModifierEffect("repair", "Repair", "Repair rolls", 2, "Repair +2"),
+      reminderEffect("repair-time", "Repairs take less time with a raise"),
+    ],
+  },
+  {
     id: "edge-improved-nerves-of-steel",
     sourceType: "edge",
     matchName: "Improved Nerves of Steel",
@@ -341,6 +605,86 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-streetwise",
+    sourceType: "edge",
+    matchName: "Streetwise",
+    label: "Streetwise",
+    summary: "+2 to Common Knowledge and criminal networking.",
+    effects: [
+      rollModifierEffect(
+        "streetwise-common-knowledge",
+        "Common Knowledge",
+        "criminal networking",
+        2,
+        "Common Knowledge +2 for criminal networking",
+      ),
+    ],
+  },
+  {
+    id: "edge-strong-willed",
+    sourceType: "edge",
+    matchName: "Strong Willed",
+    label: "Strong Willed",
+    summary: "+2 to resist Smarts or Spirit-based Tests.",
+    effects: [
+      rollModifierEffect(
+        "resist-smarts-spirit-tests",
+        "Smarts/Spirit",
+        "resisting Smarts or Spirit-based Tests",
+        2,
+        "Resist Smarts or Spirit-based Tests +2",
+        { exclusiveGroup: "test-resistance" },
+      ),
+    ],
+  },
+  {
+    id: "edge-iron-will",
+    sourceType: "edge",
+    matchName: "Iron Will",
+    label: "Iron Will",
+    summary: "+4 to resist Smarts or Spirit-based Tests.",
+    effects: [
+      rollModifierEffect(
+        "resist-smarts-spirit-tests",
+        "Smarts/Spirit",
+        "resisting Smarts or Spirit-based Tests",
+        4,
+        "Resist Smarts or Spirit-based Tests +4",
+        { exclusiveGroup: "test-resistance" },
+      ),
+    ],
+  },
+  {
+    id: "edge-thief",
+    sourceType: "edge",
+    matchName: "Thief",
+    label: "Thief",
+    summary: "+1 to Thievery, climbing Athletics, and urban Stealth.",
+    effects: [
+      rollModifierEffect(
+        "thievery",
+        "Thievery",
+        "Thievery rolls",
+        1,
+        "Thievery +1",
+      ),
+      rollModifierEffect(
+        "climbing-athletics",
+        "Athletics",
+        "climbing",
+        1,
+        "Athletics +1 when climbing",
+      ),
+      rollModifierEffect(
+        "urban-stealth",
+        "Stealth",
+        "urban areas",
+        1,
+        "Stealth +1 in urban areas",
+      ),
+    ],
+  },
+  {
     id: "edge-trademark-weapon",
     sourceType: "edge",
     matchName: "Trademark Weapon",
@@ -352,6 +696,29 @@ const EFFECT_HOOK_REGISTRY = [
         "chosen-weapon",
         "Subchoice required: choose the specific weapon before attack/Parry bonus can be automated",
         ["character", "combat"],
+      ),
+    ],
+  },
+  {
+    id: "edge-woodsman",
+    sourceType: "edge",
+    matchName: "Woodsman",
+    label: "Woodsman",
+    summary: "+2 to Survival and wilderness Stealth.",
+    effects: [
+      rollModifierEffect(
+        "survival",
+        "Survival",
+        "Survival rolls",
+        2,
+        "Survival +2",
+      ),
+      rollModifierEffect(
+        "wilderness-stealth",
+        "Stealth",
+        "wilderness areas",
+        2,
+        "Stealth +2 in the wilderness",
       ),
     ],
   },
@@ -493,6 +860,46 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "hindrance-clueless",
+    sourceType: "hindrance",
+    matchName: "Clueless",
+    label: "Clueless",
+    summary: "-1 to Common Knowledge and Notice.",
+    effects: [
+      rollModifierEffect(
+        "common-knowledge",
+        "Common Knowledge",
+        "Common Knowledge rolls",
+        -1,
+        "Common Knowledge -1",
+      ),
+      rollModifierEffect("notice", "Notice", "Notice rolls", -1, "Notice -1"),
+    ],
+  },
+  {
+    id: "hindrance-clumsy",
+    sourceType: "hindrance",
+    matchName: "Clumsy",
+    label: "Clumsy",
+    summary: "-2 to Athletics and Stealth.",
+    effects: [
+      rollModifierEffect(
+        "athletics",
+        "Athletics",
+        "Athletics rolls",
+        -2,
+        "Athletics -2",
+      ),
+      rollModifierEffect(
+        "stealth",
+        "Stealth",
+        "Stealth rolls",
+        -2,
+        "Stealth -2",
+      ),
+    ],
+  },
+  {
     id: "hindrance-hesitant",
     sourceType: "hindrance",
     matchName: "Hesitant",
@@ -541,6 +948,22 @@ const EFFECT_HOOK_REGISTRY = [
         appliesTo: ["character", "combat"],
         displayLabel: "Intimidation -2",
       },
+    ],
+  },
+  {
+    id: "hindrance-one-eye",
+    sourceType: "hindrance",
+    matchName: "One Eye",
+    label: "One Eye",
+    summary: "-2 to actions at 5 inches / 10 yards or more.",
+    effects: [
+      rollModifierEffect(
+        "distance-actions",
+        "Actions",
+        "actions at 5 inches / 10 yards or more",
+        -2,
+        "Actions at 5 inches / 10 yards or more -2",
+      ),
     ],
   },
   {
@@ -617,6 +1040,44 @@ const EFFECT_HOOK_REGISTRY = [
         appliesTo: ["character", "combat"],
         displayLabel: "Athletics and rolls to resist Athletics -2",
       },
+    ],
+  },
+  {
+    id: "hindrance-tongue-tied",
+    sourceType: "hindrance",
+    matchName: "Tongue-Tied",
+    label: "Tongue-Tied",
+    summary:
+      "-1 to speech-based Intimidation, Performance, Persuasion, and Taunt.",
+    effects: [
+      rollModifierEffect(
+        "speech-intimidation",
+        "Intimidation",
+        "speech-based Intimidation rolls",
+        -1,
+        "Speech-based Intimidation -1",
+      ),
+      rollModifierEffect(
+        "speech-performance",
+        "Performance",
+        "speech-based Performance rolls",
+        -1,
+        "Speech-based Performance -1",
+      ),
+      rollModifierEffect(
+        "speech-persuasion",
+        "Persuasion",
+        "speech-based Persuasion rolls",
+        -1,
+        "Speech-based Persuasion -1",
+      ),
+      rollModifierEffect(
+        "speech-taunt",
+        "Taunt",
+        "speech-based Taunt rolls",
+        -1,
+        "Speech-based Taunt -1",
+      ),
     ],
   },
   {

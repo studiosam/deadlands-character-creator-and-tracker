@@ -166,8 +166,9 @@ Current implementation:
 - Hindrance severity now has helper-level matching for `minor`, `major`, and
   `unknown`; Slow uses this to apply different Minor and Major passive effects.
 - Structured `roll-modifier` effects now render as passive Character and Combat
-  reminders for Alertness, Brave, Danger Sense, All Thumbs, Anemic, Mean, Mild
-  Mannered, and Yellow.
+  reminders for common high-confidence Edge and Hindrance modifiers, including
+  social, healing, resistance, knowledge, stealth, repair, and Test-resistance
+  cases.
 - Block and Improved Block now apply baseline-aware Parry math when a trusted
   `baseParry` is available or the character is app-created; imported characters
   without a baseline keep recorded Parry and show the passive effect as a
@@ -198,8 +199,12 @@ Effect Hook Candidate Audit:
 
 - Already implemented: Alertness, Block, Brave, Brawler, Brawny, Danger Sense,
   Improved Block, Improved Nerves of Steel, Soldier, Fleet-Footed, All Thumbs,
-  Anemic, Mean, Mild Mannered, Nerves of Steel, Small, Slow, Tough as Nails,
-  Tougher than Nails, Weapon Master, Master of Arms, Yellow, and Obese.
+  Anemic, Arcane Resistance, Improved Arcane Resistance, Aristocrat,
+  Attractive, Very Attractive, Clueless, Clumsy, Elan, Fast Healer, Healer,
+  Investigator, Iron Jaw, Iron Will, Mean, Menacing, Mild Mannered, Mr. Fix It,
+  Nerves of Steel, One Eye, Small, Slow, Streetwise, Strong Willed, Thief,
+  Tongue-Tied, Tough as Nails, Tougher than Nails, Weapon Master, Master of
+  Arms, Woodsman, Yellow, and Obese.
 - Explicitly marked but not fully automated: Berserk, Luck, Great Luck, Bad
   Luck, Quick, Hesitant, Level Headed, unresolved Trademark Weapon, and
   unresolved Reputation.
@@ -208,13 +213,10 @@ Effect Hook Candidate Audit:
 - Passive math, high confidence: the current small deterministic set is covered
   for the Phase 2 audit. Future passive math should be added only when the
   baseline and stacking rules are equally clear.
-- Roll modifier reminders, high confidence: Clueless, Clumsy, One Eye,
-  Tongue-Tied, Arcane Resistance, Improved Arcane Resistance, Aristocrat,
-  Attractive, Very Attractive, Elan, Fast Healer, Healer, Iron Jaw,
-  Investigator, Mr. Fix It, Streetwise, Strong Willed, Thief, Woodsman,
-  Menacing, Guts, Grit, True Grit, and Whateley Blood. These should use
-  structured `roll-modifier` or reminder metadata before deeper roll automation
-  exists.
+- Roll modifier reminders, remaining high-confidence audit items: Guts, Grit,
+  True Grit, Whateley Blood, and other setting-specific entries whose exact
+  numeric value or resource impact needs a narrower rules pass before
+  automation.
 - Initiative and Action Card reminders: Bad Luck, Hesitant, Luck, Great Luck,
   Quick, Level Headed, Improved Level Headed, Calculating, Dead Shot, Mighty
   Blow, Tactician, Master Tactician, Quick Draw, and Fast as Lightning. These
@@ -238,9 +240,9 @@ Effect Hook Candidate Audit:
   powers, Mad Scientist device Edges, Shaman restriction Edges, Behold a Pale
   Horse, and most story or Marshal-facing effects.
 - Next safest code slice: either add session/action-card resource models for
-  marked entries such as Luck and Quick, expand `roll-modifier` coverage to the
-  remaining high-confidence reminders, or add subchoice storage for the next
-  target-required Edge group.
+  marked entries such as Luck and Quick, add subchoice storage for the next
+  target-required Edge group, or run a narrow setting-specific pass for Guts,
+  Grit, True Grit, and Whateley Blood.
 
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.
