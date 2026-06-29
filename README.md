@@ -244,8 +244,14 @@ pushes and pull requests targeting `main`.
 
 ## License
 
-This repository is source-available for non-commercial use only. It is not
-licensed under MIT, Apache, GPL, or another open-source license.
+This repository is source-available under a custom non-commercial license. It
+is not licensed under MIT, Apache, GPL, or another open-source license.
+
+The license allows personal non-commercial use, educational or portfolio review,
+private non-commercial modification, and non-commercial patches or forks that
+preserve the project notices. Selling, paid hosting, commercial bundling,
+commercial distribution, or commercial derivative use requires prior written
+permission from the copyright holder.
 
 See [LICENSE](LICENSE) for the project-specific terms. Third-party Deadlands,
 Savage Worlds, SWADE, and related names or setting material remain owned by
