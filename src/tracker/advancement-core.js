@@ -253,6 +253,12 @@ function normalizeAdvanceTarget(target) {
  * App-owned advances should converge on the canonical ledger shape, while
  * imported history can remain non-undoable when reliable before/after changes
  * are unavailable.
+ *
+ * Canonical app-owned shape:
+ * - id, type, label, source, advanceNumber, rankAtTime, createdAt
+ * - targets[] for user intent when an advance can affect multiple records
+ * - changes[] for trusted before/after mutations used by safe undo
+ * - notes plus compatibility fields read from older pre-release entries
  */
 function normalizeAdvanceEntry(entry, index = 0) {
   const raw =
@@ -325,6 +331,14 @@ function normalizeAdvanceEntry(entry, index = 0) {
   };
 }
 
+/**
+ * Normalize a canonical ledger change.
+ *
+ * A change is the trusted mutation atom for app-owned advancement:
+ * - path: stable app path for the changed value or added entity
+ * - before / after: exact values needed to validate and undo safely
+ * - displayLabel: player-readable label for warnings and undo previews
+ */
 function normalizeCanonicalChange(change) {
   if (!change || typeof change !== "object") return null;
   return {
@@ -336,6 +350,13 @@ function normalizeCanonicalChange(change) {
   };
 }
 
+/**
+ * Convert current application mutation records into canonical changes.
+ *
+ * The implementation still names the local mutation array legacyChanges because
+ * older code produced appliedChanges. The returned changes[] is the source of
+ * truth for new app-owned ledger entries.
+ */
 function canonicalChangesFromLegacyChanges(changes) {
   return (Array.isArray(changes) ? changes : [])
     .map(canonicalChangeFromLegacyChange)
@@ -415,6 +436,13 @@ function canonicalChangeFromLegacyChange(change) {
   return null;
 }
 
+/**
+ * Normalize and de-duplicate all advancement history IDs.
+ *
+ * This function preserves imported-history entries even when they are not
+ * undoable, because imported text is useful chronology. Only app-owned entries
+ * with reliable changes[] should participate in safe undo.
+ */
 function normalizeAdvances(entries) {
   const used = new Set();
   return (Array.isArray(entries) ? entries : []).map((entry, index) => {
@@ -1006,6 +1034,11 @@ function increasePowerPointsForAdvance(advance) {
  * This is the mutation boundary for app-owned advances. It must update the
  * character and record enough canonical before/after data for later safe undo
  * checks.
+ *
+ * Supported app-owned application types intentionally stay narrow here:
+ * skill-increase, two-skills-increase, attribute-increase, edge-gain,
+ * power-gain, and power-points-increase. Other history remains record-only
+ * until a deterministic mutation model exists.
  */
 function applyAdvanceToCharacter(advance) {
   if (advance.applied) return advance;
@@ -1077,6 +1110,14 @@ function canonicalChangeAfterId(change) {
     : change.targetId || "";
 }
 
+/**
+ * Validate one canonical change before undo.
+ *
+ * Undo is conservative by design. The current record must still match the
+ * recorded after-state and advancement-created records must still point back to
+ * the same advance. If anything drifted, the UI should explain the unsafe undo
+ * instead of guessing.
+ */
 function canUndoAdvanceChange(advance, change) {
   if (change.targetType === "edge" && change.operation === "add") {
     const entityId = canonicalChangeAfterId(change);

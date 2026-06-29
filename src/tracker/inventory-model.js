@@ -88,6 +88,13 @@ function normalizeItemStorageId(source, currentCharacter = character) {
   );
 }
 
+/**
+ * Normalize one physical item's location fields.
+ *
+ * Physical items use itemLocation/storageId/containerId rather than the older
+ * inventory-only location field so weapons, armor, ammo, consumables, and gear
+ * can all share movement, storage, and load rules.
+ */
 function normalizePhysicalItemLocation(
   item,
   fallback = "carried",
@@ -293,6 +300,12 @@ function normalizeInventoryState(currentCharacter) {
  * Weapons, armor, ammo, vehicles, and gear all need to move between carried,
  * backpack/container, and off-person locations. This pass keeps those records
  * interoperable before encumbrance or inventory UI reads them.
+ *
+ * Contract:
+ * - equipped/carried count as on-person unless inside a dropped container
+ * - stored with a storageId is off-person and excluded from carried load
+ * - container with a containerId inherits the containing inventory item's state
+ * - dropped is on the scene but excluded from carried/combat load
  */
 function normalizePhysicalInventoryState(currentCharacter) {
   (currentCharacter.weapons || []).forEach((weapon) =>
@@ -460,6 +473,13 @@ function setInventoryItemLocation(item, location, storageId = "") {
   item.storageId = item.location === "stored" ? storageId : "";
 }
 
+/**
+ * Set the shared physical item location fields for non-inventory collections.
+ *
+ * Inventory gear has nested contents; other collections stay flat and refer to
+ * a container by ID. Keep this helper as the only writer for itemLocation,
+ * storageId, and containerId on weapons, armor, ammo, and consumables.
+ */
 function setPhysicalItemLocation(
   item,
   location,
@@ -504,6 +524,13 @@ function findPhysicalItem(type, id) {
   return null;
 }
 
+/**
+ * Move a flat physical item collection record.
+ *
+ * Armor equip state derives from itemLocation after movement. Other physical
+ * records are not copied into inventory containers; they reference the
+ * container ID so their original collection-specific fields remain intact.
+ */
 function movePhysicalItem(type, id, destination, destinationId = "") {
   const item = findPhysicalItem(type, id);
   if (!item) return;

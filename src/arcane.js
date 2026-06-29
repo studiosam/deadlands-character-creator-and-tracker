@@ -182,6 +182,13 @@ function isArcaneBackgroundEdge(edgeName) {
   return Boolean(arcaneBackgroundConfigFromEdge(edgeName));
 }
 
+/**
+ * Store the compact Arcane Background state on a character.
+ *
+ * Full profile data stays in ARCANE_BACKGROUNDS. Character records keep only the
+ * stable identifiers and display fields needed by setup, import, resources, and
+ * combat reminders.
+ */
 function makeArcaneBackgroundState(config) {
   if (!config) return null;
   return {
@@ -200,6 +207,10 @@ function makeArcaneBackgroundState(config) {
  *
  * Power Points are stored as a normal tracker resource so setup, combat, import,
  * and advancement workflows can all read the same current/max values.
+ *
+ * The resource contract is id: "power-points", current, max, source,
+ * creationSource, and note. Setup source details are attached by setup-source.js
+ * when the resource is granted during character creation.
  */
 function makePowerPointResource(config, overrides = {}) {
   const max = Math.max(
@@ -287,6 +298,10 @@ function makeHucksterDeal() {
  *
  * Catalog metadata fills missing display fields, while source and creation
  * metadata stay attached so setup audits can explain why a power exists.
+ *
+ * Power records may represent known powers, setup placeholders, or active
+ * combat powers. Do not infer legality here; setup audits and Arcane Background
+ * profiles decide whether a power belongs to a character.
  */
 function normalizePowerRecord(power, index = 0, fallbackSource = "") {
   if (typeof power === "string") power = { name: power };

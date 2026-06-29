@@ -132,6 +132,14 @@ function inferSetupCreationSource(record) {
   );
 }
 
+/**
+ * Apply canonical setup source fields to a setup-created record.
+ *
+ * The source contract uses:
+ * - creationSource: compact machine token, such as setup-starting-gear
+ * - source: user-facing label for lists and audits
+ * - sourceDetail: structured metadata that explains the grant or purchase
+ */
 function applySetupSourceFields(record, creationSource, detail = {}) {
   if (!record || typeof record !== "object") return record;
   const token = normalizeSetupSourceToken(creationSource);
@@ -142,6 +150,13 @@ function applySetupSourceFields(record, creationSource, detail = {}) {
   return record;
 }
 
+/**
+ * Normalize existing setup source metadata without overwriting useful detail.
+ *
+ * This is used for current records, imports, and older local saves. It upgrades
+ * recognizable source strings into the canonical source fields while leaving
+ * unknown records available for setup audit and GM exception notes.
+ */
 function normalizeSetupSourceFields(
   record,
   fallbackCreationSource = "",
@@ -226,6 +241,14 @@ function setupGearRecordDetail(record, purchaseType = "gear") {
   };
 }
 
+/**
+ * Normalize setup source tracking across every setup-owned collection.
+ *
+ * When assumeCurrentRecordsAreSetup is true, current records are treated as the
+ * finalized starting package and receive setup source tags. Imported or advanced
+ * characters should usually call this without that option so unexplained records
+ * remain visible to audits instead of being silently trusted.
+ */
 function normalizeSetupSourceTracking(
   currentCharacter = character,
   options = {},
@@ -313,6 +336,14 @@ function normalizeSetupSourceTracking(
   return currentCharacter;
 }
 
+/**
+ * Snapshot the finalized starting state.
+ *
+ * The baseline is the app's reference point for distinguishing setup-created
+ * records from play-time changes and future advancement. Store full records,
+ * money source detail, setup exceptions, and core traits so later audits can
+ * explain what was known at confirmation time.
+ */
 function buildCreationBaselineSnapshot(currentCharacter = character) {
   const now = new Date().toISOString();
   return {

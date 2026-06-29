@@ -45,6 +45,8 @@ function savagedAdvanceLabel(advance) {
  *
  * The export does not provide trusted before/after mutations for undo, so these
  * entries carry labels and advance numbers but intentionally have empty changes.
+ * Imported history should inform chronology and audits, not drive safe undo or
+ * rules enforcement unless a future export provides reliable mutation details.
  */
 function savagedAdvances(data) {
   return arr(data.advances).map((advance, index) => {
@@ -250,6 +252,8 @@ function shouldEnablePowerPointsFromImport(data) {
  *
  * Deadlands has arcane and supernatural concepts that do not use normal Power
  * Points, so ambiguous imports produce warnings rather than automatic resources.
+ * Explicit Savaged.us Power Point pools win; inferred Arcane Background profiles
+ * are only used when the export gives enough signal to avoid false positives.
  */
 function savagedResources(data) {
   const resources = [];
@@ -425,6 +429,10 @@ function savagedImportWarnings(data, resources, config) {
  * This function performs source-specific extraction only. The returned payload
  * still passes through normalize(), where app-wide defaults, migrations, and
  * physical inventory location rules are applied consistently.
+ *
+ * Imported characters remain setupStatus: needsReview so the app can show audit
+ * gaps instead of pretending third-party data has the same source tracking and
+ * creation baseline as an app-created character.
  */
 function fromSavagedUs(data) {
   const strength =
