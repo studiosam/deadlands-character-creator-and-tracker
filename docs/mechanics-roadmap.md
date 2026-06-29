@@ -187,8 +187,14 @@ Current implementation:
   math. They raise maximum Wounds to four or five before Incapacitation; they
   do not alter Toughness.
 - Explicit `automation-status` markers now surface entries that are known but
-  not safely automated yet, including manual/table-only, resource-model,
-  action-state, and subchoice-required effects.
+  not safely automated yet, including manual/table-only and subchoice-required
+  effects.
+- Luck, Great Luck, and Bad Luck now modify computed starting Bennies through
+  the session resource model, and Start Session resets current Bennies to that
+  computed value.
+- Quick, Hesitant, Level Headed, and Improved Level Headed now feed a Combat
+  Action Cards model that records player-entered cards, checks Quick redraw
+  eligibility, and displays the effective draw/keep instruction.
 - Trademark Weapon and Reputation now store explicit subchoice metadata; their
   status markers change from `subchoice-required` to `subchoice-selected` once
   the chosen weapon or reputation type is recorded.
@@ -198,16 +204,16 @@ Current implementation:
 Effect Hook Candidate Audit:
 
 - Already implemented: Alertness, Block, Brave, Brawler, Brawny, Danger Sense,
-  Improved Block, Improved Nerves of Steel, Soldier, Fleet-Footed, All Thumbs,
-  Anemic, Arcane Resistance, Improved Arcane Resistance, Aristocrat,
-  Attractive, Very Attractive, Clueless, Clumsy, Elan, Fast Healer, Healer,
-  Investigator, Iron Jaw, Iron Will, Mean, Menacing, Mild Mannered, Mr. Fix It,
-  Nerves of Steel, One Eye, Small, Slow, Streetwise, Strong Willed, Thief,
+  Great Luck, Improved Block, Improved Level Headed, Improved Nerves of Steel,
+  Soldier, Fleet-Footed, All Thumbs, Anemic, Arcane Resistance, Improved Arcane
+  Resistance, Aristocrat, Attractive, Very Attractive, Bad Luck, Clueless,
+  Clumsy, Elan, Fast Healer, Healer, Hesitant, Investigator, Iron Jaw, Iron
+  Will, Level Headed, Luck, Mean, Menacing, Mild Mannered, Mr. Fix It, Nerves
+  of Steel, One Eye, Quick, Small, Slow, Streetwise, Strong Willed, Thief,
   Tongue-Tied, Tough as Nails, Tougher than Nails, Weapon Master, Master of
   Arms, Woodsman, Yellow, and Obese.
-- Explicitly marked but not fully automated: Berserk, Luck, Great Luck, Bad
-  Luck, Quick, Hesitant, Level Headed, unresolved Trademark Weapon, and
-  unresolved Reputation.
+- Explicitly marked but not fully automated: Berserk, unresolved Trademark
+  Weapon, and unresolved Reputation.
 - Subchoice storage implemented: Trademark Weapon chosen weapon and Reputation
   good/bad type.
 - Passive math, high confidence: the current small deterministic set is covered
@@ -217,14 +223,16 @@ Effect Hook Candidate Audit:
   True Grit, Whateley Blood, and other setting-specific entries whose exact
   numeric value or resource impact needs a narrower rules pass before
   automation.
-- Initiative and Action Card reminders: Bad Luck, Hesitant, Luck, Great Luck,
-  Quick, Level Headed, Improved Level Headed, Calculating, Dead Shot, Mighty
-  Blow, Tactician, Master Tactician, Quick Draw, and Fast as Lightning. These
-  should remain reminders until Combat has action-card state.
-- Resource or session-start effects: Bad Luck, Luck, Great Luck, Power Points,
-  Rapid Recharge, Improved Rapid Recharge, Power Surge, Soul Drain, and Behold
-  a Pale Horse. These need source-tracked resource/session handling rather than
-  one-time silent mutations.
+- Initiative and Action Card effects: Quick, Hesitant, Level Headed, and
+  Improved Level Headed have a basic action-card state model. Remaining
+  initiative, Joker, or action-context entries include Calculating, Dead Shot,
+  Mighty Blow, Tactician, Master Tactician, Quick Draw, and Fast as Lightning.
+  These need Joker/turn/action context before reliable automation.
+- Resource or session-start effects: Rapid Recharge, Improved Rapid Recharge,
+  Power Surge, Soul Drain, and Behold a Pale Horse. Luck, Great Luck, and Bad
+  Luck are now handled by the session Benny model. Remaining items need
+  source-tracked resource/session handling rather than one-time silent
+  mutations.
 - Subchoice or target-required effects: Scholar, Trademark Weapon, Improved
   Trademark Weapon, Reputation, Martial Artist, Martial Warrior, Chi, Champion,
   Assassin, Giant Killer, Double Tap, Dodge, Improved Dodge, Marksman, Rapid
@@ -239,10 +247,34 @@ Effect Hook Candidate Audit:
   Ways Oath, Tenderfoot, Tale-Teller, organization rank/favor Edges, Harrowed
   powers, Mad Scientist device Edges, Shaman restriction Edges, Behold a Pale
   Horse, and most story or Marshal-facing effects.
-- Next safest code slice: either add session/action-card resource models for
-  marked entries such as Luck and Quick, add subchoice storage for the next
-  target-required Edge group, or run a narrow setting-specific pass for Guts,
-  Grit, True Grit, and Whateley Blood.
+- Small Phase 2 audit result: the next best accuracy payoff is Power Point
+  recovery for Rapid Recharge and Improved Rapid Recharge. The app already has
+  a canonical `power-points` resource and recovery controls, and these Edges
+  have deterministic replacement behavior that should improve live-play
+  accuracy without adding attack resolution or target context.
+
+Recommended next code slice:
+
+1. Add resource-recovery effect metadata for Rapid Recharge and Improved Rapid
+   Recharge, with Improved replacing the base Edge.
+2. Add a helper that computes Power Point recovery per hour from effect hooks,
+   defaulting to the normal rate when no Edge applies.
+3. Update Combat and Arcane Power Point controls to show and apply the computed
+   one-hour recovery button.
+4. Preserve existing manual recovery buttons or rename them so they remain
+   clearly manual.
+5. Add focused tests proving default recovery, Rapid Recharge recovery,
+   Improved replacement, clamping at max, and reload/export/import persistence.
+
+Deferred after this audit:
+
+- Guts, Grit, True Grit, and Whateley Blood need a narrow setting-specific rules
+  pass before automation because they touch Fear penalties, rerolls, social
+  penalties, and Power Point/Fatigue tradeoffs.
+- Calculating, Dead Shot, Mighty Blow, Tactician, Master Tactician, Quick Draw,
+  and Fast as Lightning need more turn/Joker/action context.
+- Dodge, Double Tap, Marksman, Rapid Fire, Assassin, Giant Killer, and similar
+  combat Edges need attack-context modeling before reliable automation.
 
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.
