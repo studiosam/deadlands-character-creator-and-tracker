@@ -2581,12 +2581,12 @@ test("Expanded Hindrance roll modifier effects render on Character and Combat", 
   ]);
 });
 
-test("Automation status effects mark resource action and table-dependent entries", async ({
+test("Session and action-card effects render concrete model hooks", async ({
   page,
 }) => {
   await seedEffectHookCharacter(page, {
-    name: "Automation Status Tester",
-    preferredId: "automation-status-tester",
+    name: "Session Action Model Tester",
+    preferredId: "session-action-model-tester",
     edgeIds: [
       "swade-edge-berserk",
       "swade-edge-luck",
@@ -2603,29 +2603,21 @@ test("Automation status effects mark resource action and table-dependent entries
   await expect(derived).toContainText(
     "Manual/table: track Berserk state and uncontrolled attacks",
   );
-  await expect(derived).toContainText("Luck");
-  await expect(derived).toContainText(
-    "Resource model needed: +1 session Benny not auto-applied",
-  );
   await expect(derived).toContainText("Great Luck");
-  await expect(derived).toContainText(
-    "Resource model needed: +2 session Bennies not auto-applied",
-  );
+  await expect(derived).toContainText("Starting Bennies +2");
   await expect(derived).toContainText("Bad Luck");
-  await expect(derived).toContainText(
-    "Resource model needed: -1 session Benny not auto-applied",
-  );
+  await expect(derived).toContainText("Starting Bennies -1");
   await expect(derived).toContainText("Quick");
   await expect(derived).toContainText(
-    "Action state needed: redraw Action Cards of 5 or lower",
+    "Action Cards of 5 or lower may be redrawn",
   );
   await expect(derived).toContainText("Hesitant");
   await expect(derived).toContainText(
-    "Action state needed: draw two Action Cards and keep the lowest",
+    "Draw two Action Cards and keep the lowest, except Jokers",
   );
   await expect(derived).toContainText("Level Headed");
   await expect(derived).toContainText(
-    "Action state needed: draw an additional Action Card",
+    "Draw an additional Action Card and choose which to use",
   );
 
   await openCombat(page);
@@ -2634,22 +2626,34 @@ test("Automation status effects mark resource action and table-dependent entries
     "Berserk: Manual/table: track Berserk state and uncontrolled attacks",
   );
   await expect(combatBreakdown).toContainText(
-    "Quick: Action state needed: redraw Action Cards of 5 or lower",
+    "Quick: Action Cards of 5 or lower may be redrawn",
   );
   await expect(combatBreakdown).toContainText(
-    "Hesitant: Action state needed: draw two Action Cards and keep the lowest",
+    "Hesitant: Draw two Action Cards and keep the lowest, except Jokers",
   );
   await expect(combatBreakdown).toContainText(
-    "Level Headed: Action state needed: draw an additional Action Card",
+    "Level Headed: Draw an additional Action Card and choose which to use",
+  );
+  const actionCardPanel = page.locator("#actionCardPanel");
+  await expect(actionCardPanel).toBeVisible();
+  await expect(actionCardPanel).toContainText(
+    "Quick: record an Action Card to check redraw.",
   );
 
   const computed = await page.evaluate(() =>
     effectHookSummariesForSurface(character, "character")
-      .filter((effect) => effect.type === "automation-status")
+      .filter((effect) =>
+        [
+          "automation-status",
+          "session-resource-modifier",
+          "action-card-rule",
+        ].includes(effect.type),
+      )
       .map((effect) => ({
         sourceName: effect.sourceName,
         target: effect.target,
-        status: effect.status,
+        type: effect.type,
+        value: effect.value,
         displayLabel: effect.displayLabel,
       })),
   );
@@ -2657,49 +2661,128 @@ test("Automation status effects mark resource action and table-dependent entries
     {
       sourceName: "Berserk",
       target: "berserk-state",
-      status: "table-dependent",
+      type: "automation-status",
+      value: undefined,
       displayLabel:
         "Manual/table: track Berserk state and uncontrolled attacks",
     },
     {
-      sourceName: "Luck",
-      target: "session-bennies",
-      status: "resource-model-needed",
-      displayLabel: "Resource model needed: +1 session Benny not auto-applied",
-    },
-    {
       sourceName: "Great Luck",
-      target: "session-bennies",
-      status: "resource-model-needed",
-      displayLabel:
-        "Resource model needed: +2 session Bennies not auto-applied",
+      target: "starting-bennies",
+      type: "session-resource-modifier",
+      value: 2,
+      displayLabel: "Starting Bennies +2",
     },
     {
       sourceName: "Quick",
-      target: "action-card-redraw",
-      status: "action-state-needed",
-      displayLabel: "Action state needed: redraw Action Cards of 5 or lower",
+      target: "quick-redraw",
+      type: "action-card-rule",
+      value: undefined,
+      displayLabel: "Action Cards of 5 or lower may be redrawn",
     },
     {
       sourceName: "Level Headed",
-      target: "action-card-draw",
-      status: "action-state-needed",
-      displayLabel: "Action state needed: draw an additional Action Card",
+      target: "level-headed-draw",
+      type: "action-card-rule",
+      value: undefined,
+      displayLabel: "Draw an additional Action Card and choose which to use",
     },
     {
       sourceName: "Bad Luck",
-      target: "session-bennies",
-      status: "resource-model-needed",
-      displayLabel: "Resource model needed: -1 session Benny not auto-applied",
+      target: "starting-bennies",
+      type: "session-resource-modifier",
+      value: -1,
+      displayLabel: "Starting Bennies -1",
     },
     {
       sourceName: "Hesitant",
-      target: "action-card-draw",
-      status: "action-state-needed",
-      displayLabel:
-        "Action state needed: draw two Action Cards and keep the lowest",
+      target: "hesitant-draw",
+      type: "action-card-rule",
+      value: undefined,
+      displayLabel: "Draw two Action Cards and keep the lowest, except Jokers",
     },
   ]);
+});
+
+test("Luck and Bad Luck update starting Bennies and Start Session reset", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Session Bennies Tester",
+    preferredId: "session-bennies-tester",
+    edgeIds: ["swade-edge-luck", "swade-edge-great-luck"],
+    hindranceIds: ["swade-hindrance-bad-luck"],
+  });
+
+  await expect(page.locator("#bennyStart")).toHaveText("Start 4");
+  expect(
+    await page.evaluate(() => ({
+      normalStarting: character.bennies.normalStarting,
+      starting: character.bennies.starting,
+      modifier: characterStartingBennyModifier(character),
+    })),
+  ).toEqual({
+    normalStarting: 3,
+    starting: 4,
+    modifier: 1,
+  });
+
+  await openHeaderMenu(page);
+  await page.locator("#newSessionBtn").click();
+  await page.locator("#appDialogConfirmBtn").click();
+  await expect(page.locator("#benniesValue")).toHaveText("4");
+  expect(await page.evaluate(() => character.bennies.current)).toBe(4);
+});
+
+test("Action Card model tracks Quick redraw state and persists cards", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Action Card State Tester",
+    preferredId: "action-card-state-tester",
+    edgeIds: ["swade-edge-quick", "swade-edge-level-headed"],
+    hindranceIds: ["swade-hindrance-hesitant"],
+  });
+
+  await openCombat(page);
+  const panel = page.locator("#actionCardPanel");
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText(
+    "Quick: record an Action Card to check redraw.",
+  );
+  await expect(panel).toContainText(
+    "Level Headed: Draw an additional Action Card and choose which to use",
+  );
+  await expect(panel).toContainText(
+    "Hesitant: Draw two Action Cards and keep the lowest, except Jokers",
+  );
+
+  await page.locator("#actionCardInput").fill("5H");
+  await expect(panel).toContainText("Quick redraw available for this card.");
+  await page.locator("#actionCardSecondaryInput").fill("King");
+  await page.locator("#actionCardNotesInput").fill("Round 1");
+  expect(await page.evaluate(() => character.actionCards)).toEqual({
+    current: "5H",
+    secondary: "King",
+    notes: "Round 1",
+  });
+
+  await reloadIntoTracker(page);
+  await openCombat(page);
+  await expect(page.locator("#actionCardInput")).toHaveValue("5H");
+  await expect(page.locator("#actionCardSecondaryInput")).toHaveValue("King");
+  await expect(page.locator("#actionCardNotesInput")).toHaveValue("Round 1");
+  await expect(panel).toContainText("Quick redraw available for this card.");
+
+  await page.locator("#actionCardInput").fill("Joker");
+  await expect(panel).toContainText("Quick: Joker is not redrawn.");
+  await page.locator("#clearActionCardsBtn").click();
+  await expect(page.locator("#actionCardInput")).toHaveValue("");
+  expect(await page.evaluate(() => character.actionCards)).toEqual({
+    current: "",
+    secondary: "",
+    notes: "",
+  });
 });
 
 test("Automation status effects mark subchoice-required entries", async ({

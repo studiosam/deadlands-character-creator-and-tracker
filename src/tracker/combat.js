@@ -86,6 +86,51 @@ function renderCombatStatusResources() {
   ].join("");
 }
 
+function renderActionCards() {
+  character.actionCards = normalizeActionCardState(character.actionCards);
+  const state = character.actionCards;
+  const capabilities = actionCardCapabilities(character);
+  const quickStatus = quickRedrawStatus(character);
+  const hasTrackedState = Boolean(
+    state.current || state.secondary || state.notes,
+  );
+  const isRelevant = Boolean(capabilities.effects.length || hasTrackedState);
+
+  els.actionCardPanel.classList.toggle("hidden", !isRelevant);
+  if (!isRelevant) return;
+
+  const rules = capabilities.effects.map(
+    (effect) => `${effect.sourceName}: ${effect.displayLabel}`,
+  );
+  if (quickStatus.applies) rules.push(quickStatus.label);
+
+  els.actionCardStatusPill.textContent = quickStatus.available
+    ? "Redraw"
+    : capabilities.effects.length
+      ? "Tracked"
+      : "Manual";
+  els.actionCardSummary.textContent = capabilities.recordsMultipleCards
+    ? "Record the current round's Action Cards for draw/keep rules."
+    : "Record the current Action Card for redraw checks.";
+  els.actionCardRules.innerHTML = rules.length
+    ? rules.map((rule) => `<span>${esc(rule)}</span>`).join("")
+    : "<span>No Action Card Edges or Hindrances detected.</span>";
+  els.actionCardSecondaryField.classList.toggle(
+    "hidden",
+    !capabilities.recordsMultipleCards && !state.secondary,
+  );
+
+  if (document.activeElement !== els.actionCardInput) {
+    els.actionCardInput.value = state.current;
+  }
+  if (document.activeElement !== els.actionCardSecondaryInput) {
+    els.actionCardSecondaryInput.value = state.secondary;
+  }
+  if (document.activeElement !== els.actionCardNotesInput) {
+    els.actionCardNotesInput.value = state.notes;
+  }
+}
+
 function combatPenaltyInfo() {
   const rawWoundPenalty = Math.min(
     character.damage.wounds,

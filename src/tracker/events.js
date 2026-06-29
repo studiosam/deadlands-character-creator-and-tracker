@@ -5,6 +5,13 @@ function updateHucksterDealField(field, value) {
   save();
 }
 
+function updateActionCardField(field, value) {
+  character.actionCards = normalizeActionCardState(character.actionCards);
+  character.actionCards[field] = String(value || "").trim();
+  render();
+  save();
+}
+
 function action(type) {
   switch (type) {
     case "incWounds":
@@ -345,10 +352,23 @@ els.clearTempConditionsBtn.onclick = () => {
     updateHucksterDealField(field, els[elementKey].checked);
   };
 });
+[
+  ["actionCardInput", "current"],
+  ["actionCardSecondaryInput", "secondary"],
+  ["actionCardNotesInput", "notes"],
+].forEach(([elementKey, field]) => {
+  els[elementKey].oninput = () =>
+    updateActionCardField(field, els[elementKey].value);
+});
+els.clearActionCardsBtn.onclick = () => {
+  character.actionCards = normalizeActionCardState(null);
+  render();
+  save();
+};
 els.newSessionBtn.onclick = async () => {
   if (
     !(await appConfirm(
-      "This resets bennies to starting, clears conviction, refills resources, and clears temporary conditions.",
+      "This resets bennies to starting, clears conviction, refills resources, clears Action Cards, and clears temporary conditions.",
       {
         title: "Start a new play session?",
         confirmText: "Start Session",
@@ -356,7 +376,9 @@ els.newSessionBtn.onclick = async () => {
     ))
   )
     return;
+  syncCharacterStartingBennies(character);
   character.bennies.current = character.bennies.starting;
+  character.actionCards = normalizeActionCardState(null);
   character.conviction = 0;
   character.resources.forEach((resource) => (resource.current = resource.max));
   character.temporaryConditions.forEach(

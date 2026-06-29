@@ -19,11 +19,23 @@ function normalize(data, options = {}) {
   normalized.player ||= defaults.player || "";
   normalized.description ||= defaults.description || "";
   normalized.background ||= defaults.background || "";
+  const rawBennies =
+    normalized.bennies && typeof normalized.bennies === "object"
+      ? normalized.bennies
+      : {};
+  const hasRawBennyStarting = Object.prototype.hasOwnProperty.call(
+    rawBennies,
+    "starting",
+  );
+  const hasRawNormalStarting = Object.prototype.hasOwnProperty.call(
+    rawBennies,
+    "normalStarting",
+  );
   normalized.setupStatus = normalizeSetupStatus(
     normalized.setupStatus,
     options.defaultSetupStatus || "complete",
   );
-  normalized.bennies = { ...defaults.bennies, ...(normalized.bennies || {}) };
+  normalized.bennies = { ...defaults.bennies, ...rawBennies };
   normalized.damage = { ...defaults.damage, ...(normalized.damage || {}) };
   normalized.derived = { ...defaults.derived, ...(normalized.derived || {}) };
   normalized.attributes =
@@ -210,6 +222,18 @@ function normalize(data, options = {}) {
 
   normalized.edges = normalizeEdges(normalized.edges);
   normalized.hindrances = normalizeHindrances(normalized.hindrances);
+  normalized.actionCards = normalizeActionCardState(normalized.actionCards);
+  if (!hasRawNormalStarting && hasRawBennyStarting) {
+    const rawStarting = Math.max(
+      0,
+      Math.floor(Number(rawBennies.starting) || 0),
+    );
+    normalized.bennies.normalStarting = Math.max(
+      0,
+      rawStarting - characterStartingBennyModifier(normalized),
+    );
+  }
+  syncCharacterStartingBennies(normalized);
   normalized.inventory = Array.isArray(normalized.inventory)
     ? normalized.inventory
     : [];

@@ -9,6 +9,7 @@ const defaultCharacter = {
   description: "",
   background: "",
   bennies: { current: 2, starting: 2, normalStarting: 3 },
+  actionCards: { current: "", secondary: "", notes: "" },
   conviction: 0,
   damage: { wounds: 0, maxWounds: 3, fatigue: 0, maxFatigue: 2 },
   derived: { pace: 5, parry: 4, baseToughness: 6, toughness: 7, armor: 1 },

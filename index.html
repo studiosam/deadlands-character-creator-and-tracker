@@ -342,6 +342,34 @@
                   id="combatStatusResources"
                   class="grid combat-inline"
                 ></div>
+                <div id="actionCardPanel" class="block hidden">
+                  <div class="topline">
+                    <h3>Action Cards</h3>
+                    <span id="actionCardStatusPill" class="pill">Tracked</span>
+                  </div>
+                  <p id="actionCardSummary" class="muted"></p>
+                  <div id="actionCardRules" class="penalty-breakdown"></div>
+                  <div class="inline-form">
+                    <label
+                      >Current card<input
+                        id="actionCardInput"
+                        placeholder="5H, King, Joker"
+                    /></label>
+                    <label id="actionCardSecondaryField"
+                      >Second card<input
+                        id="actionCardSecondaryInput"
+                        placeholder="Optional"
+                    /></label>
+                    <label
+                      >Notes<input
+                        id="actionCardNotesInput"
+                        placeholder="Round or redraw notes"
+                    /></label>
+                    <button id="clearActionCardsBtn" type="button">
+                      Clear Cards
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -1813,6 +1841,7 @@
     <script src="src/default-character.js"></script>
     <script src="src/tracker/constants.js"></script>
     <script src="src/tracker/state-dom.js"></script>
+    <script src="src/tracker/session-action-model.js"></script>
     <script src="src/tracker/effect-hooks.js"></script>
     <script src="src/app-ui.js"></script>
     <script src="src/tracker/utils.js"></script>

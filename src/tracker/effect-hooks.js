@@ -464,12 +464,9 @@ const EFFECT_HOOK_REGISTRY = [
     label: "Luck",
     summary: "Starts each session with one additional Benny.",
     effects: [
-      automationStatusEffect(
-        "resource-model-needed",
-        "session-bennies",
-        "Resource model needed: +1 session Benny not auto-applied",
-        ["character", "combat"],
-      ),
+      sessionBennyEffect(1, "Starting Bennies +1", {
+        exclusiveGroup: "session-benny-luck",
+      }),
     ],
   },
   {
@@ -479,12 +476,9 @@ const EFFECT_HOOK_REGISTRY = [
     label: "Great Luck",
     summary: "Starts each session with two additional Bennies.",
     effects: [
-      automationStatusEffect(
-        "resource-model-needed",
-        "session-bennies",
-        "Resource model needed: +2 session Bennies not auto-applied",
-        ["character", "combat"],
-      ),
+      sessionBennyEffect(2, "Starting Bennies +2", {
+        exclusiveGroup: "session-benny-luck",
+      }),
     ],
   },
   {
@@ -494,11 +488,9 @@ const EFFECT_HOOK_REGISTRY = [
     label: "Quick",
     summary: "May discard and redraw Action Cards of 5 or lower.",
     effects: [
-      automationStatusEffect(
-        "action-state-needed",
-        "action-card-redraw",
-        "Action state needed: redraw Action Cards of 5 or lower",
-        ["character", "combat"],
+      actionCardRuleEffect(
+        "quick-redraw",
+        "Action Cards of 5 or lower may be redrawn",
       ),
     ],
   },
@@ -510,11 +502,9 @@ const EFFECT_HOOK_REGISTRY = [
     summary:
       "Draw an additional Action Card each round and choose which to use.",
     effects: [
-      automationStatusEffect(
-        "action-state-needed",
-        "action-card-draw",
-        "Action state needed: draw an additional Action Card",
-        ["character", "combat"],
+      actionCardRuleEffect(
+        "level-headed-draw",
+        "Draw an additional Action Card and choose which to use",
       ),
     ],
   },
@@ -850,14 +840,7 @@ const EFFECT_HOOK_REGISTRY = [
     matchName: "Bad Luck",
     label: "Bad Luck",
     summary: "Starts each session with one fewer Benny.",
-    effects: [
-      automationStatusEffect(
-        "resource-model-needed",
-        "session-bennies",
-        "Resource model needed: -1 session Benny not auto-applied",
-        ["character", "combat"],
-      ),
-    ],
+    effects: [sessionBennyEffect(-1, "Starting Bennies -1")],
   },
   {
     id: "hindrance-clueless",
@@ -906,11 +889,9 @@ const EFFECT_HOOK_REGISTRY = [
     label: "Hesitant",
     summary: "Draws two Action Cards and keeps the lowest, except Jokers.",
     effects: [
-      automationStatusEffect(
-        "action-state-needed",
-        "action-card-draw",
-        "Action state needed: draw two Action Cards and keep the lowest",
-        ["character", "combat"],
+      actionCardRuleEffect(
+        "hesitant-draw",
+        "Draw two Action Cards and keep the lowest, except Jokers",
       ),
     ],
   },

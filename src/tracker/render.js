@@ -115,6 +115,7 @@ function render() {
   els.fatigueNote.textContent = character.damage.fatigue
     ? "Apply fatigue penalty to affected trait rolls."
     : "Fresh";
+  syncCharacterStartingBennies(character);
   els.benniesValue.textContent = character.bennies.current;
   els.bennyStart.textContent = `Start ${character.bennies.starting}`;
   els.convictionValue.textContent = character.conviction;
@@ -776,6 +777,7 @@ function renderKeyConditions() {
 function renderPlaySummary() {
   renderCombatWeapons();
   renderCombatStatusResources();
+  renderActionCards();
   renderCombatPowerPoints();
 
   const activeResources = character.resources.filter(
