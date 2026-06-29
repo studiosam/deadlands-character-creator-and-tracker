@@ -2472,6 +2472,140 @@ test("Expanded Edge roll modifier effects render and replace improved variants",
   );
 });
 
+test("Guts Grit and True Grit render a concise Fear check reminder", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Fear Reminder Chain Tester",
+    preferredId: "fear-reminder-chain-tester",
+    edgeIds: ["dl-edge-guts", "dl-edge-grit", "dl-edge-true-grit"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("True Grit");
+  await expect(derived).toContainText(
+    "Fear check reminder: True Grit Edge present",
+  );
+  await expect(derived).not.toContainText(
+    "Fear check reminder: Guts Edge present",
+  );
+  await expect(derived).not.toContainText(
+    "Fear check reminder: Grit Edge present",
+  );
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "True Grit: Fear check reminder: True Grit Edge present",
+  );
+
+  expect(
+    await page.evaluate(() => ({
+      state: characterFearCheckEdgeState(character),
+      summaries: effectHookSummariesForSurface(character, "character")
+        .filter((effect) => effect.target === "fear-check-edge-chain")
+        .map((effect) => ({
+          sourceName: effect.sourceName,
+          target: effect.target,
+          type: effect.type,
+          value: effect.value,
+          status: effect.status,
+          displayLabel: effect.displayLabel,
+        })),
+    })),
+  ).toEqual({
+    state: {
+      hasGuts: true,
+      hasGrit: true,
+      hasTrueGrit: true,
+      reviewNotes: [],
+    },
+    summaries: [
+      {
+        sourceName: "True Grit",
+        target: "fear-check-edge-chain",
+        type: "reminder",
+        value: 3,
+        status: undefined,
+        displayLabel: "Fear check reminder: True Grit Edge present",
+      },
+    ],
+  });
+});
+
+test("Fear check Edge chain flags suspicious prerequisite data", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Fear Chain Audit Tester",
+    preferredId: "fear-chain-audit-tester",
+    edgeIds: ["dl-edge-grit"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  let derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Fear check reminder: Grit Edge present");
+  await expect(derived).toContainText(
+    "Manual review: Grit recorded without Guts",
+  );
+  expect(
+    await page.evaluate(() => ({
+      state: characterFearCheckEdgeState(character),
+      auditNotes: effectHookSummariesForSurface(character, "character")
+        .filter((effect) => effect.status === "manual-review")
+        .map((effect) => effect.displayLabel),
+      combatAuditNotes: effectHookSummariesForSurface(character, "combat")
+        .filter((effect) => effect.status === "manual-review")
+        .map((effect) => effect.displayLabel),
+    })),
+  ).toEqual({
+    state: {
+      hasGuts: false,
+      hasGrit: true,
+      hasTrueGrit: false,
+      reviewNotes: [
+        {
+          id: "fear-edge-grit-without-guts",
+          displayLabel: "Manual review: Grit recorded without Guts",
+        },
+      ],
+    },
+    auditNotes: ["Manual review: Grit recorded without Guts"],
+    combatAuditNotes: [],
+  });
+});
+
+test("Fear check Edge chain flags True Grit without Grit", async ({ page }) => {
+  await seedEffectHookCharacter(page, {
+    name: "True Grit Audit Tester",
+    preferredId: "true-grit-audit-tester",
+    edgeIds: ["dl-edge-true-grit"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText(
+    "Fear check reminder: True Grit Edge present",
+  );
+  await expect(derived).toContainText(
+    "Manual review: True Grit recorded without Grit",
+  );
+
+  expect(
+    await page.evaluate(() => characterFearCheckEdgeState(character)),
+  ).toEqual({
+    hasGuts: false,
+    hasGrit: false,
+    hasTrueGrit: true,
+    reviewNotes: [
+      {
+        id: "fear-edge-true-grit-without-grit",
+        displayLabel: "Manual review: True Grit recorded without Grit",
+      },
+    ],
+  });
+});
+
 test("Expanded Hindrance roll modifier effects render on Character and Combat", async ({
   page,
 }) => {

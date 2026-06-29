@@ -66,7 +66,6 @@ the rules.
   need future hooks include bonus/reroll effects, wound penalty changes,
   session resource changes, Fear modifiers, minimum Strength changes, social
   penalties, and combat options.
-- Hindrance reduction/removal as Advancement is not implemented.
 
 ### Combat And Table Action
 
@@ -88,8 +87,10 @@ the rules.
   template, modifier, or effect-state tracking.
 - Arcane Background consequences are mostly reminders. Future work should cover
   Blessed sin/backlash notes, Chi Master restrictions, Huckster Deal with the
-  Devil outcomes, Mad Scientist malfunction, Shaman restrictions, and Power
-  Points recovery modifiers.
+  Devil outcomes, Mad Scientist malfunction, Shaman restrictions, and remaining
+  Power Point event modifiers such as Power Surge and Soul Drain. Rapid
+  Recharge and Improved Rapid Recharge are handled by the passive effect hook
+  model.
 - Huckster available powers are separated from Known Powers, but full Deal with
   the Devil resolution is not automated.
 
@@ -146,6 +147,20 @@ Completion criteria:
 Phase 1 is not complete until the app can answer: "What did this character
 start with, what rule or source granted it, and what later changed?"
 
+### Advancement Backlog
+
+Advancement work should stay separate from passive Edge and Hindrance effect
+hooks because it mutates the character through the canonical ledger rather than
+changing derived display math.
+
+- Implement Hindrance reduction/removal as canonical Advancement entries.
+- Support Minor Hindrance removal and Major Hindrance reduction as one
+  Advancement entry.
+- Model full Major Hindrance removal as either a two-Advance spend or an
+  explicit GM/table exception path.
+- Preserve imported advancement history as history unless reliable before/after
+  mutation data exists.
+
 ### Phase 2: Edge And Hindrance Effect Hooks
 
 Goal: move from reference-only entries to explainable mechanical modifiers where
@@ -189,6 +204,8 @@ Current implementation:
 - Explicit `automation-status` markers now surface entries that are known but
   not safely automated yet, including manual/table-only and subchoice-required
   effects.
+- Rapid Recharge and Improved Rapid Recharge now set the computed Power Point
+  recovery rate, with Improved Rapid Recharge replacing the base Edge.
 - Luck, Great Luck, and Bad Luck now modify computed starting Bennies through
   the session resource model, and Start Session resets current Bennies to that
   computed value.
@@ -211,7 +228,10 @@ Effect Hook Candidate Audit:
   Will, Level Headed, Luck, Mean, Menacing, Mild Mannered, Mr. Fix It, Nerves
   of Steel, One Eye, Quick, Small, Slow, Streetwise, Strong Willed, Thief,
   Tongue-Tied, Tough as Nails, Tougher than Nails, Weapon Master, Master of
-  Arms, Woodsman, Yellow, and Obese.
+  Arms, Woodsman, Yellow, Obese, Rapid Recharge, and Improved Rapid Recharge.
+- Tiny Fear-check reminder implemented: Guts, Grit, and True Grit are detected
+  by canonical Edge name; suspicious chains such as Grit without Guts or True
+  Grit without Grit are flagged for manual review.
 - Explicitly marked but not fully automated: Berserk, unresolved Trademark
   Weapon, and unresolved Reputation.
 - Subchoice storage implemented: Trademark Weapon chosen weapon and Reputation
@@ -219,25 +239,24 @@ Effect Hook Candidate Audit:
 - Passive math, high confidence: the current small deterministic set is covered
   for the Phase 2 audit. Future passive math should be added only when the
   baseline and stacking rules are equally clear.
-- Roll modifier reminders, remaining high-confidence audit items: Guts, Grit,
-  True Grit, Whateley Blood, and other setting-specific entries whose exact
-  numeric value or resource impact needs a narrower rules pass before
-  automation.
-- Initiative and Action Card effects: Quick, Hesitant, Level Headed, and
-  Improved Level Headed have a basic action-card state model. Remaining
-  initiative, Joker, or action-context entries include Calculating, Dead Shot,
-  Mighty Blow, Tactician, Master Tactician, Quick Draw, and Fast as Lightning.
-  These need Joker/turn/action context before reliable automation.
-- Resource or session-start effects: Rapid Recharge, Improved Rapid Recharge,
-  Power Surge, Soul Drain, and Behold a Pale Horse. Luck, Great Luck, and Bad
-  Luck are now handled by the session Benny model. Remaining items need
-  source-tracked resource/session handling rather than one-time silent
+- Roll modifier reminders, remaining high-confidence audit items: Whateley
+  Blood and other setting-specific entries whose exact numeric value or resource
+  impact needs a narrower rules pass before automation.
+- Needs action context, not Phase 2 passive hooks: Calculating, Dead Shot,
+  Mighty Blow, Tactician, Master Tactician, Quick Draw, Fast as Lightning,
+  Dodge, Improved Dodge, Double Tap, Marksman, Rapid Fire, Improved Rapid Fire,
+  Assassin, Giant Killer, Martial Artist, Martial Warrior, Champion, and similar
+  combat Edges. These require turn, Joker, attack, weapon, or target context and
+  should move to Phase 4 combat helper work.
+- Resource or session-start effects: Luck, Great Luck, Bad Luck, Rapid
+  Recharge, and Improved Rapid Recharge are implemented. Power Surge, Soul
+  Drain, and Behold a Pale Horse remain deferred because they need event,
+  resource-spend, mount, or session context rather than one-time silent
   mutations.
 - Subchoice or target-required effects: Scholar, Trademark Weapon, Improved
-  Trademark Weapon, Reputation, Martial Artist, Martial Warrior, Chi, Champion,
-  Assassin, Giant Killer, Double Tap, Dodge, Improved Dodge, Marksman, Rapid
-  Fire, Improved Rapid Fire, Rich, Filthy Rich, and Arcane Background. These
-  need stored choices or action context before reliable automation.
+  Trademark Weapon, Reputation, Chi, Rich, Filthy Rich, and Arcane Background.
+  These need stored choices, wealth/session models, or Arcane Background
+  bookkeeping before reliable automation.
 - Severity-dependent Hindrances after Slow: Ailin', Bad Eyes, Enemy, Habit,
   Hard of Hearing, Obligation, Outsider, Pacifist, Phobia, Ruthless, Secret,
   Shamed, Suspicious, Thin Skinned, Ugly, Vengeful, Vow, Wanted, Young,
@@ -245,36 +264,8 @@ Effect Hook Candidate Audit:
   the relevant roll/resource/creation model.
 - Manual or table-only for now: Berserk, Cursed, Grim Servant o' Death, Old
   Ways Oath, Tenderfoot, Tale-Teller, organization rank/favor Edges, Harrowed
-  powers, Mad Scientist device Edges, Shaman restriction Edges, Behold a Pale
-  Horse, and most story or Marshal-facing effects.
-- Small Phase 2 audit result: the next best accuracy payoff is Power Point
-  recovery for Rapid Recharge and Improved Rapid Recharge. The app already has
-  a canonical `power-points` resource and recovery controls, and these Edges
-  have deterministic replacement behavior that should improve live-play
-  accuracy without adding attack resolution or target context.
-
-Recommended next code slice:
-
-1. Add resource-recovery effect metadata for Rapid Recharge and Improved Rapid
-   Recharge, with Improved replacing the base Edge.
-2. Add a helper that computes Power Point recovery per hour from effect hooks,
-   defaulting to the normal rate when no Edge applies.
-3. Update Combat and Arcane Power Point controls to show and apply the computed
-   one-hour recovery button.
-4. Preserve existing manual recovery buttons or rename them so they remain
-   clearly manual.
-5. Add focused tests proving default recovery, Rapid Recharge recovery,
-   Improved replacement, clamping at max, and reload/export/import persistence.
-
-Deferred after this audit:
-
-- Guts, Grit, True Grit, and Whateley Blood need a narrow setting-specific rules
-  pass before automation because they touch Fear penalties, rerolls, social
-  penalties, and Power Point/Fatigue tradeoffs.
-- Calculating, Dead Shot, Mighty Blow, Tactician, Master Tactician, Quick Draw,
-  and Fast as Lightning need more turn/Joker/action context.
-- Dodge, Double Tap, Marksman, Rapid Fire, Assassin, Giant Killer, and similar
-  combat Edges need attack-context modeling before reliable automation.
+  powers, Mad Scientist device Edges, Shaman restriction Edges, most story or
+  Marshal-facing effects, and vague imported/history-only records.
 
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.
@@ -282,7 +273,6 @@ Deferred after this audit:
    cases.
 4. Add subchoice storage for Edges that require a selected Trait, weapon, style,
    contact, reputation type, or supernatural option.
-5. Implement Hindrance reduction/removal Advancement.
 
 Completion criteria:
 
@@ -293,11 +283,9 @@ Completion criteria:
 - Edge subchoices are stored on the character and survive reload/export/import.
 - Requirement validation distinguishes reliable checks, partial checks,
   GM-overridable warnings, and unsupported complex requirements.
-- Hindrance reduction/removal is represented in the canonical Advancement
-  ledger and updates the character safely.
 - Browser tests cover at least one representative passive Edge, one Hindrance
   effect or warning, one subchoice Edge, one complex-prerequisite warning, and
-  Hindrance reduction/removal.
+  at least one explicit manual/table-only or needs-action-context marker.
 
 Phase 2 is not complete until common Edges and Hindrances are more than labels:
 they either affect the sheet, produce a specific warning, or are explicitly
@@ -347,6 +335,10 @@ player and Marshal.
 4. Add attack/damage helper scaffolds for weapon cards.
 5. Add special combat Edge actions after their prerequisites and subchoices are
    reliable.
+6. Revisit needs-action-context Edges such as Calculating, Dead Shot, Mighty
+   Blow, Tactician, Master Tactician, Quick Draw, Fast as Lightning, Dodge,
+   Improved Dodge, Double Tap, Marksman, Rapid Fire, Improved Rapid Fire,
+   Assassin, Giant Killer, Martial Artist, Martial Warrior, and Champion.
 
 Completion criteria:
 
@@ -430,53 +422,24 @@ user can tell which source profile produced each available choice.
 
 ## Recommended Next Slice
 
-Implement starting Powers setup selection.
-
-This should come before deeper combat automation because the app already has:
-
-- Arcane Background profiles.
-- Power catalog data.
-- required starting power metadata.
-- known-power creation helpers.
-- setup audit tests.
+Close Phase 2 with a small classification pass before starting Phase 3.
 
 The slice should:
 
-- Keep Powers inside Character Setup.
-- Let eligible created pre-advance characters add and remove setup-selected
-  starting powers.
-- Distinguish setup-selected starting powers from later Advancement powers.
-- Enforce required starting powers and starting power count with warnings or
-  blocking only where the app has reliable data.
-- Preserve imported and advanced characters as audit-only.
-- Persist the starting power choices and update setup status.
-
-Completion criteria:
-
-- A created pre-advance character with an Arcane Background sees a setup Powers
-  picker limited to the matched Arcane Background's allowed powers by default.
-- Required starting powers are shown clearly and can be added without creating
-  duplicate Known Powers.
-- The setup Powers step distinguishes missing required powers, missing optional
-  starting power slots, complete starting power selection, and audit-only states.
-- Setup-selected starting powers are tagged with a source that distinguishes
-  them from powers gained by Advancement.
-- Removing a setup-selected starting power is allowed only while the character
-  is still eligible for setup mutation.
-- Imported characters, advanced characters, and characters with unreliable
-  Arcane Background data keep the current audit-only behavior.
-- Save/reload and export/import preserve setup-selected starting power metadata.
-- Browser tests cover Blessed or Chi Master required-power selection, a
-  no-required-power Arcane Background, duplicate prevention, source tagging,
-  audit-only imported behavior, and setup status changes.
+- Add explicit `manual/table-only` or `needs-action-context` markers for the
+  remaining common Edge and Hindrance entries that are still only catalog text.
+- Avoid implementing combat-action Edges until Phase 4 has turn, Joker, attack,
+  weapon, and target context.
+- Keep Hindrance reduction/removal in the Advancement backlog instead of the
+  passive effect hook system.
+- Update tests only where new markers are displayed or persisted.
 
 It should not:
 
-- Rebuild Arcane Backgrounds from scratch.
-- Automate all power effects.
-- Add combat power targeting.
-- Add full Deal with the Devil resolution.
-- Add editable campaign rulesets.
+- Add attack resolution.
+- Add power runtime tracking.
+- Add Hindrance mutation through Phase 2 hooks.
+- Reopen completed Character Setup slices.
 
 ## Maintenance Notes
 

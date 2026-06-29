@@ -502,6 +502,48 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-guts",
+    sourceType: "edge",
+    matchName: "Guts",
+    label: "Guts",
+    summary: "Fear check reminder.",
+    effects: [
+      reminderEffect(
+        "fear-check-edge-chain",
+        "Fear check reminder: Guts Edge present",
+        { value: 1, exclusiveGroup: "fear-check-edge-chain" },
+      ),
+    ],
+  },
+  {
+    id: "edge-grit",
+    sourceType: "edge",
+    matchName: "Grit",
+    label: "Grit",
+    summary: "Fear check reminder.",
+    effects: [
+      reminderEffect(
+        "fear-check-edge-chain",
+        "Fear check reminder: Grit Edge present",
+        { value: 2, exclusiveGroup: "fear-check-edge-chain" },
+      ),
+    ],
+  },
+  {
+    id: "edge-true-grit",
+    sourceType: "edge",
+    matchName: "True Grit",
+    label: "True Grit",
+    summary: "Fear check reminder.",
+    effects: [
+      reminderEffect(
+        "fear-check-edge-chain",
+        "Fear check reminder: True Grit Edge present",
+        { value: 3, exclusiveGroup: "fear-check-edge-chain" },
+      ),
+    ],
+  },
+  {
     id: "edge-quick",
     sourceType: "edge",
     matchName: "Quick",
@@ -1251,6 +1293,41 @@ function effectHookRecordMatches(hook, record) {
   return true;
 }
 
+function characterHasCanonicalEdge(currentCharacter, edgeName) {
+  const canonicalName = normalizeEffectHookName(edgeName);
+  return (currentCharacter?.edges || []).some(
+    (edge) => normalizeEffectHookName(edge?.name) === canonicalName,
+  );
+}
+
+function characterFearCheckEdgeState(currentCharacter = character) {
+  const hasGuts = characterHasCanonicalEdge(currentCharacter, "Guts");
+  const hasGrit = characterHasCanonicalEdge(currentCharacter, "Grit");
+  const hasTrueGrit = characterHasCanonicalEdge(currentCharacter, "True Grit");
+  const reviewNotes = [];
+
+  if (hasGrit && !hasGuts) {
+    reviewNotes.push({
+      id: "fear-edge-grit-without-guts",
+      displayLabel: "Manual review: Grit recorded without Guts",
+    });
+  }
+
+  if (hasTrueGrit && !hasGrit) {
+    reviewNotes.push({
+      id: "fear-edge-true-grit-without-grit",
+      displayLabel: "Manual review: True Grit recorded without Grit",
+    });
+  }
+
+  return {
+    hasGuts,
+    hasGrit,
+    hasTrueGrit,
+    reviewNotes,
+  };
+}
+
 function activeEffectHooks(currentCharacter = character) {
   return EFFECT_HOOK_REGISTRY.map((hook) => {
     const record = effectHookRecordCollection(
@@ -1490,6 +1567,22 @@ function dominantEffectSummaryEntries(entries) {
   return result;
 }
 
+function fearCheckAuditSummaryEntries(currentCharacter, surface) {
+  if (surface !== "character") return [];
+  return characterFearCheckEdgeState(currentCharacter).reviewNotes.map(
+    (note) => ({
+      id: note.id,
+      sourceType: "edge",
+      sourceName: "Fear check reminder",
+      target: "fear-check-edge-chain",
+      type: "automation-status",
+      status: "manual-review",
+      displayLabel: note.displayLabel,
+      summary: "Fear Edge chain audit note.",
+    }),
+  );
+}
+
 function effectHookSubchoiceDetail(record) {
   if (!record || typeof record !== "object") return null;
   if (typeof normalizeEdgeSubchoiceDetail === "function") {
@@ -1534,8 +1627,8 @@ function effectHookSummariesForSurface(
   currentCharacter = character,
   surface = "character",
 ) {
-  return dominantEffectSummaryEntries(
-    activeEffectHooks(currentCharacter).flatMap((hook) =>
+  return dominantEffectSummaryEntries([
+    ...activeEffectHooks(currentCharacter).flatMap((hook) =>
       (hook.effects || [])
         .filter((effect) => effectAppliesTo(effect, surface))
         .map((effect) => ({
@@ -1553,5 +1646,6 @@ function effectHookSummariesForSurface(
           summary: hook.summary,
         })),
     ),
-  );
+    ...fearCheckAuditSummaryEntries(currentCharacter, surface),
+  ]);
 }
