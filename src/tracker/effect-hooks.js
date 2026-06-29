@@ -55,6 +55,19 @@ function reminderEffect(target, displayLabel, options = {}) {
   };
 }
 
+function resourceRecoveryRateEffect(target, value, displayLabel, options = {}) {
+  return {
+    type: "resource-recovery-rate",
+    target,
+    value,
+    appliesTo: options.appliesTo || ["character", "combat"],
+    displayLabel,
+    ...(options.exclusiveGroup
+      ? { exclusiveGroup: options.exclusiveGroup }
+      : {}),
+  };
+}
+
 const EFFECT_HOOK_REGISTRY = [
   {
     id: "edge-alertness",
@@ -498,6 +511,40 @@ const EFFECT_HOOK_REGISTRY = [
       actionCardRuleEffect(
         "quick-redraw",
         "Action Cards of 5 or lower may be redrawn",
+      ),
+    ],
+  },
+  {
+    id: "edge-rapid-recharge",
+    sourceType: "edge",
+    matchName: "Rapid Recharge",
+    label: "Rapid Recharge",
+    summary: "Recover 10 Power Points per hour.",
+    effects: [
+      resourceRecoveryRateEffect(
+        "power-points-per-hour",
+        10,
+        "Power Points recover 10 per hour",
+        {
+          exclusiveGroup: "power-points-recovery-rate",
+        },
+      ),
+    ],
+  },
+  {
+    id: "edge-improved-rapid-recharge",
+    sourceType: "edge",
+    matchName: "Improved Rapid Recharge",
+    label: "Improved Rapid Recharge",
+    summary: "Recover 20 Power Points per hour.",
+    effects: [
+      resourceRecoveryRateEffect(
+        "power-points-per-hour",
+        20,
+        "Power Points recover 20 per hour",
+        {
+          exclusiveGroup: "power-points-recovery-rate",
+        },
       ),
     ],
   },
@@ -1373,6 +1420,18 @@ function characterWoundPenaltyReduction(
       scope,
     }),
   );
+}
+
+function characterPowerPointRecoveryPerHour(
+  currentCharacter = character,
+  scope = "combat",
+) {
+  const recoveryRate = effectHookModifierTotal(currentCharacter, {
+    type: "resource-recovery-rate",
+    target: "power-points-per-hour",
+    scope,
+  });
+  return recoveryRate > 0 ? recoveryRate : 5;
 }
 
 function effectHookDieStepIndex(die) {

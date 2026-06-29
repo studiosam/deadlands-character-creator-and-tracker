@@ -1225,7 +1225,7 @@ async function seedEffectHookCharacter(page, options = {}) {
       consumables: [],
       vehicles: [],
       powers: [],
-      resources: [],
+      resources: seedOptions.resources || [],
     });
     const entry = addCharacterSlot(characterData, {
       source: "test",
@@ -2705,6 +2705,106 @@ test("Session and action-card effects render concrete model hooks", async ({
       displayLabel: "Draw two Action Cards and keep the lowest, except Jokers",
     },
   ]);
+});
+
+test("Power Point recovery defaults to five per hour without recharge Edges", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Default Power Point Recovery Tester",
+    preferredId: "default-power-point-recovery-tester",
+    resources: [
+      {
+        id: "power-points",
+        name: "Power Points",
+        current: 5,
+        max: 15,
+        source: "Effect hook test",
+      },
+    ],
+  });
+
+  await openCombat(page);
+  const powerPoints = page.locator("#playPowerPointsList");
+  await expect(powerPoints).toContainText("5 / 15");
+  await expect(powerPoints).toContainText("Recovery: 5 / hour");
+  await powerPoints.getByRole("button", { name: "Recover 1 hour +5" }).click();
+  await expect(powerPoints).toContainText("10 / 15");
+
+  expect(
+    await page.evaluate(() => characterPowerPointRecoveryPerHour(character)),
+  ).toBe(5);
+});
+
+test("Rapid Recharge effects set hourly Power Point recovery controls", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Rapid Recharge Recovery Tester",
+    preferredId: "rapid-recharge-recovery-tester",
+    edgeIds: [
+      "swade-edge-rapid-recharge",
+      "swade-edge-improved-rapid-recharge",
+    ],
+    resources: [
+      {
+        id: "power-points",
+        name: "Power Points",
+        current: 0,
+        max: 20,
+        source: "Effect hook test",
+      },
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Improved Rapid Recharge");
+  await expect(derived).toContainText("Power Points recover 20 per hour");
+  await expect(derived).not.toContainText("Power Points recover 10 per hour");
+
+  await openCombat(page);
+  const powerPoints = page.locator("#playPowerPointsList");
+  await expect(powerPoints).toContainText("0 / 20");
+  await expect(powerPoints).toContainText("Recovery: 20 / hour");
+  await powerPoints.getByRole("button", { name: "Recover 1 hour +20" }).click();
+  await expect(powerPoints).toContainText("20 / 20");
+  await expect(
+    powerPoints.getByRole("button", { name: "Recover 1 hour +20" }),
+  ).toBeDisabled();
+
+  expect(
+    await page.evaluate(() => ({
+      current: powerPointResource().current,
+      recovery: characterPowerPointRecoveryPerHour(character),
+      summaries: effectHookSummariesForSurface(character, "character")
+        .filter((effect) => effect.target === "power-points-per-hour")
+        .map((effect) => ({
+          sourceName: effect.sourceName,
+          type: effect.type,
+          value: effect.value,
+          displayLabel: effect.displayLabel,
+        })),
+    })),
+  ).toEqual({
+    current: 20,
+    recovery: 20,
+    summaries: [
+      {
+        sourceName: "Improved Rapid Recharge",
+        type: "resource-recovery-rate",
+        value: 20,
+        displayLabel: "Power Points recover 20 per hour",
+      },
+    ],
+  });
+
+  await reloadIntoTracker(page);
+  await openCombat(page);
+  await expect(page.locator("#playPowerPointsList")).toContainText("20 / 20");
+  await expect(page.locator("#playPowerPointsList")).toContainText(
+    "Recovery: 20 / hour",
+  );
 });
 
 test("Luck and Bad Luck update starting Bennies and Start Session reset", async ({

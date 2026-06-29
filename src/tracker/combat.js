@@ -55,7 +55,8 @@ function appendPowerPointControls(
   row.className = "row";
   const max = resource.max || "—";
   const value = `${resource.current} / ${max}`;
-  row.innerHTML = `<div><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<span>${value}</span>` : "<span>Current / Max</span>"}${resource.source ? `<span>${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls resource-recovery-actions"><button data-recover="5" type="button">Rest +5</button><button data-recover="10" type="button">Rest +10</button><button data-recover="15" type="button">Rest +15</button><button data-recover="max" type="button">Max</button></div>`;
+  const recoveryPerHour = characterPowerPointRecoveryPerHour(character);
+  row.innerHTML = `<div><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<span>${value}</span>` : "<span>Current / Max</span>"}<span>Recovery: ${recoveryPerHour} / hour</span>${resource.source ? `<span>${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls resource-recovery-actions"><button data-recover="hour" type="button">Recover 1 hour +${recoveryPerHour}</button><button data-recover="5" type="button">Manual +5</button><button data-recover="10" type="button">Manual +10</button><button data-recover="15" type="button">Manual +15</button><button data-recover="max" type="button">Max</button></div>`;
   row.querySelectorAll("[data-recover]").forEach((button) => {
     const atMax = Boolean(resource.max && resource.current >= resource.max);
     button.disabled =
@@ -69,7 +70,11 @@ function appendPowerPointControls(
         }
         return;
       }
-      recoverResource(resource, Number(button.dataset.recover));
+      const amount =
+        button.dataset.recover === "hour"
+          ? recoveryPerHour
+          : Number(button.dataset.recover);
+      recoverResource(resource, amount);
     };
   });
   container.appendChild(row);
