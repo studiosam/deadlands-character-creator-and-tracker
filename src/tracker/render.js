@@ -58,14 +58,28 @@ function renderCharacterIdentityDisplays() {
 function render() {
   renderCharacterIdentityDisplays();
   els.woundsValue.textContent = character.damage.wounds;
-  const woundPenalty = Math.min(
+  const rawWoundPenalty = Math.min(
     character.damage.wounds,
     character.damage.maxWounds,
+  );
+  const woundPenaltyReduction = characterWoundPenaltyReduction(
+    character,
+    "character",
+  );
+  const appliedWoundPenaltyReduction = Math.min(
+    rawWoundPenalty,
+    woundPenaltyReduction,
+  );
+  const woundPenalty = Math.max(
+    0,
+    rawWoundPenalty - appliedWoundPenaltyReduction,
   );
   els.woundPenalty.textContent = woundPenalty ? `Penalty -${woundPenalty}` : "";
   els.woundPenalty.classList.toggle("hidden", !woundPenalty);
   els.woundsNote.textContent = character.damage.wounds
-    ? "Apply wound penalty to affected trait rolls."
+    ? appliedWoundPenaltyReduction
+      ? `Wound penalty reduced by ${appliedWoundPenaltyReduction} from passive effects.`
+      : "Apply wound penalty to affected trait rolls."
     : "Healthy";
   els.fatigueValue.textContent = character.damage.fatigue;
   const fatiguePenalty = Math.min(
@@ -87,6 +101,7 @@ function render() {
   character.selectedArmorLocation = "best";
   const armor = armorValue(location);
   const toughnessModifier = characterToughnessModifier(character);
+  const pendingToughnessModifier = characterPendingToughnessModifier(character);
   const sizeModifier = characterSizeModifier(character);
   const paceModifier = characterPaceModifier(character);
   const parryModifier = characterParryModifier(character);
@@ -129,6 +144,7 @@ function render() {
     ? 0
     : parryModifier;
   character.derived.effectToughnessModifier = toughnessModifier;
+  character.derived.effectToughnessPendingModifier = pendingToughnessModifier;
   character.derived.effectSizeModifier = sizeModifier;
   els.paceValue.textContent = character.derived.pace;
   els.parryValue.textContent = character.derived.parry;
@@ -532,6 +548,9 @@ function renderCharacterSummary() {
         `Base ${compactText(character.derived.baseToughness)}`,
         character.derived.effectToughnessModifier
           ? `Effects ${character.derived.effectToughnessModifier > 0 ? "+" : ""}${character.derived.effectToughnessModifier}`
+          : "",
+        character.derived.effectToughnessPendingModifier
+          ? "Recorded total; passive Toughness effect shown below"
           : "",
         `Armor ${compactText(character.derived.armor, "0")}`,
       ]

@@ -102,6 +102,29 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-brawler",
+    sourceType: "edge",
+    matchName: "Brawler",
+    label: "Brawler",
+    summary: "+1 Toughness and improved unarmed damage.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "toughness",
+        value: 1,
+        requiresTrustedBaseline: true,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Toughness +1",
+      },
+      {
+        type: "reminder",
+        target: "unarmed-damage",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Improved unarmed damage",
+      },
+    ],
+  },
+  {
     id: "edge-fleet-footed",
     sourceType: "edge",
     matchName: "Fleet-Footed",
@@ -163,6 +186,40 @@ const EFFECT_HOOK_REGISTRY = [
         value: 2,
         appliesTo: ["character", "combat"],
         displayLabel: "Ignore 2 points of Gang Up bonus",
+      },
+    ],
+  },
+  {
+    id: "edge-improved-nerves-of-steel",
+    sourceType: "edge",
+    matchName: "Improved Nerves of Steel",
+    label: "Improved Nerves of Steel",
+    summary: "Ignore up to two levels of Wound penalties.",
+    effects: [
+      {
+        type: "penalty-reduction",
+        target: "wound-penalty",
+        value: 2,
+        exclusiveGroup: "wound-penalty-reduction",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Ignore up to 2 Wound penalty levels",
+      },
+    ],
+  },
+  {
+    id: "edge-nerves-of-steel",
+    sourceType: "edge",
+    matchName: "Nerves of Steel",
+    label: "Nerves of Steel",
+    summary: "Ignore one level of Wound penalties.",
+    effects: [
+      {
+        type: "penalty-reduction",
+        target: "wound-penalty",
+        value: 1,
+        exclusiveGroup: "wound-penalty-reduction",
+        appliesTo: ["character", "combat"],
+        displayLabel: "Ignore 1 Wound penalty level",
       },
     ],
   },
@@ -452,6 +509,17 @@ function effectAppliesTo(effect, scope = "") {
   return !scope || (effect.appliesTo || []).includes(scope);
 }
 
+function trustedDerivedBaseline(currentCharacter, target) {
+  if (target === "toughness") {
+    return Boolean(
+      currentCharacter?.source === "created" ||
+      currentCharacter?.creationBaseline ||
+      currentCharacter?.creation?.finalized,
+    );
+  }
+  return true;
+}
+
 function dominantEffectValue(currentValue, nextValue) {
   if (currentValue === undefined) return nextValue;
   const currentMagnitude = Math.abs(Number(currentValue) || 0);
@@ -473,7 +541,9 @@ function effectHookModifierTotal(
       (effect) =>
         (!type || effect.type === type) &&
         (!target || effect.target === target) &&
-        effectAppliesTo(effect, scope),
+        effectAppliesTo(effect, scope) &&
+        (!effect.requiresTrustedBaseline ||
+          trustedDerivedBaseline(currentCharacter, effect.target)),
     )
     .reduce((effectSum, effect) => {
       const value = Number(effect.value) || 0;
@@ -523,6 +593,34 @@ function characterParryModifier(currentCharacter = character) {
     target: "parry",
     scope: "character",
   });
+}
+
+function characterPendingToughnessModifier(currentCharacter = character) {
+  return activeEffectHooks(currentCharacter)
+    .flatMap((hook) => hook.effects || [])
+    .filter(
+      (effect) =>
+        effect.type === "numeric-modifier" &&
+        effect.target === "toughness" &&
+        effect.requiresTrustedBaseline &&
+        !trustedDerivedBaseline(currentCharacter, effect.target) &&
+        effectAppliesTo(effect, "character"),
+    )
+    .reduce((sum, effect) => sum + (Number(effect.value) || 0), 0);
+}
+
+function characterWoundPenaltyReduction(
+  currentCharacter = character,
+  scope = "combat",
+) {
+  return Math.max(
+    0,
+    effectHookModifierTotal(currentCharacter, {
+      type: "penalty-reduction",
+      target: "wound-penalty",
+      scope,
+    }),
+  );
 }
 
 function effectHookDieStepIndex(die) {

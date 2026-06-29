@@ -1209,6 +1209,13 @@ async function seedEffectHookCharacter(page, options = {}) {
         baseSize: 0,
         ...(seedOptions.derived || {}),
       },
+      damage: {
+        wounds: 0,
+        maxWounds: 3,
+        fatigue: 0,
+        maxFatigue: 2,
+        ...(seedOptions.damage || {}),
+      },
       armorStrength: "d6",
       weaponStrength: "d6",
       inventory: seedOptions.inventory || [],
@@ -1509,6 +1516,186 @@ test("Block passive math does not double-count imported Parry without a baseline
     hasBaseParry: false,
     parryModifier: 0,
     pendingParryModifier: 1,
+  });
+});
+
+test("Brawler passive math increases Toughness from a trusted baseline", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Brawler Effect Tester",
+    preferredId: "brawler-effect-tester",
+    edgeIds: ["swade-edge-brawler"],
+    derived: {
+      baseToughness: 5,
+      toughness: 5,
+      armor: 0,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Toughness");
+  await expect(derived).toContainText("Base 5 + Effects +1 + Armor 0");
+  await expect(derived).toContainText("Brawler");
+  await expect(derived).toContainText("Toughness +1");
+  await expect(derived).toContainText("Improved unarmed damage");
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Brawler: Toughness +1");
+  await expect(combatBreakdown).toContainText(
+    "Brawler: Improved unarmed damage",
+  );
+
+  const computed = await page.evaluate(() => ({
+    toughness: character.derived.toughness,
+    toughnessModifier: character.derived.effectToughnessModifier,
+    pendingToughnessModifier: character.derived.effectToughnessPendingModifier,
+    summaries: effectHookSummariesForSurface(character, "character")
+      .filter((effect) =>
+        ["toughness", "unarmed-damage"].includes(effect.target),
+      )
+      .map((effect) => `${effect.sourceName}: ${effect.displayLabel}`),
+  }));
+  expect(computed).toEqual({
+    toughness: 6,
+    toughnessModifier: 1,
+    pendingToughnessModifier: 0,
+    summaries: ["Brawler: Toughness +1", "Brawler: Improved unarmed damage"],
+  });
+});
+
+test("Brawler passive math does not double-count imported Toughness without a trusted baseline", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Imported Brawler Effect Tester",
+    preferredId: "imported-brawler-effect-tester",
+    source: "savaged.us",
+    edgeIds: ["swade-edge-brawler"],
+    derived: {
+      baseToughness: 7,
+      toughness: 7,
+      armor: 0,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Toughness");
+  await expect(derived).toContainText("7");
+  await expect(derived).toContainText(
+    "Recorded total; passive Toughness effect shown below",
+  );
+  await expect(derived).toContainText("Brawler");
+  await expect(derived).toContainText("Toughness +1");
+
+  const computed = await page.evaluate(() => ({
+    toughness: character.derived.toughness,
+    toughnessModifier: character.derived.effectToughnessModifier,
+    pendingToughnessModifier: character.derived.effectToughnessPendingModifier,
+  }));
+  expect(computed).toEqual({
+    toughness: 7,
+    toughnessModifier: 0,
+    pendingToughnessModifier: 1,
+  });
+});
+
+test("Nerves of Steel reduces active wound penalties", async ({ page }) => {
+  await seedEffectHookCharacter(page, {
+    name: "Nerves Effect Tester",
+    preferredId: "nerves-effect-tester",
+    edgeIds: ["swade-edge-nerves-of-steel"],
+    damage: {
+      wounds: 2,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#woundPenalty")).toContainText("Penalty -1");
+  await expect(page.locator("#woundsNote")).toContainText(
+    "Wound penalty reduced by 1 from passive effects.",
+  );
+  await expect(page.locator("#characterDerivedDetails")).toContainText(
+    "Nerves of Steel",
+  );
+  await expect(page.locator("#characterDerivedDetails")).toContainText(
+    "Ignore 1 Wound penalty level",
+  );
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyTotal")).toHaveText("-1");
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Wounds -1");
+  await expect(combatBreakdown).toContainText(
+    "Nerves of Steel: Ignore 1 Wound penalty level",
+  );
+
+  const computed = await page.evaluate(() => ({
+    reduction: characterWoundPenaltyReduction(character, "combat"),
+    penaltyInfo: combatPenaltyInfo(),
+  }));
+  expect(computed.reduction).toBe(1);
+  expect(computed.penaltyInfo.total).toBe(1);
+  expect(computed.penaltyInfo.traitPenalties).toEqual([
+    { label: "Wounds", value: -1 },
+  ]);
+});
+
+test("Improved Nerves of Steel replaces Nerves wound penalty reduction", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Improved Nerves Effect Tester",
+    preferredId: "improved-nerves-effect-tester",
+    edgeIds: [
+      "swade-edge-nerves-of-steel",
+      "swade-edge-improved-nerves-of-steel",
+    ],
+    damage: {
+      wounds: 3,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#woundPenalty")).toContainText("Penalty -1");
+  await expect(page.locator("#woundsNote")).toContainText(
+    "Wound penalty reduced by 2 from passive effects.",
+  );
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyTotal")).toHaveText("-1");
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText(
+    "Improved Nerves of Steel: Ignore up to 2 Wound penalty levels",
+  );
+  await expect(combatBreakdown).not.toContainText(
+    "Nerves of Steel: Ignore 1 Wound penalty level",
+  );
+
+  const computed = await page.evaluate(() => ({
+    reduction: characterWoundPenaltyReduction(character, "combat"),
+    activeHooks: activeEffectHooks(character).map((hook) => hook.id),
+    summaries: effectHookSummariesForSurface(character, "combat")
+      .filter((effect) => effect.target === "wound-penalty")
+      .map((effect) => `${effect.sourceName}: ${effect.displayLabel}`),
+    penaltyInfo: combatPenaltyInfo(),
+  }));
+  expect(computed).toEqual({
+    reduction: 2,
+    activeHooks: ["edge-improved-nerves-of-steel", "edge-nerves-of-steel"],
+    summaries: [
+      "Improved Nerves of Steel: Ignore up to 2 Wound penalty levels",
+    ],
+    penaltyInfo: {
+      total: 1,
+      traitPenalties: [{ label: "Wounds", value: -1 }],
+      modifiers: [
+        "Improved Nerves of Steel: Ignore up to 2 Wound penalty levels",
+      ],
+    },
   });
 });
 

@@ -172,18 +172,23 @@ Current implementation:
   `baseParry` is available or the character is app-created; imported characters
   without a baseline keep recorded Parry and show the passive effect as a
   reminder only.
+- Brawler now applies baseline-aware Toughness math for trusted created
+  characters and remains reminder-only for imported characters without trusted
+  derived baselines.
+- Nerves of Steel and Improved Nerves of Steel now reduce displayed active
+  wound penalties, with Improved Nerves replacing rather than stacking with the
+  base Edge.
 - Character, Combat, and Inventory surfaces show passive-effect explanations
   instead of relying only on catalog text.
 
 Effect Hook Candidate Audit:
 
-- Already implemented: Alertness, Block, Brave, Brawny, Danger Sense, Improved
-  Block, Soldier, Fleet-Footed, All Thumbs, Anemic, Mean, Mild Mannered, Small,
-  Slow, Yellow, and Obese.
-- Passive math, high confidence: Brawler, Nerves of Steel, Improved Nerves of
-  Steel, Tough as Nails, Tougher than Nails, Weapon Master, and Master of Arms.
-  These should be baseline-aware before they mutate derived values so imported
-  totals are not double-counted.
+- Already implemented: Alertness, Block, Brave, Brawler, Brawny, Danger Sense,
+  Improved Block, Improved Nerves of Steel, Soldier, Fleet-Footed, All Thumbs,
+  Anemic, Mean, Mild Mannered, Nerves of Steel, Small, Slow, Yellow, and Obese.
+- Passive math, high confidence: Tough as Nails, Tougher than Nails, Weapon
+  Master, and Master of Arms. These should be baseline-aware before they mutate
+  derived values so imported totals are not double-counted.
 - Roll modifier reminders, high confidence: Clueless, Clumsy, One Eye,
   Tongue-Tied, Arcane Resistance, Improved Arcane Resistance, Aristocrat,
   Attractive, Very Attractive, Elan, Fast Healer, Healer, Iron Jaw,
@@ -215,7 +220,7 @@ Effect Hook Candidate Audit:
   Horse, and most story or Marshal-facing effects.
 - Next safest code slice: either expand `roll-modifier` coverage to the
   remaining high-confidence reminders or add baseline-aware passive math for
-  Brawler, Nerves of Steel, and Improved Nerves of Steel.
+  Tough as Nails, Tougher than Nails, Weapon Master, and Master of Arms.
 
 1. Add structured effect metadata for high-impact Edges and Hindrances.
 2. Apply passive effects that are unambiguous and character-local.

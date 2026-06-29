@@ -87,9 +87,13 @@ function renderCombatStatusResources() {
 }
 
 function combatPenaltyInfo() {
-  const woundPenalty = Math.min(
+  const rawWoundPenalty = Math.min(
     character.damage.wounds,
     character.damage.maxWounds,
+  );
+  const woundPenalty = Math.max(
+    0,
+    rawWoundPenalty - characterWoundPenaltyReduction(character, "combat"),
   );
   const fatiguePenalty = Math.min(
     character.damage.fatigue,
