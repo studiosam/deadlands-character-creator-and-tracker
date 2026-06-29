@@ -172,6 +172,10 @@ Current implementation:
   `baseParry` is available or the character is app-created; imported characters
   without a baseline keep recorded Parry and show the passive effect as a
   reminder only.
+- Weapon Master and Master of Arms now apply baseline-aware Parry math using a
+  separate exclusive group from Block, so Master of Arms replaces Weapon Master
+  while still stacking with Block. Their Fighting bonus damage die reminders
+  also replace correctly.
 - Brawler now applies baseline-aware Toughness math for trusted created
   characters and remains reminder-only for imported characters without trusted
   derived baselines.
@@ -195,15 +199,15 @@ Effect Hook Candidate Audit:
 - Already implemented: Alertness, Block, Brave, Brawler, Brawny, Danger Sense,
   Improved Block, Improved Nerves of Steel, Soldier, Fleet-Footed, All Thumbs,
   Anemic, Mean, Mild Mannered, Nerves of Steel, Small, Slow, Tough as Nails,
-  Tougher than Nails, Yellow, and Obese.
+  Tougher than Nails, Weapon Master, Master of Arms, Yellow, and Obese.
 - Explicitly marked but not fully automated: Berserk, Luck, Great Luck, Bad
   Luck, Quick, Hesitant, Level Headed, unresolved Trademark Weapon, and
   unresolved Reputation.
 - Subchoice storage implemented: Trademark Weapon chosen weapon and Reputation
   good/bad type.
-- Passive math, high confidence: Weapon Master and Master of Arms. These should
-  be baseline-aware before they mutate derived values so imported totals are not
-  double-counted.
+- Passive math, high confidence: the current small deterministic set is covered
+  for the Phase 2 audit. Future passive math should be added only when the
+  baseline and stacking rules are equally clear.
 - Roll modifier reminders, high confidence: Clueless, Clumsy, One Eye,
   Tongue-Tied, Arcane Resistance, Improved Arcane Resistance, Aristocrat,
   Attractive, Very Attractive, Elan, Fast Healer, Healer, Iron Jaw,

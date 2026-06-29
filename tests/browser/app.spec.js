@@ -1519,6 +1519,156 @@ test("Block passive math does not double-count imported Parry without a baseline
   });
 });
 
+test("Weapon Master passive math increases Parry from a trusted baseline", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Weapon Master Effect Tester",
+    preferredId: "weapon-master-effect-tester",
+    edgeIds: ["swade-edge-weapon-master"],
+    derived: {
+      parry: 5,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Parry");
+  await expect(derived).toContainText("Base 5 + Effects +1");
+  await expect(derived).toContainText("Weapon Master");
+  await expect(derived).toContainText("Parry +1");
+  await expect(derived).toContainText("Fighting bonus damage die becomes d8");
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Weapon Master: Parry +1");
+  await expect(combatBreakdown).toContainText(
+    "Weapon Master: Fighting bonus damage die becomes d8",
+  );
+
+  const computed = await page.evaluate(() => ({
+    parry: character.derived.parry,
+    baseParry: character.derived.baseParry,
+    parryModifier: character.derived.effectParryModifier,
+    pendingParryModifier: character.derived.effectParryPendingModifier,
+    summaries: effectHookSummariesForSurface(character, "character")
+      .filter((effect) =>
+        ["parry", "fighting-bonus-damage"].includes(effect.target),
+      )
+      .map((effect) => `${effect.sourceName}: ${effect.displayLabel}`),
+  }));
+  expect(computed).toEqual({
+    parry: 6,
+    baseParry: 5,
+    parryModifier: 1,
+    pendingParryModifier: 0,
+    summaries: [
+      "Weapon Master: Parry +1",
+      "Weapon Master: Fighting bonus damage die becomes d8",
+    ],
+  });
+});
+
+test("Master of Arms replaces Weapon Master bonus and stacks with Block", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Master of Arms Effect Tester",
+    preferredId: "master-of-arms-effect-tester",
+    edgeIds: [
+      "swade-edge-block",
+      "swade-edge-weapon-master",
+      "swade-edge-master-of-arms",
+    ],
+    derived: {
+      parry: 5,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Base 5 + Effects +3");
+  await expect(derived).toContainText("Block");
+  await expect(derived).toContainText("Master of Arms");
+  await expect(derived).toContainText("Parry +2");
+  await expect(derived).toContainText("Fighting bonus damage die becomes d10");
+  await expect(derived).not.toContainText(
+    "Fighting bonus damage die becomes d8",
+  );
+
+  await openCombat(page);
+  const combatBreakdown = page.locator("#combatPenaltyBreakdown");
+  await expect(combatBreakdown).toContainText("Block: Parry +1");
+  await expect(combatBreakdown).toContainText("Master of Arms: Parry +2");
+  await expect(combatBreakdown).toContainText(
+    "Master of Arms: Fighting bonus damage die becomes d10",
+  );
+  await expect(combatBreakdown).not.toContainText(
+    "Weapon Master: Fighting bonus damage die becomes d8",
+  );
+
+  const computed = await page.evaluate(() => ({
+    parry: character.derived.parry,
+    baseParry: character.derived.baseParry,
+    parryModifier: character.derived.effectParryModifier,
+    activeHooks: activeEffectHooks(character).map((hook) => hook.id),
+    summaries: effectHookSummariesForSurface(character, "character")
+      .filter((effect) =>
+        ["parry", "gang-up", "fighting-bonus-damage"].includes(effect.target),
+      )
+      .map((effect) => `${effect.sourceName}: ${effect.displayLabel}`),
+  }));
+  expect(computed).toEqual({
+    parry: 8,
+    baseParry: 5,
+    parryModifier: 3,
+    activeHooks: ["edge-block", "edge-weapon-master", "edge-master-of-arms"],
+    summaries: [
+      "Block: Parry +1",
+      "Block: Ignore 1 point of Gang Up bonus",
+      "Master of Arms: Parry +2",
+      "Master of Arms: Fighting bonus damage die becomes d10",
+    ],
+  });
+});
+
+test("Weapon Master passive math does not double-count imported Parry without a baseline", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Imported Weapon Master Effect Tester",
+    preferredId: "imported-weapon-master-effect-tester",
+    source: "savaged.us",
+    edgeIds: ["swade-edge-weapon-master"],
+    derived: {
+      parry: 8,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Parry");
+  await expect(derived).toContainText("8");
+  await expect(derived).toContainText(
+    "Recorded total; passive Parry effect shown below",
+  );
+  await expect(derived).toContainText("Weapon Master");
+  await expect(derived).toContainText("Parry +1");
+
+  const computed = await page.evaluate(() => ({
+    parry: character.derived.parry,
+    hasBaseParry: Object.hasOwn(character.derived, "baseParry"),
+    parryModifier: character.derived.effectParryModifier,
+    pendingParryModifier: character.derived.effectParryPendingModifier,
+  }));
+  expect(computed).toEqual({
+    parry: 8,
+    hasBaseParry: false,
+    parryModifier: 0,
+    pendingParryModifier: 1,
+  });
+});
+
 test("Brawler passive math increases Toughness from a trusted baseline", async ({
   page,
 }) => {
