@@ -1603,6 +1603,119 @@ test("Brawler passive math does not double-count imported Toughness without a tr
   });
 });
 
+test("Tough as Nails increases Wound capacity from a trusted baseline", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Tough as Nails Effect Tester",
+    preferredId: "tough-as-nails-effect-tester",
+    edgeIds: ["swade-edge-tough-as-nails"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterStatusStrip")).toContainText("0 / 4");
+  await expect(page.locator("#woundsNote")).toContainText("Healthy");
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Tough as Nails");
+  await expect(derived).toContainText(
+    "Maximum Wounds +1; can take four Wounds",
+  );
+
+  await openCombat(page);
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Tough as Nails: Maximum Wounds +1; can take four Wounds",
+  );
+
+  const computed = await page.evaluate(() => ({
+    maxWounds: character.damage.maxWounds,
+    baseMaxWounds: character.damage.baseMaxWounds,
+    maxWoundsModifier: character.damage.effectMaxWoundsModifier,
+    pendingMaxWoundsModifier: character.damage.effectMaxWoundsPendingModifier,
+    summaries: effectHookSummariesForSurface(character, "character")
+      .filter((effect) => effect.target === "max-wounds")
+      .map((effect) => `${effect.sourceName}: ${effect.displayLabel}`),
+  }));
+  expect(computed).toEqual({
+    maxWounds: 4,
+    baseMaxWounds: 3,
+    maxWoundsModifier: 1,
+    pendingMaxWoundsModifier: 0,
+    summaries: ["Tough as Nails: Maximum Wounds +1; can take four Wounds"],
+  });
+});
+
+test("Tougher than Nails replaces Tough as Nails Wound capacity", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Tougher than Nails Effect Tester",
+    preferredId: "tougher-than-nails-effect-tester",
+    edgeIds: ["swade-edge-tough-as-nails", "swade-edge-tougher-than-nails"],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterStatusStrip")).toContainText("0 / 5");
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Tougher than Nails");
+  await expect(derived).toContainText(
+    "Maximum Wounds +2; can take five Wounds",
+  );
+  await expect(derived).not.toContainText("Tough as NailsMaximum Wounds +1");
+
+  const computed = await page.evaluate(() => ({
+    maxWounds: character.damage.maxWounds,
+    baseMaxWounds: character.damage.baseMaxWounds,
+    maxWoundsModifier: character.damage.effectMaxWoundsModifier,
+    activeHooks: activeEffectHooks(character).map((hook) => hook.id),
+    summaries: effectHookSummariesForSurface(character, "character")
+      .filter((effect) => effect.target === "max-wounds")
+      .map((effect) => `${effect.sourceName}: ${effect.displayLabel}`),
+  }));
+  expect(computed).toEqual({
+    maxWounds: 5,
+    baseMaxWounds: 3,
+    maxWoundsModifier: 2,
+    activeHooks: ["edge-tough-as-nails", "edge-tougher-than-nails"],
+    summaries: ["Tougher than Nails: Maximum Wounds +2; can take five Wounds"],
+  });
+});
+
+test("Tough as Nails does not double-count imported Wound capacity without a baseline", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Imported Tough as Nails Effect Tester",
+    preferredId: "imported-tough-as-nails-effect-tester",
+    source: "savaged.us",
+    edgeIds: ["swade-edge-tough-as-nails"],
+    damage: {
+      maxWounds: 4,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterStatusStrip")).toContainText("0 / 4");
+  await expect(page.locator("#woundsNote")).toContainText(
+    "Recorded Wound maximum; passive Wound capacity effect shown below.",
+  );
+  await expect(page.locator("#characterDerivedDetails")).toContainText(
+    "Tough as Nails",
+  );
+
+  const computed = await page.evaluate(() => ({
+    maxWounds: character.damage.maxWounds,
+    hasBaseMaxWounds: Object.hasOwn(character.damage, "baseMaxWounds"),
+    maxWoundsModifier: character.damage.effectMaxWoundsModifier,
+    pendingMaxWoundsModifier: character.damage.effectMaxWoundsPendingModifier,
+  }));
+  expect(computed).toEqual({
+    maxWounds: 4,
+    hasBaseMaxWounds: false,
+    maxWoundsModifier: 0,
+    pendingMaxWoundsModifier: 1,
+  });
+});
+
 test("Nerves of Steel reduces active wound penalties", async ({ page }) => {
   await seedEffectHookCharacter(page, {
     name: "Nerves Effect Tester",

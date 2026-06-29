@@ -57,6 +57,26 @@ function renderCharacterIdentityDisplays() {
 
 function render() {
   renderCharacterIdentityDisplays();
+  const maxWoundsModifier = characterMaxWoundsModifier(character);
+  const pendingMaxWoundsModifier = characterPendingMaxWoundsModifier(character);
+  if (
+    character.damage.baseMaxWounds === undefined &&
+    character.source === "created"
+  ) {
+    character.damage.baseMaxWounds = Number(character.damage.maxWounds) || 3;
+  }
+  const baseMaxWounds = Number(character.damage.baseMaxWounds);
+  const canApplyMaxWoundsModifier =
+    Number.isFinite(baseMaxWounds) && baseMaxWounds > 0;
+  character.damage.maxWounds = canApplyMaxWoundsModifier
+    ? Math.max(1, baseMaxWounds + maxWoundsModifier)
+    : Number(character.damage.maxWounds) || 3;
+  character.damage.effectMaxWoundsModifier = canApplyMaxWoundsModifier
+    ? maxWoundsModifier
+    : 0;
+  character.damage.effectMaxWoundsPendingModifier = canApplyMaxWoundsModifier
+    ? 0
+    : pendingMaxWoundsModifier;
   els.woundsValue.textContent = character.damage.wounds;
   const rawWoundPenalty = Math.min(
     character.damage.wounds,
@@ -80,7 +100,9 @@ function render() {
     ? appliedWoundPenaltyReduction
       ? `Wound penalty reduced by ${appliedWoundPenaltyReduction} from passive effects.`
       : "Apply wound penalty to affected trait rolls."
-    : "Healthy";
+    : character.damage.effectMaxWoundsPendingModifier
+      ? "Recorded Wound maximum; passive Wound capacity effect shown below."
+      : "Healthy";
   els.fatigueValue.textContent = character.damage.fatigue;
   const fatiguePenalty = Math.min(
     character.damage.fatigue,

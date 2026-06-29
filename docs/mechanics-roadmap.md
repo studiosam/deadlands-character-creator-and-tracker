@@ -178,6 +178,9 @@ Current implementation:
 - Nerves of Steel and Improved Nerves of Steel now reduce displayed active
   wound penalties, with Improved Nerves replacing rather than stacking with the
   base Edge.
+- Tough as Nails and Tougher than Nails now apply baseline-aware Wound capacity
+  math. They raise maximum Wounds to four or five before Incapacitation; they
+  do not alter Toughness.
 - Explicit `automation-status` markers now surface entries that are known but
   not safely automated yet, including manual/table-only, resource-model,
   action-state, and subchoice-required effects.
@@ -191,15 +194,16 @@ Effect Hook Candidate Audit:
 
 - Already implemented: Alertness, Block, Brave, Brawler, Brawny, Danger Sense,
   Improved Block, Improved Nerves of Steel, Soldier, Fleet-Footed, All Thumbs,
-  Anemic, Mean, Mild Mannered, Nerves of Steel, Small, Slow, Yellow, and Obese.
+  Anemic, Mean, Mild Mannered, Nerves of Steel, Small, Slow, Tough as Nails,
+  Tougher than Nails, Yellow, and Obese.
 - Explicitly marked but not fully automated: Berserk, Luck, Great Luck, Bad
   Luck, Quick, Hesitant, Level Headed, unresolved Trademark Weapon, and
   unresolved Reputation.
 - Subchoice storage implemented: Trademark Weapon chosen weapon and Reputation
   good/bad type.
-- Passive math, high confidence: Tough as Nails, Tougher than Nails, Weapon
-  Master, and Master of Arms. These should be baseline-aware before they mutate
-  derived values so imported totals are not double-counted.
+- Passive math, high confidence: Weapon Master and Master of Arms. These should
+  be baseline-aware before they mutate derived values so imported totals are not
+  double-counted.
 - Roll modifier reminders, high confidence: Clueless, Clumsy, One Eye,
   Tongue-Tied, Arcane Resistance, Improved Arcane Resistance, Aristocrat,
   Attractive, Very Attractive, Elan, Fast Healer, Healer, Iron Jaw,
@@ -212,9 +216,9 @@ Effect Hook Candidate Audit:
   Blow, Tactician, Master Tactician, Quick Draw, and Fast as Lightning. These
   should remain reminders until Combat has action-card state.
 - Resource or session-start effects: Bad Luck, Luck, Great Luck, Power Points,
-  Rapid Recharge, Improved Rapid Recharge, Power Surge, Soul Drain, Tough as
-  Nails, Tougher than Nails, and Behold a Pale Horse. These need source-tracked
-  resource/session handling rather than one-time silent mutations.
+  Rapid Recharge, Improved Rapid Recharge, Power Surge, Soul Drain, and Behold
+  a Pale Horse. These need source-tracked resource/session handling rather than
+  one-time silent mutations.
 - Subchoice or target-required effects: Scholar, Trademark Weapon, Improved
   Trademark Weapon, Reputation, Martial Artist, Martial Warrior, Chi, Champion,
   Assassin, Giant Killer, Double Tap, Dodge, Improved Dodge, Marksman, Rapid

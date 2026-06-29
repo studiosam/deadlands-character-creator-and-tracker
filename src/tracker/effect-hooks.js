@@ -356,6 +356,42 @@ const EFFECT_HOOK_REGISTRY = [
     ],
   },
   {
+    id: "edge-tough-as-nails",
+    sourceType: "edge",
+    matchName: "Tough as Nails",
+    label: "Tough as Nails",
+    summary: "Can take four Wounds before Incapacitation.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "max-wounds",
+        value: 1,
+        exclusiveGroup: "wound-capacity",
+        requiresTrustedBaseline: true,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Maximum Wounds +1; can take four Wounds",
+      },
+    ],
+  },
+  {
+    id: "edge-tougher-than-nails",
+    sourceType: "edge",
+    matchName: "Tougher than Nails",
+    label: "Tougher than Nails",
+    summary: "Can take five Wounds before Incapacitation.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "max-wounds",
+        value: 2,
+        exclusiveGroup: "wound-capacity",
+        requiresTrustedBaseline: true,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Maximum Wounds +2; can take five Wounds",
+      },
+    ],
+  },
+  {
     id: "hindrance-all-thumbs",
     sourceType: "hindrance",
     matchName: "All Thumbs",
@@ -662,11 +698,12 @@ function effectAppliesTo(effect, scope = "") {
 }
 
 function trustedDerivedBaseline(currentCharacter, target) {
-  if (target === "toughness") {
+  if (target === "toughness" || target === "max-wounds") {
     return Boolean(
       currentCharacter?.source === "created" ||
       currentCharacter?.creationBaseline ||
-      currentCharacter?.creation?.finalized,
+      currentCharacter?.creation?.finalized ||
+      currentCharacter?.damage?.baseMaxWounds,
     );
   }
   return true;
@@ -747,6 +784,14 @@ function characterParryModifier(currentCharacter = character) {
   });
 }
 
+function characterMaxWoundsModifier(currentCharacter = character) {
+  return effectHookModifierTotal(currentCharacter, {
+    type: "numeric-modifier",
+    target: "max-wounds",
+    scope: "character",
+  });
+}
+
 function characterPendingToughnessModifier(currentCharacter = character) {
   return activeEffectHooks(currentCharacter)
     .flatMap((hook) => hook.effects || [])
@@ -759,6 +804,33 @@ function characterPendingToughnessModifier(currentCharacter = character) {
         effectAppliesTo(effect, "character"),
     )
     .reduce((sum, effect) => sum + (Number(effect.value) || 0), 0);
+}
+
+function characterPendingMaxWoundsModifier(currentCharacter = character) {
+  const groupedTotals = {};
+  const ungroupedTotal = activeEffectHooks(currentCharacter)
+    .flatMap((hook) => hook.effects || [])
+    .filter(
+      (effect) =>
+        effect.type === "numeric-modifier" &&
+        effect.target === "max-wounds" &&
+        effect.requiresTrustedBaseline &&
+        !trustedDerivedBaseline(currentCharacter, effect.target) &&
+        effectAppliesTo(effect, "character"),
+    )
+    .reduce((sum, effect) => {
+      const value = Number(effect.value) || 0;
+      if (!effect.exclusiveGroup) return sum + value;
+      groupedTotals[effect.exclusiveGroup] = dominantEffectValue(
+        groupedTotals[effect.exclusiveGroup],
+        value,
+      );
+      return sum;
+    }, 0);
+  return (
+    ungroupedTotal +
+    Object.values(groupedTotals).reduce((sum, value) => sum + value, 0)
+  );
 }
 
 function characterWoundPenaltyReduction(
