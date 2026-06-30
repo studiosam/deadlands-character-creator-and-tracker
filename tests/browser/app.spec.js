@@ -3304,6 +3304,137 @@ test("Active power runtime reminders render in Arcane and Combat and persist", a
   );
 });
 
+test("Active power runtime reminders cover common candidate powers", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Expanded Active Power Reminder Tester",
+    preferredId: "expanded-active-power-reminder-tester",
+    activePowers: [
+      {
+        id: "barrier-reminder",
+        catalogId: "power-barrier",
+        name: "Barrier",
+        status: "active",
+        cost: 2,
+        duration: "5",
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      {
+        id: "burrow-reminder",
+        catalogId: "power-burrow",
+        name: "Burrow",
+        status: "active",
+        cost: 2,
+        duration: "5",
+        activatedAt: "2026-01-01T00:01:00.000Z",
+      },
+      {
+        id: "light-darkness-reminder",
+        catalogId: "power-light-darkness",
+        name: "Light/Darkness",
+        status: "active",
+        cost: 2,
+        duration: "10 minutes",
+        activatedAt: "2026-01-01T00:02:00.000Z",
+      },
+      {
+        id: "entangle-reminder",
+        catalogId: "power-entangle",
+        name: "Entangle",
+        status: "active",
+        cost: 2,
+        duration: "Instant",
+        activatedAt: "2026-01-01T00:03:00.000Z",
+      },
+      {
+        id: "fly-reminder",
+        catalogId: "power-fly",
+        name: "Fly",
+        status: "active",
+        cost: 3,
+        duration: "5",
+        activatedAt: "2026-01-01T00:04:00.000Z",
+      },
+      {
+        id: "invisibility-reminder",
+        catalogId: "power-invisibility",
+        name: "Invisibility",
+        status: "active",
+        cost: 5,
+        duration: "5",
+        activatedAt: "2026-01-01T00:05:00.000Z",
+      },
+      {
+        id: "sloth-speed-reminder",
+        catalogId: "power-sloth-speed",
+        name: "Sloth/Speed",
+        status: "active",
+        cost: 2,
+        duration: "Instant sloth / 5 speed",
+        activatedAt: "2026-01-01T00:06:00.000Z",
+      },
+      {
+        id: "smite-reminder",
+        catalogId: "power-smite",
+        name: "Smite",
+        status: "active",
+        cost: 2,
+        duration: "5",
+        activatedAt: "2026-01-01T00:07:00.000Z",
+      },
+      {
+        id: "wall-walker-reminder",
+        catalogId: "power-wall-walker",
+        name: "Wall Walker",
+        status: "active",
+        cost: 2,
+        duration: "5",
+        activatedAt: "2026-01-01T00:08:00.000Z",
+      },
+    ],
+  });
+
+  await openArcane(page);
+  const activePowers = page.locator("#activePowersList");
+  await expect(activePowers).toContainText(
+    "Track barrier placement, size, damage, and cover or obstruction manually.",
+  );
+  await expect(activePowers).toContainText(
+    "Track submerged targets, underground movement, and emergence timing manually.",
+  );
+  await expect(activePowers).toContainText(
+    "Track the affected area and whether it is light, darkness, or dispelled.",
+  );
+  await expect(activePowers).toContainText(
+    "Track each affected target's restrained state and escape attempts manually.",
+  );
+  await expect(activePowers).toContainText(
+    "Track flying Pace, altitude, target count, and terrain risks manually.",
+  );
+  await expect(activePowers).toContainText(
+    "Track visibility, detection, and target-reveal circumstances manually.",
+  );
+  await expect(activePowers).toContainText(
+    "Track whether Sloth or Speed is active for each affected target.",
+  );
+  await expect(activePowers).toContainText(
+    "Track the affected weapon and damage bonus manually.",
+  );
+  await expect(activePowers).toContainText(
+    "Track wall or ceiling movement, position, and surface limits manually.",
+  );
+
+  await openCombat(page);
+  const combatPowers = page.locator("#playActivePowersList");
+  await expect(combatPowers).toContainText(
+    "Track barrier placement, size, damage, and cover or obstruction manually.",
+  );
+  await expect(combatPowers).toContainText(
+    "Track whether Sloth or Speed is active for each affected target.",
+  );
+});
+
 test("Active power runtime reminders are marked inactive for ended statuses", async ({
   page,
 }) => {

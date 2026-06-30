@@ -389,17 +389,53 @@ function normalizePowerRecord(power, index = 0, fallbackSource = "") {
 
 const ACTIVE_POWER_STATUSES = ["active", "dismissed", "expired", "disrupted"];
 const ACTIVE_POWER_RUNTIME_REMINDERS_BY_POWER_ID = {
+  "power-barrier": [
+    "Track barrier placement, size, damage, and cover or obstruction manually.",
+    "Track maintained duration and any table-specific modifier choices separately.",
+  ],
   "power-boost-lower-trait": [
     "Track the affected Trait, target, and whether this is the boost or lower use.",
     "Apply raise, Strong modifier, recovery, and extra-recipient details manually.",
+  ],
+  "power-burrow": [
+    "Track submerged targets, underground movement, and emergence timing manually.",
+    "Track extra recipients and surface restrictions separately.",
   ],
   "power-deflection": [
     "Apply the attack penalty against the protected target manually.",
     "Track raise and extra-recipient details separately.",
   ],
+  "power-entangle": [
+    "Track each affected target's restrained state and escape attempts manually.",
+    "Track Bound, area, and multi-target details separately.",
+  ],
+  "power-fly": [
+    "Track flying Pace, altitude, target count, and terrain risks manually.",
+    "Track raise speed and extra recipients separately.",
+  ],
+  "power-invisibility": [
+    "Track visibility, detection, and target-reveal circumstances manually.",
+    "Track raise and extra-recipient details separately.",
+  ],
+  "power-light-darkness": [
+    "Track the affected area and whether it is light, darkness, or dispelled.",
+    "Apply illumination and vision penalties manually.",
+  ],
   "power-protection": [
     "Apply the Armor bonus to the protected target manually.",
     "Track raise, More Armor, and extra-recipient details separately.",
+  ],
+  "power-sloth-speed": [
+    "Track whether Sloth or Speed is active for each affected target.",
+    "Apply movement, action, recovery, raise, and duration details manually.",
+  ],
+  "power-smite": [
+    "Track the affected weapon and damage bonus manually.",
+    "Track raise, extra recipients, and special weapon cases separately.",
+  ],
+  "power-wall-walker": [
+    "Track wall or ceiling movement, position, and surface limits manually.",
+    "Track extra recipients and maintained duration separately.",
   ],
 };
 

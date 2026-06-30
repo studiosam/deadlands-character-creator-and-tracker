@@ -308,9 +308,11 @@ Current implementation:
 - Maintenance state is surfaced prominently on Arcane and Combat active-power
   cards.
 - A small runtime reminder registry surfaces high-confidence manual effect
-  reminders for `Protection`, `Deflection`, and `Boost/Lower Trait` while those
-  powers are active. Ended active-power records are marked inactive instead of
-  continuing to show active-effect reminders.
+  reminders for `Protection`, `Deflection`, `Boost/Lower Trait`, `Barrier`,
+  `Burrow`, `Light/Darkness`, `Entangle`, `Fly`, `Invisibility`, `Sloth/Speed`,
+  `Smite`, and `Wall Walker` while those powers are active. Ended active-power
+  records are marked inactive instead of continuing to show active-effect
+  reminders.
 - Variable Power Point activation stores a structured `spendBreakdown` with base
   cost, selected modifier quantities, modifier costs, and total cost. Active
   power cards display the breakdown in Arcane and Combat.
