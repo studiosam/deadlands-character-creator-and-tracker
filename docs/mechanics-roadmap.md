@@ -307,6 +307,10 @@ Current implementation:
   zero. Non-numeric durations remain manual reminders.
 - Maintenance state is surfaced prominently on Arcane and Combat active-power
   cards.
+- A small runtime reminder registry surfaces high-confidence manual effect
+  reminders for `Protection`, `Deflection`, and `Boost/Lower Trait` while those
+  powers are active. Ended active-power records are marked inactive instead of
+  continuing to show active-effect reminders.
 - Active Powers can be marked dismissed, expired, or disrupted without deleting
   the underlying Known Power.
 - Active Power records persist through reload and tracker JSON export/import.

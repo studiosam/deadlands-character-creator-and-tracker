@@ -3237,6 +3237,158 @@ test("Non-numeric active power durations remain manual without countdown control
   });
 });
 
+test("Active power runtime reminders render in Arcane and Combat and persist", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Active Power Reminder Tester",
+    preferredId: "active-power-reminder-tester",
+    activePowers: [
+      {
+        id: "protection-reminder-power",
+        catalogId: "power-protection",
+        name: "Protection",
+        status: "active",
+        cost: 1,
+        duration: "5",
+        durationRemaining: 5,
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+
+  await openArcane(page);
+  let activePower = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Protection" }),
+    });
+  await expect(activePower).toContainText("Effect reminder");
+  await expect(activePower).toContainText(
+    "Apply the Armor bonus to the protected target manually.",
+  );
+  await expect(activePower).toContainText(
+    "Track raise, More Armor, and extra-recipient details separately.",
+  );
+
+  await openCombat(page);
+  let combatPower = page
+    .locator("#playActivePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Protection" }),
+    });
+  await expect(combatPower).toContainText("Effect reminder");
+  await expect(combatPower).toContainText(
+    "Apply the Armor bonus to the protected target manually.",
+  );
+
+  await reloadIntoTracker(page);
+  await openArcane(page);
+  activePower = page.locator("#activePowersList .active-power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await expect(activePower).toContainText("Effect reminder");
+  await expect(activePower).toContainText(
+    "Apply the Armor bonus to the protected target manually.",
+  );
+
+  await openCombat(page);
+  combatPower = page
+    .locator("#playActivePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Protection" }),
+    });
+  await expect(combatPower).toContainText("Effect reminder");
+  await expect(combatPower).toContainText(
+    "Apply the Armor bonus to the protected target manually.",
+  );
+});
+
+test("Active power runtime reminders are marked inactive for ended statuses", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Inactive Active Power Reminder Tester",
+    preferredId: "inactive-active-power-reminder-tester",
+    activePowers: [
+      {
+        id: "expired-protection-reminder",
+        catalogId: "power-protection",
+        name: "Protection",
+        status: "active",
+        cost: 1,
+        duration: "5",
+        durationRemaining: 5,
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      {
+        id: "dismissed-deflection-reminder",
+        catalogId: "power-deflection",
+        name: "Deflection",
+        status: "active",
+        cost: 3,
+        duration: "5",
+        durationRemaining: 5,
+        activatedAt: "2026-01-01T00:01:00.000Z",
+      },
+      {
+        id: "disrupted-boost-reminder",
+        catalogId: "power-boost-lower-trait",
+        name: "Boost/Lower Trait",
+        status: "active",
+        cost: 2,
+        duration: "5 boost / Instant lower",
+        activatedAt: "2026-01-01T00:02:00.000Z",
+      },
+    ],
+  });
+
+  await openArcane(page);
+  const protection = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Protection" }),
+    });
+  const deflection = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Deflection" }),
+    });
+  const boostLowerTrait = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Boost/Lower Trait" }),
+    });
+
+  await expect(protection).toContainText(
+    "Apply the Armor bonus to the protected target manually.",
+  );
+  await expect(deflection).toContainText(
+    "Apply the attack penalty against the protected target manually.",
+  );
+  await expect(boostLowerTrait).toContainText(
+    "Track the affected Trait, target, and whether this is the boost or lower use.",
+  );
+
+  await protection.getByRole("button", { name: "Expire" }).click();
+  await expect(protection).toContainText("Effect inactive");
+  await expect(protection).not.toContainText(
+    "Apply the Armor bonus to the protected target manually.",
+  );
+
+  await deflection.getByRole("button", { name: "Dismiss" }).click();
+  await expect(deflection).toContainText("Effect inactive");
+  await expect(deflection).not.toContainText(
+    "Apply the attack penalty against the protected target manually.",
+  );
+
+  await boostLowerTrait.getByRole("button", { name: "Disrupt" }).click();
+  await expect(boostLowerTrait).toContainText("Effect inactive");
+  await expect(boostLowerTrait).not.toContainText(
+    "Track the affected Trait, target, and whether this is the boost or lower use.",
+  );
+});
+
 test("Active powers can be dismissed and disrupted without deleting records", async ({
   page,
 }) => {

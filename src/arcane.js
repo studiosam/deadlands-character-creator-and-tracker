@@ -388,6 +388,20 @@ function normalizePowerRecord(power, index = 0, fallbackSource = "") {
 }
 
 const ACTIVE_POWER_STATUSES = ["active", "dismissed", "expired", "disrupted"];
+const ACTIVE_POWER_RUNTIME_REMINDERS_BY_POWER_ID = {
+  "power-boost-lower-trait": [
+    "Track the affected Trait, target, and whether this is the boost or lower use.",
+    "Apply raise, Strong modifier, recovery, and extra-recipient details manually.",
+  ],
+  "power-deflection": [
+    "Apply the attack penalty against the protected target manually.",
+    "Track raise and extra-recipient details separately.",
+  ],
+  "power-protection": [
+    "Apply the Armor bonus to the protected target manually.",
+    "Track raise, More Armor, and extra-recipient details separately.",
+  ],
+};
 
 function normalizeActivePowerStatus(status) {
   return ACTIVE_POWER_STATUSES.includes(status) ? status : "active";
@@ -408,6 +422,34 @@ function activePowerKnownPower(activePower, knownPowers = []) {
     ) ||
     null
   );
+}
+
+function activePowerReminderPowerId(activePower, knownPowers = []) {
+  const knownPower = activePowerKnownPower(activePower, knownPowers);
+  const ids = [
+    activePower?.catalogId,
+    activePower?.powerCatalogId,
+    knownPower?.catalogId,
+    activePower?.powerId,
+    knownPower?.id,
+  ]
+    .map((id) => String(id || "").trim())
+    .filter(Boolean);
+  return ids.find((id) => ACTIVE_POWER_RUNTIME_REMINDERS_BY_POWER_ID[id]) || "";
+}
+
+function activePowerReminderDefinitions(activePower, knownPowers = []) {
+  const powerId = activePowerReminderPowerId(activePower, knownPowers);
+  return powerId ? ACTIVE_POWER_RUNTIME_REMINDERS_BY_POWER_ID[powerId] : [];
+}
+
+function activePowerRuntimeReminders(activePower, knownPowers = []) {
+  if (!activePowerIsCurrent(activePower)) return [];
+  return activePowerReminderDefinitions(activePower, knownPowers);
+}
+
+function activePowerHasRuntimeReminder(activePower, knownPowers = []) {
+  return activePowerReminderDefinitions(activePower, knownPowers).length > 0;
 }
 
 function activePowerSlug(value) {
