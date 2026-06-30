@@ -414,6 +414,28 @@ function activePowerSlug(value) {
   return normalizeArcaneText(value).replace(/\s+/g, "-") || "power";
 }
 
+function numericActivePowerDuration(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const text = String(value).trim();
+  const direct = Number(text);
+  if (Number.isFinite(direct) && direct >= 0) return Math.floor(direct);
+  const match = text.match(/^(\d+)\s*(?:rounds?|rds?)?$/i);
+  return match ? Math.floor(Number(match[1])) : null;
+}
+
+function activePowerDurationReminder(activePower) {
+  const remaining = numericActivePowerDuration(activePower?.durationRemaining);
+  if (remaining !== null) {
+    if (remaining <= 0) return "Duration expired.";
+    if (remaining === 1) return "1 round remaining.";
+    return `${remaining} rounds remaining.`;
+  }
+  const duration = String(activePower?.duration || "").trim();
+  return duration
+    ? `Manual duration: ${duration}.`
+    : "Manual duration tracking.";
+}
+
 function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
   if (typeof activePower === "string") activePower = { name: activePower };
   if (!activePower || typeof activePower !== "object") activePower = {};
@@ -430,6 +452,12 @@ function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
       ) || 0,
     ),
   );
+  const duration = activePower.duration ?? knownPower?.duration ?? "";
+  const durationRemainingSource =
+    activePower.durationRemaining ??
+    activePower.remainingDuration ??
+    numericActivePowerDuration(duration);
+  const durationRemaining = numericActivePowerDuration(durationRemainingSource);
   return {
     id:
       activePower.id ||
@@ -443,7 +471,12 @@ function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
     name: activePower.name || knownPower?.name || "Unnamed power",
     status,
     cost,
-    duration: activePower.duration ?? knownPower?.duration ?? "",
+    duration,
+    durationRemaining,
+    durationReminder: activePowerDurationReminder({
+      duration,
+      durationRemaining,
+    }),
     maintenance: Boolean(activePower.maintenance || activePower.maintained),
     targetLabel: activePower.targetLabel || activePower.target || "",
     trappingNotes:
@@ -474,6 +507,7 @@ function makeActivePowerRecord(power, option = {}, overrides = {}) {
       status: "active",
       cost,
       duration: overrides.duration ?? power?.duration ?? "",
+      durationRemaining: overrides.durationRemaining,
       maintenance: false,
       targetLabel: overrides.targetLabel || "",
       trappingNotes: overrides.trappingNotes ?? power?.trapping ?? "",

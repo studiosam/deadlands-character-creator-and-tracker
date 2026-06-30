@@ -299,9 +299,14 @@ Current implementation:
 
 - Known Powers can be activated from Arcane or Combat power cards into
   normalized `activePowers` runtime records.
-- Active Power records track source power, Power Point cost, duration/remaining
-  text, maintenance state, target label, trapping notes, runtime notes,
-  activation time, end time, and status.
+- Active Power records track source power, Power Point cost, base duration,
+  numeric `durationRemaining` when available, duration reminder text,
+  maintenance state, target label, trapping notes, runtime notes, activation
+  time, end time, and status.
+- Numeric round durations can be ticked down one round at a time and expire at
+  zero. Non-numeric durations remain manual reminders.
+- Maintenance state is surfaced prominently on Arcane and Combat active-power
+  cards.
 - Active Powers can be marked dismissed, expired, or disrupted without deleting
   the underlying Known Power.
 - Active Power records persist through reload and tracker JSON export/import.
@@ -309,8 +314,9 @@ Current implementation:
   display concise manual-effect reminders.
 
 1. Track active powers with duration, maintenance, targets, trapping notes, and
-   Power Point cost. Initial runtime records are implemented.
-2. Add Disruption and expiration reminders.
+   Power Point cost. Initial runtime records and numeric countdown helpers are
+   implemented.
+2. Add richer Disruption, expiration, and recasting reminders.
 3. Add common character-local power effects such as armor, defense penalties,
    Trait boosts, movement changes, and visibility state.
 4. Expand variable Power Point controls for powers with safe, structured

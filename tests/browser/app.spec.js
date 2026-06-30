@@ -3038,7 +3038,11 @@ test("Known powers activate into editable active power records", async ({
   await activePower
     .locator("[data-active-power-field='duration']")
     .fill("4 rounds");
+  await activePower
+    .locator("[data-active-power-field='durationRemaining']")
+    .fill("4");
   await activePower.locator("[data-active-power-field='maintenance']").check();
+  await expect(activePower).toContainText("Maintenance marked");
   await activePower
     .locator("[data-active-power-field='trappingNotes']")
     .fill("Glowing sigils");
@@ -3059,6 +3063,7 @@ test("Known powers activate into editable active power records", async ({
       status: "expired",
       cost: expect.any(Number),
       duration: "4 rounds",
+      durationRemaining: 4,
       maintenance: true,
       targetLabel: "Dusty",
       trappingNotes: "Glowing sigils",
@@ -3089,6 +3094,147 @@ test("Known powers activate into editable active power records", async ({
   await expect(page.locator("#activePowersList")).toContainText(
     "Raise applied manually",
   );
+});
+
+test("Numeric active power durations tick down persist and expire at zero", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Active Power Countdown Tester",
+    preferredId: "active-power-countdown-tester",
+    activePowers: [
+      {
+        id: "countdown-power",
+        name: "Countdown Power",
+        status: "active",
+        cost: 1,
+        duration: "3 rounds",
+        durationRemaining: 2,
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+
+  await openArcane(page);
+  let activePower = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Countdown Power" }),
+    });
+  await expect(activePower).toContainText("2 rounds remaining.");
+  await activePower.getByRole("button", { name: "Tick down 1 round" }).click();
+  await expect(activePower).toContainText("1 round remaining.");
+  await expect(activePower).toContainText("1 round left");
+  expect(
+    await page.evaluate(() => {
+      const activePowerRecord = character.activePowers.find(
+        (power) => power.id === "countdown-power",
+      );
+      return {
+        durationRemaining: activePowerRecord.durationRemaining,
+        status: activePowerRecord.status,
+        ended: Boolean(activePowerRecord.endedAt),
+      };
+    }),
+  ).toEqual({
+    durationRemaining: 1,
+    status: "active",
+    ended: false,
+  });
+
+  await reloadIntoTracker(page);
+  await openArcane(page);
+  activePower = page.locator("#activePowersList .active-power-card").filter({
+    has: page.getByRole("heading", { name: "Countdown Power" }),
+  });
+  await expect(activePower).toContainText("1 round remaining.");
+  await activePower.getByRole("button", { name: "Tick down 1 round" }).click();
+  await expect(activePower).toContainText("Duration expired.");
+  await expect(activePower).toContainText("Expired");
+  expect(
+    await page.evaluate(() => {
+      const activePowerRecord = character.activePowers.find(
+        (power) => power.id === "countdown-power",
+      );
+      return {
+        durationRemaining: activePowerRecord.durationRemaining,
+        status: activePowerRecord.status,
+        ended: Boolean(activePowerRecord.endedAt),
+      };
+    }),
+  ).toEqual({
+    durationRemaining: 0,
+    status: "expired",
+    ended: true,
+  });
+
+  await openCombat(page);
+  const combatPower = page
+    .locator("#playActivePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Countdown Power" }),
+    });
+  await expect(combatPower).toContainText("Duration expired.");
+  await expect(combatPower).toContainText("Expired");
+});
+
+test("Non-numeric active power durations remain manual without countdown controls", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Manual Active Power Duration Tester",
+    preferredId: "manual-active-power-duration-tester",
+    activePowers: [
+      {
+        id: "manual-duration-power",
+        name: "Manual Duration Power",
+        status: "active",
+        cost: 2,
+        duration: "Maintained",
+        maintenance: true,
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+
+  await openArcane(page);
+  const activePower = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Manual Duration Power" }),
+    });
+  await expect(activePower).toContainText("Manual duration: Maintained.");
+  await expect(activePower).toContainText("Maintenance marked");
+  await expect(
+    activePower.getByRole("button", { name: "Tick down 1 round" }),
+  ).toHaveCount(0);
+
+  await reloadIntoTracker(page);
+  await openCombat(page);
+  const combatPower = page
+    .locator("#playActivePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Manual Duration Power" }),
+    });
+  await expect(combatPower).toContainText("Manual duration: Maintained.");
+  await expect(combatPower).toContainText("Maintenance marked");
+  await expect(
+    combatPower.getByRole("button", { name: "Tick down 1 round" }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(() => {
+      const activePowerRecord = character.activePowers.find(
+        (power) => power.id === "manual-duration-power",
+      );
+      return {
+        durationRemaining: activePowerRecord.durationRemaining,
+        status: activePowerRecord.status,
+      };
+    }),
+  ).toEqual({
+    durationRemaining: null,
+    status: "active",
+  });
 });
 
 test("Active powers can be dismissed and disrupted without deleting records", async ({
