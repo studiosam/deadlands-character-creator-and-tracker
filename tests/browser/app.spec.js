@@ -3178,6 +3178,92 @@ test("Numeric active power durations tick down persist and expire at zero", asyn
   await expect(combatPower).toContainText("Expired");
 });
 
+test("Active powers track structured target mode and raise fields", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Structured Active Power Field Tester",
+    preferredId: "structured-active-power-field-tester",
+    powerIds: ["power-boost-lower-trait"],
+    activePowers: [
+      {
+        id: "structured-boost-lower",
+        catalogId: "power-boost-lower-trait",
+        name: "Boost/Lower Trait",
+        status: "active",
+        cost: 2,
+        duration: "5 boost / Instant lower",
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+
+  await openArcane(page);
+  let activePower = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Boost/Lower Trait" }),
+    });
+  await expect(
+    activePower.locator("[data-active-power-field='effectMode']"),
+  ).toHaveCount(1);
+  await activePower
+    .locator("[data-active-power-field='targetLabel']")
+    .fill("Dusty");
+  await activePower
+    .locator("[data-active-power-field='effectMode']")
+    .selectOption("Boost");
+  activePower = page.locator("#activePowersList .active-power-card").filter({
+    has: page.getByRole("heading", { name: "Boost/Lower Trait" }),
+  });
+  await activePower.locator("[data-active-power-field='raiseMarked']").check();
+  activePower = page.locator("#activePowersList .active-power-card").filter({
+    has: page.getByRole("heading", { name: "Boost/Lower Trait" }),
+  });
+  await expect(activePower).toContainText("Structured tracking");
+  await expect(activePower).toContainText("Target: Dusty");
+  await expect(activePower).toContainText("Mode: Boost");
+  await expect(activePower).toContainText("Raise marked");
+
+  expect(
+    await page.evaluate(() => {
+      const activePowerRecord = character.activePowers[0];
+      return {
+        targetLabel: activePowerRecord.targetLabel,
+        effectMode: activePowerRecord.effectMode,
+        raiseMarked: activePowerRecord.raiseMarked,
+      };
+    }),
+  ).toEqual({
+    targetLabel: "Dusty",
+    effectMode: "Boost",
+    raiseMarked: true,
+  });
+
+  await reloadIntoTracker(page);
+  await openCombat(page);
+  let combatPower = page
+    .locator("#playActivePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Boost/Lower Trait" }),
+    });
+  await expect(combatPower).toContainText("Target: Dusty");
+  await expect(combatPower).toContainText("Mode: Boost");
+  await expect(combatPower).toContainText("Raise marked");
+
+  const exportedText = await page.evaluate(() =>
+    JSON.stringify(serializeTrackerExport(character)),
+  );
+  await page.evaluate((text) => importJsonText(text), exportedText);
+  await openArcane(page);
+  activePower = page.locator("#activePowersList .active-power-card").filter({
+    has: page.getByRole("heading", { name: "Boost/Lower Trait" }),
+  });
+  await expect(activePower).toContainText("Target: Dusty");
+  await expect(activePower).toContainText("Mode: Boost");
+  await expect(activePower).toContainText("Raise marked");
+});
+
 test("Non-numeric active power durations remain manual without countdown controls", async ({
   page,
 }) => {

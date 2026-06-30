@@ -301,8 +301,8 @@ Current implementation:
   normalized `activePowers` runtime records.
 - Active Power records track source power, Power Point cost, base duration,
   numeric `durationRemaining` when available, duration reminder text,
-  maintenance state, target label, trapping notes, runtime notes, activation
-  time, end time, and status.
+  maintenance state, structured target label, optional effect mode, raise marker,
+  trapping notes, runtime notes, activation time, end time, and status.
 - Numeric round durations can be ticked down one round at a time and expire at
   zero. Non-numeric durations remain manual reminders.
 - Maintenance state is surfaced prominently on Arcane and Combat active-power
@@ -316,6 +316,10 @@ Current implementation:
 - Variable Power Point activation stores a structured `spendBreakdown` with base
   cost, selected modifier quantities, modifier costs, and total cost. Active
   power cards display the breakdown in Arcane and Combat.
+- Structured runtime fields let players mark target, raise state, and mode for
+  paired powers such as `Boost/Lower Trait`, `Light/Darkness`, and
+  `Sloth/Speed`. These fields improve reminders and card clarity only; they do
+  not apply stat changes automatically.
 - Active Powers can be marked dismissed, expired, or disrupted without deleting
   the underlying Known Power.
 - Active Power records persist through reload and tracker JSON export/import.
@@ -335,8 +339,8 @@ Current implementation:
 Completion criteria:
 
 - Known Powers can be activated into explicit active-power records with caster,
-  target label, duration, maintenance state, cost paid, trapping notes, and
-  optional modifier choices.
+  target label, effect mode where relevant, raise marker, duration, maintenance
+  state, cost paid, trapping notes, and optional modifier choices.
 - Active powers can expire, be dismissed, or be marked disrupted without losing
   the underlying Known Power.
 - Common character-local power effects appear in Combat and Character Sheet

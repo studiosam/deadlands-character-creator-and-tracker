@@ -438,6 +438,11 @@ const ACTIVE_POWER_RUNTIME_REMINDERS_BY_POWER_ID = {
     "Track extra recipients and maintained duration separately.",
   ],
 };
+const ACTIVE_POWER_EFFECT_MODE_OPTIONS_BY_POWER_ID = {
+  "power-boost-lower-trait": ["Boost", "Lower"],
+  "power-light-darkness": ["Light", "Darkness", "Dispel"],
+  "power-sloth-speed": ["Sloth", "Speed"],
+};
 
 function normalizeActivePowerStatus(status) {
   return ACTIVE_POWER_STATUSES.includes(status) ? status : "active";
@@ -460,7 +465,11 @@ function activePowerKnownPower(activePower, knownPowers = []) {
   );
 }
 
-function activePowerReminderPowerId(activePower, knownPowers = []) {
+function activePowerRuntimePowerId(
+  activePower,
+  knownPowers = [],
+  registry = {},
+) {
   const knownPower = activePowerKnownPower(activePower, knownPowers);
   const ids = [
     activePower?.catalogId,
@@ -471,7 +480,15 @@ function activePowerReminderPowerId(activePower, knownPowers = []) {
   ]
     .map((id) => String(id || "").trim())
     .filter(Boolean);
-  return ids.find((id) => ACTIVE_POWER_RUNTIME_REMINDERS_BY_POWER_ID[id]) || "";
+  return ids.find((id) => registry[id]) || "";
+}
+
+function activePowerReminderPowerId(activePower, knownPowers = []) {
+  return activePowerRuntimePowerId(
+    activePower,
+    knownPowers,
+    ACTIVE_POWER_RUNTIME_REMINDERS_BY_POWER_ID,
+  );
 }
 
 function activePowerReminderDefinitions(activePower, knownPowers = []) {
@@ -488,8 +505,27 @@ function activePowerHasRuntimeReminder(activePower, knownPowers = []) {
   return activePowerReminderDefinitions(activePower, knownPowers).length > 0;
 }
 
+function activePowerEffectModeOptions(activePower, knownPowers = []) {
+  const powerId = activePowerRuntimePowerId(
+    activePower,
+    knownPowers,
+    ACTIVE_POWER_EFFECT_MODE_OPTIONS_BY_POWER_ID,
+  );
+  return powerId ? ACTIVE_POWER_EFFECT_MODE_OPTIONS_BY_POWER_ID[powerId] : [];
+}
+
 function activePowerSlug(value) {
   return normalizeArcaneText(value).replace(/\s+/g, "-") || "power";
+}
+
+function normalizeActivePowerBoolean(value) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    return ["1", "true", "yes", "y", "raise", "raised"].includes(
+      value.trim().toLowerCase(),
+    );
+  }
+  return Boolean(value);
 }
 
 function numericActivePowerDuration(value) {
@@ -617,6 +653,13 @@ function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
     }),
     maintenance: Boolean(activePower.maintenance || activePower.maintained),
     targetLabel: activePower.targetLabel || activePower.target || "",
+    effectMode: activePower.effectMode || activePower.mode || "",
+    raiseMarked: normalizeActivePowerBoolean(
+      activePower.raiseMarked ??
+        activePower.withRaise ??
+        activePower.raised ??
+        activePower.raise,
+    ),
     trappingNotes:
       activePower.trappingNotes ||
       activePower.trapping ||
@@ -654,6 +697,8 @@ function makeActivePowerRecord(power, option = {}, overrides = {}) {
       durationRemaining: overrides.durationRemaining,
       maintenance: false,
       targetLabel: overrides.targetLabel || "",
+      effectMode: overrides.effectMode ?? option.effectMode ?? "",
+      raiseMarked: overrides.raiseMarked ?? option.raiseMarked ?? false,
       trappingNotes: overrides.trappingNotes ?? power?.trapping ?? "",
       notes: overrides.notes ?? option.description ?? power?.shortSummary ?? "",
       optionName: overrides.optionName ?? option.name ?? "",
