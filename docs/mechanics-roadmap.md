@@ -62,29 +62,36 @@ the rules.
 - Complex Edge prerequisites, subchoices, conflicts, repeat limits, one-Arcane
   Background rules, and organization-specific bookkeeping are mostly not
   automated.
-- Most Edge and Hindrance mechanical effects are reference-only. Examples that
-  need future hooks include bonus/reroll effects, wound penalty changes,
-  session resource changes, Fear modifiers, minimum Strength changes, social
-  penalties, and combat options.
+- Many deterministic Edge and Hindrance hooks now produce passive math,
+  resource changes, action-card reminders, Fear-check reminders, or explicit
+  manual/table-only markers. Remaining gaps are mostly table-context effects,
+  rerolls, attack/target choices, wealth/session models, and special combat
+  options.
 
 ### Combat And Table Action
 
 - Combat is currently a player-state cockpit, not a SWADE combat engine.
-- Missing tactical systems include action deck initiative, Jokers, Hold/interrupt
-  handling, Multi-Action Penalty helpers, Tests, Support, Soak, Incapacitation,
-  Bleeding Out resolution, recovery rolls, attack resolution, damage resolution,
-  cover, range, lighting, called shots, gang-up, prone interactions, and size
-  modifiers.
+- The app has a player-entered Action Card model for Quick, Hesitant, Level
+  Headed, and Improved Level Headed, but not a full action deck, Joker reward,
+  turn order, or Hold/interrupt workflow.
+- Missing tactical systems include Multi-Action Penalty helpers, Tests, Support,
+  Soak, Incapacitation, Bleeding Out resolution, recovery rolls, attack
+  resolution, damage resolution, cover, range, lighting, called shots, gang-up,
+  prone interactions, and size modifiers.
 - Weapon tracking handles loaded rounds and reserve ammunition, but does not
   automate attack rolls, damage rolls, rate-of-fire choices, recoil, innocent
   bystander handling, or special combat Edge actions.
 
 ### Powers And Arcane Backgrounds
 
-- Known Powers and Power Point spending are functional, but most power effects
-  are not mechanically applied to the character or targets.
-- Active powers do not yet have full duration, maintenance, disruption, target,
-  template, modifier, or effect-state tracking.
+- Known Powers, Power Point spending, variable spend breakdowns, and active
+  Power runtime records are functional.
+- Active powers support duration countdowns where numeric, manual duration
+  reminders, maintenance marking, target labels, raise/mode fields, trapping
+  notes, status transitions, recast choices, and concise runtime reminders.
+- Most power effects are still not mechanically applied to the character or
+  targets. That remains intentional unless a future slice has explicit target,
+  raise, mode, and stacking data.
 - Arcane Background consequences are mostly reminders. Future work should cover
   Blessed sin/backlash notes, Chi Master restrictions, Huckster Deal with the
   Devil outcomes, Mad Scientist malfunction, Shaman restrictions, and remaining
@@ -162,6 +169,8 @@ changing derived display math.
   mutation data exists.
 
 ### Phase 2: Edge And Hindrance Effect Hooks
+
+Status: complete for passive math, reminder, and marker scope.
 
 Goal: move from reference-only entries to explainable mechanical modifiers where
 safe.
@@ -287,15 +296,17 @@ Completion criteria:
   effect or warning, one subchoice Edge, one complex-prerequisite warning, and
   at least one explicit manual/table-only or needs-action-context marker.
 
-Phase 2 is not complete until common Edges and Hindrances are more than labels:
-they either affect the sheet, produce a specific warning, or are explicitly
-marked as manual/table-only.
+Phase 2 is complete at the passive math, reminder, and marker scope. Remaining
+action-context Edges and Hindrances should move through Phase 4 or later
+specialized systems instead of expanding the passive hook model indefinitely.
 
 ### Phase 3: Power Runtime Improvements
 
+Status: complete for runtime and reminder tracking.
+
 Goal: support powers during play without turning the app into a full VTT.
 
-Current implementation:
+Completed scope:
 
 - Known Powers can be activated from Arcane or Combat power cards into
   normalized `activePowers` runtime records.
@@ -332,16 +343,17 @@ Current implementation:
 - Power effect automation is intentionally deferred; active records currently
   display concise manual-effect reminders.
 
-1. Track active powers with duration, maintenance, targets, trapping notes, and
-   Power Point cost. Initial runtime records and numeric countdown helpers are
-   implemented.
-2. Add richer Disruption, expiration, and recasting reminders. Status
-   transition notes and already-active recast choices are implemented.
-3. Add common character-local power effects such as armor, defense penalties,
-   Trait boosts, movement changes, and visibility state.
-4. Expand variable Power Point controls for powers with safe, structured
-   options. Initial selected-modifier storage and display are implemented.
-5. Improve Arcane Background-specific consequence helpers.
+Deferred out of Phase 3:
+
+- Automatic stat changes for active powers, including armor, defense penalties,
+  Trait boosts, movement changes, visibility state, and other target-dependent
+  effects.
+- Full target, area, opposed-roll, resistance, recovery, template, and Marshal
+  adjudication workflows.
+- Arcane Background-specific consequence automation beyond existing reminder
+  and Huckster Deal with the Devil helper state.
+- Additional lower-priority catalog reminders that do not improve common table
+  use.
 
 Completion criteria:
 
@@ -350,24 +362,69 @@ Completion criteria:
   state, cost paid, trapping notes, and optional modifier choices.
 - Active powers can expire, be dismissed, or be marked disrupted without losing
   the underlying Known Power.
-- Common character-local power effects appear in Combat and Character Sheet
-  summaries where the app can safely model them.
+- Active and ended power cards clearly distinguish active reminders from expired,
+  dismissed, or disrupted records.
 - Variable Power Point controls distinguish structured spend from manual-cost
   powers and prevent impossible current-PP spending.
-- Arcane Background-specific warnings or helper states appear for the major
-  Deadlands Arcane Backgrounds without forcing full automation.
 - Browser tests cover activation, maintenance/expiration, PP spending,
-  reload/export/import, and at least one Arcane Background-specific restriction.
+  structured target/raise/mode fields, reminder rendering, status transitions,
+  recast choices, and reload/export/import.
 
-Phase 3 is not complete until the app can track "this power is active right now,
-what it cost, when it ends, and what character-local effect it has."
+Phase 3 is complete at the runtime/reminder scope. Future power work should be
+driven by specific table-use gaps, not by expanding into a full power rules
+engine by default.
 
 ### Phase 4: Combat Helper Systems
+
+Status: ready for first implementation slice.
 
 Goal: add table-speed helpers while keeping final dice interpretation with the
 player and Marshal.
 
-1. Add action card and Joker tracking.
+Readiness audit:
+
+- Already available: player-entered Action Card state, Quick redraw detection,
+  Level Headed/Hesitant draw instructions, Bennies/session reset, wounds,
+  fatigue, conditions, encumbrance, passive effect reminders, weapon/ammo cards,
+  and active Power reminders.
+- Partial only: conditions can represent Aim, Defend, On Hold, Wild Attack, and
+  The Drop as flags, but there is no turn action state, action-count model, or
+  explicit Multi-Action Penalty workflow.
+- Missing: Soak helper, Incapacitation helper, Bleeding Out resolution flow,
+  recovery-roll prompt flow, attack/damage helper summary, range/cover/lighting
+  helper, and special combat Edge action workflows.
+- Risk boundary: Phase 4 should remain helper-first. It should show reminders,
+  track choices, and summarize modifiers without rolling dice or silently
+  deciding table outcomes.
+
+Recommended first slice:
+
+1. Add a session-scoped combat action state for current turn choices: action
+   count, running, aim, defend, Wild Attack, Test, Support, Hold, and notes.
+2. Render those choices as Combat tab toggles or compact cards with computed
+   reminder text.
+3. Calculate reminder-only Multi-Action Penalty text from action count and
+   relevant passive effects.
+4. Add a clear-turn or next-turn helper that resets only the temporary action
+   choices, not wounds, ammo, Powers, or permanent conditions.
+5. Add focused browser tests for persistence, reset behavior, and reminder
+   output without stat mutation.
+
+Questions before implementation:
+
+- Should action choices clear manually, on a "Next Turn" button, or only when
+  the user starts a new session?
+- Should Aim, Defend, Wild Attack, On Hold, and The Drop remain existing
+  condition flags or move into the new turn-action state?
+- Should running affect Pace display immediately, or should the first slice keep
+  it as a reminder until movement tracking exists?
+- Should Wild Attack apply Parry changes automatically later, or stay
+  reminder-only because attack context and duration are table-dependent?
+
+Backlog after the first slice:
+
+1. Extend the current Action Card model into fuller initiative, Joker reward,
+   and Hold/interrupt tracking.
 2. Add Multi-Action Penalty, running, aim, defend, Wild Attack, Test, and Support
    reminders.
 3. Add Soak and Incapacitation helpers.
