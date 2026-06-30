@@ -322,6 +322,9 @@ Current implementation:
   not apply stat changes automatically.
 - Active Powers can be marked dismissed, expired, or disrupted without deleting
   the underlying Known Power.
+- Ended active-power records show status transition notes with the ended time.
+  Expired records state that effect reminders no longer apply; disrupted
+  records tell the player to confirm maintained-power consequences manually.
 - Active Power records persist through reload and tracker JSON export/import.
 - Power effect automation is intentionally deferred; active records currently
   display concise manual-effect reminders.
@@ -329,7 +332,9 @@ Current implementation:
 1. Track active powers with duration, maintenance, targets, trapping notes, and
    Power Point cost. Initial runtime records and numeric countdown helpers are
    implemented.
-2. Add richer Disruption, expiration, and recasting reminders.
+2. Add richer Disruption, expiration, and recasting reminders. Status
+   transition notes for expired, dismissed, and disrupted powers are
+   implemented; recasting helpers remain future work.
 3. Add common character-local power effects such as armor, defense penalties,
    Trait boosts, movement changes, and visibility state.
 4. Expand variable Power Point controls for powers with safe, structured

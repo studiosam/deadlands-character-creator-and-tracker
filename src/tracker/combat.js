@@ -703,6 +703,26 @@ function activePowerSpendBreakdownMarkup(activePower) {
   return `<div class="entry-advisory"><strong>Power Point spend:</strong><p>Base ${breakdown.baseCost} PP; total ${breakdown.totalCost} PP.</p><ul>${items}</ul></div>`;
 }
 
+function activePowerEndedAtText(activePower) {
+  if (!activePower.endedAt) return "";
+  const endedAt = new Date(activePower.endedAt);
+  if (Number.isNaN(endedAt.getTime())) return String(activePower.endedAt);
+  return endedAt.toLocaleString();
+}
+
+function activePowerStatusNoteMarkup(activePower) {
+  const status = normalizeActivePowerStatus(activePower.status);
+  if (status === "active") return "";
+  const endedText = activePowerEndedAtText(activePower);
+  const endedMarkup = endedText ? `<span>Ended: ${esc(endedText)}</span>` : "";
+  const statusNotes = {
+    dismissed: "Dismissed: active effect reminders no longer apply.",
+    expired: "Expired: effect reminders no longer apply.",
+    disrupted: "Disrupted: confirm maintained power consequences manually.",
+  };
+  return `<p class="entry-advisory"><strong>Status note:</strong> ${esc(statusNotes[status] || "Inactive.")}${endedMarkup}</p>`;
+}
+
 function activePowerTrackingSummaryMarkup(activePower) {
   const parts = [
     activePower.targetLabel ? `Target: ${activePower.targetLabel}` : "",
@@ -766,11 +786,12 @@ function renderActivePowerCard(activePower) {
   const durationReminder = activePowerDurationReminder(activePower);
   const durationValue = numericDuration === null ? "" : String(numericDuration);
   const runtimeReminderMarkup = activePowerRuntimeReminderMarkup(activePower);
+  const statusNoteMarkup = activePowerStatusNoteMarkup(activePower);
   const spendBreakdownMarkup = activePowerSpendBreakdownMarkup(activePower);
   const trackingSummaryMarkup = activePowerTrackingSummaryMarkup(activePower);
   const effectModeFieldMarkup = activePowerEffectModeFieldMarkup(activePower);
   article.className = `weapon-card power-card active-power-card ${status}`;
-  article.innerHTML = `<div class="topline"><div><h3>${esc(activePower.name || "Unnamed power")}</h3><p class="meta">${esc(activePowerDetailText(activePower))}</p></div><span class="loaded">${esc(activePowerStatusLabel(status))}</span></div><p class="muted">Power effect reminder only: apply table effects manually.</p>${runtimeReminderMarkup}${trackingSummaryMarkup}${spendBreakdownMarkup}<p class="entry-advisory"><strong>Duration reminder:</strong> ${esc(durationReminder)}</p>${activePower.maintenance ? '<p class="entry-advisory"><strong>Maintenance marked:</strong> remember ongoing Power Point or action requirements.</p>' : ""}<div class="creator-grid active-power-fields"><label>Target label<input data-active-power-field="targetLabel" value="${esc(activePower.targetLabel)}" placeholder="Self, ally, target, group"></label>${effectModeFieldMarkup}<label>Base duration<input data-active-power-field="duration" value="${esc(activePower.duration)}" placeholder="Duration from power"></label><label>Rounds remaining<input data-active-power-field="durationRemaining" type="number" min="0" step="1" value="${esc(durationValue)}" placeholder="Manual unless numeric"></label><label class="checkline"><input data-active-power-field="raiseMarked" type="checkbox" ${activePower.raiseMarked ? "checked" : ""}> Raise marked</label><label class="checkline"><input data-active-power-field="maintenance" type="checkbox" ${activePower.maintenance ? "checked" : ""}> Maintenance marked</label><label class="creator-wide">Trapping notes<textarea data-active-power-field="trappingNotes">${esc(activePower.trappingNotes)}</textarea></label><label class="creator-wide">Runtime notes<textarea data-active-power-field="notes">${esc(activePower.notes)}</textarea></label></div><div class="weapon-actions power-actions">${numericDuration === null ? "" : `<button class="ghost" type="button" data-active-power-tick ${current ? "" : "disabled"}>Tick down 1 round</button>`}<button class="ghost" type="button" data-active-power-status="dismissed" ${current ? "" : "disabled"}>Dismiss</button><button class="ghost" type="button" data-active-power-status="expired" ${current ? "" : "disabled"}>Expire</button><button class="delete-small" type="button" data-active-power-status="disrupted" ${current ? "" : "disabled"}>Disrupt</button></div>`;
+  article.innerHTML = `<div class="topline"><div><h3>${esc(activePower.name || "Unnamed power")}</h3><p class="meta">${esc(activePowerDetailText(activePower))}</p></div><span class="loaded">${esc(activePowerStatusLabel(status))}</span></div><p class="muted">Power effect reminder only: apply table effects manually.</p>${runtimeReminderMarkup}${statusNoteMarkup}${trackingSummaryMarkup}${spendBreakdownMarkup}<p class="entry-advisory"><strong>Duration reminder:</strong> ${esc(durationReminder)}</p>${activePower.maintenance ? '<p class="entry-advisory"><strong>Maintenance marked:</strong> remember ongoing Power Point or action requirements.</p>' : ""}<div class="creator-grid active-power-fields"><label>Target label<input data-active-power-field="targetLabel" value="${esc(activePower.targetLabel)}" placeholder="Self, ally, target, group"></label>${effectModeFieldMarkup}<label>Base duration<input data-active-power-field="duration" value="${esc(activePower.duration)}" placeholder="Duration from power"></label><label>Rounds remaining<input data-active-power-field="durationRemaining" type="number" min="0" step="1" value="${esc(durationValue)}" placeholder="Manual unless numeric"></label><label class="checkline"><input data-active-power-field="raiseMarked" type="checkbox" ${activePower.raiseMarked ? "checked" : ""}> Raise marked</label><label class="checkline"><input data-active-power-field="maintenance" type="checkbox" ${activePower.maintenance ? "checked" : ""}> Maintenance marked</label><label class="creator-wide">Trapping notes<textarea data-active-power-field="trappingNotes">${esc(activePower.trappingNotes)}</textarea></label><label class="creator-wide">Runtime notes<textarea data-active-power-field="notes">${esc(activePower.notes)}</textarea></label></div><div class="weapon-actions power-actions">${numericDuration === null ? "" : `<button class="ghost" type="button" data-active-power-tick ${current ? "" : "disabled"}>Tick down 1 round</button>`}<button class="ghost" type="button" data-active-power-status="dismissed" ${current ? "" : "disabled"}>Dismiss</button><button class="ghost" type="button" data-active-power-status="expired" ${current ? "" : "disabled"}>Expire</button><button class="delete-small" type="button" data-active-power-status="disrupted" ${current ? "" : "disabled"}>Disrupt</button></div>`;
 
   article.querySelectorAll("[data-active-power-field]").forEach((input) => {
     const field = input.dataset.activePowerField;

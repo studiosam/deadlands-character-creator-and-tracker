@@ -3151,6 +3151,10 @@ test("Numeric active power durations tick down persist and expire at zero", asyn
   await activePower.getByRole("button", { name: "Tick down 1 round" }).click();
   await expect(activePower).toContainText("Duration expired.");
   await expect(activePower).toContainText("Expired");
+  await expect(activePower).toContainText(
+    "Expired: effect reminders no longer apply.",
+  );
+  await expect(activePower).toContainText("Ended:");
   expect(
     await page.evaluate(() => {
       const activePowerRecord = character.activePowers.find(
@@ -3589,18 +3593,30 @@ test("Active power runtime reminders are marked inactive for ended statuses", as
 
   await protection.getByRole("button", { name: "Expire" }).click();
   await expect(protection).toContainText("Effect inactive");
+  await expect(protection).toContainText(
+    "Expired: effect reminders no longer apply.",
+  );
+  await expect(protection).toContainText("Ended:");
   await expect(protection).not.toContainText(
     "Apply the Armor bonus to the protected target manually.",
   );
 
   await deflection.getByRole("button", { name: "Dismiss" }).click();
   await expect(deflection).toContainText("Effect inactive");
+  await expect(deflection).toContainText(
+    "Dismissed: active effect reminders no longer apply.",
+  );
+  await expect(deflection).toContainText("Ended:");
   await expect(deflection).not.toContainText(
     "Apply the attack penalty against the protected target manually.",
   );
 
   await boostLowerTrait.getByRole("button", { name: "Disrupt" }).click();
   await expect(boostLowerTrait).toContainText("Effect inactive");
+  await expect(boostLowerTrait).toContainText(
+    "Disrupted: confirm maintained power consequences manually.",
+  );
+  await expect(boostLowerTrait).toContainText("Ended:");
   await expect(boostLowerTrait).not.toContainText(
     "Track the affected Trait, target, and whether this is the boost or lower use.",
   );
@@ -3781,8 +3797,16 @@ test("Active powers can be dismissed and disrupted without deleting records", as
 
   await dismissable.getByRole("button", { name: "Dismiss" }).click();
   await expect(dismissable).toContainText("Dismissed");
+  await expect(dismissable).toContainText(
+    "Dismissed: active effect reminders no longer apply.",
+  );
+  await expect(dismissable).toContainText("Ended:");
   await disruptable.getByRole("button", { name: "Disrupt" }).click();
   await expect(disruptable).toContainText("Disrupted");
+  await expect(disruptable).toContainText(
+    "Disrupted: confirm maintained power consequences manually.",
+  );
+  await expect(disruptable).toContainText("Ended:");
 
   expect(
     await page.evaluate(() =>
