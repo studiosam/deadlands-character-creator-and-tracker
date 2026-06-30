@@ -29,7 +29,8 @@ want a local, private, session-focused tracker at the table.
   sample when no characters exist, or open the read-only Sources & Rulesets
   page.
 - Track wounds, fatigue, Bennies, Conviction, penalties, defenses, conditions,
-  combat resources, powers, consumables, and reminders.
+  combat resources, powers, consumables, reminders, and GM-facing combat
+  declarations.
 - Manage weapons, loaded rounds, reserve ammunition, armor by location, gear,
   vehicles, storage locations, carrying capacity, and encumbrance.
 - Build a Deadlands/SWADE character through Character Setup, confirm setup, and
@@ -44,6 +45,8 @@ want a local, private, session-focused tracker at the table.
   Huckster Dealing with the Devil helper state.
 - Import Savaged.us JSON exports and preserve app-owned tracker data through
   localStorage and JSON export/import.
+- Undo or redo recent per-character tracker changes with snapshot history that
+  persists through reload.
 - Save, switch, rename, duplicate, delete, and export multiple local character
   slots from the Manage > Characters panel.
 - Edit stable character profile fields from the Characters panel: name, player,
@@ -53,18 +56,20 @@ want a local, private, session-focused tracker at the table.
 
 ## Current Scope
 
-- Implemented: combat tracking, inventory/equipment management, local character
-  library, JSON import/export, minimal landing page, read-only Sources &
-  Rulesets, Character Setup review, confirmed Character Sheet mode, Characters
-  panel profile editing, and automated browser/static checks.
+- Implemented: combat tracking, Combat Declaration, inventory/equipment
+  management, local character library, JSON import/export, minimal landing
+  page, read-only Sources & Rulesets, Character Setup review, confirmed
+  Character Sheet mode, Characters panel profile editing, global undo/redo, and
+  automated browser/static checks.
 - Partially implemented: created-character starting baselines, Hindrance
-  benefit spending, starting Edge source tracking, Power and Gear setup audits,
-  and Advancement data/forms.
+  benefit spending, starting Edge source tracking, Power and Gear setup
+  workflows, and Advancement data/forms.
 - Planned next: keep post-confirmation character reference separate from setup,
-  profile management, inventory, arcane tools, and future Advancement workflow.
+  profile management, inventory, arcane tools, and the existing Advancement
+  workflow.
 - Deferred: full Edge prerequisite enforcement, full Power legality validation,
-  starting gear purchase validation, imported advanced-character baseline
-  reconstruction, and editable campaign/source configuration.
+  free/source-granted starting gear modeling, imported advanced-character
+  baseline reconstruction, and editable campaign/source configuration.
 
 ## Demo and Screenshots
 
@@ -87,8 +92,8 @@ repository root.
 Recommended portfolio screenshots/GIFs:
 
 - Minimal landing page with saved-character selection.
-- Combat tab during live play with wounds, Bennies, weapons, ammo, and
-  conditions visible.
+- Combat tab during live play with wounds, Bennies, weapons, ammo, conditions,
+  Combat Declaration, and Undo/Redo visible.
 - Inventory tab showing storage locations and encumbrance.
 - Encumbrance separates Current Load from Combat Load: Current Load is what the
   character normally carries, Combat Load assumes droppable backpack/container
@@ -109,6 +114,9 @@ Recommended portfolio screenshots/GIFs:
   saves, full app state, creation drafts, and tracker-character exports.
 - Local-first persistence through `localStorage`; JSON export/import remains the
   portability and backup mechanism.
+- Per-character snapshot undo/redo history is stored separately from exported
+  character JSON so table mistakes can be recovered locally without changing
+  backup format.
 - Character library state is stored separately from the legacy active tracker
   save, so older browser saves can migrate without losing the existing key.
 - App-styled dialogs and toasts replace native browser alerts/confirms.
@@ -122,7 +130,8 @@ Recommended portfolio screenshots/GIFs:
   posture, and local data controls.
 - Playwright tests cover load, responsive tabs, sample loading, landing flows,
   setupStatus, profile editing, imports, export/import round trips, persistence,
-  character-library isolation, inventory, and core combat controls.
+  character-library isolation, inventory, global undo/redo, Combat Declaration,
+  and core combat controls.
 
 ## Import and Export Formats
 
@@ -236,7 +245,8 @@ pushes and pull requests targeting `main`.
 - Continue converting manual rules-heavy checklist items into automated tests
   without expanding MVP scope.
 - Keep Character Setup, Character Sheet reference, Characters profile editing,
-  Inventory, Arcane, Combat, and future Advancement workflows clearly separated.
+  Inventory, Arcane, Combat, and the existing Advancement workflow clearly
+  separated.
 - Harden schema migrations as real breaking data changes appear.
 - Improve onboarding copy and empty states from actual table feedback.
 - If monetization becomes serious, split a generic tracker core from

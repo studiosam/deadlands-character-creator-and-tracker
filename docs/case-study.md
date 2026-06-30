@@ -27,6 +27,10 @@ mirrors the active character, while the multiple-character library lives behind
 New exports include `schemaVersion`, `exportType`, `exportedAt`, and full-state
 exports include the character library.
 
+Per-character undo/redo history is stored separately from exported character
+JSON. It uses capped character snapshots so live-play mistakes can be corrected
+locally without turning every feature into a custom reversible operation.
+
 The persistence layer is deliberately small:
 
 - Storage adapter functions isolate `localStorage`.
@@ -35,6 +39,8 @@ The persistence layer is deliberately small:
   envelopes.
 - Character library helpers save, switch, duplicate, rename, delete, and migrate
   local character slots without leaking storage details into the UI.
+- Undo history helpers record snapshots at save boundaries, group rapid text
+  input, and keep redo local to the active character.
 
 That structure leaves room for future cloud sync or shareable URLs without
 rewriting feature modules around a new storage backend.
@@ -77,6 +83,9 @@ Recent polish adds:
 - Read-only Sources & Rulesets page for the current Deadlands-focused profile.
 - `setupStatus` separation between setup review and confirmed sheet reference.
 - Characters panel profile editor.
+- Combat Declaration for GM-facing player intent and GM-adjudicated result
+  bookkeeping without roll automation.
+- Global per-character undo/redo that survives reloads.
 - A demo-mode banner so sample data is not mistaken for a campaign save.
 - App-styled dialogs and toasts for destructive actions, imports, exports, and
   validation feedback.

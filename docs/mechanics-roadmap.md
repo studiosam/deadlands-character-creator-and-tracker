@@ -16,7 +16,7 @@ the rules.
 ## Current Strengths
 
 - Character tracking: wounds, fatigue, Bennies, Conviction, conditions,
-  resources, notes, and table reminders.
+  resources, notes, table reminders, and per-character undo/redo history.
 - Inventory and load: weapons, loaded rounds, reserve ammunition, armor,
   general gear, consumables, vehicles, storage locations, containers, backpack
   load, combat load, carried load, and off-person storage.
@@ -31,7 +31,7 @@ the rules.
   catalog power filtering, variable Power Point spending, and Huckster Deal with
   the Devil helper state.
 - Data workflows: Savaged.us import, app JSON import/export, local character
-  library, profile editing, and full-state backup.
+  library, profile editing, full-state backup, and snapshot-based undo/redo.
 
 ## Major Mechanics Gaps
 
@@ -74,10 +74,13 @@ the rules.
 - The app has a player-entered Action Card model for Quick, Hesitant, Level
   Headed, and Improved Level Headed, but not a full action deck, Joker reward,
   turn order, or Hold/interrupt workflow.
-- Missing tactical systems include Multi-Action Penalty helpers, Tests, Support,
-  Soak, Incapacitation, Bleeding Out resolution, recovery rolls, attack
-  resolution, damage resolution, cover, range, lighting, called shots, gang-up,
-  prone interactions, and size modifiers.
+- Combat Declaration supports player intent, action count, optional weapon,
+  target label, declaration details, common legal/limited action reminders, and
+  player-entered GM-adjudicated result application.
+- Missing tactical systems include fuller Multi-Action Penalty/action
+  guidance, Tests, Support, Soak, Incapacitation, Bleeding Out resolution,
+  recovery rolls, attack resolution, damage resolution, cover, range, lighting,
+  called shots, gang-up, prone interactions, and size modifiers.
 - Weapon tracking handles loaded rounds and reserve ammunition, but does not
   automate attack rolls, damage rolls, rate-of-fire choices, recoil, innocent
   bystander handling, or special combat Edge actions.
@@ -376,7 +379,7 @@ engine by default.
 
 ### Phase 4: Combat Helper Systems
 
-Status: ready for first implementation slice.
+Status: first implementation slice complete.
 
 Goal: add player-side table-speed helpers that clarify legal declarations,
 GM-facing intent, and player-owned bookkeeping after GM adjudication. The app
@@ -387,10 +390,11 @@ Readiness audit:
 - Already available: player-entered Action Card state, Quick redraw detection,
   Level Headed/Hesitant draw instructions, Bennies/session reset, wounds,
   fatigue, conditions, encumbrance, passive effect reminders, weapon/ammo cards,
-  and active Power reminders.
-- Partial only: conditions can represent Aim, Defend, On Hold, Wild Attack, and
-  The Drop as flags, but there is no turn action state, action-count model, or
-  explicit Multi-Action Penalty workflow.
+  active Power reminders, and Combat Declaration.
+- Partial only: Combat Declaration tracks action count and shows
+  reminder-only Multi-Action Penalty text, and conditions can represent Aim,
+  Defend, On Hold, Wild Attack, and The Drop as flags. There is still no full
+  turn-state engine, initiative deck, or action-resolution workflow.
 - Missing: fuller Soak bookkeeping, Incapacitation result entry, Bleeding Out
   reminders, recovery-roll prompt flow, and special combat Edge declaration
   reminders.
@@ -399,21 +403,31 @@ Readiness audit:
   results. It should not roll dice, choose targets, calculate enemy defenses, or
   silently decide table outcomes.
 
-Recommended first slice:
+Completed first slice:
 
-1. Add a Combat Declaration panel for player intent, action count, optional
+1. Combat Declaration captures player intent, action count, optional
    weapon/item, target label, and freeform details.
-2. Show common legal/limited action reminders from current character state such
-   as Shaken, Stunned, Bound, Entangled, unloaded weapons, missing Power Points,
-   and missing Bennies.
-3. Generate short GM-facing declaration text and reminder-only Multi-Action
+2. It shows common legal/limited action reminders from current character state
+   such as Shaken, Stunned, Bound, Entangled, unloaded weapons, missing Power
+   Points, and missing Bennies.
+3. It generates short GM-facing declaration text and reminder-only Multi-Action
    Penalty text.
-4. Let the player record and apply GM-adjudicated results such as Wound,
+4. It lets the player record and apply GM-adjudicated results such as Wound,
    Fatigue, Benny, condition, ammo, and freeform result notes.
-5. Keep every field editable and overrideable; use warnings instead of hard
-   blocks unless the player is directly applying a requested bookkeeping change.
+5. Every field remains editable and overrideable; warnings are preferred over
+   hard blocks unless the player is directly applying a requested bookkeeping
+   change.
 
-Questions before implementation:
+Resolved boundary:
+
+- Combat Declaration is player-facing declaration and bookkeeping support, not
+  combat automation.
+- It records the player's stated action and applies only player-entered
+  GM-adjudicated results.
+- Snapshot-based global undo/redo protects mistakes across Combat, Inventory,
+  Arcane, Character Setup, Advancement, notes, and profile edits.
+
+Questions before the next slice:
 
 - Should declaration state clear manually, on a future "Next Turn" button, or
   only when the user starts a new session?
@@ -422,6 +436,8 @@ Questions before implementation:
 - Should running remain reminder-only until movement tracking exists?
 - Should Wild Attack stay reminder-only because attack context and duration are
   table-dependent?
+- Which action types need the most useful next layer of declaration guidance:
+  Attack, Reload, Test, Support, Power, Soak, Recover, or Hold?
 
 Backlog after the first slice:
 

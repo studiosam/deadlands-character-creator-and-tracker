@@ -18,7 +18,7 @@ Edges audits recorded Edges against the current catalog and, for characters crea
 
 Powers follows Edges because Arcane Background Edges determine whether Powers are required. It audits the recorded Arcane Background against `ARCANE_BACKGROUND_POWER_PROFILES`, including expected Arcane Skill and linked attribute, Power Points, expected starting power count, required starting powers, known power catalog matches, and obvious powers outside the matched Arcane Background power list. For characters created in this tool with no recorded Advances, it supports setting the profile's starting Power Points and selecting legal starting Powers from the matched Arcane Background profile, including required starting powers. Setup-created Power Points are source-tagged as `setup-arcane-background`, and setup-selected Powers are source-tagged as `setup-starting-power` so they remain distinct from later Advancement changes. Non-arcane characters show this step as not applicable. Created pre-advance characters show missing Arcane Skill, Power Points, starting power count, or required starting powers as incomplete; imported and advanced characters remain audit-only and use Needs Review for the same gaps. Full Power effect automation and complex table-dependent Power legality remain deferred.
 
-Gear follows Powers. It audits recorded money, weapons, armor, general gear, consumables, ammunition, vehicles, carried/on-body items, equipped/worn items, dropped items, stored/off-person items, container contents, current load, combat load, carrying capacity, and obvious missing or unknown item data. For characters created in this tool with no recorded Advances, it supports buying catalog gear, ammunition, armor, weapons, and vehicles from remaining setup funds. Setup-created purchases reduce `moneyCents`, are source-tagged as `setup-starting-gear`, and preserve purchase metadata in `sourceDetail`. Imported and advanced characters remain audit-only because their equipment may include post-creation purchases, loot, or table adjustments. Free/granted starting gear and explicit setup exception records remain later slices.
+Gear follows Powers. It audits recorded money, weapons, armor, general gear, consumables, ammunition, vehicles, carried/on-body items, equipped/worn items, dropped items, stored/off-person items, container contents, current load, combat load, carrying capacity, and obvious missing or unknown item data. For characters created in this tool with no recorded Advances, it supports buying catalog gear, ammunition, armor, weapons, and vehicles from remaining setup funds. Setup-created purchases reduce `moneyCents`, are source-tagged as `setup-starting-gear`, and preserve purchase metadata in `sourceDetail`. Imported and advanced characters remain audit-only because their equipment may include post-creation purchases, loot, or table adjustments. Basic GM/table exception marking exists from Review; richer exception notes plus free/granted and organization gear modeling remain later slices.
 
 Review summarizes available setup data, import warnings, and setup source audit results. The source audit distinguishes records explained by canonical setup source fields from records that still need a GM/table exception note or a more specific setup workflow. Eligible created pre-advance characters can mark unexplained records as GM/table exceptions from Review; this writes `creationSource: "setup-gm-exception"`, `source`, `sourceDetail`, and a `setupExceptions` metadata record.
 
@@ -60,7 +60,7 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 
 ### Partially implemented
 
-- Character Setup Gear purchase tracking is partially implemented. Created pre-advance characters can buy catalog gear, ammunition, armor, weapons, and vehicles from setup funds with `setup-starting-gear` source tags. Gear also reports money, load, carried/off-person locations, containers, and obvious missing/unknown item data. Free/granted gear, organization gear, and explicit setup exceptions are deferred.
+- Character Setup Gear purchase tracking is partially implemented. Created pre-advance characters can buy catalog gear, ammunition, armor, weapons, and vehicles from setup funds with `setup-starting-gear` source tags. Gear also reports money, load, carried/off-person locations, containers, and obvious missing/unknown item data. Free/granted gear, organization gear, and richer setup exception notes are deferred.
 - Character Setup Powers selection is partially implemented. Created pre-advance characters can set source-tracked starting Power Points and add or remove setup-selected starting Powers from the matched Arcane Background profile, while imported and advanced characters remain audit-only. Full Power effect automation and complex table-dependent Power validation are deferred.
 - Setup source auditing is partially implemented. Review shows explained setup records and can mark unexplained records as GM/table exceptions. Richer exception notes and structured free/source-granted gear workflows are deferred.
 - Advancement has canonical ledger storage, adaptive forms, application helpers, validation, import history handling, and focused browser coverage. The remaining product boundary question is whether the current Character-tab Advancement area should move behind a more deliberate Advancement workflow.
@@ -75,7 +75,8 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 
 - Full Edge prerequisite validation.
 - Full Power effect automation and complex table-dependent Power validation.
-- Free/granted starting gear, organization gear, and setup exception records.
+- Free/granted starting gear, organization gear, and richer setup exception
+  notes/workflows.
 - Reconstruction of original creation baselines for advanced imported characters.
 - Editable campaign/source configuration in `Sources & Rulesets`.
 
@@ -176,7 +177,7 @@ Direct changes to Attributes, Skills, Edges, Hindrances, Powers, or Gear after s
 - Show identity, derived stats, Attributes, Skills, Edges, Hindrances, and short notes.
 - Show a deliberate `Review Setup` or `Reopen Setup Review` action.
 - Do not show the full setup workflow by default.
-- Keep active combat, inventory management, arcane controls, long-form notes, and future Advancement workflows in their own tabs or dedicated panels.
+- Keep active combat, inventory management, arcane controls, long-form notes, and the existing Advancement workflow in their own tabs or dedicated panels.
 
 ### `setupStatus` Lifecycle
 

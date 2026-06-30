@@ -7,23 +7,25 @@ cover app load, tab switching, minimal landing flows, saved-character selection,
 setupStatus, confirmed Character Sheet cleanup, Characters panel profile
 editing, sample loading, Savaged.us paste import, export/import round trip,
 persistence, inventory item persistence, canonical Advancement ledger save/reload
-coverage, and core combat controls across desktop and mobile viewports. Keep
-this checklist for rules-heavy validation and table workflow checks that are not
-yet practical to automate.
+coverage, global undo/redo, Combat Declaration, and core combat controls across
+desktop and mobile viewports. Keep this checklist for rules-heavy validation and
+table workflow checks that are not yet practical to automate.
 
 ## Current manual status
 
 - Implemented and still worth manual regression: Power catalog workflow, Arcane
   Background compatibility, variable Power Point spending, setup review, landing
   page import/selection, Sources & Rulesets, Characters panel profile editing,
-  and confirmed Character Sheet reference mode.
+  confirmed Character Sheet reference mode, Combat Declaration, and global
+  undo/redo.
 - Partially implemented: Advancement storage, adaptive forms, application
   helpers, skill filtering, and canonical ledger entries exist. Automated tests
   cover supported apply types and imported history; the manual Advancement
   sections below focus on editing, removal/undo, and rules-heavy table review.
 - Deferred for MVP: full Edge prerequisite validation, full Power legality
-  validation, starting gear purchase validation, imported advanced-character
-  baseline reconstruction, and editable campaign/source configuration.
+  validation, free/source-granted starting gear modeling, imported
+  advanced-character baseline reconstruction, and editable campaign/source
+  configuration.
 
 # Landing, Sources, Setup, and Character Sheet Tests
 
@@ -77,7 +79,9 @@ yet practical to automate.
       gear, and container contents without exposing inventory mutation controls.
 - [ ] Gear setup audit flags missing names, unknown locations, suspicious
       counts, unknown weights, and other obvious data issues as review items.
-- [ ] Starting gear purchase validation and gear-source tracking remain
+- [ ] Starting gear purchase validation and gear-source tracking allow eligible
+      created pre-advance characters to buy catalog gear from setup funds.
+- [ ] Gear free/source-granted items and richer setup exception notes remain
       deferred.
 
 # Power Catalog Workflow Tests

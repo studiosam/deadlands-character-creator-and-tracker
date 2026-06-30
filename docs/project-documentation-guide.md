@@ -18,8 +18,8 @@ break during later feature work.
   These are the places where old saves, Savaged.us imports, and app-owned
   records meet.
 - Document safety invariants near destructive or state-reset actions, such as
-  session reset, setup finalization, import replacement, advancement undo, and
-  inventory/source migration.
+  session reset, setup finalization, import replacement, global undo/redo,
+  advancement undo, and inventory/source migration.
 - Keep UI comments focused on workflow boundaries and state ownership. Markup
   structure should remain readable without comment noise.
 - When a TODO is necessary, make it specific and testable. Avoid open-ended
@@ -40,6 +40,9 @@ Use three layers of source comments:
 
 - `src/tracker/storage.js`: schema normalization, migration tolerance, and
   persistence boundaries.
+- `src/tracker/undo-history.js`: snapshot history ownership, grouping
+  boundaries, redo invalidation, and why undo state stays outside exported
+  character JSON.
 - `src/tracker/effect-hooks.js`: deterministic passive effects versus reminders
   and table-dependent markers.
 - `src/tracker/advancement-core.js` and
@@ -51,9 +54,10 @@ Use three layers of source comments:
 - `src/tracker/inventory-model.js`, `src/tracker/encumbrance.js`,
   `src/tracker/inventory.js`, and `src/tracker/equipment.js`: physical item
   location, containers, backpack/combat load, and catalog-purchase assumptions.
-- `src/tracker/combat.js` and `src/tracker/session-action-model.js`: live play
-  state that changes during a session and should not mutate permanent character
-  records unless explicitly saved.
+- `src/tracker/combat.js`, `src/tracker/combat-declaration-model.js`, and
+  `src/tracker/session-action-model.js`: live play state, player-facing
+  declaration support, action-card helpers, and boundaries that prevent the app
+  from replacing GM adjudication.
 
 ## Documentation Workflow
 
