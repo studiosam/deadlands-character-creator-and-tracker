@@ -378,8 +378,9 @@ engine by default.
 
 Status: ready for first implementation slice.
 
-Goal: add table-speed helpers while keeping final dice interpretation with the
-player and Marshal.
+Goal: add player-side table-speed helpers that clarify legal declarations,
+GM-facing intent, and player-owned bookkeeping after GM adjudication. The app
+should not resolve attacks, damage, enemy actions, or table-dependent outcomes.
 
 Readiness audit:
 
@@ -390,36 +391,37 @@ Readiness audit:
 - Partial only: conditions can represent Aim, Defend, On Hold, Wild Attack, and
   The Drop as flags, but there is no turn action state, action-count model, or
   explicit Multi-Action Penalty workflow.
-- Missing: Soak helper, Incapacitation helper, Bleeding Out resolution flow,
-  recovery-roll prompt flow, attack/damage helper summary, range/cover/lighting
-  helper, and special combat Edge action workflows.
-- Risk boundary: Phase 4 should remain helper-first. It should show reminders,
-  track choices, and summarize modifiers without rolling dice or silently
-  deciding table outcomes.
+- Missing: fuller Soak bookkeeping, Incapacitation result entry, Bleeding Out
+  reminders, recovery-roll prompt flow, and special combat Edge declaration
+  reminders.
+- Risk boundary: Phase 4 should remain declaration-first. It should show
+  reminders, track choices, and apply only player-entered GM-adjudicated
+  results. It should not roll dice, choose targets, calculate enemy defenses, or
+  silently decide table outcomes.
 
 Recommended first slice:
 
-1. Add a session-scoped combat action state for current turn choices: action
-   count, running, aim, defend, Wild Attack, Test, Support, Hold, and notes.
-2. Render those choices as Combat tab toggles or compact cards with computed
-   reminder text.
-3. Calculate reminder-only Multi-Action Penalty text from action count and
-   relevant passive effects.
-4. Add a clear-turn or next-turn helper that resets only the temporary action
-   choices, not wounds, ammo, Powers, or permanent conditions.
-5. Add focused browser tests for persistence, reset behavior, and reminder
-   output without stat mutation.
+1. Add a Combat Declaration panel for player intent, action count, optional
+   weapon/item, target label, and freeform details.
+2. Show common legal/limited action reminders from current character state such
+   as Shaken, Stunned, Bound, Entangled, unloaded weapons, missing Power Points,
+   and missing Bennies.
+3. Generate short GM-facing declaration text and reminder-only Multi-Action
+   Penalty text.
+4. Let the player record and apply GM-adjudicated results such as Wound,
+   Fatigue, Benny, condition, ammo, and freeform result notes.
+5. Keep every field editable and overrideable; use warnings instead of hard
+   blocks unless the player is directly applying a requested bookkeeping change.
 
 Questions before implementation:
 
-- Should action choices clear manually, on a "Next Turn" button, or only when
-  the user starts a new session?
+- Should declaration state clear manually, on a future "Next Turn" button, or
+  only when the user starts a new session?
 - Should Aim, Defend, Wild Attack, On Hold, and The Drop remain existing
-  condition flags or move into the new turn-action state?
-- Should running affect Pace display immediately, or should the first slice keep
-  it as a reminder until movement tracking exists?
-- Should Wild Attack apply Parry changes automatically later, or stay
-  reminder-only because attack context and duration are table-dependent?
+  condition flags, or should they later gain declaration shortcuts?
+- Should running remain reminder-only until movement tracking exists?
+- Should Wild Attack stay reminder-only because attack context and duration are
+  table-dependent?
 
 Backlog after the first slice:
 

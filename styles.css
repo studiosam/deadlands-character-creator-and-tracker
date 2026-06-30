@@ -1377,6 +1377,39 @@ h3 {
   padding: 0.25rem 0.48rem;
 }
 
+.combat-action-hints {
+  margin: 0.7rem 0;
+}
+
+.combat-action-hints span.ready {
+  border-color: rgba(131, 209, 140, 0.38);
+  color: var(--good);
+}
+
+.combat-action-hints span.limited {
+  border-color: rgba(228, 189, 87, 0.42);
+  color: var(--warn);
+}
+
+.combat-declaration-reminders {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.8rem;
+}
+
+.combat-declaration-reminders .entry-warning,
+.combat-declaration-reminders .entry-advisory {
+  margin: 0;
+}
+
+.combat-declaration-preview {
+  margin-bottom: 0.8rem;
+}
+
+.combat-result-grid textarea {
+  min-height: 5.5rem;
+}
+
 .combat-resource-controls {
   display: grid;
   gap: 0.8rem;

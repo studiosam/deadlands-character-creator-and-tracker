@@ -375,7 +375,7 @@ els.clearActionCardsBtn.onclick = () => {
 els.newSessionBtn.onclick = async () => {
   if (
     !(await appConfirm(
-      "This resets bennies to starting, clears conviction, refills resources, clears Action Cards, and clears temporary conditions.",
+      "This resets bennies to starting, clears conviction, refills resources, clears Action Cards, clears combat declarations, and clears temporary conditions.",
       {
         title: "Start a new play session?",
         confirmText: "Start Session",
@@ -386,6 +386,7 @@ els.newSessionBtn.onclick = async () => {
   syncCharacterStartingBennies(character);
   character.bennies.current = character.bennies.starting;
   character.actionCards = normalizeActionCardState(null);
+  character.combatDeclaration = normalizeCombatDeclarationState(null);
   character.conviction = 0;
   character.resources.forEach((resource) => (resource.current = resource.max));
   character.temporaryConditions.forEach(

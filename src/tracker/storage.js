@@ -243,6 +243,9 @@ function normalize(data, options = {}) {
   normalized.edges = normalizeEdges(normalized.edges);
   normalized.hindrances = normalizeHindrances(normalized.hindrances);
   normalized.actionCards = normalizeActionCardState(normalized.actionCards);
+  normalized.combatDeclaration = normalizeCombatDeclarationState(
+    normalized.combatDeclaration,
+  );
   if (!hasRawNormalStarting && hasRawBennyStarting) {
     const rawStarting = Math.max(
       0,

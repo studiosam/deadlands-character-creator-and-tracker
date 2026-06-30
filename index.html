@@ -379,6 +379,124 @@
             <div id="playPowerPointsList" class="list"></div>
           </section>
 
+          <section id="combatDeclarationCard" class="card wide">
+            <div class="section-title">
+              <div>
+                <h2>Combat Declaration</h2>
+                <p class="muted">
+                  State intent for the GM, then record the adjudicated result.
+                </p>
+              </div>
+              <span id="combatDeclarationStatusPill" class="pill"
+                >Editable</span
+              >
+            </div>
+            <div
+              id="combatDeclarationActionHints"
+              class="penalty-breakdown combat-action-hints"
+            ></div>
+            <div
+              id="combatDeclarationReminders"
+              class="combat-declaration-reminders"
+            ></div>
+            <div class="creator-grid combat-declaration-grid">
+              <label
+                >Declared action<select
+                  id="combatDeclarationActionInput"
+                ></select
+              ></label>
+              <label
+                >Action count<select id="combatDeclarationCountInput"></select
+              ></label>
+              <label
+                >Weapon / item<select id="combatDeclarationWeaponInput"></select
+              ></label>
+              <label
+                >Target label<input
+                  id="combatDeclarationTargetInput"
+                  placeholder="Bandit, ally, door, zone"
+              /></label>
+              <label class="creator-wide"
+                >Declaration details<input
+                  id="combatDeclarationDetailsInput"
+                  placeholder="Called shot, Test Trait, movement, power name"
+              /></label>
+            </div>
+            <div
+              id="combatDeclarationPreview"
+              class="entry-advisory combat-declaration-preview"
+            ></div>
+            <div class="creator-grid combat-result-grid">
+              <label class="creator-wide"
+                >GM-adjudicated result<textarea
+                  id="combatDeclarationResultInput"
+                  placeholder="What the GM ruled happened"
+                ></textarea>
+              </label>
+              <label
+                >Wound change<input
+                  id="combatDeclarationWoundsInput"
+                  type="number"
+                  min="-5"
+                  max="5"
+                  step="1"
+              /></label>
+              <label
+                >Fatigue change<input
+                  id="combatDeclarationFatigueInput"
+                  type="number"
+                  min="-5"
+                  max="5"
+                  step="1"
+              /></label>
+              <label
+                >Benny change<input
+                  id="combatDeclarationBenniesInput"
+                  type="number"
+                  min="-10"
+                  max="10"
+                  step="1"
+              /></label>
+              <label
+                >Condition<select id="combatDeclarationConditionInput"></select
+              ></label>
+              <label
+                >Condition change<select
+                  id="combatDeclarationConditionModeInput"
+                >
+                  <option value="set">Set active</option>
+                  <option value="clear">Clear</option>
+                </select></label
+              >
+              <label
+                >Loaded ammo spent<input
+                  id="combatDeclarationAmmoInput"
+                  type="number"
+                  min="0"
+                  max="99"
+                  step="1"
+              /></label>
+              <button id="applyCombatDeclarationResultBtn" type="button">
+                Apply GM Result
+              </button>
+              <button
+                id="clearCombatDeclarationBtn"
+                class="ghost"
+                type="button"
+              >
+                Clear Declaration
+              </button>
+              <button
+                id="clearCombatDeclarationLogBtn"
+                class="ghost"
+                type="button"
+              >
+                Clear Result Log
+              </button>
+            </div>
+            <div id="combatDeclarationResultLog" class="list"></div>
+          </section>
+
           <section class="card wide">
             <div class="section-title">
               <div>
@@ -1856,6 +1974,7 @@
     <script src="src/tracker/utils.js"></script>
     <script src="src/tracker/equipment-helpers.js"></script>
     <script src="src/tracker/inventory-model.js"></script>
+    <script src="src/tracker/combat-declaration-model.js"></script>
     <script src="src/tracker/encumbrance.js"></script>
     <script src="src/tracker/render-helpers.js"></script>
     <script src="src/tracker/advancement-core.js"></script>

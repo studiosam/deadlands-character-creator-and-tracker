@@ -786,6 +786,7 @@ function renderPlaySummary() {
   renderCombatWeapons();
   renderCombatStatusResources();
   renderActionCards();
+  renderCombatDeclaration();
   renderCombatPowerPoints();
 
   const activeResources = character.resources.filter(
