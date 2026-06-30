@@ -3389,6 +3389,141 @@ test("Active power runtime reminders are marked inactive for ended statuses", as
   );
 });
 
+test("Variable power spend records cost breakdown and preserves reminders", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Variable Active Power Spend Tester",
+    preferredId: "variable-active-power-spend-tester",
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await knownPower.locator("[data-variable-spend='0']").fill("2");
+  await knownPower.getByRole("button", { name: "Spend 3 PP" }).click();
+
+  let activePower = page
+    .locator("#activePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Protection" }),
+    });
+  await expect(activePower).toContainText("Power Point spend");
+  await expect(activePower).toContainText("Base 1 PP; total 3 PP.");
+  await expect(activePower).toContainText(
+    "Additional Recipients × 2 extra target: +2 PP",
+  );
+  await expect(activePower).toContainText(
+    "Apply the Armor bonus to the protected target manually.",
+  );
+
+  expect(
+    await page.evaluate(() => ({
+      powerPoints: powerPointResource().current,
+      activePower: character.activePowers[0],
+    })),
+  ).toEqual({
+    powerPoints: 12,
+    activePower: expect.objectContaining({
+      name: "Protection",
+      cost: 3,
+      spendBreakdown: {
+        baseCost: 1,
+        totalCost: 3,
+        modifiers: [
+          {
+            id: "additional-recipients",
+            label: "Additional Recipients",
+            quantity: 2,
+            costPer: 1,
+            totalCost: 2,
+            quantityLabel: "extra target",
+            manualCost: false,
+          },
+        ],
+      },
+    }),
+  });
+
+  await reloadIntoTracker(page);
+  await openArcane(page);
+  activePower = page.locator("#activePowersList .active-power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await expect(activePower).toContainText("Base 1 PP; total 3 PP.");
+  await expect(activePower).toContainText(
+    "Additional Recipients × 2 extra target: +2 PP",
+  );
+  await expect(activePower).toContainText("Effect reminder");
+
+  const exportedText = await page.evaluate(() =>
+    JSON.stringify(serializeTrackerExport(character)),
+  );
+  await page.evaluate((text) => importJsonText(text), exportedText);
+  await openCombat(page);
+  const combatPower = page
+    .locator("#playActivePowersList .active-power-card")
+    .filter({
+      has: page.getByRole("heading", { name: "Protection" }),
+    });
+  await expect(combatPower).toContainText("Base 1 PP; total 3 PP.");
+  await expect(combatPower).toContainText(
+    "Additional Recipients × 2 extra target: +2 PP",
+  );
+  await expect(combatPower).toContainText(
+    "Apply the Armor bonus to the protected target manually.",
+  );
+  expect(
+    await page.evaluate(() => character.activePowers[0].spendBreakdown),
+  ).toEqual({
+    baseCost: 1,
+    totalCost: 3,
+    modifiers: [
+      {
+        id: "additional-recipients",
+        label: "Additional Recipients",
+        quantity: 2,
+        costPer: 1,
+        totalCost: 2,
+        quantityLabel: "extra target",
+        manualCost: false,
+      },
+    ],
+  });
+});
+
+test("Variable power spend blocks activation when Power Points are insufficient", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Variable Active Power Spend Block Tester",
+    preferredId: "variable-active-power-spend-block-tester",
+    powerPointsCurrent: 3,
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await knownPower.locator("[data-variable-spend='0']").fill("3");
+  const spendButton = knownPower.getByRole("button", { name: "Spend 4 PP" });
+  await expect(spendButton).toBeDisabled();
+  await expect(spendButton).toHaveAttribute("title", "Not enough Power Points");
+  await expect(page.locator("#activePowersList")).toContainText(
+    "No active power records.",
+  );
+  expect(
+    await page.evaluate(() => ({
+      powerPoints: powerPointResource().current,
+      activePowers: character.activePowers,
+    })),
+  ).toEqual({
+    powerPoints: 3,
+    activePowers: [],
+  });
+});
+
 test("Active powers can be dismissed and disrupted without deleting records", async ({
   page,
 }) => {

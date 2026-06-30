@@ -430,20 +430,48 @@ function variableSpendMarkup(power) {
   return `<div class="variable-spend-controls"><div class="topline"><h3>Variable Spend</h3><small>Base ${powerCost(power)} PP</small></div>${rows}<button class="variable-spend-btn" type="button">Spend ${powerCost(power)} PP</button></div>`;
 }
 
-function variableSpendTotal(power, article) {
+function variableSpendOptionCostPer(option) {
+  return Number.isFinite(Number(option?.costPer)) ? Number(option.costPer) : 0;
+}
+
+function variableSpendQuantity(input) {
+  return Math.max(0, Math.floor(Number(input.value) || 0));
+}
+
+function variableSpendBreakdown(power, article) {
   const baseCost = powerCost(power);
   const options = variableSpendOptionsForPower(power);
-  return Array.from(article.querySelectorAll("[data-variable-spend]")).reduce(
-    (total, input) => {
+  const modifiers = Array.from(
+    article.querySelectorAll("[data-variable-spend]"),
+  )
+    .map((input) => {
       const option = options[Number(input.dataset.variableSpend)];
-      const quantity = Math.max(0, Math.floor(Number(input.value) || 0));
-      const costPer = Number.isFinite(Number(option?.costPer))
-        ? Number(option.costPer)
-        : 1;
-      return total + quantity * costPer;
-    },
-    baseCost,
+      const quantity = variableSpendQuantity(input);
+      const costPer = variableSpendOptionCostPer(option);
+      return {
+        id: option?.id || "",
+        label: option?.label || "Modifier",
+        quantity,
+        costPer,
+        totalCost: quantity * costPer,
+        quantityLabel: option?.quantityLabel || "use",
+        manualCost: !Number.isFinite(Number(option?.costPer)),
+      };
+    })
+    .filter((modifier) => modifier.quantity > 0);
+  const modifierTotal = modifiers.reduce(
+    (total, modifier) => total + modifier.totalCost,
+    0,
   );
+  return {
+    baseCost,
+    modifiers,
+    totalCost: baseCost + modifierTotal,
+  };
+}
+
+function variableSpendTotal(power, article) {
+  return variableSpendBreakdown(power, article).totalCost;
 }
 
 function updateVariableSpendButton(power, article, powerPoints) {
@@ -557,13 +585,16 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
   if (variableSpendButton) {
     updateVariableSpendButton(power, article, powerPoints);
     variableSpendButton.onclick = () => {
-      const total = variableSpendTotal(power, article);
+      const spendBreakdown = variableSpendBreakdown(power, article);
+      const total = spendBreakdown.totalCost;
+      if (powerPoints && total > powerPoints.current) return;
       if (powerPoints && total) {
         powerPoints.current = Math.max(0, powerPoints.current - total);
       }
       addActivePowerFromCast(power, {
         name: "Variable Spend",
         cost: total,
+        spendBreakdown,
         description:
           "Variable Power Point spend; track selected options manually.",
       });
@@ -652,6 +683,21 @@ function activePowerRuntimeReminderMarkup(activePower) {
   return "";
 }
 
+function activePowerSpendBreakdownMarkup(activePower) {
+  const breakdown = activePower.spendBreakdown;
+  if (!breakdown?.modifiers?.length) return "";
+  const items = breakdown.modifiers
+    .map((modifier) => {
+      const quantityLabel = modifier.quantityLabel || "use";
+      const costText = modifier.manualCost
+        ? "manual PP"
+        : `+${modifier.totalCost} PP`;
+      return `<li>${esc(modifier.label)} × ${modifier.quantity} ${esc(quantityLabel)}: ${esc(costText)}</li>`;
+    })
+    .join("");
+  return `<div class="entry-advisory"><strong>Power Point spend:</strong><p>Base ${breakdown.baseCost} PP; total ${breakdown.totalCost} PP.</p><ul>${items}</ul></div>`;
+}
+
 function finishActivePower(activePower, status) {
   activePower.status = normalizeActivePowerStatus(status);
   activePower.endedAt = new Date().toISOString();
@@ -686,8 +732,9 @@ function renderActivePowerCard(activePower) {
   const durationReminder = activePowerDurationReminder(activePower);
   const durationValue = numericDuration === null ? "" : String(numericDuration);
   const runtimeReminderMarkup = activePowerRuntimeReminderMarkup(activePower);
+  const spendBreakdownMarkup = activePowerSpendBreakdownMarkup(activePower);
   article.className = `weapon-card power-card active-power-card ${status}`;
-  article.innerHTML = `<div class="topline"><div><h3>${esc(activePower.name || "Unnamed power")}</h3><p class="meta">${esc(activePowerDetailText(activePower))}</p></div><span class="loaded">${esc(activePowerStatusLabel(status))}</span></div><p class="muted">Power effect reminder only: apply table effects manually.</p>${runtimeReminderMarkup}<p class="entry-advisory"><strong>Duration reminder:</strong> ${esc(durationReminder)}</p>${activePower.maintenance ? '<p class="entry-advisory"><strong>Maintenance marked:</strong> remember ongoing Power Point or action requirements.</p>' : ""}<div class="creator-grid active-power-fields"><label>Target label<input data-active-power-field="targetLabel" value="${esc(activePower.targetLabel)}" placeholder="Self, ally, target, group"></label><label>Base duration<input data-active-power-field="duration" value="${esc(activePower.duration)}" placeholder="Duration from power"></label><label>Rounds remaining<input data-active-power-field="durationRemaining" type="number" min="0" step="1" value="${esc(durationValue)}" placeholder="Manual unless numeric"></label><label class="checkline"><input data-active-power-field="maintenance" type="checkbox" ${activePower.maintenance ? "checked" : ""}> Maintenance marked</label><label class="creator-wide">Trapping notes<textarea data-active-power-field="trappingNotes">${esc(activePower.trappingNotes)}</textarea></label><label class="creator-wide">Runtime notes<textarea data-active-power-field="notes">${esc(activePower.notes)}</textarea></label></div><div class="weapon-actions power-actions">${numericDuration === null ? "" : `<button class="ghost" type="button" data-active-power-tick ${current ? "" : "disabled"}>Tick down 1 round</button>`}<button class="ghost" type="button" data-active-power-status="dismissed" ${current ? "" : "disabled"}>Dismiss</button><button class="ghost" type="button" data-active-power-status="expired" ${current ? "" : "disabled"}>Expire</button><button class="delete-small" type="button" data-active-power-status="disrupted" ${current ? "" : "disabled"}>Disrupt</button></div>`;
+  article.innerHTML = `<div class="topline"><div><h3>${esc(activePower.name || "Unnamed power")}</h3><p class="meta">${esc(activePowerDetailText(activePower))}</p></div><span class="loaded">${esc(activePowerStatusLabel(status))}</span></div><p class="muted">Power effect reminder only: apply table effects manually.</p>${runtimeReminderMarkup}${spendBreakdownMarkup}<p class="entry-advisory"><strong>Duration reminder:</strong> ${esc(durationReminder)}</p>${activePower.maintenance ? '<p class="entry-advisory"><strong>Maintenance marked:</strong> remember ongoing Power Point or action requirements.</p>' : ""}<div class="creator-grid active-power-fields"><label>Target label<input data-active-power-field="targetLabel" value="${esc(activePower.targetLabel)}" placeholder="Self, ally, target, group"></label><label>Base duration<input data-active-power-field="duration" value="${esc(activePower.duration)}" placeholder="Duration from power"></label><label>Rounds remaining<input data-active-power-field="durationRemaining" type="number" min="0" step="1" value="${esc(durationValue)}" placeholder="Manual unless numeric"></label><label class="checkline"><input data-active-power-field="maintenance" type="checkbox" ${activePower.maintenance ? "checked" : ""}> Maintenance marked</label><label class="creator-wide">Trapping notes<textarea data-active-power-field="trappingNotes">${esc(activePower.trappingNotes)}</textarea></label><label class="creator-wide">Runtime notes<textarea data-active-power-field="notes">${esc(activePower.notes)}</textarea></label></div><div class="weapon-actions power-actions">${numericDuration === null ? "" : `<button class="ghost" type="button" data-active-power-tick ${current ? "" : "disabled"}>Tick down 1 round</button>`}<button class="ghost" type="button" data-active-power-status="dismissed" ${current ? "" : "disabled"}>Dismiss</button><button class="ghost" type="button" data-active-power-status="expired" ${current ? "" : "disabled"}>Expire</button><button class="delete-small" type="button" data-active-power-status="disrupted" ${current ? "" : "disabled"}>Disrupt</button></div>`;
 
   article.querySelectorAll("[data-active-power-field]").forEach((input) => {
     const field = input.dataset.activePowerField;

@@ -478,6 +478,64 @@ function activePowerDurationReminder(activePower) {
     : "Manual duration tracking.";
 }
 
+function normalizeActivePowerSpendModifier(modifier) {
+  const quantity = Math.max(0, Math.floor(Number(modifier?.quantity) || 0));
+  const costPer = Number.isFinite(Number(modifier?.costPer))
+    ? Number(modifier.costPer)
+    : 0;
+  const totalCost = Math.max(
+    0,
+    Math.floor(Number(modifier?.totalCost ?? quantity * costPer) || 0),
+  );
+  return {
+    id: modifier?.id || "",
+    label: modifier?.label || "Modifier",
+    quantity,
+    costPer,
+    totalCost,
+    quantityLabel: modifier?.quantityLabel || "use",
+    manualCost: Boolean(modifier?.manualCost),
+  };
+}
+
+function normalizeActivePowerSpendBreakdown(activePower, cost) {
+  const source = activePower?.spendBreakdown || null;
+  const sourceModifiers = Array.isArray(source?.modifiers)
+    ? source.modifiers
+    : Array.isArray(activePower?.selectedModifiers)
+      ? activePower.selectedModifiers
+      : [];
+  const modifiers = sourceModifiers
+    .map(normalizeActivePowerSpendModifier)
+    .filter((modifier) => modifier.quantity > 0);
+  if (!source && !modifiers.length) return null;
+  const modifierTotal = modifiers.reduce(
+    (total, modifier) => total + modifier.totalCost,
+    0,
+  );
+  const baseCost = Math.max(
+    0,
+    Math.floor(
+      Number(
+        source?.baseCost ?? activePower?.baseCost ?? cost - modifierTotal,
+      ) || 0,
+    ),
+  );
+  const totalCost = Math.max(
+    0,
+    Math.floor(
+      Number(
+        source?.totalCost ?? activePower?.totalCost ?? baseCost + modifierTotal,
+      ) || 0,
+    ),
+  );
+  return {
+    baseCost,
+    modifiers,
+    totalCost,
+  };
+}
+
 function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
   if (typeof activePower === "string") activePower = { name: activePower };
   if (!activePower || typeof activePower !== "object") activePower = {};
@@ -500,6 +558,7 @@ function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
     activePower.remainingDuration ??
     numericActivePowerDuration(duration);
   const durationRemaining = numericActivePowerDuration(durationRemainingSource);
+  const spendBreakdown = normalizeActivePowerSpendBreakdown(activePower, cost);
   return {
     id:
       activePower.id ||
@@ -513,6 +572,7 @@ function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
     name: activePower.name || knownPower?.name || "Unnamed power",
     status,
     cost,
+    spendBreakdown,
     duration,
     durationRemaining,
     durationReminder: activePowerDurationReminder({
@@ -536,9 +596,14 @@ function normalizeActivePowerRecord(activePower, index = 0, knownPowers = []) {
 
 function makeActivePowerRecord(power, option = {}, overrides = {}) {
   const now = new Date().toISOString();
+  const spendBreakdown =
+    overrides.spendBreakdown ?? option.spendBreakdown ?? null;
   const cost = Math.max(
     0,
-    Math.floor(Number(overrides.cost ?? option.cost ?? 0) || 0),
+    Math.floor(
+      Number(overrides.cost ?? option.cost ?? spendBreakdown?.totalCost ?? 0) ||
+        0,
+    ),
   );
   return normalizeActivePowerRecord(
     {
@@ -548,6 +613,7 @@ function makeActivePowerRecord(power, option = {}, overrides = {}) {
       name: power?.name || "Unnamed power",
       status: "active",
       cost,
+      spendBreakdown,
       duration: overrides.duration ?? power?.duration ?? "",
       durationRemaining: overrides.durationRemaining,
       maintenance: false,

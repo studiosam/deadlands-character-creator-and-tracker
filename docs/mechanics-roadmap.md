@@ -311,6 +311,9 @@ Current implementation:
   reminders for `Protection`, `Deflection`, and `Boost/Lower Trait` while those
   powers are active. Ended active-power records are marked inactive instead of
   continuing to show active-effect reminders.
+- Variable Power Point activation stores a structured `spendBreakdown` with base
+  cost, selected modifier quantities, modifier costs, and total cost. Active
+  power cards display the breakdown in Arcane and Combat.
 - Active Powers can be marked dismissed, expired, or disrupted without deleting
   the underlying Known Power.
 - Active Power records persist through reload and tracker JSON export/import.
@@ -324,7 +327,7 @@ Current implementation:
 3. Add common character-local power effects such as armor, defense penalties,
    Trait boosts, movement changes, and visibility state.
 4. Expand variable Power Point controls for powers with safe, structured
-   options.
+   options. Initial selected-modifier storage and display are implemented.
 5. Improve Arcane Background-specific consequence helpers.
 
 Completion criteria:
