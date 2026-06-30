@@ -3096,6 +3096,139 @@ test("Known powers activate into editable active power records", async ({
   );
 });
 
+test("Active power recast helper can create another active record", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Active Power Recast Duplicate Tester",
+    preferredId: "active-power-recast-duplicate-tester",
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await knownPower.getByRole("button", { name: /Activate/ }).click();
+  await knownPower.getByRole("button", { name: /Activate/ }).click();
+  await expect(page.locator("#appDialogTitle")).toHaveText(
+    "Power already active",
+  );
+  await expect(page.locator("#appDialogMessage")).toContainText(
+    "Protection already has an active record.",
+  );
+  await page.getByRole("button", { name: "Create another record" }).click();
+
+  await expect(
+    page
+      .locator("#activePowersList .active-power-card")
+      .filter({ has: page.getByRole("heading", { name: "Protection" }) }),
+  ).toHaveCount(2);
+  expect(
+    await page.evaluate(() => ({
+      powerPoints: powerPointResource().current,
+      statuses: character.activePowers.map((power) => power.status),
+      ended: character.activePowers.map((power) => Boolean(power.endedAt)),
+    })),
+  ).toEqual({
+    powerPoints: 13,
+    statuses: ["active", "active"],
+    ended: [false, false],
+  });
+});
+
+test("Active power recast helper can expire old record before recasting", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Active Power Recast Expire Tester",
+    preferredId: "active-power-recast-expire-tester",
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await knownPower.getByRole("button", { name: /Activate/ }).click();
+  await knownPower.getByRole("button", { name: /Activate/ }).click();
+  await page.getByRole("button", { name: "Expire old record" }).click();
+
+  const protectionCards = page
+    .locator("#activePowersList .active-power-card")
+    .filter({ has: page.getByRole("heading", { name: "Protection" }) });
+  await expect(protectionCards).toHaveCount(2);
+  await expect(protectionCards).toContainText([
+    /Active|Expired/,
+    /Active|Expired/,
+  ]);
+  await expect(page.locator("#activePowersList")).toContainText(
+    "Expired: effect reminders no longer apply.",
+  );
+  await expect(page.locator("#activePowersList")).toContainText("Ended:");
+  expect(
+    await page.evaluate(() => ({
+      powerPoints: powerPointResource().current,
+      records: character.activePowers.map((power) => ({
+        status: power.status,
+        ended: Boolean(power.endedAt),
+      })),
+    })),
+  ).toEqual({
+    powerPoints: 13,
+    records: [
+      { status: "expired", ended: true },
+      { status: "active", ended: false },
+    ],
+  });
+});
+
+test("Active power recast helper can dismiss old record before recasting", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Active Power Recast Dismiss Tester",
+    preferredId: "active-power-recast-dismiss-tester",
+    activePowers: [
+      {
+        id: "existing-protection-recast",
+        catalogId: "power-protection",
+        name: "Protection",
+        status: "active",
+        cost: 1,
+        duration: "5",
+        durationRemaining: 5,
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await knownPower.getByRole("button", { name: /Activate/ }).click();
+  await page.getByRole("button", { name: "Dismiss old record" }).click();
+
+  await expect(page.locator("#activePowersList")).toContainText(
+    "Dismissed: active effect reminders no longer apply.",
+  );
+  await expect(page.locator("#activePowersList")).toContainText("Ended:");
+  expect(
+    await page.evaluate(() => ({
+      powerPoints: powerPointResource().current,
+      records: character.activePowers.map((power) => ({
+        status: power.status,
+        ended: Boolean(power.endedAt),
+      })),
+    })),
+  ).toEqual({
+    powerPoints: 14,
+    records: [
+      { status: "dismissed", ended: true },
+      { status: "active", ended: false },
+    ],
+  });
+});
+
 test("Numeric active power durations tick down persist and expire at zero", async ({
   page,
 }) => {

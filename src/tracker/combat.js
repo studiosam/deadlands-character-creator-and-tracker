@@ -494,6 +494,73 @@ function addActivePowerFromCast(power, option = {}) {
   return activePower;
 }
 
+function activePowerMatchesKnownPower(activePower, power) {
+  const activeCatalogId = String(
+    activePower.catalogId || activePower.powerCatalogId || "",
+  ).trim();
+  const powerCatalogId = String(power.catalogId || "").trim();
+  if (activeCatalogId && powerCatalogId && activeCatalogId === powerCatalogId) {
+    return true;
+  }
+
+  const activePowerId = String(activePower.powerId || "").trim();
+  const powerId = String(power.id || "").trim();
+  if (activePowerId && powerId && activePowerId === powerId) return true;
+
+  return (
+    normalizeArcaneText(activePower.name) &&
+    normalizeArcaneText(activePower.name) === normalizeArcaneText(power.name)
+  );
+}
+
+function activePowerRecordsForKnownPower(power) {
+  const activePowers = Array.isArray(character.activePowers)
+    ? character.activePowers
+    : [];
+  return activePowers.filter(
+    (activePower) =>
+      activePowerIsCurrent(activePower) &&
+      activePowerMatchesKnownPower(activePower, power),
+  );
+}
+
+function endActivePowerRecord(activePower, status) {
+  activePower.status = normalizeActivePowerStatus(status);
+  activePower.endedAt = new Date().toISOString();
+}
+
+async function resolveActivePowerRecast(power) {
+  const activePowers = activePowerRecordsForKnownPower(power);
+  if (!activePowers.length) return true;
+
+  const powerName = power.name || "This power";
+  const countLabel =
+    activePowers.length === 1
+      ? "an active record"
+      : `${activePowers.length} active records`;
+  const choice = await appChoice(
+    `${powerName} already has ${countLabel}. Choose how to handle this activation.`,
+    [
+      { label: "Create another record", value: "create" },
+      { label: "Expire old record", value: "expired" },
+      { label: "Dismiss old record", value: "dismissed" },
+    ],
+    {
+      title: "Power already active",
+      cancelText: "Cancel",
+    },
+  );
+
+  if (choice === "create") return true;
+  if (choice === "expired" || choice === "dismissed") {
+    activePowers.forEach((activePower) =>
+      endActivePowerRecord(activePower, choice),
+    );
+    return true;
+  }
+  return false;
+}
+
 function powerDescriptionMarkup(power, castOptions, powerPoints) {
   const parts = [];
   if (power.shortSummary || power.notes) {
@@ -568,7 +635,8 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
       powerPoints && option.cost > powerPoints.current
         ? "Not enough Power Points"
         : option.description || `Spend ${option.cost} Power Points`;
-    button.onclick = () => {
+    button.onclick = async () => {
+      if (!(await resolveActivePowerRecast(power))) return;
       if (powerPoints && option.cost) {
         powerPoints.current = Math.max(0, powerPoints.current - option.cost);
       }
@@ -584,10 +652,11 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
   });
   if (variableSpendButton) {
     updateVariableSpendButton(power, article, powerPoints);
-    variableSpendButton.onclick = () => {
+    variableSpendButton.onclick = async () => {
       const spendBreakdown = variableSpendBreakdown(power, article);
       const total = spendBreakdown.totalCost;
       if (powerPoints && total > powerPoints.current) return;
+      if (!(await resolveActivePowerRecast(power))) return;
       if (powerPoints && total) {
         powerPoints.current = Math.max(0, powerPoints.current - total);
       }
