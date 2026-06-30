@@ -95,9 +95,25 @@
                 <button
                   id="newSessionBtn"
                   type="button"
-                  title="Reset bennies, conviction, resources, and temporary conditions for a new play session."
+                  title="Reset bennies, conviction, resources, Action Cards, combat declarations, and temporary conditions for a new play session."
                 >
                   Start Session
+                </button>
+                <button
+                  class="ghost"
+                  id="undoBtn"
+                  type="button"
+                  title="Undo the last saved tracker change for this character."
+                >
+                  Undo
+                </button>
+                <button
+                  class="ghost"
+                  id="redoBtn"
+                  type="button"
+                  title="Redo the last undone tracker change for this character."
+                >
+                  Redo
                 </button>
                 <button
                   class="ghost"
@@ -1981,6 +1997,7 @@
     <script src="src/tracker/entries.js"></script>
     <script src="src/tracker/setup-source.js"></script>
     <script src="src/tracker/storage.js"></script>
+    <script src="src/tracker/undo-history.js"></script>
     <script src="src/tracker/catalog-ui.js"></script>
     <script src="src/tracker/setup-model.js"></script>
     <script src="src/tracker/setup-render.js"></script>

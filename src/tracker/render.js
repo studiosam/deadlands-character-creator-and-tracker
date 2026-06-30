@@ -219,6 +219,7 @@ function render() {
   renderNotesSummary();
   renderSettingsSummary();
   renderCharacterLibrary();
+  renderUndoControls();
 
   if (document.activeElement !== els.notesArea)
     els.notesArea.value = character.notes || "";

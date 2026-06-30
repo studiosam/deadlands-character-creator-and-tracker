@@ -22,6 +22,8 @@ const els = {
   characterName: $("#characterName"),
   characterSubtitle: $("#characterSubtitle"),
   saveState: $("#saveState"),
+  undoBtn: $("#undoBtn"),
+  redoBtn: $("#redoBtn"),
   woundsValue: $("#woundsValue"),
   woundPenalty: $("#woundPenalty"),
   woundsNote: $("#woundsNote"),

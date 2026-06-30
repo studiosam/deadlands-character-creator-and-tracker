@@ -15,6 +15,8 @@ function revealAppAfterBoot() {
 }
 
 try {
+  installUndoHistoryInteractionTracking();
+  syncUndoHistoryForActiveCharacter();
   catalogs();
   updatePreviews();
   render();

@@ -414,6 +414,12 @@ els.resetBtn.onclick = async () => {
 els.exportBtn.onclick = () => {
   exportTrackerCharacter();
 };
+els.undoBtn.onclick = () => {
+  undoLastCharacterChange();
+};
+els.redoBtn.onclick = () => {
+  redoLastCharacterChange();
+};
 els.importFile.onchange = (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -535,6 +541,7 @@ els.settingsClearAllBtn.onclick = async () => {
   clearTimeout(saveTimer);
   storageAdapter.remove(STORAGE_KEY);
   storageAdapter.remove(CHARACTER_LIBRARY_KEY);
+  storageAdapter.remove(UNDO_HISTORY_KEY);
   storageAdapter.remove(CREATION_KEY);
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, false);

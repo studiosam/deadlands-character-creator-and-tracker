@@ -444,6 +444,18 @@ function saveCharacterSlot(data = character, metadata = {}) {
   if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
   const activeId = metadata.id || characterLibrary.activeCharacterId;
   const existing = activeId ? characterLibrary.charactersById[activeId] : null;
+  const replacingActive =
+    Boolean(existing) && activeId === characterLibrary.activeCharacterId;
+  if (
+    replacingActive &&
+    data === character &&
+    !metadata.skipUndo &&
+    typeof recordUndoSnapshotBeforeCommit === "function"
+  ) {
+    recordUndoSnapshotBeforeCommit(data, {
+      forceBoundary: Boolean(metadata.forceUndoBoundary),
+    });
+  }
   const entry = characterSlotFromCharacter(data, existing || {}, {
     ...metadata,
     id: existing?.id || metadata.id,
@@ -452,6 +464,13 @@ function saveCharacterSlot(data = character, metadata = {}) {
   characterLibrary.activeCharacterId = entry.id;
   persistCharacterLibrary();
   storageAdapter.writeJson(STORAGE_KEY, entry.character);
+  if (typeof syncUndoHistoryForActiveCharacter === "function") {
+    if (metadata.resetUndoHistory) {
+      resetUndoHistoryForCharacter(entry.id, entry.character);
+    } else if (!replacingActive || metadata.skipUndo) {
+      syncUndoHistoryForActiveCharacter(entry.character);
+    }
+  }
   return entry;
 }
 
@@ -555,6 +574,8 @@ function addCharacterSlot(data, metadata = {}) {
   characterLibrary.activeCharacterId = entry.id;
   persistCharacterLibrary();
   storageAdapter.writeJson(STORAGE_KEY, entry.character);
+  if (typeof resetUndoHistoryForCharacter === "function")
+    resetUndoHistoryForCharacter(entry.id, entry.character);
   return entry;
 }
 
@@ -571,6 +592,8 @@ function activateCharacterSlot(id) {
     STORAGE_KEY,
     serializeCharacterForStorage(character),
   );
+  if (typeof syncUndoHistoryForActiveCharacter === "function")
+    syncUndoHistoryForActiveCharacter(character);
   return true;
 }
 
@@ -595,6 +618,8 @@ function removeCharacterSlot(id) {
       serializeCharacterForStorage(character),
     );
   else if (!isUnsavedCharacterDraft()) storageAdapter.remove(STORAGE_KEY);
+  if (typeof syncUndoHistoryForActiveCharacter === "function")
+    syncUndoHistoryForActiveCharacter(character);
   return true;
 }
 
@@ -606,6 +631,11 @@ function renameCharacterSlot(id, name) {
   entry.character.name = nextName;
   entry.updatedAt = new Date().toISOString();
   if (characterLibrary.activeCharacterId === id) character.name = nextName;
+  if (
+    characterLibrary.activeCharacterId === id &&
+    typeof recordUndoSnapshotBeforeCommit === "function"
+  )
+    recordUndoSnapshotBeforeCommit(character, { forceBoundary: true });
   persistCharacterLibrary();
   if (characterLibrary.activeCharacterId === id)
     storageAdapter.writeJson(
