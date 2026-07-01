@@ -120,11 +120,18 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   ).toHaveCount(0);
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
 
+  await page.evaluate(() => window.history.back());
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  await expect(panel).toBeHidden();
+
   await openHeaderMenu(page);
   await page.locator("#creatorModeBtn").click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await page.locator("#characterSetupPanel [data-app-tab='catalog']").click();
   await expect(panel).toBeVisible();
+  await page.evaluate(() => window.history.back());
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
 });
 
 test("shows the read-only sources and rulesets page from the global menu", async ({

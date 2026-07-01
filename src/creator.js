@@ -488,20 +488,54 @@ function catalogByName(items) {
   );
 }
 
-function setAppTab(tabName) {
-  const panelMap = {
-    play: "#playPanel",
-    character: "#characterPanel",
-    catalog: "#catalogPanel",
-    inventory: "#inventoryPanel",
-    arcane: "#arcanePanel",
-    notes: "#notesPanel",
-    settings: "#settingsPanel",
-    sourcesRulesets: "#sourcesRulesetsPanel",
-    library: "#libraryPanel",
-    creation: "#creationPanel",
+const APP_TAB_PANELS = {
+  play: "#playPanel",
+  character: "#characterPanel",
+  catalog: "#catalogPanel",
+  inventory: "#inventoryPanel",
+  arcane: "#arcanePanel",
+  notes: "#notesPanel",
+  settings: "#settingsPanel",
+  sourcesRulesets: "#sourcesRulesetsPanel",
+  library: "#libraryPanel",
+  creation: "#creationPanel",
+};
+const APP_HISTORY_STATE_KEY = "deadlandsTrackerNavigation";
+let appHistoryApplyingState = false;
+let appHistoryInitialized = false;
+
+function navigationStatesMatch(left, right) {
+  return left?.view === right?.view && (left?.tab || "") === (right?.tab || "");
+}
+
+function appHistoryState(state) {
+  return {
+    [APP_HISTORY_STATE_KEY]: true,
+    view: state.view,
+    tab: state.tab || "",
   };
-  const nextTab = panelMap[tabName] ? tabName : "play";
+}
+
+function recordAppNavigation(state, options = {}) {
+  if (options.history === false || appHistoryApplyingState) return;
+  if (!window.history?.pushState || !window.history?.replaceState) return;
+
+  const nextState = appHistoryState(state);
+  const currentState = history.state?.[APP_HISTORY_STATE_KEY]
+    ? history.state
+    : null;
+  const mode =
+    options.replace || !appHistoryInitialized ? "replaceState" : "pushState";
+
+  if (mode === "pushState" && navigationStatesMatch(currentState, nextState))
+    return;
+
+  history[mode](nextState, "", window.location.href);
+  appHistoryInitialized = true;
+}
+
+function setAppTab(tabName, options = {}) {
+  const nextTab = APP_TAB_PANELS[tabName] ? tabName : "play";
 
   document.querySelectorAll("[data-app-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.appTab === nextTab);
@@ -511,14 +545,15 @@ function setAppTab(tabName) {
     panel.classList.remove("active");
   });
 
-  const panel = $(panelMap[nextTab]);
+  const panel = $(APP_TAB_PANELS[nextTab]);
   panel.classList.remove("hidden");
   panel.classList.add("active");
   if (nextTab === "creation") renderCreator();
+  recordAppNavigation({ view: "tab", tab: nextTab }, options);
 }
 
-function setCreatorMode(on) {
-  setAppTab(on ? "creation" : "play");
+function setCreatorMode(on, options = {}) {
+  setAppTab(on ? "creation" : "play", options);
 }
 
 function coreSetupSkills() {
@@ -654,7 +689,7 @@ function setLandingVisible(visible) {
   $(".shell")?.classList.toggle("hidden", visible);
 }
 
-function renderLandingPage() {
+function renderLandingPage(options = {}) {
   const landing = $("#landingPage");
   if (!landing) return;
   setLandingVisible(true);
@@ -685,11 +720,12 @@ function renderLandingPage() {
   }
 
   updateLandingPrimaryLabel();
+  recordAppNavigation({ view: "landing" }, options);
 }
 
-function closeLandingPage(tabName = "play") {
+function closeLandingPage(tabName = "play", options = {}) {
   setLandingVisible(false);
-  setAppTab(tabName);
+  setAppTab(tabName, options);
   $(".shell")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -1693,6 +1729,27 @@ document.addEventListener("click", (event) => {
 document.querySelectorAll("[data-app-tab]").forEach((button) => {
   button.onclick = () => setAppTab(button.dataset.appTab);
 });
+
+window.addEventListener("popstate", (event) => {
+  const state = event.state;
+  if (!state?.[APP_HISTORY_STATE_KEY]) return;
+
+  appHistoryApplyingState = true;
+  try {
+    if (state.view === "landing") {
+      renderLandingPage({ history: false });
+      renderDemoExperience();
+      $("#landingPage")?.scrollIntoView({ behavior: "auto", block: "start" });
+    } else {
+      setLandingVisible(false);
+      setAppTab(state.tab || "play", { history: false });
+      renderDemoExperience();
+    }
+  } finally {
+    appHistoryApplyingState = false;
+  }
+});
+
 $("#loadSampleBtn").onclick = () => {
   const panel = $("#demoWelcomePanel");
   if (panel) {
