@@ -147,7 +147,7 @@ test("keeps duplicated character state independent across switching and reload @
 
 test("manages multiple local character save slots", async ({ page }) => {
   await page.locator("#landingLoadSampleBtn").click();
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#characterLibraryMenuBtn").click();
 
   await expect(page.locator("#libraryPanel")).toBeVisible();
@@ -172,7 +172,7 @@ test("keeps character slots in stable order when switching", async ({
   page,
 }) => {
   await page.locator("#landingLoadSampleBtn").click();
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#characterLibraryMenuBtn").click();
   await page.locator("#libraryDuplicateActiveBtn").click();
 
@@ -439,7 +439,7 @@ test("deletes only the selected character and preserves the remaining character"
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator(".shell")).toBeVisible();
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#characterLibraryMenuBtn").click();
   await expect(page.locator("#libraryPanel")).toBeVisible();
   await page.locator("#librarySaveCurrentBtn").click();
@@ -542,7 +542,7 @@ test("deletes only the selected character and preserves the remaining character"
   }
   await expect(page.locator("#characterName")).toContainText(keepName);
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#characterLibraryMenuBtn").click();
   await expect(
     page
@@ -566,16 +566,15 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   );
   expect(sample.ok()).toBeTruthy();
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#pasteImportBtn").click();
   await page.locator("#importJsonText").fill(await sample.text());
   await page.locator("#confirmPasteImportBtn").click();
 
   await expect(page.locator("#characterName")).toContainText("Lehi Larson");
-  await page.getByRole("button", { name: "Notes" }).click();
-  await expect(page.locator("#importWarningsList")).toBeVisible();
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#appTabs")).toBeHidden();
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Complete",
   );
@@ -602,7 +601,7 @@ test("round-trips exported tracker JSON through import @mobile", async ({
   const noteText = "Round trip smoke note";
 
   await enterTracker(page);
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#characterLibraryMenuBtn").click();
   await expect(page.locator("#libraryPanel")).toBeVisible();
   await page.locator("#librarySaveCurrentBtn").click();
@@ -641,7 +640,7 @@ test("round-trips exported tracker JSON through import @mobile", async ({
       notes: noteText,
     });
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#exportBtn").click(),
@@ -649,7 +648,7 @@ test("round-trips exported tracker JSON through import @mobile", async ({
   const downloadedJsonPath = testInfo.outputPath(download.suggestedFilename());
   await download.saveAs(downloadedJsonPath);
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#resetBtn").click();
   await page.locator("#appDialogConfirmBtn").click();
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
@@ -658,7 +657,7 @@ test("round-trips exported tracker JSON through import @mobile", async ({
   await page.getByRole("button", { name: "Notes" }).click();
   await expect(page.locator("#notesArea")).not.toHaveValue(noteText);
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#importFile").setInputFiles(downloadedJsonPath);
 
   await expect(page.locator("#characterName")).toContainText(characterName);

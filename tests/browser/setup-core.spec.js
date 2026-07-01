@@ -246,9 +246,17 @@ test("starts new characters directly in character setup @mobile", async ({
       hasBaseline: true,
     });
 
-  await openHeaderMenu(page);
-  await expect(page.locator("#creatorModeBtn")).toHaveText("New Character");
-  await page.locator("#creatorModeBtn").click();
+  await page.locator("#setupMainMenuBtn").click();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator("#landingCreateBtn")).toHaveText(
+    "Create/Edit Character",
+  );
+  await page.locator("#landingCreateBtn").click();
+  await expect(page.locator("#appDialog")).toBeVisible();
+  await page
+    .locator("#appDialog")
+    .getByRole("button", { name: "Create New Character" })
+    .click();
   await expect(page.locator("#characterName")).toContainText(
     "Unnamed Character",
   );
@@ -366,6 +374,11 @@ test("shows a clean reference sheet for confirmed characters", async ({
     .locator("#characterSetupPanel [data-setup-action='confirmSetup']")
     .click();
   await expect(page.locator("#characterSetupPanel")).toBeHidden();
+  await expect(page.locator(".shell")).not.toHaveClass(/character-setup-page/);
+  await expect(page.locator(".shell > .hero")).toBeVisible();
+  await expect(page.locator("#appTabs")).toBeVisible();
+  await expect(page.locator("#setupMainMenuBtn")).toBeHidden();
+  await expect(page.locator("#headerToolsMenu")).toBeVisible();
 
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#characterSummaryName")).toContainText(
@@ -374,7 +387,13 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await expect(page.locator("#characterDossierSubtitle")).toContainText(
     "Drifter",
   );
-  await expect(page.locator("#characterBasicsList")).toContainText("Human");
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(
+    "Human",
+  );
+  await expect(page.locator("#characterBasicsList")).not.toContainText("Human");
+  await expect(page.locator("#characterBasicsList")).not.toContainText(
+    "Novice",
+  );
   await expect(page.locator("#characterDerivedDetails")).toContainText("Pace");
   await expect(page.locator("#characterDerivedDetails")).toContainText("Parry");
   await expect(page.locator("#characterDerivedDetails")).toContainText(
@@ -386,7 +405,7 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await expect(page.locator("#hindrancesList")).toContainText("Bad Luck");
 
   await expect(page.locator("#reviewSetupBtn")).toBeVisible();
-  await expect(page.locator("#manageCharacterBtn")).toBeVisible();
+  await expect(page.locator("#manageCharacterBtn")).toHaveCount(0);
   await expect(page.locator("#characterSetupPanel")).toBeHidden();
   await expect(page.locator("#characterSetupStepper")).toBeHidden();
   await expect(page.locator("#setupConceptPanel")).toBeHidden();
@@ -394,18 +413,26 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await expect(page.locator("#showAdvanceFormBtn")).toBeVisible();
   await expect(page.locator("#showEdgeFormBtn")).toBeHidden();
   await expect(page.locator("#showHindranceFormBtn")).toBeHidden();
-  await expect(page.locator("#addManualPowerPointsBtn")).toBeHidden();
+  await expect(
+    page.locator("#characterPanel #addManualPowerPointsBtn"),
+  ).toHaveCount(0);
   await expect(page.locator("#advanceEditorPanel")).toBeHidden();
   await expect(page.locator("#edgeEditorPanel")).toBeHidden();
   await expect(page.locator("#hindranceEditorPanel")).toBeHidden();
 
-  await page.locator("#manageCharacterBtn").click();
+  await openHeaderMenu(page);
+  await page.locator("#characterLibraryMenuBtn").click();
   await expect(page.locator("#libraryPanel")).toBeVisible();
   await expect(page.locator("#characterProfileEditor")).toBeVisible();
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await page.locator("#reviewSetupBtn").click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator(".shell")).toHaveClass(/character-setup-page/);
+  await expect(page.locator(".shell > .hero")).toBeHidden();
+  await expect(page.locator("#appTabs")).toBeHidden();
+  await expect(page.locator("#setupMainMenuBtn")).toBeVisible();
+  await expect(page.locator("#headerToolsMenu")).toBeHidden();
   await expect(page.locator("#characterSetupStepper")).toBeVisible();
 
   await expect
@@ -602,8 +629,9 @@ test("shows setup review for imported characters until confirmed @mobile", async
   await page.locator("#confirmPasteImportBtn").click();
   await expect(page.locator("#characterName")).toContainText("Lehi Larson");
 
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#appTabs")).toBeHidden();
   await expect(page.locator("#characterSetupStepper")).toBeVisible();
   await expect(page.locator("#setupReviewPanel")).toBeVisible();
   const confirmSetupButton = page.locator(

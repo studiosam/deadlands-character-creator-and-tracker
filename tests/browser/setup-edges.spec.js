@@ -281,7 +281,7 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
     });
 
   await reloadIntoTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
   await page.locator("[data-setup-step='edges']").click();
   await expect(page.locator("#setupEdgesPanel")).toContainText("Alertness");
   await expect(page.locator("#setupEdgesPanel")).toContainText("Berserk");

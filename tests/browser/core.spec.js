@@ -219,6 +219,13 @@ test("empty landing offers create, import, and demo only", async ({ page }) => {
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator(".shell")).toHaveClass(/character-setup-page/);
+  await expect(page.locator(".shell > .hero")).toBeHidden();
+  await expect(page.locator("#appTabs")).toBeHidden();
+  await expect(page.locator("#setupMainMenuBtn")).toBeVisible();
+  await expect(
+    page.locator("#characterPanel .dossier-header-actions #headerToolsMenu"),
+  ).toBeHidden();
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
 });
 
@@ -386,7 +393,7 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
 
   await page.evaluate(() => window.history.back());
-  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(panel).toBeHidden();
 
   await openHeaderMenu(page);
@@ -474,7 +481,7 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
     await expect(page.locator(".tab-panel.active")).toBeVisible();
   }
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#localDataMenuBtn").click();
   await expect(page.locator("#localDataPanel")).toContainText(
     "Local Data & Backups",
@@ -493,7 +500,7 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await expect(page.locator("#characterHeroCopy")).toBeVisible();
   await expect(page.locator("#appTabs")).toBeVisible();
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#privacyLegalMenuBtn").click();
   await expect(page.locator("#privacyLegalPanel")).toContainText(
     "Privacy & Legal Notes",
@@ -507,7 +514,7 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await page.locator("#utilityBackToTrackerBtn").click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
 
-  await page.locator("#headerToolsMenu summary").click();
+  await openHeaderMenu(page);
   await page.locator("#mainMenuBtn").click();
   await expect(page.locator("#landingPage")).toBeVisible();
   await expect(page.locator(".shell")).toBeHidden();

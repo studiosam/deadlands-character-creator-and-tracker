@@ -86,9 +86,21 @@ async function reloadIntoTracker(page) {
 }
 
 async function openHeaderMenu(page) {
+  const summary = page.locator("#headerToolsMenu summary");
+  if (!(await summary.isVisible())) {
+    if (await page.locator("#utilityBackToTrackerBtn").isVisible()) {
+      await page.locator("#utilityBackToTrackerBtn").click();
+    }
+    if (!(await summary.isVisible())) {
+      await page
+        .getByRole("button", { name: "Character", exact: true })
+        .click();
+    }
+    await expect(summary).toBeVisible();
+  }
   const menu = page.locator("#headerToolsMenu");
   if (!(await menu.evaluate((element) => element.open))) {
-    await page.locator("#headerToolsMenu summary").click();
+    await summary.click();
   }
 }
 
@@ -149,8 +161,17 @@ async function openArcane(page) {
 }
 
 async function openCharacterSetupReview(page) {
-  await page.getByRole("button", { name: "Character", exact: true }).click();
   const setupPanel = page.locator("#characterSetupPanel");
+  if (await setupPanel.isVisible()) {
+    await expect(setupPanel).toBeVisible();
+    return;
+  }
+  const characterTab = page.getByRole("button", {
+    name: "Character",
+    exact: true,
+  });
+  if (await characterTab.isVisible()) await characterTab.click();
+  else await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   if (!(await setupPanel.isVisible())) {
     await page.locator("#reviewSetupBtn").click();
   }
@@ -701,8 +722,7 @@ async function seedPowersSetupCharacter(page, options = {}) {
     render();
     renderDemoExperience();
   }, options);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await openCharacterSetupReview(page);
   await page.locator("[data-setup-step='powers']").click();
 }
 
@@ -751,8 +771,7 @@ async function seedGearSetupCharacter(page, options = {}) {
     render();
     renderDemoExperience();
   }, options);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await openCharacterSetupReview(page);
   await page.locator("[data-setup-step='gear']").click();
 }
 

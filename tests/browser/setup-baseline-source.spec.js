@@ -650,7 +650,7 @@ test("edits setup traits for created characters and stores the creation baseline
     "Setup Trait Editor",
   );
 
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
   await expect(page.locator("[data-setup-step='traits']")).toContainText(
     "Incomplete",
   );
@@ -810,6 +810,26 @@ test("edits setup traits for created characters and stores the creation baseline
   await expect(setupSkillsPanel).not.toContainText("Draft starting Skills");
   await expect(setupSkillsPanel).toContainText("Skill Points");
   await expect(setupSkillsPanel).toContainText("0 / 12");
+  const skillOverview = setupSkillsPanel.locator(".setup-skill-overview-list");
+  await expect(skillOverview).toHaveCSS("position", "sticky");
+  await expect(skillOverview).toHaveCSS("z-index", "15");
+  const stickyScroll = await skillOverview.evaluate((element) => {
+    const skillGroups = document.querySelector(
+      "#setupSkillsPanel .setup-skill-attribute-groups",
+    );
+    skillGroups?.scrollIntoView({ block: "start" });
+    window.scrollBy(0, 220);
+    const style = getComputedStyle(element);
+    return {
+      scrollY: window.scrollY,
+      top: Math.round(element.getBoundingClientRect().top),
+      stickyTop: Math.round(Number.parseFloat(style.top) || 0),
+    };
+  });
+  expect(stickyScroll.scrollY).toBeGreaterThan(0);
+  expect(
+    Math.abs(stickyScroll.top - stickyScroll.stickyTop),
+  ).toBeLessThanOrEqual(2);
   const skillPointsCard = setupSkillsPanel.locator(".setup-skill-points-card");
   await expect(skillPointsCard).toContainText("0 / 12 assigned");
   await expect(
@@ -827,6 +847,14 @@ test("edits setup traits for created characters and stores the creation baseline
     .locator(".setup-trait-editor-row.skill-row")
     .filter({ hasText: "Language" });
   await expect(languageRow.locator(".setup-die-step.current")).toHaveText("d8");
+  await expect(languageRow.locator(".setup-die-step.unavailable")).toHaveText([
+    "d4-2",
+    "d4",
+    "d6",
+  ]);
+  await expect(
+    languageRow.locator("[data-setup-action='decSkill']"),
+  ).toBeDisabled();
   await expect(languageRow).toContainText("Core");
   await expect(languageRow).toContainText("Cost 0");
   const shootingRow = setupSkillsPanel
@@ -840,6 +868,7 @@ test("edits setup traits for created characters and stores the creation baseline
     /Ranged attacks/,
   );
   await expect(shootingRow).toContainText("d4-2");
+  await expect(shootingRow).not.toContainText("Linked Agility");
   await expect(shootingRow.locator(".setup-die-step")).toHaveText([
     "d4-2",
     "d4",
@@ -850,6 +879,9 @@ test("edits setup traits for created characters and stores the creation baseline
   ]);
   await expect(shootingRow.locator(".setup-die-step.current")).toHaveText(
     "d4-2",
+  );
+  await expect(shootingRow.locator(".setup-die-step.unavailable")).toHaveCount(
+    0,
   );
   await shootingRow.locator("[data-setup-action='incSkill']").click();
   await expect(shootingRow.locator(".setup-die-step.current")).toHaveText("d4");

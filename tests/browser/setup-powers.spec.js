@@ -158,7 +158,7 @@ test("Powers setup creates and persists setup starting Power Points", async ({
   });
 
   await reloadIntoTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
   await page.locator("[data-setup-step='powers']").click();
   await expect(page.locator("[data-setup-step='powers']")).toContainText(
     "Complete",
@@ -276,7 +276,7 @@ test("Powers setup selection adds removes and persists setup starting powers", a
   });
 
   await reloadIntoTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
   await page.locator("[data-setup-step='powers']").click();
 
   setupPowersPanel = page.locator("#setupPowersPanel");

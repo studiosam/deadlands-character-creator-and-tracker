@@ -566,7 +566,7 @@ test("Tough as Nails increases Wound capacity from a trusted baseline", async ({
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterStatusStrip")).toContainText("0 / 4");
+  await expect(page.locator("#characterStatusStrip")).toBeHidden();
   await expect(page.locator("#woundsNote")).toContainText("Healthy");
   const derived = page.locator("#characterDerivedDetails");
   await expect(derived).toContainText("Tough as Nails");
@@ -607,7 +607,7 @@ test("Tougher than Nails replaces Tough as Nails Wound capacity", async ({
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterStatusStrip")).toContainText("0 / 5");
+  await expect(page.locator("#characterStatusStrip")).toBeHidden();
   const derived = page.locator("#characterDerivedDetails");
   await expect(derived).toContainText("Tougher than Nails");
   await expect(derived).toContainText(
@@ -647,7 +647,7 @@ test("Tough as Nails does not double-count imported Wound capacity without a bas
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterStatusStrip")).toContainText("0 / 4");
+  await expect(page.locator("#characterStatusStrip")).toBeHidden();
   await expect(page.locator("#woundsNote")).toContainText(
     "Recorded Wound maximum; passive Wound capacity effect shown below.",
   );

@@ -259,7 +259,7 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   );
 
   await reloadIntoTracker(page);
-  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await openCharacterSetupReview(page);
   await page.locator("[data-setup-step='gear']").click();
   const persisted = await page.evaluate(() => ({
     moneyCents: character.moneyCents,

@@ -31,7 +31,7 @@ html,
 body {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -473,6 +473,23 @@ h3 {
 
 .hero-copy {
   min-width: 0;
+}
+
+.character-setup-page > .hero {
+  display: none;
+}
+
+.character-setup-page #appTabs,
+.character-setup-page #characterHeaderTools {
+  display: none;
+}
+
+#setupMainMenuBtn {
+  display: none;
+}
+
+.character-setup-page #setupMainMenuBtn {
+  display: inline-flex;
 }
 
 .utility-shell .hero {
@@ -2231,9 +2248,42 @@ h3 {
   box-shadow: none;
 }
 
-.dossier-header {
+.character-dossier .dossier-header {
   overflow: hidden;
   position: relative;
+  border-color: rgba(242, 182, 95, 0.22);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.09),
+      rgba(255, 255, 255, 0.03)
+    ),
+    rgba(18, 22, 31, 0.9);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.dossier-header .eyebrow {
+  color: var(--accent-strong);
+}
+
+.dossier-header .subtitle {
+  color: var(--muted);
+}
+
+.dossier-header .ghost {
+  color: var(--text);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.dossier-header .pill {
+  color: #fff5df;
+  border-color: rgba(242, 182, 95, 0.34);
+  background: rgba(138, 79, 34, 0.78);
 }
 
 .dossier-header::after {
@@ -2241,8 +2291,8 @@ h3 {
   position: absolute;
   inset: auto 1rem 0;
   height: 3px;
-  border-top: 1px solid var(--dossier-rule);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  border-top: 1px solid rgba(242, 182, 95, 0.36);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .character-setup-shell h2,
@@ -2810,6 +2860,14 @@ h3 {
   letter-spacing: 0;
 }
 
+.setup-skills-group {
+  display: block;
+}
+
+.setup-skills-group > * + * {
+  margin-top: 0.6rem;
+}
+
 .setup-skill-attribute-groups {
   display: grid;
   gap: 0.85rem;
@@ -2866,7 +2924,18 @@ h3 {
 }
 
 .setup-skill-overview-list {
-  margin-bottom: 0.2rem;
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  z-index: 15;
+  align-self: start;
+  grid-template-columns: minmax(0, 1fr);
+  margin: -0.1rem 0 0.35rem;
+  padding: 0.35rem 0;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(239, 226, 197, 0.98), rgba(239, 226, 197, 0.92)),
+    var(--dossier-paper);
+  box-shadow: 0 10px 24px rgba(36, 26, 18, 0.12);
 }
 
 .setup-trait-editor-row {
@@ -3006,6 +3075,12 @@ h3 {
   opacity: 1;
 }
 
+.setup-die-track .setup-die-step.unavailable {
+  color: rgba(88, 70, 50, 0.42);
+  text-decoration: line-through;
+  opacity: 0.24;
+}
+
 .setup-attribute-points-card,
 .setup-skill-points-card {
   border-left-color: rgba(42, 96, 85, 0.68);
@@ -3113,7 +3188,7 @@ h3 {
 
 .dossier-heading h2 {
   margin: 0;
-  color: var(--dossier-ink);
+  color: inherit;
   font-family: var(--font-display);
   font-size: clamp(2rem, 4vw, 3.75rem);
   line-height: 0.96;
@@ -3122,7 +3197,6 @@ h3 {
 
 .dossier-heading .subtitle {
   margin-top: 0.45rem;
-  color: var(--dossier-muted);
   font-size: 1rem;
 }
 
@@ -3133,11 +3207,46 @@ h3 {
   gap: 0.55rem;
 }
 
+.dossier-header-actions .header-tools {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.character-dossier .header-menu summary {
+  border-color: var(--line-strong);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
 .dossier-meta {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.6rem;
   margin-top: 1.25rem;
+}
+
+.dossier-header .dossier-meta {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 56rem;
+}
+
+.dossier-header .dossier-meta:empty,
+.dossier-header .dossier-status-strip:empty {
+  display: none;
+}
+
+.dossier-header .dossier-meta-item {
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.dossier-header .dossier-meta-item span {
+  color: rgba(246, 230, 205, 0.66);
+}
+
+.dossier-header .dossier-meta-item strong {
+  color: var(--text);
 }
 
 .dossier-meta-item,

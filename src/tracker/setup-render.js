@@ -590,16 +590,19 @@ function setupSkillDiceControls(
   currentDie,
   decreaseDisabled,
   increaseDisabled,
+  baselineDie = "",
 ) {
   const skillDieSteps = ["d4-2", ...DIE_STEPS];
+  const baselineIndex = baselineDie ? getDieStepIndex(baselineDie) : -1;
   return `<div class="setup-trait-controls setup-skill-dice-controls" aria-label="${esc(`${skillName} die value ${currentDie}`)}">
     <button class="ghost tag-action" type="button" data-setup-action="decSkill" data-trait-name="${esc(skillName)}"${decreaseDisabled ? " disabled" : ""}>−</button>
     <div class="setup-die-track" aria-hidden="true">
       ${skillDieSteps
-        .map(
-          (step) =>
-            `<span class="setup-die-step${step === currentDie ? " current" : ""}">${esc(step)}</span>`,
-        )
+        .map((step) => {
+          const stepIndex = step === "d4-2" ? -1 : getDieStepIndex(step);
+          const unavailable = stepIndex < baselineIndex;
+          return `<span class="setup-die-step${step === currentDie ? " current" : ""}${unavailable ? " unavailable" : ""}"${unavailable ? ' data-unavailable="true"' : ""}>${esc(step)}</span>`;
+        })
         .join("")}
     </div>
     <button class="ghost tag-action" type="button" data-setup-action="incSkill" data-trait-name="${esc(skillName)}"${increaseDisabled ? " disabled" : ""}>+</button>
@@ -628,7 +631,6 @@ function setupSkillPointCard(skillStats) {
 
 function setupSkillEditorRow(skill) {
   const linkedAttribute = setupSkillAttributeKey(skill.linkedAttribute);
-  const attributeDie = character.attributes?.[linkedAttribute] || "d4";
   const referenceName = skillReferenceName(skill.name);
   const useNote = skillUseNote(skill.name);
   const displayDie = skill.isUnskilled
@@ -637,11 +639,12 @@ function setupSkillEditorRow(skill) {
   const index = getDieStepIndex(skill.die || skill.value);
   const cost = skill.isUnskilled ? 0 : setupSkillPointCost(skill);
   const core = skill.core || setupSkillIsCoreName(skill.name);
-  const decreaseDisabled = skill.isUnskilled || (core && index <= 0);
+  const baselineDie = setupStartingSkillBaselineDie(skill.name);
+  const baselineIndex = baselineDie ? getDieStepIndex(baselineDie) : -1;
+  const decreaseDisabled = skill.isUnskilled || index <= baselineIndex;
   const increaseDisabled = !skill.isUnskilled && index >= DIE_STEPS.length - 1;
   const meta = [
     displayDie,
-    `Linked ${displayNameFromKey(linkedAttribute) || linkedAttribute} ${attributeDie}`,
     skill.isUnskilled ? "Unskilled" : `Cost ${cost}`,
     core ? "Core" : "",
   ].filter(Boolean);
@@ -659,7 +662,7 @@ function setupSkillEditorRow(skill) {
       <strong>${esc(skill.name || "Skill")}</strong>
       <span>${esc(meta.join(" • "))}</span>
     </div>
-    ${setupSkillDiceControls(skill.name, displayDie, decreaseDisabled, increaseDisabled)}
+    ${setupSkillDiceControls(skill.name, displayDie, decreaseDisabled, increaseDisabled, baselineDie)}
   </article>`;
 }
 
@@ -762,7 +765,7 @@ function renderSetupSkills() {
         : ""
     }
     <div class="setup-trait-groups">
-      <section class="setup-trait-group" aria-labelledby="setupSkillsListHeading">
+      <section class="setup-trait-group setup-skills-group" aria-labelledby="setupSkillsListHeading">
         <h4 id="setupSkillsListHeading">Skills</h4>
         ${
           editable

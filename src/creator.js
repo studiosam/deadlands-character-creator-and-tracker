@@ -566,6 +566,8 @@ function setAppTab(tabName, options = {}) {
   panel.classList.remove("hidden");
   panel.classList.add("active");
   if (nextTab === "creation") renderCreator();
+  if (typeof updateCharacterSetupShellMode === "function")
+    updateCharacterSetupShellMode();
   recordAppNavigation({ view: "tab", tab: nextTab }, options);
 }
 
@@ -1900,6 +1902,7 @@ $("#landingPrivacyLegalBtn").onclick = () => closeLandingPage("privacyLegal");
 $("#landingSourcesRulesetsBtn").onclick = () =>
   closeLandingPage("sourcesRulesets");
 $("#mainMenuBtn").onclick = openLandingPage;
+$("#setupMainMenuBtn").onclick = openLandingPage;
 $("#utilityBackToTrackerBtn").onclick = () => setAppTab("play");
 $("#utilityMainMenuBtn").onclick = openLandingPage;
 $("#creatorModeBtn").onclick = startCharacterSetupCreation;

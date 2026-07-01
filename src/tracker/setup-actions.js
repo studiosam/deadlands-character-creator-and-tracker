@@ -211,7 +211,7 @@ function setupSkillIncreaseCost(name, existing) {
     ? { ...existing }
     : {
         name,
-        die: "d4",
+        die: setupStartingSkillBaselineDie(name) || "d4",
         linkedAttribute: definition.linkedAttribute,
         notes: "",
         core: definition.core,
@@ -636,6 +636,8 @@ function changeSetupSkill(name, direction) {
   if (!existing) return;
 
   const currentIndex = getDieStepIndex(existing.die || existing.value);
+  const baselineDie = setupStartingSkillBaselineDie(existing.name);
+  const baselineIndex = baselineDie ? getDieStepIndex(baselineDie) : -1;
   if (
     direction > 0 &&
     currentIndex >= 0 &&
@@ -647,11 +649,16 @@ function changeSetupSkill(name, direction) {
       return;
     }
     existing.die = setupTraitDieFromIndex(currentIndex + 1);
-  } else if (direction < 0 && currentIndex > 0) {
-    existing.die = setupTraitDieFromIndex(currentIndex - 1);
+  } else if (direction < 0 && currentIndex > baselineIndex) {
+    const nextIndex = currentIndex - 1;
+    if (nextIndex < 0 && !setupSkillIsCoreName(existing.name)) {
+      character.skills = character.skills.filter((skill) => skill !== existing);
+    } else {
+      existing.die = setupTraitDieFromIndex(nextIndex);
+    }
   } else if (
     direction < 0 &&
-    currentIndex <= 0 &&
+    currentIndex <= baselineIndex &&
     !existing.core &&
     !setupSkillIsCoreName(existing.name)
   ) {

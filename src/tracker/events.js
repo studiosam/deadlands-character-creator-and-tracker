@@ -275,7 +275,6 @@ if (els.addRequiredPowerBtn) els.addRequiredPowerBtn.onclick = addRequiredPower;
   });
 els.addManualPowerPointsBtn.onclick = addManualPowerPoints;
 els.reviewSetupBtn.onclick = reopenSetupReview;
-els.manageCharacterBtn.onclick = () => setAppTab("library");
 els.showEdgeFormBtn.onclick = () => openEdgeEditor();
 els.edgeCatalogSelect.onchange = chooseEdgeCatalogEntry;
 els.edgeNameInput.oninput = renderEdgeSubchoiceControls;

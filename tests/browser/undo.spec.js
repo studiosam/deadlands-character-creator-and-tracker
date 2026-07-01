@@ -55,6 +55,7 @@ test("global undo and redo restore character snapshots across reload", async ({
   await page.locator("#headerToolsMenu").evaluate((menu) => {
     menu.open = false;
   });
+  await openCombat(page);
   await increaseWounds(page);
   await expectWounds(page, 1);
   await expect

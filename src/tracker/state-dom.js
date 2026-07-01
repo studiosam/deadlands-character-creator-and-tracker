@@ -122,7 +122,6 @@ const els = {
   characterSetupContent: $("#characterSetupContent"),
   characterDossierLayout: $("#characterDossierLayout"),
   reviewSetupBtn: $("#reviewSetupBtn"),
-  manageCharacterBtn: $("#manageCharacterBtn"),
   attributesList: $("#attributesList"),
   skillsList: $("#skillsList"),
   advanceSummaryList: $("#advanceSummaryList"),

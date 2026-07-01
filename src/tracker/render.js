@@ -9,18 +9,25 @@ function characterSetupReviewMode() {
   return character?.setupStatus === "needsReview" || characterSetupReviewOpen;
 }
 
+function updateCharacterSetupShellMode() {
+  const characterPanel = $("#characterPanel");
+  const characterPanelActive =
+    characterPanel?.classList.contains("active") &&
+    !characterPanel?.classList.contains("hidden");
+  $(".shell")?.classList.toggle(
+    "character-setup-page",
+    Boolean(characterSetupReviewMode() && characterPanelActive),
+  );
+}
+
 function renderCharacterTabMode() {
   const setupMode = characterSetupReviewMode();
   const confirmedSheetMode =
     character?.setupStatus === "complete" && !characterSetupReviewOpen;
+  updateCharacterSetupShellMode();
   els.characterSetupPanel?.classList.toggle("hidden", !setupMode);
   els.characterDossierLayout?.classList.toggle("hidden", setupMode);
   els.reviewSetupBtn?.classList.toggle("hidden", setupMode);
-  els.manageCharacterBtn?.classList.toggle("hidden", false);
-  els.addManualPowerPointsBtn?.classList.toggle(
-    "hidden",
-    confirmedSheetMode || Boolean(powerPointResource()),
-  );
   els.showAdvanceFormBtn?.classList.toggle("hidden", false);
   [els.showEdgeFormBtn, els.showHindranceFormBtn].forEach((button) =>
     button?.classList.toggle("hidden", confirmedSheetMode),
@@ -453,13 +460,10 @@ function renderCharacterSummary() {
     .join(" • ");
   els.characterSourceBadge.textContent = sourceLabel();
   els.characterBasicsList.innerHTML = [
-    ["Rank", character.rank],
-    ["Ancestry", character.ancestry],
-    ["Gender", character.gender],
-    ["Age", character.age],
     ["Profession or Title", character.archetype],
     ["Player Name", character.player],
-    ["Source", sourceLabel()],
+    ["Gender", character.gender],
+    ["Age", character.age],
   ]
     .map(
       ([label, value]) =>
@@ -468,32 +472,8 @@ function renderCharacterSummary() {
     .join("");
 
   const powerPoints = powerPointResource();
-  els.characterStatusStrip.innerHTML = [
-    statusPipMarkup(
-      "Wounds",
-      `${character.damage.wounds} / ${character.damage.maxWounds}`,
-    ),
-    statusPipMarkup(
-      "Fatigue",
-      `${character.damage.fatigue} / ${character.damage.maxFatigue}`,
-    ),
-    statusPipMarkup(
-      "Bennies",
-      character.bennies.current,
-      `Start ${character.bennies.starting}`,
-    ),
-    statusPipMarkup("Conviction", character.conviction),
-    powerPoints
-      ? statusPipMarkup(
-          "Power Points",
-          `${powerPoints.current} / ${powerPoints.max}`,
-          powerPoints.source,
-        )
-      : "",
-  ]
-    .filter(Boolean)
-    .join("");
-  els.addManualPowerPointsBtn.classList.toggle("hidden", Boolean(powerPoints));
+  els.characterStatusStrip.innerHTML = "";
+  els.addManualPowerPointsBtn?.classList.toggle("hidden", Boolean(powerPoints));
 
   const attributeEntries = sortedAttributeEntries();
   els.attributesList.innerHTML = attributeEntries.length
