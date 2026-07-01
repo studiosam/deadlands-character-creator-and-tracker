@@ -41,6 +41,8 @@ const defaultCharacter = {
   arcaneBackground: null,
   powers: [],
   activePowers: [],
+  madScienceDevices: [],
+  organizations: [],
   advances: [],
   hucksterDeal: null,
   moneyCents: 2122,

@@ -928,6 +928,36 @@
                   <option value="Custom"></option>
                 </datalist>
               </section>
+
+              <section
+                id="organizationBookkeepingPanel"
+                class="card dossier-card hidden"
+              >
+                <div class="dossier-section-title">
+                  <h2>Organizations</h2>
+                  <button
+                    id="addOrganizationRecordBtn"
+                    class="ghost small-action"
+                    type="button"
+                  >
+                    Add Organization
+                  </button>
+                </div>
+                <p class="muted">
+                  Track Agent and Territorial Ranger rank, favors, issue, source
+                  notes, and GM-adjudicated favor history.
+                </p>
+                <div id="organizationSuggestionList"></div>
+                <div
+                  id="organizationBookkeepingList"
+                  class="dossier-notes-list"
+                ></div>
+                <datalist id="organizationNameOptions">
+                  <option value="Agency"></option>
+                  <option value="Territorial Rangers"></option>
+                  <option value="Other Organization"></option>
+                </datalist>
+              </section>
             </div>
 
             <aside class="dossier-column">
@@ -1447,6 +1477,25 @@
               and reminders without automating power effects.
             </p>
             <div id="activePowersList" class="grid powers"></div>
+          </section>
+
+          <section id="madScienceDevicesPanel" class="card wide hidden">
+            <div class="section-title">
+              <div>
+                <h2>Mad Scientist Devices</h2>
+                <p>
+                  Track gizmos, inventions, elixirs, fuel, repair status, and
+                  malfunction reminders without automating table results.
+                </p>
+              </div>
+            </div>
+            <div class="inline-form">
+              <select id="madScienceDevicePowerSelect"></select>
+              <button id="addMadScienceDeviceBtn" type="button">
+                Add Device
+              </button>
+            </div>
+            <div id="madScienceDevicesList" class="grid powers"></div>
           </section>
 
           <section id="hucksterDealPanel" class="card wide hidden">
@@ -1999,12 +2048,14 @@
     <script src="src/tracker/advancement-core.js"></script>
     <script src="src/tracker/entries.js"></script>
     <script src="src/tracker/setup-source.js"></script>
+    <script src="src/tracker/deadlands-bookkeeping.js"></script>
     <script src="src/tracker/storage.js"></script>
     <script src="src/tracker/undo-history.js"></script>
     <script src="src/tracker/catalog-ui.js"></script>
     <script src="src/tracker/setup-model.js"></script>
     <script src="src/tracker/setup-render.js"></script>
     <script src="src/tracker/setup-actions.js"></script>
+    <script src="src/tracker/deadlands-bookkeeping-ui.js"></script>
     <script src="src/tracker/render.js"></script>
     <script src="src/tracker/combat-declaration-ui.js"></script>
     <script src="src/tracker/active-power-cards.js"></script>

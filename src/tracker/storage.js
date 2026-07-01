@@ -233,6 +233,13 @@ function normalize(data, options = {}) {
         normalizeActivePowerRecord(activePower, index, normalized.powers),
       )
     : [];
+  normalized.madScienceDevices = normalizeMadScienceDevices(
+    normalized.madScienceDevices,
+    normalized,
+  );
+  normalized.organizations = normalizeDeadlandsOrganizations(
+    normalized.organizations,
+  );
   normalized.hucksterDeal = normalizeHucksterDeal(normalized.hucksterDeal);
   if (
     normalized.arcaneBackground?.key === "huckster" &&

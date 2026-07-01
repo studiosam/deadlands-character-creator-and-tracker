@@ -195,6 +195,8 @@ function render() {
   els.moneyDisplay.textContent = money(character.moneyCents);
 
   renderCharacterSummary();
+  if (typeof renderDeadlandsOrganizations === "function")
+    renderDeadlandsOrganizations();
   renderCharacterSetup();
   renderCharacterTabMode();
   renderCatalogBrowser();
@@ -205,6 +207,7 @@ function render() {
   renderResources();
   renderPowers();
   renderActivePowers();
+  if (typeof renderMadScienceDevices === "function") renderMadScienceDevices();
   renderHucksterDeal();
   renderKeyConditions();
   renderConditions();

@@ -427,19 +427,56 @@ general VTT.
 
 Candidate slices:
 
-1. Fear reminders: player-facing Fear Level context, character-relevant
-   modifiers, Guts/Grit/True Grit/Brave/Yellow reminders, and short follow-up
-   notes without copying Fear tables.
+1. Existing Fear reminders: keep the current passive reminders and audit notes
+   for Brave, Yellow, Guts, Grit, and True Grit, but do not add a dedicated
+   Fear workflow unless table use proves the current reminders are insufficient.
 2. Formal duel support: participants, hole-card count/modifiers, draw state,
    and relevant Edge reminders.
 3. Harrowed tracking: Harrowed status, Dominion/manitou notes, Harrowed Edge
    reminders, and complication notes without automating Marshal secrets.
-4. Mad Scientist and infernal devices: device identity, malfunction reminder
-   state, ghost-rock fuel notes, and repair/status tracking.
-5. Organization bookkeeping: Agent and Territorial Ranger rank, favors, source,
-   spend/refresh notes, and granted gear/pay reminders.
+4. Mad Scientist and infernal devices: implemented baseline device identity,
+   malfunction reminder state, ghost-rock fuel notes, and repair/status
+   tracking.
+5. Organization bookkeeping: implemented baseline Agent and Territorial Ranger
+   rank, favors, source, spend/refresh notes, and granted gear/pay reminders.
 6. Weird West travel/resource reminders: ghost rock, superstitions, tale-telling
    hooks, and travel hazards where they affect the player character.
+
+Phase 5 audit findings:
+
+1. Fear does not need a new dedicated panel right now. The app already detects
+   Brave, Yellow, Guts, Grit, and True Grit, and it already renders concise
+   Fear-check reminders and suspicious Edge-chain audit notes. Direct manual
+   controls are enough for recording Marshal-adjudicated results.
+2. Mad Scientist and infernal-device support now has baseline bookkeeping
+   through player-owned device records. It stays focused on device identity,
+   status, malfunction reminders, repair notes, and ghost-rock fuel notes rather
+   than a malfunction rules engine.
+3. Agent and Territorial Ranger organization bookkeeping now has baseline
+   player-owned records for rank, favors, granted-gear notes, pay/source notes,
+   and manual refresh/spend history.
+4. Harrowed support has high setting value but needs careful boundaries.
+   Dominion, manitou behavior, and some consequences are table- or Marshal-owned
+   information, so Harrowed should wait until smaller player-owned Phase 5
+   bookkeeping slices are proven.
+5. Formal duel support is setting-specific but lower frequency. It should remain
+   behind Mad Scientist and organization bookkeeping unless an active table
+   needs duels immediately.
+6. Ghost-rock, travel, tale-telling, and superstition support should be
+   reminder/resource slices only. They should not become a travel simulator or
+   Marshal-facing hazard engine.
+
+Implemented Phase 5 bookkeeping slices:
+
+- Mad Scientist Devices: add a small player-owned device model for powers and
+  infernal gear with device name, status, trapping notes, malfunction reminder,
+  repair notes, ghost-rock fuel notes where relevant, reload/export/import
+  persistence, and card display.
+- Agent/Ranger Organizations: add a small player-owned organization model with
+  organization name, rank or grade, favors, granted-gear notes, pay/source notes,
+  manual spend/refresh history, reload/export/import persistence, and character
+  sheet display.
+- Further expansion should be based on table use, not speculative automation.
 
 Completion criteria:
 
@@ -486,23 +523,28 @@ user can tell which source profile produced each available choice.
 
 ## Recommended Next Slice
 
-Start Phase 5 with a small Weird West subsystem audit.
+Validate the implemented Phase 5 bookkeeping slices in table use before adding
+another setting subsystem.
 
-The slice should:
+Any next Phase 5 slice should:
 
-- Compare Fear reminders, formal duels, Harrowed tracking, Mad Scientist
-  devices, organization favors/ranks, and ghost-rock/resource reminders by
-  player-table payoff.
-- Identify what state the player owns, what the Marshal owns, and what should
-  remain pure reminder text.
-- Pick one first implementation slice with minimal data shape, persistence, UI,
-  and tests.
-- Update this roadmap with the chosen Phase 5 first slice.
+- Store only player-owned facts, reminders, and GM-adjudicated notes.
+- Persist and round-trip through reload/export/import.
+- Show concise reminders in the tracker without forcing an unnecessary
+  workflow.
+- Add focused browser tests for creation, editing, reload, export/import, and
+  rendering.
+
+Likely future candidates, if table use proves they are needed:
+
+1. Harrowed player-state reminders with clear Marshal-secret boundaries.
+2. Formal duel helper for hole-card count and declaration notes.
+3. Ghost-rock, travel, tale-telling, or superstition reminder/resource notes.
 
 It should not:
 
-- Build a full Fear subsystem, duel engine, Harrowed Dominion engine, or
-  infernal-device rules engine before the audit.
+- Build a full Fear subsystem, duel engine, Harrowed Dominion engine,
+  infernal-device rules engine, or organization favor adjudicator.
 - Copy rulebook tables or long rule text.
 - Add GM-facing automation that does not improve the player tracker.
 
