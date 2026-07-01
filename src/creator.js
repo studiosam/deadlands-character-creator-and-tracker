@@ -153,24 +153,7 @@ function emptyDraft() {
       strength: "d4",
       vigor: "d4",
     },
-    skills: SKILL_DEFS.filter((skill) => skill[2])
-      .map((skill) => ({
-        name: skill[0],
-        die: "d4",
-        linkedAttribute: skill[1],
-        notes: "",
-        core: true,
-      }))
-      .concat([
-        {
-          name: "Language (English)",
-          die: "d4",
-          linkedAttribute: "smarts",
-          notes: "Default language",
-          core: false,
-          language: true,
-        },
-      ]),
+    skills: setupStartingSkillBaselineEntries(),
     hindrances: [],
     edges: [],
     creation: {
@@ -591,21 +574,7 @@ function setCreatorMode(on, options = {}) {
 }
 
 function coreSetupSkills() {
-  return [
-    "Athletics",
-    "Common Knowledge",
-    "Notice",
-    "Persuasion",
-    "Stealth",
-  ].map((name) => ({
-    name,
-    die: "d4",
-    linkedAttribute: setupSkillAttributeKey(
-      SKILL_LINKED_ATTRIBUTES[name] || "smarts",
-    ),
-    notes: "",
-    core: true,
-  }));
+  return setupStartingSkillBaselineEntries();
 }
 
 function newSetupCharacterPayload() {

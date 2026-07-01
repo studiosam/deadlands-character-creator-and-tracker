@@ -580,30 +580,34 @@ function resetSetupAttributes() {
 function resetSetupSkills() {
   if (!ensureSetupTraitsEditable()) return;
   if (!Array.isArray(character.skills)) character.skills = [];
+  const baselines = setupStartingSkillBaselineEntries();
+  const hasMissingOrChangedBaseline = baselines.some((baseline) => {
+    const existing = character.skills.find(
+      (skill) => skillReferenceName(skill.name) === baseline.name,
+    );
+    return (
+      !existing ||
+      (existing.die || existing.value || "") !== baseline.die ||
+      !existing.core
+    );
+  });
   const hasResettableSkills =
     setupSkillPointStats().spent > 0 ||
-    character.skills.some(
-      (skill) =>
-        !setupSkillIsCoreName(skill.name) ||
-        (skill.die || skill.value || "d4") !== "d4" ||
-        !skill.core,
-    );
+    hasMissingOrChangedBaseline ||
+    character.skills.some((skill) => !setupSkillIsCoreName(skill.name));
   if (!hasResettableSkills) return;
 
-  character.skills = Object.entries(SKILL_LINKED_ATTRIBUTES)
-    .filter(([name]) => setupSkillIsCoreName(name))
-    .map(([name, linkedAttribute]) => {
-      const existing = character.skills.find(
-        (skill) => skillReferenceName(skill.name) === name,
-      );
-      return {
-        ...(existing || {}),
-        name,
-        die: "d4",
-        linkedAttribute: setupSkillAttributeKey(linkedAttribute),
-        core: true,
-      };
-    });
+  character.skills = baselines.map((baseline) => {
+    const existing = character.skills.find(
+      (skill) => skillReferenceName(skill.name) === baseline.name,
+    );
+    return {
+      ...(existing || {}),
+      ...baseline,
+      linkedAttribute: setupSkillAttributeKey(baseline.linkedAttribute),
+      core: true,
+    };
+  });
   commitSetupTraitChange();
 }
 

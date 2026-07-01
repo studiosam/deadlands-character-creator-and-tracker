@@ -602,6 +602,7 @@ test("edits setup traits for created characters and stores the creation baseline
         core: true,
       },
       { name: "Notice", die: "d4", linkedAttribute: "smarts", core: true },
+      { name: "Language", die: "d8", linkedAttribute: "smarts", core: true },
       {
         name: "Persuasion",
         die: "d4",
@@ -822,6 +823,12 @@ test("edits setup traits for created characters and stores the creation baseline
     "aria-valuenow",
     "0",
   );
+  const languageRow = setupSkillsPanel
+    .locator(".setup-trait-editor-row.skill-row")
+    .filter({ hasText: "Language" });
+  await expect(languageRow.locator(".setup-die-step.current")).toHaveText("d8");
+  await expect(languageRow).toContainText("Core");
+  await expect(languageRow).toContainText("Cost 0");
   const shootingRow = setupSkillsPanel
     .locator(".setup-trait-editor-row.skill-row")
     .filter({ hasText: "Shooting" });
@@ -856,6 +863,7 @@ test("edits setup traits for created characters and stores the creation baseline
     skillPointsCard.locator("[data-setup-action='resetSkills']"),
   ).toBeEnabled();
   await skillPointsCard.locator("[data-setup-action='resetSkills']").click();
+  await expect(languageRow.locator(".setup-die-step.current")).toHaveText("d8");
   await expect(shootingRow.locator(".setup-die-step.current")).toHaveText(
     "d4-2",
   );
@@ -880,6 +888,11 @@ test("edits setup traits for created characters and stores the creation baseline
   );
   expect(stored.creationBaseline.attributes.agility).toBe("d6");
   expect(stored.attributes.agility).toBe("d6");
+  expect(
+    stored.creationBaseline.skills.some(
+      (skill) => skill.name === "Language" && skill.die === "d8",
+    ),
+  ).toBe(true);
   expect(
     stored.creationBaseline.skills.some(
       (skill) => skill.name === "Shooting" && skill.die === "d4",

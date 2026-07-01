@@ -705,6 +705,33 @@ const SETUP_HINDRANCE_BENEFITS = [
     effect: "+$500 starting funds",
   },
 ];
+
+const SETUP_STARTING_SKILL_BASELINES = {
+  Athletics: "d4",
+  "Common Knowledge": "d4",
+  Notice: "d4",
+  Persuasion: "d4",
+  Stealth: "d4",
+  Language: "d8",
+};
+
+function setupStartingSkillBaselineDie(name) {
+  return SETUP_STARTING_SKILL_BASELINES[skillReferenceName(name)] || "";
+}
+
+function setupStartingSkillBaselineEntries() {
+  return Object.entries(SETUP_STARTING_SKILL_BASELINES).map(([name, die]) => ({
+    name,
+    die,
+    linkedAttribute: String(SKILL_LINKED_ATTRIBUTES[name] || "smarts")
+      .trim()
+      .toLowerCase(),
+    notes: "",
+    core: true,
+    language: name === "Language",
+  }));
+}
+
 function setupCreationRules() {
   const creation = character.creation || {};
   return {
@@ -766,14 +793,9 @@ function setupAttributePointStats() {
   };
 }
 function setupSkillIsCoreName(name) {
-  return [
-    "Athletics",
-    "Common Knowledge",
-    "Notice",
-    "Persuasion",
-    "Stealth",
-  ].includes(skillReferenceName(name));
+  return Boolean(setupStartingSkillBaselineDie(name));
 }
+
 function setupSkillPointCost(skill) {
   const skillIndex = getDieStepIndex(skill?.die || skill?.value);
   if (skillIndex < 0) return 0;
@@ -782,7 +804,8 @@ function setupSkillPointCost(skill) {
     0,
     getDieStepIndex(character.attributes?.[linkedAttribute] || "d4"),
   );
-  const baseIndex = skill?.core || setupSkillIsCoreName(skill?.name) ? 0 : -1;
+  const baselineDie = setupStartingSkillBaselineDie(skill?.name);
+  const baseIndex = baselineDie ? getDieStepIndex(baselineDie) : -1;
   let cost = 0;
   for (let index = baseIndex + 1; index <= skillIndex; index += 1)
     cost += index > attributeIndex ? 2 : 1;

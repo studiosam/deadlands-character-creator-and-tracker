@@ -157,6 +157,15 @@ test("starts new characters directly in character setup @mobile", async ({
         setupDraftSource: setupDraft?.character?.source || "",
         setupDraftName: setupDraft?.character?.name ?? "__missing__",
         setupDraftArchetype: setupDraft?.character?.archetype ?? "__missing__",
+        setupDraftLanguageDie:
+          setupDraft?.character?.skills?.find(
+            (skill) => skill.name === "Language",
+          )?.die || "",
+        setupDraftLanguageCore: Boolean(
+          setupDraft?.character?.skills?.find(
+            (skill) => skill.name === "Language",
+          )?.core,
+        ),
         setupDraftStep: setupDraft?.step || "",
         setupProgressStep: setupProgress?.step || "",
         trackerSource: tracker?.source || "",
@@ -176,6 +185,8 @@ test("starts new characters directly in character setup @mobile", async ({
     setupDraftSource: "created",
     setupDraftName: "",
     setupDraftArchetype: "",
+    setupDraftLanguageDie: "d8",
+    setupDraftLanguageCore: true,
     setupDraftStep: "traits",
     setupProgressStep: "traits",
     trackerSource: "",
