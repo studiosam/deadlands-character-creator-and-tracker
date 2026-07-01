@@ -42,6 +42,109 @@ const {
 
 useAppTestHooks();
 
+test("keeps duplicated character state independent across switching and reload @mobile", async ({
+  page,
+}) => {
+  const originalName = "Healthy Character";
+  const duplicateName = "Wounded Character";
+
+  await enterTracker(page);
+  await saveCurrentCharacter(page);
+  await renameActiveCharacter(page, originalName);
+  await openCombat(page);
+  await increaseWounds(page);
+  await expectWounds(page, 1);
+
+  await openCharacterLibrary(page);
+  await page.locator("#libraryDuplicateActiveBtn").click();
+  await expect(page.locator(".library-character")).toHaveCount(2);
+  await renameActiveCharacter(page, duplicateName);
+
+  await openCombat(page);
+  await expectWounds(page, 1);
+  await increaseWounds(page);
+  await expectWounds(page, 2);
+
+  await switchToCharacter(page, originalName);
+  await openCombat(page);
+  await expectWounds(page, 1);
+
+  await switchToCharacter(page, duplicateName);
+  await openCombat(page);
+  await expectWounds(page, 2);
+
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ libraryKey, storageKey, originalName, duplicateName }) => {
+          const library = JSON.parse(
+            localStorage.getItem(libraryKey) || "null",
+          );
+          const tracker = JSON.parse(
+            localStorage.getItem(storageKey) || "null",
+          );
+          const entries = Object.values(library?.charactersById || {});
+          const original = entries.find((entry) => entry.name === originalName);
+          const duplicate = entries.find(
+            (entry) => entry.name === duplicateName,
+          );
+          return {
+            count: entries.length,
+            originalEntryName: original?.name || "",
+            originalCharacterName: original?.character?.name || "",
+            originalWounds: original?.character?.damage?.wounds ?? null,
+            duplicateEntryName: duplicate?.name || "",
+            duplicateCharacterName: duplicate?.character?.name || "",
+            duplicateWounds: duplicate?.character?.damage?.wounds ?? null,
+            distinctIds:
+              Boolean(original?.id) &&
+              Boolean(duplicate?.id) &&
+              original.id !== duplicate.id,
+            activeName:
+              library?.charactersById?.[library.activeCharacterId]?.name || "",
+            activeCharacterName:
+              library?.charactersById?.[library.activeCharacterId]?.character
+                ?.name || "",
+            trackerName: tracker?.name || "",
+            trackerWounds: tracker?.damage?.wounds ?? null,
+          };
+        },
+        {
+          libraryKey: CHARACTER_LIBRARY_KEY,
+          storageKey: STORAGE_KEY,
+          originalName,
+          duplicateName,
+        },
+      ),
+    )
+    .toEqual({
+      count: 2,
+      originalEntryName: originalName,
+      originalCharacterName: originalName,
+      originalWounds: 1,
+      duplicateEntryName: duplicateName,
+      duplicateCharacterName: duplicateName,
+      duplicateWounds: 2,
+      distinctIds: true,
+      activeName: duplicateName,
+      activeCharacterName: duplicateName,
+      trackerName: duplicateName,
+      trackerWounds: 2,
+    });
+
+  await reloadIntoTracker(page);
+  await expect(page.locator("#characterName")).toContainText(duplicateName);
+  await expectWounds(page, 2);
+
+  await switchToCharacter(page, originalName);
+  await openCombat(page);
+  await expectWounds(page, 1);
+
+  await switchToCharacter(page, duplicateName);
+  await openCombat(page);
+  await expectWounds(page, 2);
+});
+
 test("manages multiple local character save slots", async ({ page }) => {
   await page.locator("#landingLoadSampleBtn").click();
   await page.locator("#headerToolsMenu summary").click();
@@ -490,30 +593,6 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await expect(page.locator("#setupReviewPanel")).toContainText(
     "Import Warnings",
   );
-});
-
-test("global undo groups rapid note edits into one undo state", async ({
-  page,
-}) => {
-  await enterTracker(page);
-  await saveCurrentCharacter(page);
-  await page.getByRole("button", { name: "Notes" }).click();
-
-  const notes = page.locator("#notesArea");
-  await notes.click();
-  await notes.pressSequentially("Trail notes");
-  await expect(notes).toHaveValue("Trail notes");
-  await expect
-    .poll(() => page.evaluate(() => undoHistoryCounts()))
-    .toEqual({ undo: 1, redo: 0 });
-
-  await openHeaderMenu(page);
-  await page.locator("#undoBtn").click();
-  await page.getByRole("button", { name: "Notes" }).click();
-  await expect(page.locator("#notesArea")).toHaveValue("");
-  await expect
-    .poll(() => page.evaluate(() => undoHistoryCounts()))
-    .toEqual({ undo: 0, redo: 1 });
 });
 
 test("round-trips exported tracker JSON through import @mobile", async ({

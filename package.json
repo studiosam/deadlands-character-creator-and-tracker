@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "lint": "node tests/static/lint.cjs",
-    "test:static": "node tests/static/parse-js.cjs && node tests/static/lint.cjs",
+    "test:static": "node tests/static/parse-js.cjs && node tests/static/lint.cjs && node tests/static/validate-catalogs.cjs",
     "test:browser": "playwright test",
     "test:browser:fast": "playwright test --project=desktop",
     "test:browser:mobile": "playwright test --project=mobile --grep @mobile",

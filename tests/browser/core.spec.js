@@ -157,3 +157,72 @@ test("shows the read-only sources and rulesets page from the global menu", async
     await expect(page.locator(panelId)).toHaveClass(/active/);
   }
 });
+
+test("loads the app and switches primary tabs @mobile", async ({ page }) => {
+  await expect(page).toHaveTitle(/Deadlands Character Tracker/);
+  await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator(".shell")).toBeHidden();
+  await expect(page.locator(".app-tabs [data-app-tab='settings']")).toHaveCount(
+    0,
+  );
+  await expect(page.locator(".app-tabs [data-app-tab='creation']")).toHaveCount(
+    0,
+  );
+  await expect(page.locator(".app-tabs [data-app-tab='catalog']")).toHaveCount(
+    0,
+  );
+
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  await page.reload();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator(".shell")).toBeHidden();
+  await page.locator("#landingContinueBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+
+  for (const tab of ["Character", "Inventory", "Arcane", "Notes"]) {
+    await page.getByRole("button", { name: tab, exact: true }).click();
+    await expect(page.locator(".tab-panel.active")).toBeVisible();
+  }
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#settingsMenuBtn").click();
+  await expect(page.locator("#settingsPanel")).toContainText(
+    "About and Settings",
+  );
+  await expect(page.locator("#settingsAppDetails")).toContainText(
+    "Schema Version",
+  );
+
+  await page.getByRole("button", { name: "Combat", exact: true }).click();
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#mainMenuBtn").click();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator(".shell")).toBeHidden();
+});
+
+test("loads a bundled sample in demo mode", async ({ page }) => {
+  await page.locator("#landingLoadSampleBtn").click();
+
+  await expect(page.locator("#demoModeBanner")).toBeVisible();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator(".shell")).toBeVisible();
+  await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
+  const stored = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    STORAGE_KEY,
+  );
+  expect(stored.schemaVersion).toBe(1);
+  const library = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    CHARACTER_LIBRARY_KEY,
+  );
+  expect(Object.keys(library.charactersById)).toHaveLength(1);
+  expect(library.charactersById[library.activeCharacterId].isDemo).toBe(true);
+});
