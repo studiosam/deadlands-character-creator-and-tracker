@@ -77,13 +77,12 @@ the rules.
 - Combat Declaration supports player intent, action count, optional weapon,
   target label, declaration details, common legal/limited action reminders, and
   player-entered GM-adjudicated result application.
-- Missing tactical systems include fuller Multi-Action Penalty/action
-  guidance, Tests, Support, Soak, Incapacitation, Bleeding Out resolution,
-  recovery rolls, attack resolution, damage resolution, cover, range, lighting,
-  called shots, gang-up, prone interactions, and size modifiers.
-- Weapon tracking handles loaded rounds and reserve ammunition, but does not
-  automate attack rolls, damage rolls, rate-of-fire choices, recoil, innocent
-  bystander handling, or special combat Edge actions.
+- The app intentionally does not need a full combat action legality engine if
+  the table workflow is GM adjudication followed by quick player bookkeeping.
+- Weapon tracking handles loaded rounds and reserve ammunition. Attack rolls,
+  damage rolls, rate-of-fire choices, recoil, innocent bystander handling,
+  target defenses, and special combat Edge actions remain table-adjudicated
+  unless a future player-facing need is clearer.
 
 ### Powers And Arcane Backgrounds
 
@@ -259,7 +258,7 @@ Effect Hook Candidate Audit:
   Dodge, Improved Dodge, Double Tap, Marksman, Rapid Fire, Improved Rapid Fire,
   Assassin, Giant Killer, Martial Artist, Martial Warrior, Champion, and similar
   combat Edges. These require turn, Joker, attack, weapon, or target context and
-  should move to Phase 4 combat helper work.
+  should remain deferred unless a specific player-facing table-use need appears.
 - Resource or session-start effects: Luck, Great Luck, Bad Luck, Rapid
   Recharge, and Improved Rapid Recharge are implemented. Power Surge, Soul
   Drain, and Behold a Pale Horse remain deferred because they need event,
@@ -300,8 +299,8 @@ Completion criteria:
   at least one explicit manual/table-only or needs-action-context marker.
 
 Phase 2 is complete at the passive math, reminder, and marker scope. Remaining
-action-context Edges and Hindrances should move through Phase 4 or later
-specialized systems instead of expanding the passive hook model indefinitely.
+action-context Edges and Hindrances should stay out of the passive hook model
+unless a later focused subsystem has a clear player-facing need for them.
 
 ### Phase 3: Power Runtime Improvements
 
@@ -379,130 +378,81 @@ engine by default.
 
 ### Phase 4: Combat Helper Systems
 
-Status: first implementation slice complete.
+Status: intentionally minimal and complete at the current player-tracker scope.
 
-Goal: add player-side table-speed helpers that clarify legal declarations,
-GM-facing intent, and player-owned bookkeeping after GM adjudication. The app
-should not resolve attacks, damage, enemy actions, or table-dependent outcomes.
+Goal: keep Combat fast for player-owned state changes after GM adjudication.
+The app should prioritize direct controls, concise reminders, and undoable
+bookkeeping over action legality modeling.
 
-Readiness audit:
+Completed scope:
 
-- Already available: player-entered Action Card state, Quick redraw detection,
-  Level Headed/Hesitant draw instructions, Bennies/session reset, wounds,
-  fatigue, conditions, encumbrance, passive effect reminders, weapon/ammo cards,
-  active Power reminders, and Combat Declaration.
-- Partial only: Combat Declaration tracks action count and shows
-  reminder-only Multi-Action Penalty text, and conditions can represent Aim,
-  Defend, On Hold, Wild Attack, and The Drop as flags. There is still no full
-  turn-state engine, initiative deck, or action-resolution workflow.
-- Missing: fuller Soak bookkeeping, Incapacitation result entry, Bleeding Out
-  reminders, recovery-roll prompt flow, and special combat Edge declaration
-  reminders.
-- Risk boundary: Phase 4 should remain declaration-first. It should show
-  reminders, track choices, and apply only player-entered GM-adjudicated
-  results. It should not roll dice, choose targets, calculate enemy defenses, or
-  silently decide table outcomes.
-
-Completed first slice:
-
-1. Combat Declaration captures player intent, action count, optional
-   weapon/item, target label, and freeform details.
-2. It shows common legal/limited action reminders from current character state
-   such as Shaken, Stunned, Bound, Entangled, unloaded weapons, missing Power
-   Points, and missing Bennies.
-3. It generates short GM-facing declaration text and reminder-only Multi-Action
-   Penalty text.
-4. It lets the player record and apply GM-adjudicated results such as Wound,
-   Fatigue, Benny, condition, ammo, and freeform result notes.
-5. Every field remains editable and overrideable; warnings are preferred over
-   hard blocks unless the player is directly applying a requested bookkeeping
-   change.
-
-Resolved boundary:
-
-- Combat Declaration is player-facing declaration and bookkeeping support, not
-  combat automation.
-- It records the player's stated action and applies only player-entered
-  GM-adjudicated results.
+- Combat provides direct controls for Wounds, Fatigue, Bennies, conditions,
+  ammunition, Power Points, active powers, and notes.
+- Combat shows state the app already knows, including Wound penalties,
+  conditions, encumbrance, passive effect reminders, active Power reminders,
+  Action Card hooks, and loaded/reserve ammunition.
+- Combat Declaration exists as optional helper UI for player intent and
+  GM-adjudicated result bookkeeping, not as a required play workflow.
 - Snapshot-based global undo/redo protects mistakes across Combat, Inventory,
   Arcane, Character Setup, Advancement, notes, and profile edits.
 
-Questions before the next slice:
+Deferred unless a real table-use need appears:
 
-- Should declaration state clear manually, on a future "Next Turn" button, or
-  only when the user starts a new session?
-- Should Aim, Defend, Wild Attack, On Hold, and The Drop remain existing
-  condition flags, or should they later gain declaration shortcuts?
-- Should running remain reminder-only until movement tracking exists?
-- Should Wild Attack stay reminder-only because attack context and duration are
-  table-dependent?
-- Which action types need the most useful next layer of declaration guidance:
-  Attack, Reload, Test, Support, Power, Soak, Recover, or Hold?
-
-Backlog after the first slice:
-
-1. Extend the current Action Card model into fuller initiative, Joker reward,
-   and Hold/interrupt tracking.
-2. Add Multi-Action Penalty, running, aim, defend, Wild Attack, Test, and Support
-   reminders.
-3. Add Soak and Incapacitation helpers.
-4. Add attack/damage helper scaffolds for weapon cards.
-5. Add special combat Edge actions after their prerequisites and subchoices are
-   reliable.
-6. Revisit needs-action-context Edges such as Calculating, Dead Shot, Mighty
-   Blow, Tactician, Master Tactician, Quick Draw, Fast as Lightning, Dodge,
-   Improved Dodge, Double Tap, Marksman, Rapid Fire, Improved Rapid Fire,
-   Assassin, Giant Killer, Martial Artist, Martial Warrior, and Champion.
+- Full initiative, Joker reward, Hold/interrupt, Soak, Incapacitation, attack
+  resolution, damage resolution, Test, Support, cover, range, lighting, called
+  shot, gang-up, prone, and special combat Edge workflows.
+- Combat action legality enforcement or blocking.
+- Any system that makes the player fill out extra paperwork when direct Wound,
+  Fatigue, Benny, ammo, condition, or Power Point controls are faster.
 
 Completion criteria:
 
-- The app can track the current combat round state needed by a player: action
-  card, Joker status, On Hold, action count, and key action modifiers.
-- Combat cards show computed reminder stacks for wounds, fatigue, encumbrance,
-  conditions, MAP, stance/action choices, and relevant passive effects.
-- Soak and Incapacitation helpers guide the user through bookkeeping without
-  silently deciding table outcomes that require player or Marshal judgment.
-- Weapon cards can produce an attack/damage helper summary from weapon stats,
-  ammo state, selected action options, and relevant character-local modifiers.
-- Special combat Edge actions are available only when the app can reliably
-  identify the Edge, required subchoice, and eligible weapon or Trait.
-- Browser tests cover round-state persistence, action modifiers, Soak helper
-  state, Incapacitation helper state, and one weapon action helper.
+- Combat provides direct, undoable controls for player-owned state.
+- Combat surfaces concise reminders from state the app already knows.
+- Combat Declaration remains optional helper UI, not a required workflow.
+- Browser tests cover direct combat bookkeeping, active-power reminders,
+  conditions, ammo/resource changes, and undo/redo.
 
-Phase 4 is not complete until Combat can act as a reliable turn assistant, while
-still leaving final roll interpretation with the table.
+Phase 4 is complete at the current tracker scope. Future combat work should be
+bugfix, speed, clarity, or table-proven reminder work rather than a planned
+rules-engine expansion.
 
-### Phase 5: Deadlands-Specific Subsystems
+### Phase 5: Deadlands-Specific Player Subsystems
 
-Goal: support the setting mechanics that make Deadlands different from generic
-SWADE.
+Status: active next phase.
 
-1. Add Fear Level and Fear check helpers.
-2. Add formal duel support.
-3. Add Harrowed tracking and manitou complication helpers.
-4. Add Mad Scientist malfunction and infernal device helpers.
-5. Add organization favors/ranks for Agents and Territorial Rangers.
-6. Add travel, ghost rock, superstition, and tale-telling reminders where they
-   help player-side table use.
+Goal: support the Weird West mechanics that players repeatedly need to track or
+remember without replacing the Marshal, reproducing full tables, or building a
+general VTT.
+
+Candidate slices:
+
+1. Fear reminders: player-facing Fear Level context, character-relevant
+   modifiers, Guts/Grit/True Grit/Brave/Yellow reminders, and short follow-up
+   notes without copying Fear tables.
+2. Formal duel support: participants, hole-card count/modifiers, draw state,
+   and relevant Edge reminders.
+3. Harrowed tracking: Harrowed status, Dominion/manitou notes, Harrowed Edge
+   reminders, and complication notes without automating Marshal secrets.
+4. Mad Scientist and infernal devices: device identity, malfunction reminder
+   state, ghost-rock fuel notes, and repair/status tracking.
+5. Organization bookkeeping: Agent and Territorial Ranger rank, favors, source,
+   spend/refresh notes, and granted gear/pay reminders.
+6. Weird West travel/resource reminders: ghost rock, superstitions, tale-telling
+   hooks, and travel hazards where they affect the player character.
 
 Completion criteria:
 
-- Fear helper state tracks Fear Level context, character-relevant modifiers, and
-  the resulting reminder or table-follow-up without reproducing full tables.
-- Duel support tracks the formal duel state the player needs: participants,
-  hole-card count/modifiers, draw state, and relevant Edge reminders.
-- Harrowed characters can record Harrowed status, manitou-related state, and
-  Harrowed-specific Edges or complications without conflating them with normal
-  living-character rules.
-- Mad Scientist and infernal device helpers track device identity, malfunction
-  reminders, and ghost-rock-related notes where relevant.
-- Organization mechanics track character-facing favors, rank, source, and
-  refresh/spend notes for Agents and Territorial Rangers.
-- Browser tests cover one representative player-facing workflow from Fear,
-  duels, Harrowed, Mad Scientist devices, and organization favors.
+- Each implemented subsystem records only player-owned state or concise
+  reminders.
+- Marshal-only adjudication remains manual and table-facing.
+- No subsystem requires extra tracking when a faster existing control is enough.
+- Browser tests cover persistence, reload, export/import where relevant, and one
+  representative player-facing workflow per implemented subsystem.
 
 Phase 5 is not complete until the app supports the major Weird West-only
-mechanics players repeatedly need at the table.
+mechanics players repeatedly need at the table, at the same low-automation level
+used by the rest of the tracker.
 
 ### Phase 6: Ruleset Configuration And Marshal Tools
 
@@ -536,22 +486,25 @@ user can tell which source profile produced each available choice.
 
 ## Recommended Next Slice
 
-Continue Phase 3 with active-power duration and maintenance helpers.
+Start Phase 5 with a small Weird West subsystem audit.
 
 The slice should:
 
-- Add lightweight active-power countdown or reminder fields without simulating
-  full turn order.
-- Surface maintenance reminders for active powers that require ongoing attention.
-- Keep target labels and trapping notes player-entered.
-- Add tests for duration and maintenance reminder behavior.
+- Compare Fear reminders, formal duels, Harrowed tracking, Mad Scientist
+  devices, organization favors/ranks, and ghost-rock/resource reminders by
+  player-table payoff.
+- Identify what state the player owns, what the Marshal owns, and what should
+  remain pure reminder text.
+- Pick one first implementation slice with minimal data shape, persistence, UI,
+  and tests.
+- Update this roadmap with the chosen Phase 5 first slice.
 
 It should not:
 
-- Add attack resolution.
-- Automate full power effects.
-- Add target stat blocks or multi-target VTT behavior.
-- Add full Deal with the Devil resolution.
+- Build a full Fear subsystem, duel engine, Harrowed Dominion engine, or
+  infernal-device rules engine before the audit.
+- Copy rulebook tables or long rule text.
+- Add GM-facing automation that does not improve the player tracker.
 
 ## Maintenance Notes
 
