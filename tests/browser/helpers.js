@@ -239,11 +239,9 @@ async function importSavagedSample(page, fileName) {
 
 async function openAdvanceEditor(page, type) {
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  if (!(await page.locator("#showAdvanceFormBtn").isVisible())) {
-    await page.locator("#reviewSetupBtn").click();
-  }
-  await expect(page.locator("#showAdvanceFormBtn")).toBeVisible();
-  await page.locator("#showAdvanceFormBtn").click();
+  const addAdvanceButton = page.locator("#showAdvanceFormBtn");
+  await expect(addAdvanceButton).toBeVisible();
+  await addAdvanceButton.click();
   await expect(page.locator("#advanceEditorPanel")).toBeVisible();
   await page.locator("#advanceTypeInput").selectOption(type);
 }
@@ -366,7 +364,7 @@ async function seedCanonicalAdvancementCharacter(page) {
   await page.evaluate(() => {
     const testCharacter = normalize({
       source: "test",
-      setupStatus: "needsReview",
+      setupStatus: "complete",
       name: "Canonical Advancement Tester",
       rank: "Novice",
       ancestry: "Human",
@@ -377,6 +375,9 @@ async function seedCanonicalAdvancementCharacter(page) {
         spirit: "d6",
         strength: "d6",
         vigor: "d6",
+      },
+      creation: {
+        finalized: true,
       },
       skills: [
         {

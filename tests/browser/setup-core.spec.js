@@ -241,7 +241,7 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await expect(page.locator("#characterSetupStepper")).toBeHidden();
   await expect(page.locator("#setupConceptPanel")).toBeHidden();
   await expect(page.locator("#setupSaveConceptBtn")).toBeHidden();
-  await expect(page.locator("#showAdvanceFormBtn")).toBeHidden();
+  await expect(page.locator("#showAdvanceFormBtn")).toBeVisible();
   await expect(page.locator("#showEdgeFormBtn")).toBeHidden();
   await expect(page.locator("#showHindranceFormBtn")).toBeHidden();
   await expect(page.locator("#addManualPowerPointsBtn")).toBeHidden();

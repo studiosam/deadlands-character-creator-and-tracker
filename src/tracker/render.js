@@ -33,16 +33,11 @@ function renderCharacterTabMode() {
     "hidden",
     confirmedSheetMode || Boolean(powerPointResource()),
   );
-  [
-    els.showAdvanceFormBtn,
-    els.showEdgeFormBtn,
-    els.showHindranceFormBtn,
-  ].forEach((button) => button?.classList.toggle("hidden", confirmedSheetMode));
-  [
-    els.advanceEditorPanel,
-    els.edgeEditorPanel,
-    els.hindranceEditorPanel,
-  ].forEach((panel) => {
+  els.showAdvanceFormBtn?.classList.toggle("hidden", false);
+  [els.showEdgeFormBtn, els.showHindranceFormBtn].forEach((button) =>
+    button?.classList.toggle("hidden", confirmedSheetMode),
+  );
+  [els.edgeEditorPanel, els.hindranceEditorPanel].forEach((panel) => {
     if (confirmedSheetMode) panel?.classList.add("hidden");
   });
 }

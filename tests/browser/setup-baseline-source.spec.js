@@ -456,9 +456,15 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   );
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
   await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("[data-setup-step='attributesSkills']"),
+  ).toContainText("Complete");
+  await page.locator("[data-setup-step='attributesSkills']").click();
+  const setupTraitsPanel = page.locator("#setupTraitsPanel");
+  await expect(setupTraitsPanel).toContainText("Traits");
 
-  const agilityCard = page
-    .locator("#attributesList .attribute-die-card")
+  const agilityCard = setupTraitsPanel
+    .locator(".attribute-die-card")
     .filter({ hasText: "Agility" });
   await expect(agilityCard).toHaveAttribute("title", /Coordination/);
   await agilityCard.hover();
@@ -467,8 +473,8 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
     "Coordination",
   );
 
-  const shootingChip = page
-    .locator("#skillsList .skill-chip")
+  const shootingChip = setupTraitsPanel
+    .locator(".skill-chip")
     .filter({ hasText: "Shooting" });
   await expect(shootingChip).toHaveAttribute("title", /Ranged attacks/);
   await shootingChip.hover();
@@ -477,12 +483,6 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
     "Linked attribute: Agility",
   );
 
-  await expect(
-    page.locator("[data-setup-step='attributesSkills']"),
-  ).toContainText("Complete");
-  await page.locator("[data-setup-step='attributesSkills']").click();
-  const setupTraitsPanel = page.locator("#setupTraitsPanel");
-  await expect(setupTraitsPanel).toContainText("Traits");
   await expect(setupTraitsPanel).toContainText("Advanced character");
   await expect(setupTraitsPanel).toContainText("All Skills Shown");
   await expect(setupTraitsPanel).toContainText("Unskilled Value");
