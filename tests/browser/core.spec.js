@@ -107,6 +107,44 @@ test("opens sources and rulesets from the landing footer", async ({ page }) => {
   await expect(panel.locator("input, select, textarea, button")).toHaveCount(0);
 });
 
+test("landing create edit button can start or edit characters", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await saveCurrentCharacter(page);
+  await renameActiveCharacter(page, "Saved Dusty");
+  await openHeaderMenu(page);
+  await page.locator("#mainMenuBtn").click();
+
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator("#landingCreateBtn")).toHaveText(
+    "Create/Edit Character",
+  );
+  await page.locator("#landingCreateBtn").click();
+
+  const dialog = page.locator("#appDialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("#appDialogTitle")).toHaveText(
+    "Create/Edit Character",
+  );
+  await expect(dialog.locator("#appDialogSelect")).toContainText(
+    "Create a new character",
+  );
+  await expect(dialog.locator("#appDialogSelect")).toContainText(
+    "Edit Saved Dusty",
+  );
+  await dialog
+    .locator("#appDialogSelect")
+    .selectOption({ label: "Edit Saved Dusty" });
+  await dialog.locator("#appDialogConfirmBtn").click();
+
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterName")).toContainText("Saved Dusty");
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#setupReviewPanel")).toBeVisible();
+});
+
 test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
   const panel = page.locator("#catalogPanel");

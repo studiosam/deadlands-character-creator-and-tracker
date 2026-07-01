@@ -151,6 +151,15 @@ async function openCharacterSetupReview(page) {
   await expect(setupPanel).toBeVisible();
 }
 
+async function startNewCharacterFromLanding(page) {
+  await page.locator("#landingCreateBtn").click();
+  const dialog = page.locator("#appDialog");
+  await expect(dialog).toBeVisible();
+  await dialog.locator("#appDialogSelect").selectOption("__new__");
+  await dialog.locator("#appDialogConfirmBtn").click();
+  await expect(dialog).toBeHidden();
+}
+
 function woundsBlock(page) {
   return page.locator(".block").filter({
     has: page.getByRole("heading", { name: "Wounds" }),
@@ -754,6 +763,7 @@ module.exports = {
   openCombat,
   openArcane,
   openCharacterSetupReview,
+  startNewCharacterFromLanding,
   woundsBlock,
   increaseWounds,
   expectWounds,

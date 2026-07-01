@@ -25,6 +25,8 @@ function resetAppDialog() {
   const choices = document.getElementById("appDialogChoices");
   const inputLabel = document.getElementById("appDialogInputLabel");
   const input = document.getElementById("appDialogInput");
+  const selectLabel = document.getElementById("appDialogSelectLabel");
+  const select = document.getElementById("appDialogSelect");
   const confirmButton = document.getElementById("appDialogConfirmBtn");
   const cancelButton = document.getElementById("appDialogCancelBtn");
 
@@ -33,6 +35,8 @@ function resetAppDialog() {
   input.value = "";
   input.type = "text";
   inputLabel.classList.add("hidden");
+  select.replaceChildren();
+  selectLabel.classList.add("hidden");
   confirmButton.classList.remove("danger");
   confirmButton.classList.remove("hidden");
   cancelButton.textContent = "Cancel";
@@ -54,6 +58,9 @@ function openAppDialog(options) {
   const inputLabel = document.getElementById("appDialogInputLabel");
   const inputText = document.getElementById("appDialogInputText");
   const input = document.getElementById("appDialogInput");
+  const selectLabel = document.getElementById("appDialogSelectLabel");
+  const selectText = document.getElementById("appDialogSelectText");
+  const select = document.getElementById("appDialogSelect");
   const choices = document.getElementById("appDialogChoices");
   const confirmButton = document.getElementById("appDialogConfirmBtn");
   const cancelButton = document.getElementById("appDialogCancelBtn");
@@ -75,6 +82,24 @@ function openAppDialog(options) {
     input.value = options.defaultValue || "";
   }
 
+  if (options.select) {
+    selectLabel.classList.remove("hidden");
+    selectText.textContent = options.selectLabel || "Choice";
+    const selectOptions = Array.isArray(options.selectOptions)
+      ? options.selectOptions
+      : [];
+    select.replaceChildren(
+      ...selectOptions.map((choice) => {
+        const option = document.createElement("option");
+        option.value = choice.value;
+        option.textContent = choice.label;
+        option.disabled = Boolean(choice.disabled);
+        return option;
+      }),
+    );
+    if (options.defaultValue) select.value = options.defaultValue;
+  }
+
   if (Array.isArray(options.choices) && options.choices.length) {
     confirmButton.classList.add("hidden");
     choices.classList.remove("hidden");
@@ -90,7 +115,9 @@ function openAppDialog(options) {
 
   confirmButton.onclick = (event) => {
     event.preventDefault();
-    resolveAppDialog(options.input ? input.value : true);
+    resolveAppDialog(
+      options.input ? input.value : options.select ? select.value : true,
+    );
   };
   cancelButton.onclick = (event) => {
     event.preventDefault();
@@ -106,6 +133,7 @@ function openAppDialog(options) {
     if (dialog.showModal) dialog.showModal();
     else dialog.setAttribute("open", "");
     if (options.input) input.focus();
+    else if (options.select) select.focus();
     else if (!confirmButton.classList.contains("hidden")) confirmButton.focus();
   });
 }
@@ -131,6 +159,20 @@ async function appPrompt(message, defaultValue = "", options = {}) {
     inputType: options.inputType || "text",
     inputLabel: options.inputLabel || "Value",
     defaultValue,
+  });
+  return result === null ? null : String(result);
+}
+
+async function appSelect(message, selectOptions, options = {}) {
+  const result = await openAppDialog({
+    title: options.title || "Choose an action",
+    message,
+    confirmText: options.confirmText || "Continue",
+    cancelText: options.cancelText || "Cancel",
+    select: true,
+    selectLabel: options.selectLabel || "Choice",
+    selectOptions,
+    defaultValue: options.defaultValue || selectOptions?.[0]?.value || "",
   });
   return result === null ? null : String(result);
 }

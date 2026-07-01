@@ -25,6 +25,7 @@ const {
   addCustomGear,
   importSavagedSample,
   openAdvanceEditor,
+  startNewCharacterFromLanding,
   eligibleAdvanceSkills,
   expectCanonicalAdvanceScaffold,
   expectCanonicalChangeScaffold,
@@ -134,7 +135,7 @@ test("selects hindrances in character setup and summarizes point expectations", 
 test("spends hindrance benefits and selects source-tracked setup edges", async ({
   page,
 }) => {
-  await page.locator("#landingCreateBtn").click();
+  await startNewCharacterFromLanding(page);
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
 
   await page.locator("#setupNameInput").fill("Benefit Edge Character");
@@ -249,7 +250,7 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
 test("filters starting Edge choices by Rank Trait and prerequisite Edge requirements", async ({
   page,
 }) => {
-  await page.locator("#landingCreateBtn").click();
+  await startNewCharacterFromLanding(page);
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
 
   await page.locator("[data-setup-step='edges']").click();
@@ -300,7 +301,7 @@ test("filters starting Edge choices by Rank Trait and prerequisite Edge requirem
 test("starting Edge validation blocks stale invalid Human free Edge choices", async ({
   page,
 }) => {
-  await page.locator("#landingCreateBtn").click();
+  await startNewCharacterFromLanding(page);
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
   await page.locator("#setupNameInput").fill("Stale Human Edge");
   await page.locator("[data-setup-step='edges']").click();
@@ -372,7 +373,7 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
 test("starting Edge validation flags stale invalid Hindrance benefit Edge choices", async ({
   page,
 }) => {
-  await page.locator("#landingCreateBtn").click();
+  await startNewCharacterFromLanding(page);
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
   await page.locator("#setupNameInput").fill("Stale Benefit Edge");
 

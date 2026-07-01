@@ -25,6 +25,7 @@ const {
   addCustomGear,
   importSavagedSample,
   openAdvanceEditor,
+  startNewCharacterFromLanding,
   eligibleAdvanceSkills,
   expectCanonicalAdvanceScaffold,
   expectCanonicalChangeScaffold,
@@ -46,7 +47,7 @@ test("starts new characters directly in character setup @mobile", async ({
   page,
 }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
-  await page.locator("#landingCreateBtn").click();
+  await startNewCharacterFromLanding(page);
 
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);
@@ -281,7 +282,7 @@ test("finishes character setup and starts playing with a saved character", async
   page,
 }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
-  await page.locator("#landingCreateBtn").click();
+  await startNewCharacterFromLanding(page);
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
 
   await page.locator("#setupNameInput").fill("Finished Setup Character");

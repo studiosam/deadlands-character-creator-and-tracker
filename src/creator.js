@@ -684,6 +684,67 @@ async function startCharacterSetupCreation() {
   appToast("Unsaved character draft started in Character Setup.", "success");
 }
 
+async function openSavedCharacterForSetupEdit(id) {
+  const entry = characterLibrary?.charactersById?.[id];
+  if (!entry) {
+    appToast("That saved character is no longer available.", "danger");
+    return;
+  }
+  if (
+    !(await resolveUnsavedCharacterDraft(
+      "Save this character draft before editing another saved character?",
+    ))
+  )
+    return;
+  if (activeCharacterSlot()) saveCharacterSlot(character);
+  if (!activateCharacterSlot(id)) return;
+  characterSetupReviewOpen = true;
+  characterSetupStep = "review";
+  storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
+  setLandingVisible(false);
+  const welcomePanel = $("#demoWelcomePanel");
+  if (welcomePanel) {
+    welcomePanel.dataset.manualOpen = "false";
+    welcomePanel.classList.add("hidden");
+  }
+  render();
+  setAppTab("character");
+  renderDemoExperience();
+  $("#characterSetupPanel")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+  appToast(`${entry.name || "Character"} opened for setup review.`, "success");
+}
+
+async function openCreateEditCharacterDialog() {
+  const savedCharacters = characterLibraryEntries();
+  const options = [
+    { value: "__new__", label: "Create a new character" },
+    ...savedCharacters.map((entry) => ({
+      value: entry.id,
+      label: `Edit ${landingCharacterName(entry)}`,
+    })),
+  ];
+  const choice = await appSelect(
+    savedCharacters.length
+      ? "Start a new character, or open a saved character in Character Setup."
+      : "No saved characters are available yet. Start a new character in Character Setup.",
+    options,
+    {
+      title: "Create/Edit Character",
+      confirmText: "Continue",
+      selectLabel: "Character action",
+    },
+  );
+  if (choice === null) return;
+  if (choice === "__new__") {
+    await startCharacterSetupCreation();
+    return;
+  }
+  await openSavedCharacterForSetupEdit(choice);
+}
+
 function setLandingVisible(visible) {
   $("#landingPage")?.classList.toggle("hidden", !visible);
   $(".shell")?.classList.toggle("hidden", visible);
@@ -1770,7 +1831,7 @@ $("#loadSampleBtn").onclick = () => {
 };
 $("#loadSelectedSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#startCreatorWelcomeBtn").onclick = () => {
-  startCharacterSetupCreation();
+  openCreateEditCharacterDialog();
 };
 $("#importWelcomeBtn").onclick = () => {
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
@@ -1797,7 +1858,7 @@ $("#landingContinueBtn").onclick = continueFromLandingPage;
 if (els.landingCharacterSelect)
   els.landingCharacterSelect.onchange = updateLandingPrimaryLabel;
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
-$("#landingCreateBtn").onclick = startCharacterSetupCreation;
+$("#landingCreateBtn").onclick = openCreateEditCharacterDialog;
 $("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
 $("#landingSettingsBtn").onclick = () => openLandingSettings();
 $("#landingLocalDataBtn").onclick = () =>
