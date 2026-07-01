@@ -220,7 +220,7 @@ function render() {
   renderPlaySummary();
   renderArcaneSummary();
   renderNotesSummary();
-  renderSettingsSummary();
+  renderLocalDataSummary();
   renderCharacterLibrary();
   renderUndoControls();
 
@@ -332,20 +332,20 @@ function localJsonSize(key) {
   return value ? `${Math.ceil(value.length / 1024)} KB` : "Not saved";
 }
 
-function settingsDetail(label, value) {
+function localDataDetail(label, value) {
   return `<div><span>${esc(label)}</span><strong>${esc(value || "—")}</strong></div>`;
 }
 
-function renderSettingsSummary() {
-  if (!els.settingsAppDetails) return;
+function renderLocalDataSummary() {
+  if (!els.localDataAppDetails) return;
   const powerPoints = powerPointResource();
   const isDemoMode = storageAdapter.readFlag(DEMO_MODE_KEY);
   const hasDraft = storageAdapter.has(CREATION_KEY);
   const hasTrackerSave = storageAdapter.has(STORAGE_KEY);
   const source = sourceLabel();
 
-  els.settingsDemoLink.href = DEMO_URL;
-  els.settingsStatusBadges.innerHTML = [
+  els.privacyLegalDemoLink.href = DEMO_URL;
+  els.localDataStatusBadges.innerHTML = [
     `<span class="pill">Version ${esc(APP_VERSION)}</span>`,
     `<span class="pill">Schema ${APP_SCHEMA_VERSION}</span>`,
     `<span class="pill">${
@@ -357,7 +357,7 @@ function renderSettingsSummary() {
     }</span>`,
   ].join("");
 
-  els.settingsAppDetails.innerHTML = [
+  els.localDataAppDetails.innerHTML = [
     ["Current Character", character.name],
     [
       "Rank / Archetype",
@@ -373,12 +373,11 @@ function renderSettingsSummary() {
         ? `${powerPoints.current} / ${powerPoints.max}`
         : "Not enabled",
     ],
-    ["Hosted Demo", DEMO_URL],
   ]
-    .map(([label, value]) => settingsDetail(label, value))
+    .map(([label, value]) => localDataDetail(label, value))
     .join("");
 
-  els.settingsStorageDetails.innerHTML = [
+  els.localDataStorageDetails.innerHTML = [
     [
       "Tracker Save",
       isUnsavedCharacterDraft()
@@ -405,7 +404,7 @@ function renderSettingsSummary() {
         : "Load, import, or create a character first",
     ],
   ]
-    .map(([label, value]) => settingsDetail(label, value))
+    .map(([label, value]) => localDataDetail(label, value))
     .join("");
 }
 

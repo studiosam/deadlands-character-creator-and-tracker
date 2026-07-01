@@ -42,9 +42,7 @@ const {
 
 useAppTestHooks();
 
-test("settings panel exposes backup and local data controls", async ({
-  page,
-}) => {
+test("local data and privacy links open distinct panels", async ({ page }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
   const footerMetrics = await page
     .locator(".landing-footer-note")
@@ -82,46 +80,67 @@ test("settings panel exposes backup and local data controls", async ({
     expect(linkRect.left).toBeGreaterThanOrEqual(0);
     expect(linkRect.right).toBeLessThanOrEqual(footerMetrics.viewportWidth);
   }
-  await page.locator("#landingSettingsBtn").click();
+  await expect(page.locator("#landingSettingsBtn")).toHaveCount(0);
+  await page.locator("#landingLocalDataBtn").click();
 
   await expect(page.locator("#landingPage")).toBeHidden();
-  await expect(page.locator("#settingsPanel")).toBeVisible();
-  await expect(page.locator("#settingsStatusBadges")).toContainText("Version");
-  await expect(page.locator("#settingsStorageDetails")).toContainText(
+  await expect(page.locator("#localDataPanel")).toBeVisible();
+  await expect(page.locator("#privacyLegalPanel")).toBeHidden();
+  await expect(page.locator("#characterHeroCopy")).toBeHidden();
+  await expect(page.locator("#characterHeaderTools")).toBeHidden();
+  await expect(page.locator("#appTabs")).toBeHidden();
+  await expect(page.locator("#utilityHeroCopy")).toBeVisible();
+  await expect(page.locator("#utilityPageTitle")).toHaveText(
+    "Local Data & Backups",
+  );
+  await expect(page.locator("#utilityPageSubtitle")).toContainText(
+    "Browser saves",
+  );
+  await expect(page.locator("#localDataStatusBadges")).toContainText("Version");
+  await expect(page.locator("#localDataStorageDetails")).toContainText(
     "Tracker Save",
   );
-  await expect(page.locator("#settingsBackupDataSection")).toContainText(
+  await expect(page.locator("#localDataBackupSection")).toContainText(
     "Backups and Local Data",
   );
-  await expect(page.locator("#settingsLocalDataControlsSection")).toContainText(
+  await expect(page.locator("#localDataControlsSection")).toContainText(
     "Clear Local Data",
   );
-  await expect(page.locator("#settingsPrivacyLegalSection")).toContainText(
+  await expect(page.locator("#localDataPanel")).not.toContainText(
     "Privacy and Legal Notes",
   );
-  await expect(page.locator("#settingsDemoLink")).toHaveAttribute(
-    "href",
-    /studiosam\.github\.io/,
-  );
+
+  await page.locator("#localDataShowWelcomeBtn").click();
+  await expect(page.locator("#demoWelcomePanel")).toBeVisible();
 
   await page.evaluate(() => window.history.back());
   await expect(page.locator("#landingPage")).toBeVisible();
   await page.locator("#landingLocalDataBtn").click();
-  await expect(page.locator("#settingsBackupDataSection")).toBeVisible();
-  await expect(page.locator("#settingsBackupDataSection")).toContainText(
+  await expect(page.locator("#localDataBackupSection")).toBeVisible();
+  await expect(page.locator("#localDataBackupSection")).toContainText(
     "Tracker Save",
   );
 
   await page.evaluate(() => window.history.back());
   await expect(page.locator("#landingPage")).toBeVisible();
   await page.locator("#landingPrivacyLegalBtn").click();
-  await expect(page.locator("#settingsPrivacyLegalSection")).toBeVisible();
-  await expect(page.locator("#settingsPrivacyLegalSection")).toContainText(
+  await expect(page.locator("#privacyLegalPanel")).toBeVisible();
+  await expect(page.locator("#localDataPanel")).toBeHidden();
+  await expect(page.locator("#characterHeroCopy")).toBeHidden();
+  await expect(page.locator("#appTabs")).toBeHidden();
+  await expect(page.locator("#utilityPageTitle")).toHaveText(
+    "Privacy & Legal Notes",
+  );
+  await expect(page.locator("#privacyLegalNotesSection")).toContainText(
     "License",
   );
-
-  await page.locator("#settingsShowWelcomeBtn").click();
-  await expect(page.locator("#demoWelcomePanel")).toBeVisible();
+  await expect(page.locator("#privacyLegalDemoLink")).toHaveAttribute(
+    "href",
+    /studiosam\.github\.io/,
+  );
+  await expect(page.locator("#privacyLegalPanel")).not.toContainText(
+    "Tracker Save",
+  );
 });
 
 test("opens sources and rulesets from the landing footer", async ({ page }) => {
@@ -132,6 +151,11 @@ test("opens sources and rulesets from the landing footer", async ({ page }) => {
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator(".shell")).toBeVisible();
   await expect(panel).toBeVisible();
+  await expect(page.locator("#characterHeroCopy")).toBeHidden();
+  await expect(page.locator("#appTabs")).toBeHidden();
+  await expect(page.locator("#utilityPageTitle")).toHaveText(
+    "Sources & Rulesets",
+  );
   await expect(
     panel.getByRole("heading", { name: "Sources & Rulesets", exact: true }),
   ).toBeVisible();
@@ -260,7 +284,15 @@ test("shows the read-only sources and rulesets page from the global menu", async
   await expect(
     page.locator(".app-tabs [data-app-tab='sourcesRulesets']"),
   ).toHaveCount(0);
+  await expect(page.locator("#characterHeroCopy")).toBeHidden();
+  await expect(page.locator("#appTabs")).toBeHidden();
+  await expect(page.locator("#utilityPageTitle")).toHaveText(
+    "Sources & Rulesets",
+  );
 
+  await page.locator("#utilityBackToTrackerBtn").click();
+  await expect(page.locator("#characterHeroCopy")).toBeVisible();
+  await expect(page.locator("#appTabs")).toBeVisible();
   const primaryTabs = [
     ["Character", "#characterPanel"],
     ["Inventory", "#inventoryPanel"],
@@ -279,9 +311,9 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
   await expect(page.locator("#landingPage")).toBeVisible();
   await expect(page.locator(".shell")).toBeHidden();
-  await expect(page.locator(".app-tabs [data-app-tab='settings']")).toHaveCount(
-    0,
-  );
+  await expect(
+    page.locator(".app-tabs [data-app-tab='localData']"),
+  ).toHaveCount(0);
   await expect(page.locator(".app-tabs [data-app-tab='creation']")).toHaveCount(
     0,
   );
@@ -306,15 +338,36 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   }
 
   await page.locator("#headerToolsMenu summary").click();
-  await page.locator("#settingsMenuBtn").click();
-  await expect(page.locator("#settingsPanel")).toContainText(
-    "About and Settings",
+  await page.locator("#localDataMenuBtn").click();
+  await expect(page.locator("#localDataPanel")).toContainText(
+    "Local Data & Backups",
   );
-  await expect(page.locator("#settingsAppDetails")).toContainText(
+  await expect(page.locator("#characterHeroCopy")).toBeHidden();
+  await expect(page.locator("#appTabs")).toBeHidden();
+  await expect(page.locator("#utilityPageTitle")).toHaveText(
+    "Local Data & Backups",
+  );
+  await expect(page.locator("#localDataAppDetails")).toContainText(
     "Schema Version",
   );
 
-  await page.getByRole("button", { name: "Combat", exact: true }).click();
+  await page.locator("#utilityBackToTrackerBtn").click();
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterHeroCopy")).toBeVisible();
+  await expect(page.locator("#appTabs")).toBeVisible();
+
+  await page.locator("#headerToolsMenu summary").click();
+  await page.locator("#privacyLegalMenuBtn").click();
+  await expect(page.locator("#privacyLegalPanel")).toContainText(
+    "Privacy & Legal Notes",
+  );
+  await expect(page.locator("#characterHeroCopy")).toBeHidden();
+  await expect(page.locator("#appTabs")).toBeHidden();
+  await expect(page.locator("#utilityPageTitle")).toHaveText(
+    "Privacy & Legal Notes",
+  );
+
+  await page.locator("#utilityBackToTrackerBtn").click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
 
   await page.locator("#headerToolsMenu summary").click();

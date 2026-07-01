@@ -51,8 +51,9 @@ want a local, private, session-focused tracker at the table.
   slots from the Manage > Characters panel.
 - Edit stable character profile fields from the Characters panel: name, player,
   profession or title, age, gender, description, and background.
-- Review app version, schema version, privacy/legal notes, backup actions, and
-  local data controls from the Settings tab.
+- Review app version, schema version, backup actions, and local data controls
+  from Local Data. Privacy/legal notes and source-book assumptions live on their
+  own pages.
 
 ## Current Scope
 
@@ -126,8 +127,9 @@ Recommended portfolio screenshots/GIFs:
   confirmed Character Sheet.
 - Characters panel profile editing keeps stable identity/profile updates out of
   casual Character Sheet reference use.
-- About/Settings panel centralizes app status, backup/export actions, privacy
-  posture, and local data controls.
+- Local Data centralizes app status, backup/export actions, and browser storage
+  controls. Privacy & Legal and Sources & Rulesets are separate informational
+  pages.
 - Playwright tests cover load, responsive tabs, sample loading, landing flows,
   setupStatus, profile editing, imports, export/import round trips, persistence,
   character-library isolation, inventory, global undo/redo, Combat Declaration,

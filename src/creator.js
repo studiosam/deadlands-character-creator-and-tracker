@@ -495,14 +495,47 @@ const APP_TAB_PANELS = {
   inventory: "#inventoryPanel",
   arcane: "#arcanePanel",
   notes: "#notesPanel",
-  settings: "#settingsPanel",
+  localData: "#localDataPanel",
+  privacyLegal: "#privacyLegalPanel",
   sourcesRulesets: "#sourcesRulesetsPanel",
   library: "#libraryPanel",
   creation: "#creationPanel",
 };
+const UTILITY_TAB_HEADERS = {
+  localData: {
+    title: "Local Data & Backups",
+    subtitle: "Browser saves, JSON backup tools, imports, and local cleanup.",
+  },
+  privacyLegal: {
+    title: "Privacy & Legal Notes",
+    subtitle:
+      "Local-first privacy, license links, fan-tool status, and source boundaries.",
+  },
+  sourcesRulesets: {
+    title: "Sources & Rulesets",
+    subtitle:
+      "The Deadlands-focused profile, source books, and rules assumptions this tracker uses.",
+  },
+};
 const APP_HISTORY_STATE_KEY = "deadlandsTrackerNavigation";
 let appHistoryApplyingState = false;
 let appHistoryInitialized = false;
+
+function setShellHeaderMode(tabName) {
+  const utilityHeader = UTILITY_TAB_HEADERS[tabName];
+  const utilityMode = Boolean(utilityHeader);
+
+  $(".shell")?.classList.toggle("utility-shell", utilityMode);
+  $("#characterHeroCopy")?.classList.toggle("hidden", utilityMode);
+  $("#characterHeaderTools")?.classList.toggle("hidden", utilityMode);
+  $("#appTabs")?.classList.toggle("hidden", utilityMode);
+  $("#utilityHeroCopy")?.classList.toggle("hidden", !utilityMode);
+  $("#utilityHeaderTools")?.classList.toggle("hidden", !utilityMode);
+
+  if (!utilityHeader) return;
+  $("#utilityPageTitle").textContent = utilityHeader.title;
+  $("#utilityPageSubtitle").textContent = utilityHeader.subtitle;
+}
 
 function navigationStatesMatch(left, right) {
   return left?.view === right?.view && (left?.tab || "") === (right?.tab || "");
@@ -536,6 +569,7 @@ function recordAppNavigation(state, options = {}) {
 
 function setAppTab(tabName, options = {}) {
   const nextTab = APP_TAB_PANELS[tabName] ? tabName : "play";
+  setShellHeaderMode(nextTab);
 
   document.querySelectorAll("[data-app-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.appTab === nextTab);
@@ -788,16 +822,6 @@ function closeLandingPage(tabName = "play", options = {}) {
   setLandingVisible(false);
   setAppTab(tabName, options);
   $(".shell")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function openLandingSettings(sectionId = "") {
-  closeLandingPage("settings");
-  if (!sectionId) return;
-  requestAnimationFrame(() => {
-    document
-      .getElementById(sectionId)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
 }
 
 async function openLandingPage() {
@@ -1860,12 +1884,11 @@ if (els.landingCharacterSelect)
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#landingCreateBtn").onclick = openCreateEditCharacterDialog;
 $("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
-$("#landingSettingsBtn").onclick = () => openLandingSettings();
-$("#landingLocalDataBtn").onclick = () =>
-  openLandingSettings("settingsBackupDataSection");
-$("#landingPrivacyLegalBtn").onclick = () =>
-  openLandingSettings("settingsPrivacyLegalSection");
+$("#landingLocalDataBtn").onclick = () => closeLandingPage("localData");
+$("#landingPrivacyLegalBtn").onclick = () => closeLandingPage("privacyLegal");
 $("#landingSourcesRulesetsBtn").onclick = () =>
   closeLandingPage("sourcesRulesets");
 $("#mainMenuBtn").onclick = openLandingPage;
+$("#utilityBackToTrackerBtn").onclick = () => setAppTab("play");
+$("#utilityMainMenuBtn").onclick = openLandingPage;
 $("#creatorModeBtn").onclick = startCharacterSetupCreation;

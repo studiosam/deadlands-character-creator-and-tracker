@@ -73,13 +73,6 @@
         <p class="landing-footer-note">
           <span>Unofficial fan tool. Saves stay in this browser.</span>
           <button
-            id="landingSettingsBtn"
-            class="landing-footer-link"
-            type="button"
-          >
-            Settings
-          </button>
-          <button
             id="landingLocalDataBtn"
             class="landing-footer-link"
             type="button"
@@ -106,12 +99,17 @@
 
     <div class="shell hidden">
       <header class="hero">
-        <div class="hero-copy">
+        <div id="characterHeroCopy" class="hero-copy">
           <p class="eyebrow">Deadlands / SWADE Table Tracker</p>
           <h1 id="characterName"></h1>
           <p id="characterSubtitle" class="subtitle"></p>
         </div>
-        <div class="header-tools">
+        <div id="utilityHeroCopy" class="hero-copy utility-hero-copy hidden">
+          <p class="eyebrow">Deadlands Tracker</p>
+          <h1 id="utilityPageTitle">Deadlands Tracker</h1>
+          <p id="utilityPageSubtitle" class="subtitle"></p>
+        </div>
+        <div id="characterHeaderTools" class="header-tools">
           <details id="headerToolsMenu" class="header-menu">
             <summary>Manage</summary>
             <div class="header-actions" aria-label="Session and file actions">
@@ -176,11 +174,19 @@
                 </button>
                 <button
                   class="ghost"
-                  id="settingsMenuBtn"
+                  id="localDataMenuBtn"
                   type="button"
-                  data-app-tab="settings"
+                  data-app-tab="localData"
                 >
-                  Settings
+                  Local Data
+                </button>
+                <button
+                  class="ghost"
+                  id="privacyLegalMenuBtn"
+                  type="button"
+                  data-app-tab="privacyLegal"
+                >
+                  Privacy & Legal
                 </button>
                 <button
                   class="ghost"
@@ -204,6 +210,17 @@
               </section>
             </div>
           </details>
+        </div>
+        <div
+          id="utilityHeaderTools"
+          class="header-tools utility-header-tools hidden"
+        >
+          <button id="utilityBackToTrackerBtn" type="button">
+            Back to Tracker
+          </button>
+          <button id="utilityMainMenuBtn" class="ghost" type="button">
+            Main Menu
+          </button>
         </div>
       </header>
 
@@ -253,7 +270,7 @@
         </button>
       </section>
 
-      <nav class="creator-tabs app-tabs" aria-label="Primary mode">
+      <nav id="appTabs" class="creator-tabs app-tabs" aria-label="Primary mode">
         <button
           id="trackerModeBtn"
           class="active"
@@ -1696,32 +1713,33 @@
         </section>
 
         <section
-          id="settingsPanel"
-          class="dashboard tab-panel hidden settings-panel"
+          id="localDataPanel"
+          class="dashboard tab-panel hidden utility-panel local-data-panel"
+          aria-labelledby="localDataHeading"
         >
-          <section class="card wide settings-hero">
+          <section class="card wide utility-hero">
             <div>
-              <p class="eyebrow">About and Settings</p>
-              <h2>Deadlands Character Creator and Tracker</h2>
+              <p class="eyebrow">Local Data</p>
+              <h2 id="localDataHeading">Local Data & Backups</h2>
               <p class="muted">
-                A local-first, unofficial table companion for active character
-                state, imports, backups, and portfolio demo review.
+                Character saves, imports, exports, backups, and browser-only
+                storage controls.
               </p>
             </div>
-            <div id="settingsStatusBadges" class="settings-badges"></div>
+            <div id="localDataStatusBadges" class="utility-badges"></div>
           </section>
 
-          <section class="card settings-card">
+          <section class="card utility-card">
             <div class="section-title">
               <div>
                 <h2>App Status</h2>
                 <p>Version, schema, and current local save state.</p>
               </div>
             </div>
-            <div id="settingsAppDetails" class="settings-detail-grid"></div>
+            <div id="localDataAppDetails" class="utility-detail-grid"></div>
           </section>
 
-          <section id="settingsBackupDataSection" class="card settings-card">
+          <section id="localDataBackupSection" class="card utility-card">
             <div class="section-title">
               <div>
                 <h2>Backups and Local Data</h2>
@@ -1732,34 +1750,34 @@
                 </p>
               </div>
             </div>
-            <div class="settings-action-grid">
-              <button id="settingsExportTrackerBtn" type="button">
+            <div class="utility-action-grid">
+              <button id="localDataExportTrackerBtn" type="button">
                 Export Character
               </button>
-              <button id="settingsExportFullBtn" class="ghost" type="button">
+              <button id="localDataExportFullBtn" class="ghost" type="button">
                 Export Full Backup
               </button>
-              <button id="settingsOpenImportBtn" class="ghost" type="button">
+              <button id="localDataOpenImportBtn" class="ghost" type="button">
                 Import JSON
               </button>
-              <button id="settingsShowWelcomeBtn" class="ghost" type="button">
+              <button id="localDataShowWelcomeBtn" class="ghost" type="button">
                 Show Demo Start
               </button>
             </div>
             <div
-              id="settingsStorageDetails"
-              class="settings-storage-list"
+              id="localDataStorageDetails"
+              class="utility-storage-list"
             ></div>
           </section>
 
-          <section class="card settings-card">
+          <section class="card utility-card">
             <div class="section-title">
               <div>
                 <h2>Supported Formats</h2>
                 <p>Files this app knows how to import and export.</p>
               </div>
             </div>
-            <div class="settings-format-list">
+            <div class="utility-format-list">
               <span>Tracker character JSON</span>
               <span>Full app backup JSON</span>
               <span>Creation draft JSON</span>
@@ -1768,7 +1786,51 @@
             </div>
           </section>
 
-          <section id="settingsPrivacyLegalSection" class="card settings-card">
+          <section
+            id="localDataControlsSection"
+            class="card utility-card danger-zone"
+          >
+            <div class="section-title">
+              <div>
+                <h2>Local Data Controls</h2>
+                <p>These only affect this browser.</p>
+              </div>
+            </div>
+            <div class="utility-action-grid">
+              <button id="localDataClearDraftBtn" class="ghost" type="button">
+                Clear Creator Draft
+              </button>
+              <button
+                id="localDataClearDemoFlagBtn"
+                class="ghost"
+                type="button"
+              >
+                Exit Demo Mode
+              </button>
+              <button id="localDataClearAllBtn" class="danger" type="button">
+                Clear Local Data
+              </button>
+            </div>
+          </section>
+        </section>
+
+        <section
+          id="privacyLegalPanel"
+          class="dashboard tab-panel hidden utility-panel privacy-legal-panel"
+          aria-labelledby="privacyLegalHeading"
+        >
+          <section class="card wide utility-hero">
+            <div>
+              <p class="eyebrow">Privacy & Legal</p>
+              <h2 id="privacyLegalHeading">Privacy & Legal Notes</h2>
+              <p class="muted">
+                Privacy posture, unofficial fan-tool status, license links, and
+                rulebook boundaries.
+              </p>
+            </div>
+          </section>
+
+          <section id="privacyLegalNotesSection" class="card utility-card">
             <div class="section-title">
               <div>
                 <h2>Privacy and Legal Notes</h2>
@@ -1778,7 +1840,7 @@
                 </p>
               </div>
             </div>
-            <div class="settings-copy-list">
+            <div class="utility-copy-list">
               <p>
                 Character data stays in this browser unless you export JSON.
                 There is no account, backend sync, analytics, or remote storage
@@ -1794,49 +1856,26 @@
                 workflow without replacing the source material.
               </p>
             </div>
-            <div class="settings-link-row">
+            <div class="utility-link-row">
               <a href="README.md">README</a>
               <a href="NOTICE.md">Notice</a>
               <a href="PRIVACY.md">Privacy</a>
               <a href="LICENSE">License</a>
               <a
-                id="settingsDemoLink"
+                id="privacyLegalDemoLink"
                 href="https://studiosam.github.io/deadlands-character-creator-and-tracker/"
                 >Hosted Demo</a
               >
-            </div>
-          </section>
-
-          <section
-            id="settingsLocalDataControlsSection"
-            class="card settings-card danger-zone"
-          >
-            <div class="section-title">
-              <div>
-                <h2>Local Data Controls</h2>
-                <p>These only affect this browser.</p>
-              </div>
-            </div>
-            <div class="settings-action-grid">
-              <button id="settingsClearDraftBtn" class="ghost" type="button">
-                Clear Creator Draft
-              </button>
-              <button id="settingsClearDemoFlagBtn" class="ghost" type="button">
-                Exit Demo Mode
-              </button>
-              <button id="settingsClearAllBtn" class="danger" type="button">
-                Clear Local Data
-              </button>
             </div>
           </section>
         </section>
 
         <section
           id="sourcesRulesetsPanel"
-          class="dashboard tab-panel hidden settings-panel sources-rulesets-panel"
+          class="dashboard tab-panel hidden utility-panel sources-rulesets-panel"
           aria-labelledby="sourcesRulesetsHeading"
         >
-          <section class="card wide settings-hero">
+          <section class="card wide utility-hero">
             <div>
               <p class="eyebrow">Campaign Profile</p>
               <h2 id="sourcesRulesetsHeading">Sources & Rulesets</h2>
@@ -1849,7 +1888,7 @@
             </div>
           </section>
 
-          <section class="card settings-card">
+          <section class="card utility-card">
             <div class="section-title">
               <div>
                 <h2>Profile</h2>
@@ -1861,7 +1900,7 @@
             </ul>
           </section>
 
-          <section class="card settings-card">
+          <section class="card utility-card">
             <div class="section-title">
               <div>
                 <h2>Books Used</h2>
@@ -1874,7 +1913,7 @@
             </ul>
           </section>
 
-          <section class="card settings-card">
+          <section class="card utility-card">
             <div class="section-title">
               <div>
                 <h2>Rules Assumptions</h2>
@@ -1891,7 +1930,7 @@
             </ul>
           </section>
 
-          <section class="card settings-card">
+          <section class="card utility-card">
             <div class="section-title">
               <div>
                 <h2>Character Creation Scope</h2>
@@ -1915,7 +1954,7 @@
             </ul>
           </section>
 
-          <section class="card wide settings-card">
+          <section class="card wide utility-card">
             <div class="section-title">
               <div>
                 <h2>Current Limitation</h2>

@@ -471,6 +471,49 @@ h3 {
   min-width: 0;
 }
 
+.utility-shell .hero {
+  align-items: end;
+  border-color: rgba(242, 182, 95, 0.28);
+  background:
+    linear-gradient(135deg, rgba(242, 182, 95, 0.09), rgba(255, 255, 255, 0.03)),
+    rgba(16, 18, 25, 0.9);
+}
+
+.utility-hero-copy h1 {
+  max-width: 11em;
+  font-size: clamp(2.6rem, 6.6vw, 5.8rem);
+}
+
+.utility-hero-copy h1::after {
+  content: "";
+  display: block;
+  width: min(34rem, 72vw);
+  height: 1px;
+  margin-top: 0.8rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(242, 182, 95, 0.76),
+    rgba(242, 182, 95, 0.18) 58%,
+    rgba(242, 182, 95, 0)
+  );
+}
+
+.utility-hero-copy .subtitle {
+  max-width: 46rem;
+  color: var(--muted);
+}
+
+.utility-header-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.utility-header-tools button {
+  min-width: 8.5rem;
+}
+
 .demo-welcome,
 .demo-mode-banner {
   display: grid;
@@ -609,43 +652,43 @@ h3 {
   justify-content: flex-end;
 }
 
-.settings-panel {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.utility-panel {
+  align-items: start;
 }
 
-.settings-hero {
+.utility-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 1rem;
 }
 
-.settings-hero h2 {
+.utility-hero h2 {
   margin-bottom: 0.35rem;
   font-family: var(--font-display);
   font-size: clamp(1.7rem, 3vw, 2.45rem);
 }
 
-.settings-badges,
-.settings-format-list,
-.settings-link-row {
+.utility-badges,
+.utility-format-list,
+.utility-link-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
 }
 
-.settings-badges {
+.utility-badges {
   justify-content: flex-end;
 }
 
-.settings-detail-grid {
+.utility-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.65rem;
 }
 
-.settings-detail-grid > div,
-.settings-storage-list > div {
+.utility-detail-grid > div,
+.utility-storage-list > div {
   min-width: 0;
   padding: 0.75rem;
   border: 1px solid var(--line);
@@ -653,8 +696,8 @@ h3 {
   background: rgba(255, 255, 255, 0.045);
 }
 
-.settings-detail-grid span,
-.settings-storage-list span {
+.utility-detail-grid span,
+.utility-storage-list span {
   display: block;
   color: var(--muted);
   font-size: 0.78rem;
@@ -663,45 +706,60 @@ h3 {
   text-transform: uppercase;
 }
 
-.settings-detail-grid strong,
-.settings-storage-list strong {
+.utility-detail-grid strong,
+.utility-storage-list strong {
   display: block;
   margin-top: 0.25rem;
   overflow-wrap: anywhere;
 }
 
-.settings-action-grid {
+.utility-action-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.65rem;
 }
 
-.settings-storage-list,
-.settings-copy-list {
+.local-data-panel .utility-card,
+.sources-rulesets-panel .utility-card,
+.privacy-legal-panel .utility-card {
+  grid-column: 1 / -1;
+}
+
+.local-data-panel .danger-zone .utility-action-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.utility-storage-list,
+.utility-copy-list {
   display: grid;
   gap: 0.65rem;
   margin-top: 0.85rem;
 }
 
-.settings-copy-list p {
+.privacy-legal-panel .utility-copy-list {
+  max-width: 72rem;
+}
+
+.utility-copy-list p {
   margin: 0;
   color: var(--muted);
 }
 
-.sources-rulesets-panel .settings-hero {
+.sources-rulesets-panel .utility-hero {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.sources-rulesets-panel .settings-hero p {
+.sources-rulesets-panel .utility-hero p {
   max-width: 68rem;
 }
 
-.sources-rulesets-panel .settings-card {
+.sources-rulesets-panel .utility-card {
   align-content: start;
 }
 
 .sources-rulesets-list {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 0.65rem;
   margin: 0;
   padding: 0;
@@ -717,8 +775,8 @@ h3 {
   overflow-wrap: anywhere;
 }
 
-.settings-format-list span,
-.settings-link-row a {
+.utility-format-list span,
+.utility-link-row a {
   display: inline-flex;
   align-items: center;
   min-height: 2.25rem;
@@ -732,7 +790,7 @@ h3 {
   text-decoration: none;
 }
 
-.settings-link-row a:hover {
+.utility-link-row a:hover {
   border-color: rgba(242, 182, 95, 0.75);
 }
 
@@ -3302,6 +3360,10 @@ h3 {
     width: 100%;
   }
 
+  .utility-header-tools {
+    justify-content: flex-start;
+  }
+
   .header-menu .header-actions {
     right: auto;
     left: 0;
@@ -3428,7 +3490,7 @@ h3 {
 
   .demo-welcome,
   .demo-mode-banner,
-  .settings-hero,
+  .utility-hero,
   .catalog-controls,
   .catalog-browser-layout,
   .catalog-detail-grid,
@@ -3437,7 +3499,7 @@ h3 {
     grid-template-columns: 1fr;
   }
 
-  .settings-badges,
+  .utility-badges,
   .catalog-type-selector,
   .catalog-filter-fields,
   .library-actions,
@@ -3513,12 +3575,16 @@ h3 {
   .attribute-dice-grid,
   .derived-scan-grid,
   .arcane-snapshot-grid,
-  .settings-panel,
-  .settings-detail-grid,
-  .settings-action-grid,
+  .utility-panel,
+  .utility-detail-grid,
+  .utility-action-grid,
   .setup-form-grid,
   .setup-review-grid,
   .setup-gear-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .local-data-panel .danger-zone .utility-action-grid {
     grid-template-columns: 1fr;
   }
 
@@ -3660,6 +3726,7 @@ h3 {
 
   .header-actions button,
   .header-actions .file-label,
+  .utility-header-tools button,
   .demo-welcome-actions button,
   .demo-mode-banner button {
     width: 100%;
@@ -3827,3 +3894,4 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+

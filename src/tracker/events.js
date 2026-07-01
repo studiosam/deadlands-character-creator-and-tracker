@@ -485,13 +485,13 @@ els.confirmPasteImportBtn.onclick = async () => {
   }
 };
 
-els.settingsExportTrackerBtn.onclick = exportTrackerCharacter;
-els.settingsExportFullBtn.onclick = exportFullState;
-els.settingsOpenImportBtn.onclick = openPasteImportPanel;
+els.localDataExportTrackerBtn.onclick = exportTrackerCharacter;
+els.localDataExportFullBtn.onclick = exportFullState;
+els.localDataOpenImportBtn.onclick = openPasteImportPanel;
 els.librarySaveCurrentBtn.onclick = saveCurrentCharacterToLibrary;
 els.libraryReviewSetupBtn.onclick = reviewActiveCharacterSetup;
 els.libraryDuplicateActiveBtn.onclick = duplicateActiveCharacterFromLibrary;
-els.settingsShowWelcomeBtn.onclick = () => {
+els.localDataShowWelcomeBtn.onclick = () => {
   const panel = $("#demoWelcomePanel");
   if (panel) {
     panel.dataset.manualOpen = "true";
@@ -499,16 +499,16 @@ els.settingsShowWelcomeBtn.onclick = () => {
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 };
-els.settingsClearDemoFlagBtn.onclick = () => {
+els.localDataClearDemoFlagBtn.onclick = () => {
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   renderDemoExperience();
-  renderSettingsSummary();
+  renderLocalDataSummary();
   appToast(
     "Demo mode flag cleared. Current character data remains saved.",
     "success",
   );
 };
-els.settingsClearDraftBtn.onclick = async () => {
+els.localDataClearDraftBtn.onclick = async () => {
   if (
     !(await appConfirm(
       "This removes only the saved character creation draft.",
@@ -523,10 +523,10 @@ els.settingsClearDraftBtn.onclick = async () => {
   creationDraft = emptyDraft();
   storageAdapter.remove(CREATION_KEY);
   if ($("#creationPanel")?.classList.contains("active")) renderCreator();
-  renderSettingsSummary();
+  renderLocalDataSummary();
   appToast("Creator draft cleared.", "success");
 };
-els.settingsClearAllBtn.onclick = async () => {
+els.localDataClearAllBtn.onclick = async () => {
   if (
     !(await appConfirm(
       "This removes all character slots, the active tracker save, creator draft, demo flags, and welcome preference from this browser. Export a full backup first if this data matters.",
