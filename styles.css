@@ -389,23 +389,33 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  gap: clamp(0.25rem, 0.8vw, 0.45rem);
+  flex-wrap: nowrap;
   position: fixed;
   bottom: clamp(0.75rem, 2vw, 1.25rem);
   left: 50%;
   z-index: 3;
-  width: max-content;
-  max-width: min(34rem, calc(100vw - 2rem));
+  width: fit-content;
+  max-width: calc(100vw - 1rem);
   margin: 0;
   color: var(--muted);
-  font-size: 0.76rem;
+  overflow: hidden;
+  font-size: clamp(0.62rem, 1.2vw, 0.76rem);
   text-align: center;
+  white-space: nowrap;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.72);
   transform: translateX(-50%);
 }
 
+.landing-footer-note > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .landing-footer-link {
+  flex: 0 0 auto;
   min-height: 0;
   padding: 0;
   border: 0;

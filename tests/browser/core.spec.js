@@ -46,6 +46,42 @@ test("settings panel exposes backup and local data controls", async ({
   page,
 }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
+  const footerMetrics = await page
+    .locator(".landing-footer-note")
+    .evaluate((footer) => {
+      const footerRect = footer.getBoundingClientRect();
+      const childTops = Array.from(footer.children).map(
+        (child) => child.getBoundingClientRect().top,
+      );
+      const linkRects = Array.from(
+        footer.querySelectorAll(".landing-footer-link"),
+      ).map((link) => {
+        const rect = link.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+        };
+      });
+      return {
+        childTops,
+        footerLeft: footerRect.left,
+        footerRight: footerRect.right,
+        linkRects,
+        viewportWidth: window.innerWidth,
+      };
+    });
+  const footerTopSpread =
+    Math.max(...footerMetrics.childTops) - Math.min(...footerMetrics.childTops);
+  expect(footerTopSpread).toBeLessThanOrEqual(1);
+  expect(footerMetrics.footerLeft).toBeGreaterThanOrEqual(0);
+  expect(footerMetrics.footerRight).toBeLessThanOrEqual(
+    footerMetrics.viewportWidth,
+  );
+  for (const linkRect of footerMetrics.linkRects) {
+    expect(linkRect.left).toBeGreaterThanOrEqual(0);
+    expect(linkRect.right).toBeLessThanOrEqual(footerMetrics.viewportWidth);
+  }
   await page.locator("#landingSettingsBtn").click();
 
   await expect(page.locator("#landingPage")).toBeHidden();
