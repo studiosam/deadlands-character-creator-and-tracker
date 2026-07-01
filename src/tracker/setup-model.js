@@ -8,9 +8,7 @@
 
 function characterSetupStatus(stepId) {
   if (stepId === "concept") {
-    return character.name && character.archetype ? "Complete" : "Incomplete";
-  }
-  if (stepId === "ancestry") {
+    if (!character.name || !character.archetype) return "Incomplete";
     return isHumanAncestry(character.ancestry) ? "Complete" : "Needs review";
   }
   if (stepId === "hindrances") {

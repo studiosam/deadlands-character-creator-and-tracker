@@ -107,6 +107,7 @@ const els = {
   characterSetupPanel: $("#characterSetupPanel"),
   characterSetupStepper: $("#characterSetupStepper"),
   characterSetupContent: $("#characterSetupContent"),
+  characterDossierLayout: $("#characterDossierLayout"),
   reviewSetupBtn: $("#reviewSetupBtn"),
   manageCharacterBtn: $("#manageCharacterBtn"),
   attributesList: $("#attributesList"),

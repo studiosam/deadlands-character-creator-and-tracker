@@ -59,6 +59,12 @@ test("starts new characters directly in character setup @mobile", async ({
     "Unsaved setup draft",
   );
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
+  await expect(page.locator("#setupConceptPanel")).toContainText(
+    "Race / Ancestry",
+  );
+  await expect(page.locator("#setupConceptPanel")).toContainText("Human");
+  await expect(page.locator("[data-setup-step='ancestry']")).toHaveCount(0);
+  await expect(page.locator("#characterDossierLayout")).toBeHidden();
   await expect(page.locator("[data-setup-step='concept']")).toHaveAttribute(
     "aria-current",
     "step",
@@ -357,28 +363,38 @@ test("finishes character setup and starts playing with a saved character", async
   ).toHaveText("Start Playing");
 });
 
-test("shows human-only race ancestry setup as read-only", async ({ page }) => {
+test("shows human ancestry in concept setup", async ({ page }) => {
   await enterTracker(page);
   await openCharacterSetupReview(page);
 
-  await page.locator("[data-setup-step='ancestry']").click();
-  const ancestryPanel = page.locator("#setupRaceAncestryPanel");
-  await expect(ancestryPanel).toBeVisible();
+  await expect(page.locator("[data-setup-step='ancestry']")).toHaveCount(0);
+  await expect(page.locator("#setupRaceAncestryPanel")).toHaveCount(0);
+
+  await page.locator("[data-setup-step='concept']").click();
+  const conceptPanel = page.locator("#setupConceptPanel");
+  await expect(conceptPanel).toBeVisible();
   await expect(
-    ancestryPanel.getByRole("heading", {
-      name: "Race / Ancestry",
+    conceptPanel.getByRole("heading", {
+      name: "Concept",
       exact: true,
     }),
   ).toBeVisible();
-  await expect(page.locator("[data-setup-step='ancestry']")).toContainText(
+  await expect(page.locator("[data-setup-step='concept']")).toContainText(
     "Complete",
   );
-  await expect(ancestryPanel).toContainText("Current Race / Ancestry");
-  await expect(ancestryPanel).toContainText("Human");
-  await expect(ancestryPanel).toContainText("This step is read-only for now.");
-  await expect(
-    ancestryPanel.locator("input, select, textarea, button"),
-  ).toHaveCount(0);
+  await expect(conceptPanel).toContainText("Race / Ancestry");
+  await expect(conceptPanel).toContainText("Human");
+  await expect(conceptPanel).toContainText(
+    "Deadlands characters use Human ancestry",
+  );
+
+  const stepTopSpread = await page
+    .locator("#characterSetupStepper .setup-step")
+    .evaluateAll((steps) => {
+      const tops = steps.map((step) => step.getBoundingClientRect().top);
+      return Math.max(...tops) - Math.min(...tops);
+    });
+  expect(stepTopSpread).toBeLessThanOrEqual(1);
 
   await page.locator("[data-setup-step='review']").click();
   await expect(page.locator("#setupReviewPanel")).toContainText(

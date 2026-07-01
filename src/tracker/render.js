@@ -7,7 +7,6 @@
  */
 const CHARACTER_SETUP_STEPS = [
   { id: "concept", label: "Concept" },
-  { id: "ancestry", label: "Race / Ancestry" },
   { id: "hindrances", label: "Hindrances" },
   { id: "attributesSkills", label: "Traits" },
   { id: "edges", label: "Edges" },
@@ -27,6 +26,7 @@ function renderCharacterTabMode() {
   const confirmedSheetMode =
     character?.setupStatus === "complete" && !characterSetupReviewOpen;
   els.characterSetupPanel?.classList.toggle("hidden", !setupMode);
+  els.characterDossierLayout?.classList.toggle("hidden", setupMode);
   els.reviewSetupBtn?.classList.toggle("hidden", setupMode);
   els.manageCharacterBtn?.classList.toggle("hidden", false);
   els.addManualPowerPointsBtn?.classList.toggle(

@@ -2160,14 +2160,17 @@ h3 {
 }
 
 .setup-stepper {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
   gap: 0.55rem;
   margin-bottom: 1rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .setup-step {
   display: grid;
+  flex: 1 0 7.25rem;
   justify-items: start;
   gap: 0.35rem;
   min-height: 4.2rem;

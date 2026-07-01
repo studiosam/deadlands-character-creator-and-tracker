@@ -1111,7 +1111,6 @@ function reopenSetupReview() {
 function incompleteSetupSections() {
   return [
     ["concept", "Concept"],
-    ["ancestry", "Race / Ancestry"],
     ["hindrances", "Hindrances"],
     ["attributesSkills", "Traits"],
     ["edges", "Edges"],

@@ -312,7 +312,6 @@ function renderCharacterSetup() {
 
   const renderers = {
     concept: renderSetupConcept,
-    ancestry: renderSetupAncestry,
     hindrances: renderSetupHindrances,
     attributesSkills: renderSetupTraits,
     edges: renderSetupEdges,
@@ -371,10 +370,19 @@ function renderSetupConcept() {
     <div class="section-title">
       <div>
         <h3 id="setupConceptHeading">Concept</h3>
-        <p>Edit the active character's core concept fields. Race and ancestry stay in the Race / Ancestry step.</p>
+        <p>Edit the active character's core concept fields. Deadlands characters use Human ancestry in this profile.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Race / Ancestry", character.ancestry || "Human")}
+      ${setupDetail("Supported by This Profile", "Human")}
+    </div>
+    ${
+      isHumanAncestry(character.ancestry)
+        ? ""
+        : '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
+    }
     <div class="setup-form-grid">
       <label>Character name<input id="setupNameInput" data-concept-field="name" value="${esc(character.name)}" autocomplete="off"></label>
       <label>Gender<input id="setupGenderInput" data-concept-field="gender" value="${esc(character.gender || "")}" autocomplete="off" list="setupGenderOptions"></label>
@@ -464,30 +472,6 @@ function renderSetupHindrances() {
     <div class="setup-hindrance-list">
       ${renderSetupHindranceRows()}
     </div>
-  </section>`;
-}
-
-function renderSetupAncestry() {
-  const status = characterSetupStatus("ancestry");
-  const supported = isHumanAncestry(character.ancestry);
-  return `<section id="setupRaceAncestryPanel" class="setup-step-panel" aria-labelledby="setupRaceAncestryHeading">
-    <div class="section-title">
-      <div>
-        <h3 id="setupRaceAncestryHeading">Race / Ancestry</h3>
-        <p>Deadlands: The Weird West uses Human characters for the current built-in profile.</p>
-      </div>
-      ${setupStatusMarkup(status)}
-    </div>
-    <div class="setup-review-grid">
-      ${setupDetail("Current Race / Ancestry", character.ancestry)}
-      ${setupDetail("Supported by This Profile", "Human")}
-    </div>
-    <p class="creator-note">This step is read-only for now. Future SWADE-wide profile support may make race and ancestry configurable.</p>
-    ${
-      supported
-        ? ""
-        : '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
-    }
   </section>`;
 }
 
