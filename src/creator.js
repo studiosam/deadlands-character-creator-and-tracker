@@ -632,7 +632,7 @@ function newSetupCharacterPayload() {
   return {
     source: "created",
     setupStatus: "needsReview",
-    name: "Untitled Character",
+    name: "",
     rank: "Novice",
     ancestry: "Human",
     archetype: "",
@@ -700,7 +700,9 @@ async function startCharacterSetupCreation() {
     return;
   if (activeCharacterSlot()) saveCharacterSlot(character);
   characterSetupReviewOpen = false;
-  character = normalize(newSetupCharacterPayload());
+  character = normalize(newSetupCharacterPayload(), {
+    preserveBlankConceptFields: true,
+  });
   characterDraftMode = true;
   characterSetupStep = "concept";
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);

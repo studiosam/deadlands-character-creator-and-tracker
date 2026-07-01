@@ -105,6 +105,8 @@ document.addEventListener("click", async (event) => {
   const setupAction = event.target?.closest?.("[data-setup-action]");
   if (setupAction?.dataset.setupAction === "nextSetupStep") {
     nextSetupStep();
+  } else if (setupAction?.dataset.setupAction === "previousSetupStep") {
+    previousSetupStep();
   } else if (setupAction?.dataset.setupAction === "saveDraftCharacter") {
     await saveDraftCharacterFromSetup();
   } else if (setupAction?.dataset.setupAction === "discardDraftCharacter") {
@@ -168,10 +170,14 @@ document.addEventListener("click", async (event) => {
     changeSetupAttribute(setupAction.dataset.traitName || "", 1);
   } else if (setupAction?.dataset.setupAction === "decAttribute") {
     changeSetupAttribute(setupAction.dataset.traitName || "", -1);
+  } else if (setupAction?.dataset.setupAction === "resetAttributes") {
+    resetSetupAttributes();
   } else if (setupAction?.dataset.setupAction === "incSkill") {
     changeSetupSkill(setupAction.dataset.traitName || "", 1);
   } else if (setupAction?.dataset.setupAction === "decSkill") {
     changeSetupSkill(setupAction.dataset.traitName || "", -1);
+  } else if (setupAction?.dataset.setupAction === "resetSkills") {
+    resetSetupSkills();
   }
   const entryAction = event.target?.closest?.("[data-entry-action]");
   if (entryAction) handleEntryAction(entryAction);

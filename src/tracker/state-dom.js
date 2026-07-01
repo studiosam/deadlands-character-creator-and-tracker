@@ -10,10 +10,11 @@ let characterLibrary = null;
 let characterDraftMode = false;
 const CHARACTER_SETUP_STEPS = [
   { id: "concept", label: "Concept" },
-  { id: "hindrances", label: "Hindrances" },
-  { id: "attributesSkills", label: "Traits" },
+  { id: "traits", label: "Attributes" },
+  { id: "skills", label: "Skills" },
   { id: "edges", label: "Edges" },
   { id: "powers", label: "Powers" },
+  { id: "hindrances", label: "Hindrances" },
   { id: "gear", label: "Gear" },
   { id: "review", label: "Review" },
 ];

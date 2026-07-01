@@ -36,11 +36,15 @@ function characterIdentitySubtitle(separator = " ") {
     .join(separator);
 }
 
+function characterDisplayName() {
+  return String(character?.name || "").trim() || "Unnamed Character";
+}
+
 function renderCharacterIdentityDisplays() {
-  els.characterName.textContent = character.name;
+  els.characterName.textContent = characterDisplayName();
   els.characterSubtitle.textContent = characterIdentitySubtitle(" ");
   if (els.characterSummaryName)
-    els.characterSummaryName.textContent = character.name;
+    els.characterSummaryName.textContent = characterDisplayName();
   if (els.characterDossierSubtitle)
     els.characterDossierSubtitle.textContent = characterIdentitySubtitle(" • ");
 }

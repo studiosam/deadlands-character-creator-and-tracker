@@ -55,7 +55,40 @@ test("starts new characters directly in character setup @mobile", async ({
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#creationPanel")).toBeHidden();
   await expect(page.locator("#characterName")).toContainText(
-    "Untitled Character",
+    "Unnamed Character",
+  );
+  await expect(page.locator("#setupNameInput")).toHaveValue("");
+  await expect(page.locator("#setupArchetypeInput")).toHaveValue("");
+  await expect(page.locator("#setupNameInput")).toHaveAttribute(
+    "placeholder",
+    "Character Name",
+  );
+  await expect(page.locator("#setupGenderInput")).toHaveAttribute(
+    "placeholder",
+    "Gender Identity",
+  );
+  await expect(page.locator("#setupAgeInput")).toHaveAttribute(
+    "placeholder",
+    "32",
+  );
+  await expect(page.locator("#setupArchetypeInput")).toHaveAttribute(
+    "placeholder",
+    "Profession or Title",
+  );
+  await expect(page.locator("#setupPlayerInput")).toHaveAttribute(
+    "placeholder",
+    "Player Name",
+  );
+  await expect(page.locator("#setupDescriptionInput")).toHaveAttribute(
+    "placeholder",
+    "Tall, wary, dusty coat",
+  );
+  await expect(page.locator("#setupBackgroundInput")).toHaveAttribute(
+    "placeholder",
+    "Why they ride",
+  );
+  await expect(page.locator("[data-setup-step='concept']")).toContainText(
+    "Incomplete",
   );
   await expect(page.locator(".setup-persistence-panel.unsaved")).toContainText(
     "Setup draft saved locally",
@@ -77,10 +110,31 @@ test("starts new characters directly in character setup @mobile", async ({
     "aria-current",
     "step",
   );
+  await expect
+    .poll(() =>
+      page
+        .locator("#characterSetupStepper .setup-step")
+        .evaluateAll((steps) =>
+          steps.map((step) =>
+            step.querySelector("span")?.textContent.replace(/\s+/g, " ").trim(),
+          ),
+        ),
+    )
+    .toEqual([
+      "1. Concept",
+      "2. Attributes",
+      "3. Skills",
+      "4. Edges",
+      "5. Powers",
+      "6. Hindrances",
+      "7. Gear",
+      "8. Review",
+    ]);
 
-  await page.locator("[data-setup-step='attributesSkills']").click();
+  await page.locator("[data-setup-step='traits']").click();
+  await expect(page.locator("#setupTraitsPanel")).toContainText("Attributes");
   await expect(page.locator("#setupTraitsPanel")).toContainText(
-    "Edit starting Attributes",
+    "Attribute Points",
   );
   await expect(
     page.locator("#setupTraitsPanel [data-setup-action='incAttribute']"),
@@ -101,6 +155,8 @@ test("starts new characters directly in character setup @mobile", async ({
         activeSource:
           library?.charactersById?.[library.activeCharacterId]?.source || "",
         setupDraftSource: setupDraft?.character?.source || "",
+        setupDraftName: setupDraft?.character?.name ?? "__missing__",
+        setupDraftArchetype: setupDraft?.character?.archetype ?? "__missing__",
         setupDraftStep: setupDraft?.step || "",
         setupProgressStep: setupProgress?.step || "",
         trackerSource: tracker?.source || "",
@@ -118,8 +174,10 @@ test("starts new characters directly in character setup @mobile", async ({
     slotCount: 0,
     activeSource: "",
     setupDraftSource: "created",
-    setupDraftStep: "attributesSkills",
-    setupProgressStep: "attributesSkills",
+    setupDraftName: "",
+    setupDraftArchetype: "",
+    setupDraftStep: "traits",
+    setupProgressStep: "traits",
     trackerSource: "",
     hasBaseline: false,
   });
@@ -128,14 +186,13 @@ test("starts new characters directly in character setup @mobile", async ({
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#characterName")).toContainText(
-    "Untitled Character",
+    "Unnamed Character",
   );
-  await expect(
-    page.locator("[data-setup-step='attributesSkills']"),
-  ).toHaveAttribute("aria-current", "step");
-  await expect(page.locator("#setupTraitsPanel")).toContainText(
-    "Edit starting Attributes",
+  await expect(page.locator("[data-setup-step='traits']")).toHaveAttribute(
+    "aria-current",
+    "step",
   );
+  await expect(page.locator("#setupTraitsPanel")).toContainText("Attributes");
 
   await page.locator("[data-setup-step='review']").click();
   await page.locator("[data-setup-action='saveDraftCharacter']").click();
@@ -182,8 +239,10 @@ test("starts new characters directly in character setup @mobile", async ({
   await expect(page.locator("#creatorModeBtn")).toHaveText("New Character");
   await page.locator("#creatorModeBtn").click();
   await expect(page.locator("#characterName")).toContainText(
-    "Untitled Character",
+    "Unnamed Character",
   );
+  await expect(page.locator("#setupNameInput")).toHaveValue("");
+  await expect(page.locator("#setupArchetypeInput")).toHaveValue("");
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
   await expect(page.locator("#creationPanel")).toBeHidden();
   await expect
@@ -239,6 +298,46 @@ test("normalizes legacy characters without setupStatus as complete", async ({
   );
 
   expect(setupStatus).toBe("complete");
+});
+
+test("loads stale setup placeholder names as empty concept fields", async ({
+  page,
+}) => {
+  await page.evaluate(
+    ({ setupDraftKey }) => {
+      const draft = normalize(
+        {
+          source: "created",
+          setupStatus: "needsReview",
+          name: "Untitled Character",
+          archetype: "Drifter",
+          rank: "Novice",
+          ancestry: "Human",
+          attributes: {},
+          skills: [],
+        },
+        { preserveBlankConceptFields: true },
+      );
+      localStorage.setItem(
+        setupDraftKey,
+        JSON.stringify({
+          schemaVersion: APP_SCHEMA_VERSION,
+          step: "concept",
+          savedAt: new Date().toISOString(),
+          character: serializeCharacterForStorage(draft),
+        }),
+      );
+    },
+    { setupDraftKey: SETUP_DRAFT_KEY },
+  );
+
+  await page.reload();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#characterName")).toContainText(
+    "Unnamed Character",
+  );
+  await expect(page.locator("#setupNameInput")).toHaveValue("");
+  await expect(page.locator("#setupArchetypeInput")).toHaveValue("");
 });
 
 test("shows a clean reference sheet for confirmed characters", async ({
@@ -332,6 +431,8 @@ test("finishes character setup and starts playing with a saved character", async
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
 
   await page.locator("#setupNameInput").fill("Finished Setup Character");
+  await page.locator("#setupGenderInput").fill("Female");
+  await page.locator("#setupAgeInput").fill("29");
   await page.locator("#setupArchetypeInput").fill("Trail Scout");
   await page.locator("#setupPlayerInput").fill("Playwright");
 
@@ -339,13 +440,22 @@ test("finishes character setup and starts playing with a saved character", async
     0,
   );
   await page.locator("[data-setup-action='nextSetupStep']").click();
-  await expect(page.locator("#setupHindrancesPanel")).toBeVisible();
+  await expect(page.locator("#setupTraitsPanel")).toBeVisible();
+  await expect(
+    page.locator("[data-setup-action='previousSetupStep']"),
+  ).toHaveText("Previous: Concept");
+  await page.locator("[data-setup-action='previousSetupStep']").click();
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupTraitsPanel")).toBeVisible();
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupSkillsPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupEdgesPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupPowersPanel")).toBeVisible();
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupHindrancesPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupGearPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
@@ -355,7 +465,7 @@ test("finishes character setup and starts playing with a saved character", async
   await expect(page.locator("#appDialog")).toBeVisible();
   await expect(page.locator("#appDialogTitle")).toHaveText("Finish setup?");
   await expect(page.locator("#appDialogMessage")).toContainText("Hindrances");
-  await expect(page.locator("#appDialogMessage")).toContainText("Traits");
+  await expect(page.locator("#appDialogMessage")).toContainText("Attributes");
   await page.locator("#appDialogConfirmBtn").click();
 
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
@@ -436,13 +546,20 @@ test("shows human ancestry in concept setup", async ({ page }) => {
     }),
   ).toBeVisible();
   await expect(page.locator("[data-setup-step='concept']")).toContainText(
-    "Complete",
+    "Incomplete",
   );
   await expect(conceptPanel).toContainText("Race / Ancestry");
   await expect(conceptPanel).toContainText("Human");
-  await expect(conceptPanel).toContainText(
-    "Deadlands characters use Human ancestry",
-  );
+  await expect(conceptPanel).not.toContainText("Supported by This Profile");
+
+  const fixedAncestryTop = await conceptPanel
+    .getByText("Race / Ancestry")
+    .first()
+    .evaluate((element) => element.getBoundingClientRect().top);
+  const backgroundTop = await page
+    .locator("#setupBackgroundInput")
+    .evaluate((element) => element.getBoundingClientRect().top);
+  expect(fixedAncestryTop).toBeGreaterThan(backgroundTop);
 
   const stepTopSpread = await page
     .locator("#characterSetupStepper .setup-step")

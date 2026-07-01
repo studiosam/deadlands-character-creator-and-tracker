@@ -48,20 +48,28 @@ function applyConceptInputs() {
   save();
 }
 
-function nextSetupStep() {
+function moveSetupStep(offset) {
   collectConceptInputs();
   const currentIndex = CHARACTER_SETUP_STEPS.findIndex(
     (step) => step.id === characterSetupStep,
   );
-  const nextStep = CHARACTER_SETUP_STEPS[currentIndex + 1];
-  if (!nextStep) return;
-  characterSetupStep = nextStep.id;
+  const targetStep = CHARACTER_SETUP_STEPS[currentIndex + offset];
+  if (!targetStep) return;
+  characterSetupStep = targetStep.id;
   renderCharacterSetup();
   save();
   $("#characterSetupContent")?.scrollIntoView({
     behavior: "smooth",
     block: "start",
   });
+}
+
+function nextSetupStep() {
+  moveSetupStep(1);
+}
+
+function previousSetupStep() {
+  moveSetupStep(-1);
 }
 
 function setupHindranceSeverityForCatalog(catalogEntry, selectedSeverity = "") {
@@ -231,7 +239,7 @@ function addSetupEdgeFromCatalog(selectId, creationSource, sourceLabel) {
   );
   if (!stillEligible) {
     appToast(
-      `${sourceLabel} is no longer eligible. Reselect it after reviewing Traits, Rank, prerequisites, and selected Edges.`,
+      `${sourceLabel} is no longer eligible. Reselect it after reviewing Attributes, Skills, Rank, prerequisites, and selected Edges.`,
       "danger",
     );
     return;
@@ -259,15 +267,6 @@ function addSetupEdgeFromCatalog(selectId, creationSource, sourceLabel) {
     setupHumanFreeEdges().length >= setupExpectedHumanFreeEdges()
   ) {
     appToast("The Human free Edge slot is already filled.", "danger");
-    return;
-  }
-
-  if (
-    creationSource === "hindrance-benefit" &&
-    setupHindranceBenefitEdges().length >=
-      setupCreationBenefitValue("extraEdgesFromHindrances")
-  ) {
-    appToast("Spend Hindrance benefit points on an Edge slot first.", "danger");
     return;
   }
 
@@ -561,6 +560,50 @@ function changeSetupAttribute(name, direction) {
   } else if (currentIndex > 0) {
     character.attributes[key] = setupTraitDieFromIndex(currentIndex - 1);
   }
+  commitSetupTraitChange();
+}
+
+function resetSetupAttributes() {
+  if (!ensureSetupTraitsEditable()) return;
+  if (!character.attributes) character.attributes = {};
+  let changed = false;
+  ATTRIBUTE_ORDER.forEach((key) => {
+    if (character.attributes[key] !== "d4") {
+      character.attributes[key] = "d4";
+      changed = true;
+    }
+  });
+  if (!changed) return;
+  commitSetupTraitChange();
+}
+
+function resetSetupSkills() {
+  if (!ensureSetupTraitsEditable()) return;
+  if (!Array.isArray(character.skills)) character.skills = [];
+  const hasResettableSkills =
+    setupSkillPointStats().spent > 0 ||
+    character.skills.some(
+      (skill) =>
+        !setupSkillIsCoreName(skill.name) ||
+        (skill.die || skill.value || "d4") !== "d4" ||
+        !skill.core,
+    );
+  if (!hasResettableSkills) return;
+
+  character.skills = Object.entries(SKILL_LINKED_ATTRIBUTES)
+    .filter(([name]) => setupSkillIsCoreName(name))
+    .map(([name, linkedAttribute]) => {
+      const existing = character.skills.find(
+        (skill) => skillReferenceName(skill.name) === name,
+      );
+      return {
+        ...(existing || {}),
+        name,
+        die: "d4",
+        linkedAttribute: setupSkillAttributeKey(linkedAttribute),
+        core: true,
+      };
+    });
   commitSetupTraitChange();
 }
 
@@ -1132,9 +1175,12 @@ function reopenSetupReview() {
 function incompleteSetupSections() {
   return [
     ["concept", "Concept"],
-    ["hindrances", "Hindrances"],
-    ["attributesSkills", "Traits"],
+    ["traits", "Attributes"],
+    ["skills", "Skills"],
     ["edges", "Edges"],
+    ["powers", "Powers"],
+    ["hindrances", "Hindrances"],
+    ["gear", "Gear"],
   ].filter(([stepId]) => characterSetupStatus(stepId) !== "Complete");
 }
 

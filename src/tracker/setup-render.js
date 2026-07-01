@@ -10,8 +10,26 @@ function setupStatusMarkup(status) {
   return `<span class="setup-status ${className}">${esc(status)}</span>`;
 }
 
-function setupDetail(label, value) {
-  return `<div class="setup-detail"><span>${esc(label)}</span><strong>${esc(value || "—")}</strong></div>`;
+function setupDetail(label, value, helpText = "") {
+  const help = String(helpText || "").trim();
+  return `<div class="setup-detail">
+    <div class="setup-detail-label">
+      <span>${esc(label)}</span>
+      ${
+        help
+          ? `<span class="setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" title="${esc(help)}" data-tooltip="${esc(help)}">?</span>`
+          : ""
+      }
+    </div>
+    <strong>${esc(value || "—")}</strong>
+  </div>`;
+}
+
+function attributeHelpMarkup(label, helpText = "") {
+  const help = String(helpText || "").trim();
+  return help
+    ? `<span class="attribute-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" title="${esc(help)}" data-tooltip="${esc(help)}">?</span>`
+    : "";
 }
 
 function sortedAttributeEntries() {
@@ -296,8 +314,7 @@ function renderSetupHindranceBenefitRows(stats) {
 
 function renderCharacterSetup() {
   if (!els.characterSetupStepper || !els.characterSetupContent) return;
-  if (!CHARACTER_SETUP_STEPS.some((step) => step.id === characterSetupStep))
-    characterSetupStep = "concept";
+  characterSetupStep = validSetupStepId(characterSetupStep);
 
   els.characterSetupStepper.innerHTML = CHARACTER_SETUP_STEPS.map(
     (step, index) => {
@@ -312,6 +329,8 @@ function renderCharacterSetup() {
 
   const renderers = {
     concept: renderSetupConcept,
+    traits: renderSetupTraits,
+    skills: renderSetupSkills,
     hindrances: renderSetupHindrances,
     attributesSkills: renderSetupTraits,
     edges: renderSetupEdges,
@@ -384,10 +403,16 @@ function renderSetupStepNavigation() {
   const currentIndex = CHARACTER_SETUP_STEPS.findIndex(
     (step) => step.id === characterSetupStep,
   );
+  const previousStep = CHARACTER_SETUP_STEPS[currentIndex - 1];
   const nextStep = CHARACTER_SETUP_STEPS[currentIndex + 1];
-  if (!nextStep) return "";
-  return `<div class="setup-step-navigation creator-actions">
-    <button type="button" data-setup-action="nextSetupStep">Next: ${esc(nextStep.label)}</button>
+  if (!previousStep && !nextStep) return "";
+  return `<div class="setup-step-navigation">
+    <div class="setup-step-navigation-previous">
+      ${previousStep ? `<button class="ghost" type="button" data-setup-action="previousSetupStep">Previous: ${esc(previousStep.label)}</button>` : ""}
+    </div>
+    <div class="setup-step-navigation-next">
+      ${nextStep ? `<button type="button" data-setup-action="nextSetupStep">Next: ${esc(nextStep.label)}</button>` : ""}
+    </div>
   </div>`;
 }
 
@@ -397,33 +422,32 @@ function renderSetupConcept() {
     <div class="section-title">
       <div>
         <h3 id="setupConceptHeading">Concept</h3>
-        <p>Edit the active character's core concept fields. Deadlands characters use Human ancestry in this profile.</p>
+        <p>Sketch the character's identity first. Name, gender, age, and title are required before Concept is complete.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>
-    <div class="setup-review-grid">
-      ${setupDetail("Race / Ancestry", character.ancestry || "Human")}
-      ${setupDetail("Supported by This Profile", "Human")}
-    </div>
-    ${
-      isHumanAncestry(character.ancestry)
-        ? ""
-        : '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
-    }
     <div class="setup-form-grid">
-      <label>Character name<input id="setupNameInput" data-concept-field="name" value="${esc(character.name)}" autocomplete="off"></label>
-      <label>Gender<input id="setupGenderInput" data-concept-field="gender" value="${esc(character.gender || "")}" autocomplete="off" list="setupGenderOptions"></label>
-      <label>Age<input id="setupAgeInput" data-concept-field="age" value="${esc(character.age || "")}" autocomplete="off"></label>
-      <label>Profession or Title<input id="setupArchetypeInput" data-concept-field="archetype" value="${esc(character.archetype || "")}" autocomplete="off"></label>
-      <label>Player name<input id="setupPlayerInput" data-concept-field="player" value="${esc(character.player || "")}" autocomplete="off"></label>
-      <label class="setup-wide">Description<textarea id="setupDescriptionInput" data-concept-field="description" rows="5">${esc(character.description || "")}</textarea></label>
-      <label class="setup-wide">Background<textarea id="setupBackgroundInput" data-concept-field="background" rows="6">${esc(character.background || "")}</textarea></label>
+      <label>Character name<input id="setupNameInput" data-concept-field="name" value="${esc(character.name || "")}" placeholder="Character Name" autocomplete="off"></label>
+      <label>Gender<input id="setupGenderInput" data-concept-field="gender" value="${esc(character.gender || "")}" placeholder="Gender Identity" autocomplete="off" list="setupGenderOptions"></label>
+      <label>Age<input id="setupAgeInput" data-concept-field="age" value="${esc(character.age || "")}" placeholder="32" autocomplete="off"></label>
+      <label>Profession or Title<input id="setupArchetypeInput" data-concept-field="archetype" value="${esc(character.archetype || "")}" placeholder="Profession or Title" autocomplete="off"></label>
+      <label>Player name<input id="setupPlayerInput" data-concept-field="player" value="${esc(character.player || "")}" placeholder="Player Name" autocomplete="off"></label>
+      <label class="setup-wide">Description<textarea id="setupDescriptionInput" data-concept-field="description" rows="5" placeholder="Tall, wary, dusty coat">${esc(character.description || "")}</textarea></label>
+      <label class="setup-wide">Background<textarea id="setupBackgroundInput" data-concept-field="background" rows="6" placeholder="Why they ride">${esc(character.background || "")}</textarea></label>
       <datalist id="setupGenderOptions">
         <option value="Female"></option>
         <option value="Male"></option>
         <option value="Nonbinary"></option>
       </datalist>
     </div>
+    <div class="setup-review-grid">
+      ${setupDetail("Race / Ancestry", character.ancestry || "Human")}
+    </div>
+    ${
+      isHumanAncestry(character.ancestry)
+        ? ""
+        : '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
+    }
     <p class="creator-note">${
       isUnsavedCharacterDraft()
         ? "Concept edits update this locally saved setup draft. Character slot save controls appear on Review."
@@ -456,9 +480,9 @@ function renderSetupHindranceSelectionControls() {
     <h4 id="setupHindranceEntryHeading">Add Hindrance</h4>
     <p class="creator-note">Choose the Hindrance, confirm its severity, and add any table-specific notes before spending its benefit points.</p>
     <div class="setup-form-grid setup-hindrance-form">
-      <label class="setup-wide">Hindrance<select id="setupHindranceCatalogSelect">${entryCatalogOptions(HINDRANCE_CATALOG, "Choose Hindrance...")}</select></label>
-      <label>Severity<select id="setupHindranceSeverityInput"><option value="Minor">Minor</option><option value="Major">Major</option></select></label>
-      <label class="setup-wide">Notes<input id="setupHindranceNotesInput" autocomplete="off" placeholder="Optional detail, obligation, enemy, vow, phobia, etc."></label>
+      <label class="setup-hindrance-name">Hindrance<select id="setupHindranceCatalogSelect">${entryCatalogOptions(HINDRANCE_CATALOG, "Choose Hindrance...")}</select></label>
+      <label class="setup-hindrance-severity">Severity<select id="setupHindranceSeverityInput"><option value="Minor">Minor</option><option value="Major">Major</option></select></label>
+      <label class="setup-hindrance-notes">Notes<input id="setupHindranceNotesInput" autocomplete="off" placeholder="Optional detail, obligation, enemy, vow, phobia, etc."></label>
       <div class="creator-actions setup-wide">
         <button id="setupAddHindranceBtn" type="button" data-setup-action="addHindrance">Add Hindrance</button>
       </div>
@@ -478,21 +502,17 @@ function renderSetupHindrances() {
       </div>
       ${setupStatusMarkup(status)}
     </div>
-    <div class="setup-review-grid">
-      ${setupDetail("Expected Selection", "At least 1 Hindrance")}
-      ${setupDetail("Minor Hindrance", "1 point")}
-      ${setupDetail("Major Hindrance", "2 points")}
-      ${setupDetail("Benefit Point Cap", "4 points")}
-      ${setupDetail("Selected Hindrances", `${stats.count}`)}
-      ${setupDetail("Total Hindrance Points", `${stats.total}`)}
-      ${setupDetail("Benefit Points Counted", `${stats.benefitPoints} / ${stats.benefitCap}`)}
-      ${setupDetail("Benefit Points Spent", `${spending.spent} / ${spending.available}`)}
-      ${setupDetail("Benefit Points Remaining", `${spending.remaining}`)}
+    <p class="creator-note setup-hindrance-explainer">Select at least one starting Hindrance unless your table allows an exception. Minor Hindrances count as 1 point and Major Hindrances count as 2 points. By default, only up to ${stats.benefitCap} Hindrance points count toward starting benefits; extra Hindrances can still be recorded for character flavor or GM/table exceptions.</p>
+    <div class="setup-review-grid setup-hindrance-summary-grid">
+      ${setupDetail("Selected Hindrances", `${stats.count}`, "The number of Hindrance records currently selected for this character.")}
+      ${setupDetail("Benefit Points Counted", `${stats.benefitPoints} / ${stats.benefitCap}`, "The Hindrance points currently allowed to spend under the default starting benefit cap.")}
+      ${setupDetail("Benefit Points Spent", `${spending.spent} / ${spending.available}`, "The counted Hindrance points already allocated to starting benefits below.")}
+      ${setupDetail("Benefit Points Remaining", `${spending.remaining}`, "Counted Hindrance points still available to spend on starting benefits.")}
     </div>
     ${
       stats.overCap
         ? `<div class="entry-advisory"><p>You may record more than ${stats.benefitCap} Hindrance points for character flavor, but only ${stats.benefitCap} points should count for starting benefits by default.</p><p><strong>Above the standard cap:</strong> ${stats.total} Hindrance points selected; extra rewards require a table or GM exception.</p></div>`
-        : '<p class="creator-note">You may record more than 4 Hindrance points for character flavor, but only 4 points should count for starting benefits.</p>'
+        : ""
     }
     ${
       stats.unknownCount
@@ -513,38 +533,42 @@ function renderSetupHindrances() {
   </section>`;
 }
 
-function setupTraitPointDetails(attributeStats, skillStats) {
-  return [
-    setupDetail(
-      "Attribute Points",
-      `${attributeStats.spent} / ${attributeStats.available}`,
-    ),
-    setupDetail(
-      "Attribute Normal / Extra",
-      `${attributeStats.normalAttributePoints} / ${attributeStats.extraAttributeRaises}`,
-    ),
-    setupDetail(
-      "Skill Points",
-      `${skillStats.spent} / ${skillStats.available}`,
-    ),
-    setupDetail("Skill Points Remaining", `${skillStats.remaining}`),
-    setupDetail(
-      "Skill Normal / Extra",
-      `${skillStats.normalSkillPoints} / ${skillStats.extraSkillPoints}`,
-    ),
-  ].join("");
-}
-
-function setupTraitControls(
-  actionBase,
-  name,
+function setupAttributeDiceControls(
+  key,
+  currentDie,
   decreaseDisabled,
   increaseDisabled,
 ) {
-  return `<div class="setup-trait-controls">
-    <button class="ghost tag-action" type="button" data-setup-action="dec${actionBase}" data-trait-name="${esc(name)}"${decreaseDisabled ? " disabled" : ""}>−</button>
-    <button class="ghost tag-action" type="button" data-setup-action="inc${actionBase}" data-trait-name="${esc(name)}"${increaseDisabled ? " disabled" : ""}>+</button>
+  return `<div class="setup-trait-controls setup-attribute-dice-controls" aria-label="${esc(`${displayNameFromKey(key)} die value ${currentDie}`)}">
+    <button class="ghost tag-action" type="button" data-setup-action="decAttribute" data-trait-name="${esc(key)}"${decreaseDisabled ? " disabled" : ""}>−</button>
+    <div class="setup-die-track" aria-hidden="true">
+      ${DIE_STEPS.map(
+        (step) =>
+          `<span class="setup-die-step${step === currentDie ? " current" : ""}">${esc(step)}</span>`,
+      ).join("")}
+    </div>
+    <button class="ghost tag-action" type="button" data-setup-action="incAttribute" data-trait-name="${esc(key)}"${increaseDisabled ? " disabled" : ""}>+</button>
   </div>`;
+}
+
+function setupAttributePointCard(attributeStats) {
+  const spent = Math.max(0, Number(attributeStats.spent) || 0);
+  const available = Math.max(0, Number(attributeStats.available) || 0);
+  const percentage =
+    available > 0 ? Math.min(100, Math.max(0, (spent / available) * 100)) : 0;
+
+  return `<article class="setup-trait-editor-row setup-attribute-editor-row setup-attribute-points-card">
+    <div class="setup-attribute-editor-heading">
+      <strong>Attribute Points</strong>
+      <span>${spent} / ${available} assigned</span>
+    </div>
+    <div class="setup-attribute-meter" role="meter" aria-label="Attribute Points assigned" aria-valuemin="0" aria-valuemax="${available}" aria-valuenow="${spent}">
+      <span class="setup-attribute-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>
+    </div>
+    <div class="setup-attribute-meter-actions">
+      <button class="ghost small-action" type="button" data-setup-action="resetAttributes" aria-label="Reset Attributes to d4" title="Reset Attributes to d4"${spent <= 0 ? " disabled" : ""}>Reset</button>
+    </div>
+  </article>`;
 }
 
 function setupAttributeEditorRow(key, attributeStats) {
@@ -552,13 +576,53 @@ function setupAttributeEditorRow(key, attributeStats) {
   const index = getDieStepIndex(die);
   const label = displayNameFromKey(key);
   const note = attributeUseNote(key);
-  return `<article class="setup-trait-editor-row trait-help-target" tabindex="0" title="${esc([label, note].filter(Boolean).join(". "))}">
-    <div>
+  return `<article class="setup-trait-editor-row setup-attribute-editor-row">
+    ${attributeHelpMarkup(label, note)}
+    <div class="setup-attribute-editor-heading">
       <strong>${esc(label)}</strong>
-      <span>${esc(die)} • 1 point per step above d4</span>
-      ${note ? `<small class="trait-help" role="tooltip">${esc(note)}</small>` : ""}
     </div>
-    ${setupTraitControls("Attribute", key, index <= 0, index >= DIE_STEPS.length - 1 || attributeStats.spent >= attributeStats.available)}
+    ${setupAttributeDiceControls(key, die, index <= 0, index >= DIE_STEPS.length - 1 || attributeStats.spent >= attributeStats.available)}
+  </article>`;
+}
+
+function setupSkillDiceControls(
+  skillName,
+  currentDie,
+  decreaseDisabled,
+  increaseDisabled,
+) {
+  const skillDieSteps = ["d4-2", ...DIE_STEPS];
+  return `<div class="setup-trait-controls setup-skill-dice-controls" aria-label="${esc(`${skillName} die value ${currentDie}`)}">
+    <button class="ghost tag-action" type="button" data-setup-action="decSkill" data-trait-name="${esc(skillName)}"${decreaseDisabled ? " disabled" : ""}>−</button>
+    <div class="setup-die-track" aria-hidden="true">
+      ${skillDieSteps
+        .map(
+          (step) =>
+            `<span class="setup-die-step${step === currentDie ? " current" : ""}">${esc(step)}</span>`,
+        )
+        .join("")}
+    </div>
+    <button class="ghost tag-action" type="button" data-setup-action="incSkill" data-trait-name="${esc(skillName)}"${increaseDisabled ? " disabled" : ""}>+</button>
+  </div>`;
+}
+
+function setupSkillPointCard(skillStats) {
+  const spent = Math.max(0, Number(skillStats.spent) || 0);
+  const available = Math.max(0, Number(skillStats.available) || 0);
+  const percentage =
+    available > 0 ? Math.min(100, Math.max(0, (spent / available) * 100)) : 0;
+
+  return `<article class="setup-trait-editor-row setup-skill-editor-row setup-skill-points-card">
+    <div class="setup-skill-editor-heading">
+      <strong>Skill Points</strong>
+      <span>${spent} / ${available} assigned</span>
+    </div>
+    <div class="setup-skill-meter" role="meter" aria-label="Skill Points assigned" aria-valuemin="0" aria-valuemax="${available}" aria-valuenow="${spent}">
+      <span class="setup-skill-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>
+    </div>
+    <div class="setup-skill-meter-actions">
+      <button class="ghost small-action" type="button" data-setup-action="resetSkills" aria-label="Reset Skills to starting values" title="Reset Skills to starting values"${spent <= 0 ? " disabled" : ""}>Reset</button>
+    </div>
   </article>`;
 }
 
@@ -589,19 +653,20 @@ function setupSkillEditorRow(skill) {
     .filter(Boolean)
     .join(" ");
 
-  return `<article class="setup-trait-editor-row skill-row${skill.isUnskilled ? " unskilled" : ""} trait-help-target" tabindex="0" title="${esc([referenceName, help].filter(Boolean).join(". "))}">
-    <div>
+  return `<article class="setup-trait-editor-row setup-skill-editor-row skill-row${skill.isUnskilled ? " unskilled" : ""}">
+    ${attributeHelpMarkup(referenceName, help)}
+    <div class="setup-skill-editor-heading">
       <strong>${esc(skill.name || "Skill")}</strong>
       <span>${esc(meta.join(" • "))}</span>
-      ${help ? `<small class="trait-help" role="tooltip">${esc(help)}</small>` : ""}
     </div>
-    ${setupTraitControls("Skill", skill.name, decreaseDisabled, increaseDisabled)}
+    ${setupSkillDiceControls(skill.name, displayDie, decreaseDisabled, increaseDisabled)}
   </article>`;
 }
 
 function renderSetupTraitAttributeGroup(attributeStats) {
   if (setupTraitsEditable()) {
-    return `<div class="setup-trait-editor-list">
+    return `<div class="setup-trait-editor-list setup-attribute-editor-list">
+      ${setupAttributePointCard(attributeStats)}
       ${ATTRIBUTE_ORDER.map((key) => setupAttributeEditorRow(key, attributeStats)).join("")}
     </div>`;
   }
@@ -631,7 +696,7 @@ function renderSetupTraitSkillGroup(setupSkills) {
           <h5>${esc(displayNameFromKey(attributeKey))}</h5>
           <span>Attribute ${esc(character.attributes?.[attributeKey] || "—")}</span>
         </div>
-        <div class="${editable ? "setup-trait-editor-list" : "skill-chip-grid"}">
+        <div class="${editable ? "setup-trait-editor-list setup-skill-editor-list" : "skill-chip-grid"}">
           ${
             attributeSkills.length
               ? attributeSkills
@@ -650,57 +715,63 @@ function renderSetupTraitSkillGroup(setupSkills) {
 }
 
 function renderSetupTraits() {
-  const attributeEntries = sortedAttributeEntries();
-  const skills = sortedSkills();
-  const setupSkills = setupSkillCatalogEntries();
-  const unskilledCount = setupSkills.filter(
-    (skill) => skill.isUnskilled,
-  ).length;
   const editable = setupTraitsEditable();
   const hasAdvances = (character.advances || []).length > 0;
   const attributeStats = setupAttributePointStats();
-  const skillPointStats = setupSkillPointStats();
 
-  return `<section id="setupTraitsPanel" class="setup-step-panel" aria-labelledby="setupTraitsHeading">
-    <div class="section-title">
-      <div>
-        <h3 id="setupTraitsHeading">Traits</h3>
-        <p>${editable ? "Edit starting Attributes and Skills for this created character. Changes update the current character and its creation baseline." : "Read-only view of recorded Attributes and the full skill list."}</p>
-      </div>
-      ${setupStatusMarkup(characterSetupStatus("attributesSkills"))}
-    </div>
-    <div class="setup-review-grid">
-      ${setupDetail("Recorded Attributes", `${attributeEntries.length}`)}
-      ${setupDetail("Recorded Skills", `${skills.length}`)}
-      ${setupDetail("All Skills Shown", `${setupSkills.length}`)}
-      ${setupDetail("Unskilled Skills", `${unskilledCount}`)}
-      ${setupDetail("Unskilled Value", "d4-2")}
-      ${setupDetail("Recorded Advances", `${(character.advances || []).length}`)}
-      ${editable ? setupTraitPointDetails(attributeStats, skillPointStats) : ""}
-    </div>
-    ${
-      editable
-        ? '<p class="creator-note">Attribute raises cost 1 point per step above d4. Non-core skills cost 1 point at or below their linked Attribute and 2 points per step above it. Core skills start at d4 for free.</p>'
-        : ""
-    }
+  return `<section id="setupTraitsPanel" class="setup-step-panel" aria-labelledby="setupAttributesHeading">
     ${
       hasAdvances
-        ? '<p class="entry-advisory"><strong>Advanced character:</strong> this view shows recorded trait values. Trait editing is locked here; use the Advances tab for current trait increases.</p>'
+        ? '<p class="entry-advisory"><strong>Advanced character:</strong> this view shows recorded Attribute values. Attribute editing is locked here; use the Advances tab for current Attribute increases.</p>'
         : ""
     }
     ${
       !editable && !hasAdvances && !setupCharacterIsCreated()
-        ? '<p class="entry-advisory"><strong>Audit only:</strong> imported or sample characters do not expose editable starting Traits until import reconstruction exists.</p>'
+        ? '<p class="entry-advisory"><strong>Audit only:</strong> imported or sample characters do not expose editable starting Attributes until import reconstruction exists.</p>'
         : ""
     }
     <div class="setup-trait-groups">
       <section class="setup-trait-group" aria-labelledby="setupAttributesHeading">
         <h4 id="setupAttributesHeading">Attributes</h4>
+        ${
+          editable
+            ? '<p class="creator-note">Attribute raises cost 1 point per step above d4. Use Hindrance benefits later if this draft needs extra Attribute points.</p>'
+            : ""
+        }
         ${renderSetupTraitAttributeGroup(attributeStats)}
       </section>
-      <section class="setup-trait-group" aria-labelledby="setupSkillsHeading">
-        <h4 id="setupSkillsHeading">Skills</h4>
-        <p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown as unskilled d4-2.</p>
+    </div>
+  </section>`;
+}
+
+function renderSetupSkills() {
+  const setupSkills = setupSkillCatalogEntries();
+  const editable = setupTraitsEditable();
+  const hasAdvances = (character.advances || []).length > 0;
+  const skillPointStats = setupSkillPointStats();
+
+  return `<section id="setupSkillsPanel" class="setup-step-panel" aria-labelledby="setupSkillsListHeading">
+    ${
+      hasAdvances
+        ? '<p class="entry-advisory"><strong>Advanced character:</strong> this view shows recorded skill values. Skill editing is locked here; use the Advances tab for current skill increases.</p>'
+        : ""
+    }
+    ${
+      !editable && !hasAdvances && !setupCharacterIsCreated()
+        ? '<p class="entry-advisory"><strong>Audit only:</strong> imported or sample characters do not expose editable starting Skills until import reconstruction exists.</p>'
+        : ""
+    }
+    <div class="setup-trait-groups">
+      <section class="setup-trait-group" aria-labelledby="setupSkillsListHeading">
+        <h4 id="setupSkillsListHeading">Skills</h4>
+        ${
+          editable
+            ? `<p class="creator-note">Non-core skills cost 1 point at or below their linked Attribute and 2 points per step above it. Core skills start at d4 for free. Missing skills are shown as unskilled d4-2.</p>
+        <div class="setup-trait-editor-list setup-skill-editor-list setup-skill-overview-list">
+          ${setupSkillPointCard(skillPointStats)}
+        </div>`
+            : '<p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown as unskilled d4-2.</p>'
+        }
         ${renderSetupTraitSkillGroup(setupSkills)}
       </section>
     </div>
@@ -743,11 +814,11 @@ function renderSetupEdgeSelectionControls() {
   }
 
   return `<section class="setup-trait-group setup-edge-selection" aria-labelledby="setupEdgeSelectionHeading">
-    <h4 id="setupEdgeSelectionHeading">Select Starting Edges</h4>
-    <p class="creator-note">Only currently eligible starting Edges are shown. Raise Traits or choose prerequisite Edges first to unlock more options.</p>
+    <h4 id="setupEdgeSelectionHeading">Draft Starting Edges</h4>
+    <p class="creator-note">Only currently eligible starting Edges are shown. Draft Human and Hindrance-benefit Edges here; unpaid extra Edges stay flagged until Hindrance benefit spending covers them.</p>
     <div class="setup-review-grid">
       ${setupDetail("Human Free Edge", `${humanEdges} / ${expectedHumanEdges}`)}
-      ${setupDetail("Hindrance Benefit Edges", `${hindranceEdges} / ${hindranceEdgeSlots}`)}
+      ${setupDetail("Draft Hindrance Benefit Edges", `${hindranceEdges} / ${hindranceEdgeSlots}`)}
     </div>
     ${
       expectedHumanEdges
@@ -759,16 +830,12 @@ function renderSetupEdgeSelectionControls() {
         </div>`
         : '<p class="creator-note">This ancestry does not grant a built-in Human free Edge.</p>'
     }
-    ${
-      hindranceEdgeSlots
-        ? `<div class="setup-form-grid">
-          <label class="setup-wide">Hindrance benefit Edge<select id="setupHindranceBenefitEdgeSelect"${hindranceEdges >= hindranceEdgeSlots ? " disabled" : ""}>${setupEdgeCatalogOptions("Choose Hindrance benefit Edge...")}</select></label>
+    <div class="setup-form-grid">
+          <label class="setup-wide">Draft Hindrance benefit Edge<select id="setupHindranceBenefitEdgeSelect">${setupEdgeCatalogOptions("Choose draft Hindrance benefit Edge...")}</select></label>
           <div class="creator-actions setup-wide">
-            <button type="button" data-setup-action="addHindranceBenefitEdge"${hindranceEdges >= hindranceEdgeSlots ? " disabled" : ""}>Add Hindrance Benefit Edge</button>
+            <button type="button" data-setup-action="addHindranceBenefitEdge">Add Draft Hindrance Benefit Edge</button>
           </div>
-        </div>`
-        : '<p class="creator-note">Spend 2 Hindrance benefit points on Edges to unlock an extra starting Edge slot.</p>'
-    }
+        </div>
   </section>`;
 }
 
@@ -801,7 +868,7 @@ function renderSetupEdges() {
       ${setupDetail("Arcane Background Edges", `${arcaneEdges.length}`)}
       ${setupDetail("Advance-Looking Edges", `${advanceEdges.length}`)}
       ${setupDetail("Human Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
-      ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
+      ${setupDetail("Draft Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
     </div>
     ${renderSetupEdgeSelectionControls()}
     <p class="entry-advisory"><strong>Audit only:</strong> imported characters may not preserve whether an Edge came from Human ancestry, Hindrance benefits, Advances, or a GM exception. Source labels below are hints unless they were created in this tool.</p>
@@ -817,7 +884,7 @@ function renderSetupEdges() {
     }
     ${
       edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
-        ? '<p class="entry-warning">Needs review: more Hindrance benefit Edges are recorded than current Hindrance spending allows.</p>'
+        ? '<p class="entry-warning">Needs review: one or more drafted Hindrance benefit Edges still need Hindrance benefit spending or must be removed.</p>'
         : ""
     }
     ${
@@ -1429,7 +1496,7 @@ function renderSetupReview() {
       ${setupDetail("Hindrance Benefits Spent", `${hindranceSpending.spent} / ${hindranceSpending.available}`)}
       ${setupDetail("Edge Count", `${edgeCount}`)}
       ${setupDetail("Human Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
-      ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
+      ${setupDetail("Draft Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
       ${setupDetail("Arcane Background Edges", `${arcaneEdgeCount}`)}
       ${setupDetail("Known Powers", `${powersCount}`)}
       ${setupDetail("Power Points", powerPoints ? `${powerPoints.current} / ${powerPoints.max || "—"}` : "Not recorded")}
@@ -1469,7 +1536,12 @@ function renderSetupReview() {
     }
     ${
       edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
-        ? '<p class="entry-warning">Edges incomplete: select all Hindrance benefit Edge slots or adjust Hindrance spending.</p>'
+        ? '<p class="entry-warning">Edges incomplete: select all paid Hindrance benefit Edge slots or adjust Hindrance spending.</p>'
+        : ""
+    }
+    ${
+      edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
+        ? '<p class="entry-warning">Edges need review: one or more drafted Hindrance benefit Edges still need Hindrance benefit spending or must be removed.</p>'
         : ""
     }
     ${

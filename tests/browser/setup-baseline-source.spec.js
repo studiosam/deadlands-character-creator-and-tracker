@@ -131,6 +131,8 @@ test("finalizing setup snapshots source-tracked creation baseline and round-trip
       rank: "Novice",
       ancestry: "Human",
       archetype: "Blessed Drifter",
+      gender: "Male",
+      age: "40",
       attributes: {
         agility: "d6",
         smarts: "d6",
@@ -455,24 +457,36 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   );
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(
-    page.locator("[data-setup-step='attributesSkills']"),
-  ).toContainText("Complete");
-  await page.locator("[data-setup-step='attributesSkills']").click();
+  await expect(page.locator("[data-setup-step='traits']")).toContainText(
+    "Complete",
+  );
+  await expect(page.locator("[data-setup-step='skills']")).toContainText(
+    "Complete",
+  );
+  await page.locator("[data-setup-step='traits']").click();
   const setupTraitsPanel = page.locator("#setupTraitsPanel");
-  await expect(setupTraitsPanel).toContainText("Traits");
+  await expect(setupTraitsPanel).toContainText("Attributes");
 
   const agilityCard = setupTraitsPanel
     .locator(".attribute-die-card")
     .filter({ hasText: "Agility" });
-  await expect(agilityCard).toHaveAttribute("title", /Coordination/);
+  await expect(agilityCard).not.toHaveAttribute("title", /Coordination/);
   await agilityCard.hover();
-  await expect(agilityCard.locator(".trait-help")).toBeVisible();
-  await expect(agilityCard.locator(".trait-help")).toContainText(
-    "Coordination",
+  await expect(agilityCard.locator(".trait-help")).toHaveCount(0);
+  await expect(agilityCard.locator(".attribute-help")).toHaveAttribute(
+    "aria-label",
+    /Coordination/,
   );
+  await expect(setupTraitsPanel).toContainText("Advanced character");
+  await expect(
+    setupTraitsPanel.locator("[data-setup-action='incAttribute']"),
+  ).toHaveCount(0);
 
-  const shootingChip = setupTraitsPanel
+  await page.locator("[data-setup-step='skills']").click();
+  const setupSkillsPanel = page.locator("#setupSkillsPanel");
+  await expect(setupSkillsPanel).toContainText("Skills");
+
+  const shootingChip = setupSkillsPanel
     .locator(".skill-chip")
     .filter({ hasText: "Shooting" });
   await expect(shootingChip).toHaveAttribute("title", /Ranged attacks/);
@@ -482,25 +496,22 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
     "Linked attribute: Agility",
   );
 
-  await expect(setupTraitsPanel).toContainText("Advanced character");
-  await expect(setupTraitsPanel).toContainText("All Skills Shown");
-  await expect(setupTraitsPanel).toContainText("Unskilled Value");
-  await expect(setupTraitsPanel).toContainText("d4-2");
-  await expect(
-    setupTraitsPanel.locator("[data-setup-action='incAttribute']"),
-  ).toHaveCount(0);
+  await expect(setupSkillsPanel).toContainText("Advanced character");
+  await expect(setupSkillsPanel).not.toContainText("All Skills Shown");
+  await expect(setupSkillsPanel).not.toContainText("Unskilled Value");
+  await expect(setupSkillsPanel).toContainText("d4-2");
   await expect(
     page
-      .locator("#setupTraitsPanel .skill-chip")
+      .locator("#setupSkillsPanel .skill-chip")
       .filter({ hasText: "Healing" }),
   ).toHaveAttribute("title", /Treating wounds/);
   await expect(
     page
-      .locator("#setupTraitsPanel .skill-chip:not(.unskilled)")
+      .locator("#setupSkillsPanel .skill-chip:not(.unskilled)")
       .filter({ hasText: "Healing" }),
   ).toHaveCSS("border-style", "solid");
 
-  const unskilledAcademics = setupTraitsPanel
+  const unskilledAcademics = setupSkillsPanel
     .locator(".skill-chip.unskilled")
     .filter({ hasText: "Academics" });
   await expect(unskilledAcademics).toContainText("d4-2");
@@ -639,29 +650,229 @@ test("edits setup traits for created characters and stores the creation baseline
   );
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(
-    page.locator("[data-setup-step='attributesSkills']"),
-  ).toContainText("Incomplete");
-  await page.locator("[data-setup-step='attributesSkills']").click();
+  await expect(page.locator("[data-setup-step='traits']")).toContainText(
+    "Incomplete",
+  );
+  await page.locator("[data-setup-step='traits']").click();
   const setupTraitsPanel = page.locator("#setupTraitsPanel");
-  await expect(setupTraitsPanel).toContainText("Edit starting Attributes");
+  await expect(setupTraitsPanel).not.toContainText("Draft starting Attributes");
+  await expect(setupTraitsPanel.locator("#setupAttributesHeading")).toHaveText(
+    "Attributes",
+  );
   await expect(setupTraitsPanel).toContainText("Attribute Points");
   await expect(setupTraitsPanel).toContainText("0 / 5");
+  const attributePointsCard = setupTraitsPanel.locator(
+    ".setup-attribute-points-card",
+  );
+  await expect(
+    setupTraitsPanel.locator(".setup-attribute-editor-row").first(),
+  ).toHaveClass(/setup-attribute-points-card/);
+  await expect(attributePointsCard).toContainText("0 / 5 assigned");
+  await expect(
+    attributePointsCard.locator("[data-setup-action='resetAttributes']"),
+  ).toBeDisabled();
+  await expect(
+    attributePointsCard.locator(".setup-attribute-meter"),
+  ).toHaveAttribute("aria-valuemax", "5");
+  await expect(
+    attributePointsCard.locator(".setup-attribute-meter"),
+  ).toHaveAttribute("aria-valuenow", "0");
+  await expect(setupTraitsPanel).not.toContainText("Recorded Attributes");
+  await expect(setupTraitsPanel).not.toContainText("Recorded Advances");
+  await expect(setupTraitsPanel).not.toContainText("Attribute Normal / Extra");
+  const attributeNoteLayout = await setupTraitsPanel
+    .locator("#setupAttributesHeading")
+    .evaluate((heading) => {
+      const group = heading.closest(".setup-trait-group");
+      const note = group.querySelector(".creator-note");
+      const list = group.querySelector(".setup-attribute-editor-list");
+      return {
+        headingBottom: Math.round(heading.getBoundingClientRect().bottom),
+        noteTop: Math.round(note.getBoundingClientRect().top),
+        noteBottom: Math.round(note.getBoundingClientRect().bottom),
+        listTop: Math.round(list.getBoundingClientRect().top),
+      };
+    });
+  expect(attributeNoteLayout.noteTop).toBeGreaterThanOrEqual(
+    attributeNoteLayout.headingBottom,
+  );
+  expect(attributeNoteLayout.listTop).toBeGreaterThanOrEqual(
+    attributeNoteLayout.noteBottom,
+  );
 
   const agilityRow = setupTraitsPanel
     .locator(".setup-trait-editor-row:not(.skill-row)")
     .filter({ hasText: "Agility" });
+  await expect(agilityRow).toHaveClass(/setup-attribute-editor-row/);
+  await expect(agilityRow).not.toHaveClass(/trait-help-target/);
+  await expect(agilityRow.locator(".trait-help")).toHaveCount(0);
+  await expect(agilityRow.locator(".attribute-help")).toHaveAttribute(
+    "aria-label",
+    /Coordination/,
+  );
+  await expect
+    .poll(() =>
+      agilityRow.locator(".attribute-help").evaluate((helper) => {
+        const style = getComputedStyle(helper);
+        return {
+          display: style.display,
+          alignItems: style.alignItems,
+          justifyContent: style.justifyContent,
+          textTransform: style.textTransform,
+        };
+      }),
+    )
+    .toEqual({
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      textTransform: "none",
+    });
+  await expect(agilityRow).not.toContainText("1 point per step above d4");
+  await expect(agilityRow.locator(".setup-die-step")).toHaveText([
+    "d4",
+    "d6",
+    "d8",
+    "d10",
+    "d12",
+  ]);
+  const attributeLayout = await setupTraitsPanel
+    .locator(".setup-attribute-editor-row")
+    .evaluateAll((rows) => {
+      return rows.map((row) => {
+        const heading = row.querySelector(".setup-attribute-editor-heading");
+        const controls = row.querySelector(".setup-attribute-dice-controls");
+        return {
+          rowTop: Math.round(row.getBoundingClientRect().top),
+          width: Math.round(row.getBoundingClientRect().width),
+          headingBottom: Math.round(heading.getBoundingClientRect().bottom),
+          controlsTop: controls
+            ? Math.round(controls.getBoundingClientRect().top)
+            : null,
+        };
+      });
+    });
+  expect(attributeLayout).toHaveLength(6);
+  const firstAttributeControlLayout = attributeLayout.find(
+    (row) => row.controlsTop !== null,
+  );
+  expect(firstAttributeControlLayout.controlsTop).toBeGreaterThanOrEqual(
+    firstAttributeControlLayout.headingBottom,
+  );
+  const attributeWidths = attributeLayout.map((row) => row.width);
+  expect(
+    Math.max(...attributeWidths) - Math.min(...attributeWidths),
+  ).toBeLessThanOrEqual(1);
+  if ((page.viewportSize()?.width || 0) >= 1200) {
+    const rowCounts = Array.from(
+      attributeLayout
+        .reduce((counts, row) => {
+          counts.set(row.rowTop, (counts.get(row.rowTop) || 0) + 1);
+          return counts;
+        }, new Map())
+        .values(),
+    );
+    expect(rowCounts).toEqual([3, 3]);
+  }
+  await expect(agilityRow.locator(".setup-die-step.current")).toHaveText("d4");
   await agilityRow.locator("[data-setup-action='incAttribute']").click();
-  await expect(agilityRow).toContainText("d6");
+  await expect(agilityRow.locator(".setup-die-step.current")).toHaveText("d6");
   await expect(setupTraitsPanel).toContainText("1 / 5");
+  await expect(
+    attributePointsCard.locator(".setup-attribute-meter"),
+  ).toHaveAttribute("aria-valuenow", "1");
+  await expect(
+    attributePointsCard.locator("[data-setup-action='resetAttributes']"),
+  ).toBeEnabled();
+  await attributePointsCard
+    .locator("[data-setup-action='resetAttributes']")
+    .click();
+  await expect(agilityRow.locator(".setup-die-step.current")).toHaveText("d4");
+  await expect(setupTraitsPanel).toContainText("0 / 5");
+  await expect(
+    attributePointsCard.locator(".setup-attribute-meter"),
+  ).toHaveAttribute("aria-valuenow", "0");
+  await expect(
+    attributePointsCard.locator("[data-setup-action='resetAttributes']"),
+  ).toBeDisabled();
+  await agilityRow.locator("[data-setup-action='incAttribute']").click();
+  await expect(agilityRow.locator(".setup-die-step.current")).toHaveText("d6");
+  await expect(
+    attributePointsCard.locator(".setup-attribute-meter"),
+  ).toHaveAttribute("aria-valuenow", "1");
 
-  const shootingRow = setupTraitsPanel
+  await page.locator("[data-setup-step='skills']").click();
+  const setupSkillsPanel = page.locator("#setupSkillsPanel");
+  await expect(setupSkillsPanel.locator("#setupSkillsListHeading")).toHaveText(
+    "Skills",
+  );
+  await expect(setupSkillsPanel).not.toContainText("Draft starting Skills");
+  await expect(setupSkillsPanel).toContainText("Skill Points");
+  await expect(setupSkillsPanel).toContainText("0 / 12");
+  const skillPointsCard = setupSkillsPanel.locator(".setup-skill-points-card");
+  await expect(skillPointsCard).toContainText("0 / 12 assigned");
+  await expect(
+    skillPointsCard.locator("[data-setup-action='resetSkills']"),
+  ).toBeDisabled();
+  await expect(skillPointsCard.locator(".setup-skill-meter")).toHaveAttribute(
+    "aria-valuemax",
+    "12",
+  );
+  await expect(skillPointsCard.locator(".setup-skill-meter")).toHaveAttribute(
+    "aria-valuenow",
+    "0",
+  );
+  const shootingRow = setupSkillsPanel
     .locator(".setup-trait-editor-row.skill-row")
     .filter({ hasText: "Shooting" });
+  await expect(shootingRow).toHaveClass(/setup-skill-editor-row/);
+  await expect(shootingRow).not.toHaveClass(/trait-help-target/);
+  await expect(shootingRow.locator(".trait-help")).toHaveCount(0);
+  await expect(shootingRow.locator(".attribute-help")).toHaveAttribute(
+    "aria-label",
+    /Ranged attacks/,
+  );
   await expect(shootingRow).toContainText("d4-2");
+  await expect(shootingRow.locator(".setup-die-step")).toHaveText([
+    "d4-2",
+    "d4",
+    "d6",
+    "d8",
+    "d10",
+    "d12",
+  ]);
+  await expect(shootingRow.locator(".setup-die-step.current")).toHaveText(
+    "d4-2",
+  );
   await shootingRow.locator("[data-setup-action='incSkill']").click();
-  await expect(shootingRow).toContainText("d4");
+  await expect(shootingRow.locator(".setup-die-step.current")).toHaveText("d4");
   await expect(shootingRow).toContainText("Cost 1");
+  await expect(setupSkillsPanel).toContainText("1 / 12");
+  await expect(skillPointsCard.locator(".setup-skill-meter")).toHaveAttribute(
+    "aria-valuenow",
+    "1",
+  );
+  await expect(
+    skillPointsCard.locator("[data-setup-action='resetSkills']"),
+  ).toBeEnabled();
+  await skillPointsCard.locator("[data-setup-action='resetSkills']").click();
+  await expect(shootingRow.locator(".setup-die-step.current")).toHaveText(
+    "d4-2",
+  );
+  await expect(setupSkillsPanel).toContainText("0 / 12");
+  await expect(skillPointsCard.locator(".setup-skill-meter")).toHaveAttribute(
+    "aria-valuenow",
+    "0",
+  );
+  await expect(
+    skillPointsCard.locator("[data-setup-action='resetSkills']"),
+  ).toBeDisabled();
+  await shootingRow.locator("[data-setup-action='incSkill']").click();
+  await expect(shootingRow.locator(".setup-die-step.current")).toHaveText("d4");
+  await expect(skillPointsCard.locator(".setup-skill-meter")).toHaveAttribute(
+    "aria-valuenow",
+    "1",
+  );
 
   const stored = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)),

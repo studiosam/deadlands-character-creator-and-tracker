@@ -2328,10 +2328,22 @@ h3 {
 }
 
 .setup-step-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
   justify-content: flex-end;
+  align-items: center;
   margin-top: 0.15rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--dossier-rule);
+}
+
+.setup-step-navigation-previous {
+  margin-right: auto;
+}
+
+.setup-step-navigation-next {
+  margin-left: auto;
 }
 
 .setup-step-panel {
@@ -2347,6 +2359,36 @@ h3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
+}
+
+.setup-review-grid.setup-hindrance-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.setup-hindrance-summary-grid .setup-detail {
+  position: relative;
+  padding-right: 2rem;
+  text-align: center;
+}
+
+.setup-hindrance-summary-grid .setup-detail-label {
+  position: static;
+  display: inline;
+}
+
+.setup-hindrance-summary-grid .setup-detail-label > span:first-child::after {
+  content: ":";
+}
+
+.setup-hindrance-summary-grid .setup-detail strong {
+  display: inline;
+  margin: 0 0 0 0.25rem;
+}
+
+.setup-hindrance-summary-grid .setup-detail-help {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
 }
 
 .setup-form-grid label {
@@ -2375,6 +2417,20 @@ h3 {
   border-left: 4px solid #8c3328;
   border-radius: 8px;
   background: rgba(255, 243, 232, 0.42);
+}
+
+.setup-form-grid.setup-hindrance-form {
+  grid-template-columns:
+    minmax(16rem, 24rem) minmax(8rem, 10rem)
+    minmax(18rem, 1fr);
+  justify-content: start;
+  align-items: end;
+}
+
+.setup-hindrance-form .setup-hindrance-name,
+.setup-hindrance-form .setup-hindrance-severity,
+.setup-hindrance-form .setup-hindrance-notes {
+  grid-column: auto;
 }
 
 .setup-hindrance-list,
@@ -2613,13 +2669,67 @@ h3 {
   padding: 0.65rem 0.7rem;
 }
 
-.setup-detail span {
-  display: block;
+.setup-detail-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   color: var(--dossier-muted);
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.setup-detail-help,
+.attribute-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(126, 78, 37, 0.45);
+  border-radius: 999px;
+  background: rgba(126, 78, 37, 0.1);
+  color: var(--dossier-ink);
+  cursor: help;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: none;
+}
+
+.setup-detail-help:hover::after,
+.setup-detail-help:focus-visible::after,
+.attribute-help:hover::after,
+.attribute-help:focus-visible::after {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + 0.45rem);
+  left: 50%;
+  width: min(17rem, 70vw);
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(126, 78, 37, 0.35);
+  border-radius: 8px;
+  background: #fffaf0;
+  box-shadow: 0 10px 24px rgba(29, 19, 11, 0.18);
+  color: var(--dossier-ink);
+  content: attr(data-tooltip);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: none;
+  transform: translateX(-50%);
+}
+
+.attribute-help {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.55rem;
 }
 
 .setup-detail strong {
@@ -2742,6 +2852,23 @@ h3 {
   gap: 0.55rem;
 }
 
+.setup-attribute-editor-list {
+  display: grid;
+  align-items: stretch;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 0.45rem;
+}
+
+.setup-skill-editor-list {
+  display: grid;
+  align-items: stretch;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.setup-skill-overview-list {
+  margin-bottom: 0.2rem;
+}
+
 .setup-trait-editor-row {
   position: relative;
   display: grid;
@@ -2754,6 +2881,25 @@ h3 {
   border-left: 4px solid rgba(121, 73, 24, 0.58);
   border-radius: 8px;
   background: rgba(255, 250, 239, 0.58);
+}
+
+.setup-attribute-editor-row {
+  flex: 1 1 18.5rem;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 0.55rem;
+}
+
+.setup-skill-editor-row {
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 0.55rem;
+}
+
+.setup-attribute-editor-heading,
+.setup-skill-editor-heading {
+  min-width: 0;
+  padding-right: 1.8rem;
 }
 
 .setup-trait-editor-row.skill-row.unskilled {
@@ -2780,6 +2926,20 @@ h3 {
   line-height: 1.35;
 }
 
+.setup-trait-editor-row .attribute-help,
+.attribute-die-card .attribute-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow-wrap: normal;
+  color: var(--dossier-ink);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+}
+
 .setup-trait-controls {
   display: inline-flex;
   align-items: center;
@@ -2796,6 +2956,151 @@ h3 {
 .setup-trait-controls .tag-action:disabled {
   cursor: not-allowed;
   opacity: 0.42;
+}
+
+.setup-attribute-dice-controls,
+.setup-skill-dice-controls {
+  justify-content: space-between;
+  gap: 0.35rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.setup-attribute-dice-controls .tag-action,
+.setup-skill-dice-controls .tag-action {
+  width: 1.9rem;
+  min-height: 1.9rem;
+  font-size: 0.9rem;
+}
+
+.setup-die-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.setup-die-track .setup-die-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 1.7rem;
+  margin: 0;
+  padding: 0.2rem 0.28rem;
+  border-radius: 999px;
+  color: var(--dossier-muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1;
+  opacity: 0.46;
+  white-space: nowrap;
+}
+
+.setup-die-track .setup-die-step.current {
+  color: var(--dossier-ink);
+  background: rgba(151, 96, 31, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(121, 73, 24, 0.34);
+  opacity: 1;
+}
+
+.setup-attribute-points-card,
+.setup-skill-points-card {
+  border-left-color: rgba(42, 96, 85, 0.68);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 239, 0.72), rgba(245, 235, 213, 0.62)),
+    rgba(255, 250, 239, 0.58);
+}
+
+.setup-attribute-points-card .setup-attribute-editor-heading,
+.setup-skill-points-card .setup-skill-editor-heading {
+  padding-right: 3.85rem;
+}
+
+.setup-attribute-meter,
+.setup-skill-meter {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 0.85rem;
+  border: 1px solid rgba(42, 96, 85, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 250, 239, 0.86);
+  box-shadow: inset 0 1px 2px rgba(36, 26, 18, 0.16);
+}
+
+.setup-attribute-meter .setup-attribute-meter-fill,
+.setup-skill-meter .setup-skill-meter-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  margin: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(42, 96, 85, 0.72), rgba(121, 73, 24, 0.72));
+  transition: width 160ms ease;
+}
+
+.setup-attribute-meter-actions,
+.setup-skill-meter-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.55rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.setup-attribute-meter-actions .small-action,
+.setup-skill-meter-actions .small-action {
+  min-height: 1.8rem;
+  padding: 0.22rem 0.68rem;
+  font-size: 0.76rem;
+  line-height: 1;
+}
+
+@media (max-width: 920px) {
+  .setup-attribute-editor-list,
+  .setup-skill-editor-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .setup-attribute-editor-list,
+  .setup-skill-editor-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.setup-benefit-spending .setup-trait-editor-row {
+  align-items: stretch;
+}
+
+.setup-benefit-spending .setup-trait-controls {
+  flex-direction: column-reverse;
+  justify-content: center;
+  justify-self: center;
+  align-items: center;
+  min-width: 8.5rem;
+}
+
+.setup-benefit-spending .setup-trait-controls button {
+  width: 2.35rem;
+  min-height: 2rem;
+  padding: 0;
+  justify-content: center;
+}
+
+.setup-benefit-spending .setup-trait-controls span {
+  min-width: 8rem;
+  margin: 0;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--dossier-rule);
+  border-radius: 999px;
+  background: rgba(255, 250, 239, 0.62);
+  text-align: center;
 }
 
 .dossier-heading,
@@ -2989,10 +3294,11 @@ h3 {
 }
 
 .attribute-die-card {
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 5.1rem;
-  padding: 0.65rem;
+  padding: 0.65rem 1.8rem 0.65rem 0.65rem;
   text-align: center;
 }
 
@@ -3453,6 +3759,10 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .setup-review-grid.setup-hindrance-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .attribute-dice-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3653,6 +3963,10 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .setup-review-grid.setup-hindrance-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
   .local-data-panel .danger-zone .utility-action-grid {
     grid-template-columns: 1fr;
   }
@@ -3679,12 +3993,20 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .setup-form-grid.setup-hindrance-form {
+    grid-template-columns: 1fr;
+  }
+
   .setup-trait-editor-row {
     grid-template-columns: 1fr;
   }
 
   .setup-trait-controls {
     justify-content: flex-start;
+  }
+
+  .setup-attribute-dice-controls {
+    justify-content: space-between;
   }
 
   .dossier-header-actions,

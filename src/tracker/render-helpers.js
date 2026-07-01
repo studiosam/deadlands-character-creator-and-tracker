@@ -97,8 +97,7 @@ function traitLabel(value) {
 function attributeCardMarkup(name, die) {
   const label = traitLabel(name);
   const note = attributeUseNote(name);
-  const title = note ? `${label}: ${note}` : label;
-  return `<div class="attribute-die-card trait-help-target" tabindex="0" title="${esc(title)}" aria-label="${esc(`${label} ${die || "—"}. ${note}`)}"><span>${esc(label)}</span><strong>${esc(die || "—")}</strong>${note ? `<small class="trait-help" role="tooltip">${esc(note)}</small>` : ""}</div>`;
+  return `<div class="attribute-die-card" aria-label="${esc(`${label} ${die || "—"}`)}">${typeof attributeHelpMarkup === "function" ? attributeHelpMarkup(label, note) : ""}<span>${esc(label)}</span><strong>${esc(die || "—")}</strong></div>`;
 }
 
 function skillChipMarkup(skill) {

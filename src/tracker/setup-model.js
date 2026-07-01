@@ -8,7 +8,14 @@
 
 function characterSetupStatus(stepId) {
   if (stepId === "concept") {
-    if (!character.name || !character.archetype) return "Incomplete";
+    const requiredFields = [
+      character.name,
+      character.gender,
+      character.age,
+      character.archetype,
+    ];
+    if (!requiredFields.every((value) => String(value || "").trim()))
+      return "Incomplete";
     return isHumanAncestry(character.ancestry) ? "Complete" : "Needs review";
   }
   if (stepId === "hindrances") {
@@ -19,19 +26,28 @@ function characterSetupStatus(stepId) {
       return "Needs review";
     return "Complete";
   }
-  if (stepId === "attributesSkills") {
+  if (stepId === "traits") {
     if (!ATTRIBUTE_ORDER.every((key) => character.attributes?.[key]))
       return "Incomplete";
     if (!setupTraitsEditable()) return "Complete";
     const attributes = setupAttributePointStats();
+    if (attributes.spent > attributes.available) return "Needs review";
+    return attributes.spent === attributes.available
+      ? "Complete"
+      : "Incomplete";
+  }
+  if (stepId === "skills") {
+    if (!setupTraitsEditable()) return "Complete";
     const skills = setupSkillPointStats();
-    if (
-      attributes.spent > attributes.available ||
-      skills.spent > skills.available
-    )
+    if (skills.spent > skills.available) return "Needs review";
+    return skills.spent === skills.available ? "Complete" : "Incomplete";
+  }
+  if (stepId === "attributesSkills") {
+    const traitStatus = characterSetupStatus("traits");
+    const skillStatus = characterSetupStatus("skills");
+    if (traitStatus === "Needs review" || skillStatus === "Needs review")
       return "Needs review";
-    return attributes.spent === attributes.available &&
-      skills.spent === skills.available
+    return traitStatus === "Complete" && skillStatus === "Complete"
       ? "Complete"
       : "Incomplete";
   }
@@ -908,7 +924,9 @@ function validateSetupStartingEdge(edge, options = {}) {
   const position = sameSource.findIndex((item) => item.id === edge.id);
   if (position >= 0 && position >= slotCount) {
     messages.push(
-      `${sourceLabel} is above the available starting Edge slot count.`,
+      source === "hindrance-benefit"
+        ? `${sourceLabel} is drafted but not yet covered by Hindrance benefit spending.`
+        : `${sourceLabel} is above the available starting Edge slot count.`,
     );
   }
 

@@ -9,6 +9,14 @@ function normalizeSetupStatus(value, fallback = "complete") {
   return value === "needsReview" || value === "complete" ? value : fallback;
 }
 
+function staleBlankSetupDraftArchetype(name, archetype) {
+  const normalizedName = String(name || "").trim();
+  return (
+    (!normalizedName || placeholderSetupCharacterName(normalizedName)) &&
+    String(archetype || "").trim() === defaultCharacter.archetype
+  );
+}
+
 /**
  * Return a fully shaped character payload safe for rendering and saving.
  *
@@ -25,10 +33,24 @@ function normalize(data, options = {}) {
       : migrateCharacterPayload(defaults);
 
   normalized.schemaVersion = APP_SCHEMA_VERSION;
-  normalized.name ||= defaults.name;
+  if (!options.preserveBlankConceptFields) normalized.name ||= defaults.name;
+  else {
+    const name = String(normalized.name || "").trim();
+    normalized.name = placeholderSetupCharacterName(name) ? "" : name;
+  }
   normalized.rank ||= defaults.rank;
   normalized.ancestry ||= defaults.ancestry;
-  normalized.archetype ||= defaults.archetype;
+  if (!options.preserveBlankConceptFields)
+    normalized.archetype ||= defaults.archetype;
+  else {
+    const archetype = String(normalized.archetype || "").trim();
+    normalized.archetype = staleBlankSetupDraftArchetype(
+      normalized.name,
+      archetype,
+    )
+      ? ""
+      : archetype;
+  }
   normalized.gender ||= defaults.gender || "";
   normalized.age ||= defaults.age || "";
   normalized.player ||= defaults.player || "";
@@ -441,6 +463,7 @@ function setSaveState(message) {
 
 function validSetupStepId(stepId, fallback = "concept") {
   const value = String(stepId || "");
+  if (value === "attributesSkills") return "traits";
   return CHARACTER_SETUP_STEPS.some((step) => step.id === value)
     ? value
     : fallback;
@@ -494,6 +517,7 @@ function restoreSetupDraftState() {
   setupResumeOnBoot = true;
   return normalize(stored.character, {
     defaultSetupStatus: "needsReview",
+    preserveBlankConceptFields: true,
   });
 }
 
