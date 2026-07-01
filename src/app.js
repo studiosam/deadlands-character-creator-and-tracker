@@ -6,15 +6,10 @@
  * reloads, direct-file use, and hosted GitHub Pages runs behave the same way.
  */
 function revealAppAfterBoot() {
-  const reveal = () => document.body.classList.remove("app-booting");
-  if (document.readyState === "complete") {
-    reveal();
-    return;
-  }
-  window.addEventListener("load", reveal, { once: true });
+  document.body.classList.remove("app-booting");
 }
 
-try {
+function performInitialRender() {
   installUndoHistoryInteractionTracking();
   syncUndoHistoryForActiveCharacter();
   catalogs();
@@ -22,6 +17,18 @@ try {
   render();
   renderLandingPage();
   renderDemoExperience();
-} finally {
-  revealAppAfterBoot();
+}
+
+function bootAppAfterPageLoad() {
+  try {
+    performInitialRender();
+  } finally {
+    revealAppAfterBoot();
+  }
+}
+
+if (document.readyState === "complete") {
+  bootAppAfterPageLoad();
+} else {
+  window.addEventListener("load", bootAppAfterPageLoad, { once: true });
 }
