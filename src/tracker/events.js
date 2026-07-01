@@ -96,18 +96,13 @@ document.addEventListener("click", async (event) => {
   }
   const setupStep = event.target?.closest?.("[data-setup-step]");
   if (setupStep) {
+    collectConceptInputs();
     characterSetupStep = setupStep.dataset.setupStep;
     renderCharacterSetup();
   }
   const setupAction = event.target?.closest?.("[data-setup-action]");
-  if (setupAction?.dataset.setupAction === "saveConcept") {
-    applyConceptInputs();
-    appToast(
-      isUnsavedCharacterDraft()
-        ? "Concept updated. Save Draft when you want to keep it."
-        : "Concept saved.",
-      "success",
-    );
+  if (setupAction?.dataset.setupAction === "nextSetupStep") {
+    nextSetupStep();
   } else if (setupAction?.dataset.setupAction === "saveDraftCharacter") {
     await saveDraftCharacterFromSetup();
   } else if (setupAction?.dataset.setupAction === "discardDraftCharacter") {

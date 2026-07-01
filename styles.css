@@ -2308,6 +2308,10 @@ h3 {
   background: #fff0ca;
 }
 
+.setup-persistence-panel.setup-progress-panel {
+  background: rgba(255, 250, 239, 0.52);
+}
+
 .setup-persistence-panel strong {
   display: block;
   font-size: 0.95rem;
@@ -2321,6 +2325,13 @@ h3 {
 .setup-persistence-panel .creator-actions {
   justify-content: flex-end;
   margin: 0;
+}
+
+.setup-step-navigation {
+  justify-content: flex-end;
+  margin-top: 0.15rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--dossier-rule);
 }
 
 .setup-step-panel {
@@ -2356,6 +2367,14 @@ h3 {
 
 .setup-wide {
   grid-column: 1 / -1;
+}
+
+.setup-hindrance-entry-card {
+  padding: 0.85rem;
+  border: 1px solid var(--dossier-rule);
+  border-left: 4px solid #8c3328;
+  border-radius: 8px;
+  background: rgba(255, 243, 232, 0.42);
 }
 
 .setup-hindrance-list,

@@ -24,7 +24,7 @@ function applyConceptField(input) {
   save();
 }
 
-function applyConceptInputs() {
+function collectConceptInputs() {
   document.querySelectorAll("[data-concept-field]").forEach((input) => {
     const field = input.dataset.conceptField;
     if (
@@ -40,8 +40,28 @@ function applyConceptInputs() {
     )
       character[field] = input.value.trim();
   });
+}
+
+function applyConceptInputs() {
+  collectConceptInputs();
   render();
   save();
+}
+
+function nextSetupStep() {
+  collectConceptInputs();
+  const currentIndex = CHARACTER_SETUP_STEPS.findIndex(
+    (step) => step.id === characterSetupStep,
+  );
+  const nextStep = CHARACTER_SETUP_STEPS[currentIndex + 1];
+  if (!nextStep) return;
+  characterSetupStep = nextStep.id;
+  renderCharacterSetup();
+  save();
+  $("#characterSetupContent")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
 }
 
 function setupHindranceSeverityForCatalog(catalogEntry, selectedSeverity = "") {

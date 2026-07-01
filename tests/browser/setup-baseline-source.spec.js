@@ -69,7 +69,6 @@ test("edits concept information in character setup and preserves it across reloa
   await page
     .locator("#setupBackgroundInput")
     .fill("Dusty left Deseret after hard accusations and harder losses.");
-  await page.locator("#setupSaveConceptBtn").click();
 
   await expect(page.locator("#characterName")).toContainText(
     "Concept Test Character",

@@ -49,6 +49,9 @@ table workflow checks that are not yet practical to automate.
 
 - [ ] Created characters open Character Setup with `setupStatus: needsReview`.
 - [ ] Imported characters open Character Setup with `setupStatus: needsReview`.
+- [ ] Non-Review setup steps show a bottom Next button and do not show
+      character save/finalization buttons.
+- [ ] Review shows the character save, Confirm Setup, and Finish Setup controls.
 - [ ] Confirm Setup hides the setup workflow and persists `setupStatus` as
       `complete`.
 - [ ] Complete characters open the Character tab as a reference-focused sheet.

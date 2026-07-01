@@ -322,21 +322,37 @@ function renderCharacterSetup() {
 
   els.characterSetupContent.innerHTML =
     renderSetupPersistencePanel() +
-    (renderers[characterSetupStep]?.() || renderSetupConcept());
+    (renderers[characterSetupStep]?.() || renderSetupConcept()) +
+    renderSetupStepNavigation();
 }
 
 function renderSetupPersistencePanel() {
+  const reviewStep = characterSetupStep === "review";
+  if (!reviewStep) {
+    return `<div class="setup-persistence-panel setup-progress-panel${isUnsavedCharacterDraft() ? " unsaved" : ""}">
+      <div>
+        <strong>${isUnsavedCharacterDraft() ? "Unsaved setup draft" : "Character setup in progress"}</strong>
+        <p>Use the Next button at the bottom of each step. Save and finish controls appear on Review.</p>
+      </div>
+      ${
+        isUnsavedCharacterDraft()
+          ? '<div class="creator-actions"><button class="ghost danger-lite" type="button" data-setup-action="discardDraftCharacter">Discard Draft</button></div>'
+          : ""
+      }
+    </div>`;
+  }
+
   const finishLabel = character.creation?.finalized
     ? "Start Playing"
     : "Finish Setup & Start Playing";
   if (isUnsavedCharacterDraft()) {
     return `<div class="setup-persistence-panel unsaved">
       <div>
-        <strong>Unsaved setup draft</strong>
-        <p>This character is only temporary until you save it to the local character library. Finish setup saves it and opens Combat.</p>
+        <strong>Review and save character</strong>
+        <p>This character is temporary until you save it to the local character library. Finish setup saves it and opens Combat.</p>
       </div>
       <div class="creator-actions">
-        <button type="button" data-setup-action="saveDraftCharacter">Save Draft</button>
+        <button type="button" data-setup-action="saveDraftCharacter">Save Character</button>
         <button type="button" data-setup-action="confirmSetup">Confirm Setup</button>
         <button type="button" data-setup-action="finishSetup">${finishLabel}</button>
         <button class="ghost danger-lite" type="button" data-setup-action="discardDraftCharacter">Discard Draft</button>
@@ -348,19 +364,30 @@ function renderSetupPersistencePanel() {
   if (!active) return "";
   return `<div class="setup-persistence-panel">
     <div>
-      <strong>${character.creation?.finalized ? "Character ready to play" : "Saved character slot"}</strong>
+      <strong>${character.creation?.finalized ? "Character ready to play" : "Review and save character"}</strong>
       <p>${
         character.creation?.finalized
           ? "This setup is marked finished. Use Start Playing to return to Combat."
-          : "Changes autosave to this browser. Finish setup marks this character ready and opens Combat."
+          : "Review the setup summary, then save or finish this character."
       }</p>
     </div>
     <div class="creator-actions">
-      <button class="ghost" type="button" data-setup-action="saveCharacterNow">Save Now</button>
+      <button class="ghost" type="button" data-setup-action="saveCharacterNow">Save Character</button>
       <button type="button" data-setup-action="confirmSetup">Confirm Setup</button>
       <button type="button" data-setup-action="finishSetup">${finishLabel}</button>
       <button class="ghost danger-lite" type="button" data-setup-action="deleteCharacterSlot">Delete Character</button>
     </div>
+  </div>`;
+}
+
+function renderSetupStepNavigation() {
+  const currentIndex = CHARACTER_SETUP_STEPS.findIndex(
+    (step) => step.id === characterSetupStep,
+  );
+  const nextStep = CHARACTER_SETUP_STEPS[currentIndex + 1];
+  if (!nextStep) return "";
+  return `<div class="setup-step-navigation creator-actions">
+    <button type="button" data-setup-action="nextSetupStep">Next: ${esc(nextStep.label)}</button>
   </div>`;
 }
 
@@ -399,12 +426,9 @@ function renderSetupConcept() {
     </div>
     <p class="creator-note">${
       isUnsavedCharacterDraft()
-        ? "Concept edits update this temporary draft. Use Save Draft when you want to keep it across sessions."
-        : "Concept edits update the active tracker character and use the normal local save path."
+        ? "Concept edits update this temporary draft. Save and finish controls appear on Review."
+        : "Concept edits update the active tracker character through the normal local save path."
     }</p>
-    <div class="creator-actions">
-      <button id="setupSaveConceptBtn" type="button" data-setup-action="saveConcept">Save Concept</button>
-    </div>
   </section>`;
 }
 
@@ -425,6 +449,21 @@ function renderSetupHindranceRows() {
         )
         .join("")
     : emptyState("No Hindrances selected yet.");
+}
+
+function renderSetupHindranceSelectionControls() {
+  return `<section class="setup-trait-group setup-hindrance-entry-card" aria-labelledby="setupHindranceEntryHeading">
+    <h4 id="setupHindranceEntryHeading">Add Hindrance</h4>
+    <p class="creator-note">Choose the Hindrance, confirm its severity, and add any table-specific notes before spending its benefit points.</p>
+    <div class="setup-form-grid setup-hindrance-form">
+      <label class="setup-wide">Hindrance<select id="setupHindranceCatalogSelect">${entryCatalogOptions(HINDRANCE_CATALOG, "Choose Hindrance...")}</select></label>
+      <label>Severity<select id="setupHindranceSeverityInput"><option value="Minor">Minor</option><option value="Major">Major</option></select></label>
+      <label class="setup-wide">Notes<input id="setupHindranceNotesInput" autocomplete="off" placeholder="Optional detail, obligation, enemy, vow, phobia, etc."></label>
+      <div class="creator-actions setup-wide">
+        <button id="setupAddHindranceBtn" type="button" data-setup-action="addHindrance">Add Hindrance</button>
+      </div>
+    </div>
+  </section>`;
 }
 
 function renderSetupHindrances() {
@@ -460,18 +499,17 @@ function renderSetupHindrances() {
         ? '<p class="entry-warning">Needs review: one or more Hindrances need Minor or Major severity.</p>'
         : ""
     }
-    ${renderSetupHindranceBenefitRows(stats)}
-    <div class="setup-form-grid setup-hindrance-form">
-      <label class="setup-wide">Hindrance<select id="setupHindranceCatalogSelect">${entryCatalogOptions(HINDRANCE_CATALOG, "Choose Hindrance...")}</select></label>
-      <label>Severity<select id="setupHindranceSeverityInput"><option value="Minor">Minor</option><option value="Major">Major</option></select></label>
-      <label class="setup-wide">Notes<input id="setupHindranceNotesInput" autocomplete="off" placeholder="Optional detail, obligation, enemy, vow, phobia, etc."></label>
-      <div class="creator-actions setup-wide">
-        <button id="setupAddHindranceBtn" type="button" data-setup-action="addHindrance">Add Hindrance</button>
+    ${renderSetupHindranceSelectionControls()}
+    <section class="setup-trait-group setup-selected-hindrances" aria-labelledby="setupSelectedHindrancesHeading">
+      <div>
+        <h4 id="setupSelectedHindrancesHeading">Selected Hindrances</h4>
+        <p class="creator-note">Review the chosen Hindrance cards before spending counted benefit points.</p>
       </div>
-    </div>
-    <div class="setup-hindrance-list">
-      ${renderSetupHindranceRows()}
-    </div>
+      <div class="setup-hindrance-list">
+        ${renderSetupHindranceRows()}
+      </div>
+    </section>
+    ${renderSetupHindranceBenefitRows(stats)}
   </section>`;
 }
 

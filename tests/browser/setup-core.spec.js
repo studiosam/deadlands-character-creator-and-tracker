@@ -58,6 +58,12 @@ test("starts new characters directly in character setup @mobile", async ({
   await expect(page.locator(".setup-persistence-panel.unsaved")).toContainText(
     "Unsaved setup draft",
   );
+  await expect(page.locator(".setup-persistence-panel")).toContainText(
+    "Save and finish controls appear on Review",
+  );
+  await expect(
+    page.locator("[data-setup-action='saveDraftCharacter']"),
+  ).toHaveCount(0);
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
   await expect(page.locator("#setupConceptPanel")).toContainText(
     "Race / Ancestry",
@@ -99,6 +105,7 @@ test("starts new characters directly in character setup @mobile", async ({
     hasBaseline: false,
   });
 
+  await page.locator("[data-setup-step='review']").click();
   await page.locator("[data-setup-action='saveDraftCharacter']").click();
   await expect(page.locator("#appDialog")).toBeVisible();
   await page.locator("#appDialogInput").fill("Saved Draft Prospect");
@@ -107,7 +114,7 @@ test("starts new characters directly in character setup @mobile", async ({
     "Saved Draft Prospect",
   );
   await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Saved character slot",
+    "Review and save character",
   );
 
   await expect
@@ -167,6 +174,7 @@ test("starts new characters directly in character setup @mobile", async ({
     "Saved Draft Prospect",
   );
 
+  await page.locator("[data-setup-step='review']").click();
   await page.locator("[data-setup-action='deleteCharacterSlot']").click();
   await expect(page.locator("#appDialog")).toBeVisible();
   await page.locator("#appDialogConfirmBtn").click();
@@ -240,7 +248,7 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await expect(page.locator("#characterSetupPanel")).toBeHidden();
   await expect(page.locator("#characterSetupStepper")).toBeHidden();
   await expect(page.locator("#setupConceptPanel")).toBeHidden();
-  await expect(page.locator("#setupSaveConceptBtn")).toBeHidden();
+  await expect(page.locator("#setupSaveConceptBtn")).toHaveCount(0);
   await expect(page.locator("#showAdvanceFormBtn")).toBeVisible();
   await expect(page.locator("#showEdgeFormBtn")).toBeHidden();
   await expect(page.locator("#showHindranceFormBtn")).toBeHidden();
@@ -294,6 +302,22 @@ test("finishes character setup and starts playing with a saved character", async
   await page.locator("#setupNameInput").fill("Finished Setup Character");
   await page.locator("#setupArchetypeInput").fill("Trail Scout");
   await page.locator("#setupPlayerInput").fill("Playwright");
+
+  await expect(page.locator("[data-setup-action='finishSetup']")).toHaveCount(
+    0,
+  );
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupHindrancesPanel")).toBeVisible();
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupTraitsPanel")).toBeVisible();
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupEdgesPanel")).toBeVisible();
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupPowersPanel")).toBeVisible();
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupGearPanel")).toBeVisible();
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupReviewPanel")).toBeVisible();
 
   await page.locator("[data-setup-action='finishSetup']").click();
   await expect(page.locator("#appDialog")).toBeVisible();

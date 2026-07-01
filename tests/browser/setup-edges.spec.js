@@ -63,6 +63,22 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Incomplete",
   );
+  const entryCard = hindrancePanel.locator(".setup-hindrance-entry-card");
+  await expect(entryCard).toContainText("Add Hindrance");
+  await expect(entryCard.locator("#setupHindranceCatalogSelect")).toBeVisible();
+  await expect(entryCard.locator("#setupHindranceSeverityInput")).toBeVisible();
+  await expect(entryCard.locator("#setupHindranceNotesInput")).toBeVisible();
+  const hindranceLayout = await hindrancePanel.evaluate((panel) => {
+    const topFor = (selector) =>
+      panel.querySelector(selector).getBoundingClientRect().top;
+    return {
+      benefitsTop: topFor(".setup-benefit-spending"),
+      entryTop: topFor(".setup-hindrance-entry-card"),
+      selectedTop: topFor(".setup-selected-hindrances"),
+    };
+  });
+  expect(hindranceLayout.entryTop).toBeLessThan(hindranceLayout.selectedTop);
+  expect(hindranceLayout.selectedTop).toBeLessThan(hindranceLayout.benefitsTop);
 
   await page
     .locator("#setupHindranceCatalogSelect")
@@ -72,6 +88,11 @@ test("selects hindrances in character setup and summarizes point expectations", 
     .fill("Hard luck follows him.");
   await page.locator("#setupAddHindranceBtn").click();
   await expect(hindrancePanel).toContainText("Bad Luck");
+  const badLuckCard = hindrancePanel.locator(".setup-hindrance-row").filter({
+    hasText: "Bad Luck",
+  });
+  await expect(badLuckCard).toContainText("Major");
+  await expect(badLuckCard).toContainText("Hard luck follows him.");
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Complete",
   );
@@ -140,10 +161,13 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
 
   await page.locator("#setupNameInput").fill("Benefit Edge Character");
   await page.locator("#setupArchetypeInput").fill("Card Sharp");
-  await page.locator("#setupSaveConceptBtn").click();
+  await expect(
+    page.locator("[data-setup-action='saveDraftCharacter']"),
+  ).toHaveCount(0);
+  await page.locator("[data-setup-step='review']").click();
   await page.locator("[data-setup-action='saveDraftCharacter']").click();
   await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Saved character slot",
+    "Review and save character",
   );
 
   await page.locator("[data-setup-step='hindrances']").click();
@@ -340,6 +364,7 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
   );
   await expect(edgesPanel).toContainText("Spirit d6+");
 
+  await page.locator("[data-setup-step='review']").click();
   await page
     .locator("#characterSetupPanel [data-setup-action='confirmSetup']")
     .first()
