@@ -48,6 +48,8 @@ test("local data and privacy links open distinct panels", async ({ page }) => {
     .locator(".landing-footer-note")
     .evaluate((footer) => {
       const footerRect = footer.getBoundingClientRect();
+      const footerText = footer.querySelector("span");
+      const footerStyle = getComputedStyle(footer);
       const childTops = Array.from(footer.children).map(
         (child) => child.getBoundingClientRect().top,
       );
@@ -63,15 +65,33 @@ test("local data and privacy links open distinct panels", async ({ page }) => {
       });
       return {
         childTops,
+        footerBottom: footerRect.bottom,
         footerLeft: footerRect.left,
+        footerPosition: footerStyle.position,
         footerRight: footerRect.right,
         linkRects,
+        textClientWidth: footerText.clientWidth,
+        textScrollWidth: footerText.scrollWidth,
+        viewportHeight: window.innerHeight,
         viewportWidth: window.innerWidth,
       };
     });
   const footerTopSpread =
     Math.max(...footerMetrics.childTops) - Math.min(...footerMetrics.childTops);
-  expect(footerTopSpread).toBeLessThanOrEqual(1);
+  if (footerMetrics.viewportWidth > 680) {
+    expect(footerTopSpread).toBeLessThanOrEqual(1);
+  } else {
+    expect(footerMetrics.footerPosition).toBe("fixed");
+    expect(footerMetrics.footerBottom).toBeLessThanOrEqual(
+      footerMetrics.viewportHeight,
+    );
+    expect(
+      footerMetrics.viewportHeight - footerMetrics.footerBottom,
+    ).toBeLessThanOrEqual(24);
+    expect(footerMetrics.textScrollWidth).toBeLessThanOrEqual(
+      footerMetrics.textClientWidth + 1,
+    );
+  }
   expect(footerMetrics.footerLeft).toBeGreaterThanOrEqual(0);
   expect(footerMetrics.footerRight).toBeLessThanOrEqual(
     footerMetrics.viewportWidth,
@@ -184,25 +204,86 @@ test("opens sources and rulesets from the landing footer", async ({ page }) => {
   await expect(panel.locator("input, select, textarea, button")).toHaveCount(0);
 });
 
-test("landing create edit button can start or edit characters", async ({
+test("empty landing offers create, import, and demo only", async ({ page }) => {
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await expect(page.locator("#landingContinueBtn")).toBeHidden();
+  await expect(page.locator("#landingCreateBtn")).toHaveText(
+    "Create New Character",
+  );
+  await expect(page.locator("#landingImportBtn")).toHaveText(
+    "Import Character",
+  );
+  await expect(page.locator("#landingLoadSampleBtn")).toBeVisible();
+
+  await page.locator("#landingCreateBtn").click();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+});
+
+test("landing create edit button opens saved-character editor", async ({
   page,
 }) => {
-  await expect(page.locator("#landingPage")).toBeVisible();
-  await page.locator("#landingCreateBtn").click();
-  let dialog = page.locator("#appDialog");
-  await expect(dialog).toBeVisible();
-  await expect(dialog.locator("#appDialogTitle")).toHaveText(
-    "Create/Edit Character",
-  );
-  await expect(dialog.locator("#appDialogSelectLabel")).toBeHidden();
-  await expect(
-    dialog.getByRole("button", { name: "Create New Character" }),
-  ).toBeVisible();
-  await expect(
-    dialog.getByRole("button", { name: "Edit Selected Character" }),
-  ).toHaveCount(0);
-  await dialog.locator("#appDialogCancelBtn").click();
-  await expect(dialog).toBeHidden();
+  const dialogButtonLayout = async (dialog) =>
+    dialog.locator("button").evaluateAll((buttons) => {
+      const visibleButtons = buttons.filter(
+        (button) => button.getClientRects().length > 0,
+      );
+      const tops = visibleButtons.map(
+        (button) => button.getBoundingClientRect().top,
+      );
+      const actionRow = document.querySelector("#appDialog .dialog-actions");
+      const gap = Number.parseFloat(getComputedStyle(actionRow).columnGap) || 0;
+      const requiredWidth =
+        visibleButtons.reduce(
+          (total, button) => total + button.getBoundingClientRect().width,
+          0,
+        ) +
+        gap * Math.max(0, visibleButtons.length - 1);
+      const availableWidth = actionRow.getBoundingClientRect().width;
+      return {
+        canFitOneLine: requiredWidth <= availableWidth + 1,
+        count: visibleButtons.length,
+        labelsFit: visibleButtons.every(
+          (button) => button.scrollWidth <= button.clientWidth + 1,
+        ),
+        topSpread: Math.max(...tops) - Math.min(...tops),
+      };
+    });
+  const editButtonPlacement = async (dialog) =>
+    dialog.evaluate((dialogElement) => {
+      const select = dialogElement.querySelector("#appDialogSelect");
+      const editButton = Array.from(dialogElement.querySelectorAll("button"))
+        .filter((button) => button.getClientRects().length > 0)
+        .find(
+          (button) => button.textContent.trim() === "Edit Selected Character",
+        );
+      const otherActionTops = Array.from(
+        dialogElement.querySelectorAll("button"),
+      )
+        .filter(
+          (button) =>
+            button.getClientRects().length > 0 &&
+            button.textContent.trim() !== "Edit Selected Character",
+        )
+        .map((button) => button.getBoundingClientRect().top);
+      const selectRect = select.getBoundingClientRect();
+      const editRect = editButton.getBoundingClientRect();
+      return {
+        editHasPlacementClass: editButton.classList.contains(
+          "dialog-choice-edit-selected",
+        ),
+        editLeft: editRect.left,
+        editTop: editRect.top,
+        editWidth: editRect.width,
+        isNarrow: window.matchMedia("(max-width: 520px)").matches,
+        nextActionTop: Math.min(...otherActionTops),
+        selectBottom: selectRect.bottom,
+        selectLeft: selectRect.left,
+        selectWidth: selectRect.width,
+      };
+    });
 
   await enterTracker(page);
   await saveCurrentCharacter(page);
@@ -216,7 +297,7 @@ test("landing create edit button can start or edit characters", async ({
   );
   await page.locator("#landingCreateBtn").click();
 
-  dialog = page.locator("#appDialog");
+  const dialog = page.locator("#appDialog");
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("#appDialogTitle")).toHaveText(
     "Create/Edit Character",
@@ -235,6 +316,27 @@ test("landing create edit button can start or edit characters", async ({
   await dialog
     .locator("#appDialogSelect")
     .selectOption({ label: "Saved Dusty" });
+  const savedDialogButtonLayout = await dialogButtonLayout(dialog);
+  expect(savedDialogButtonLayout.count).toBe(3);
+  expect(savedDialogButtonLayout.labelsFit).toBe(true);
+  if (savedDialogButtonLayout.canFitOneLine)
+    expect(savedDialogButtonLayout.topSpread).toBeLessThanOrEqual(1);
+  const savedEditPlacement = await editButtonPlacement(dialog);
+  expect(savedEditPlacement.editHasPlacementClass).toBe(true);
+  if (savedEditPlacement.isNarrow) {
+    expect(savedEditPlacement.editTop).toBeGreaterThanOrEqual(
+      savedEditPlacement.selectBottom - 1,
+    );
+    expect(savedEditPlacement.editTop).toBeLessThan(
+      savedEditPlacement.nextActionTop,
+    );
+    expect(
+      Math.abs(savedEditPlacement.editLeft - savedEditPlacement.selectLeft),
+    ).toBeLessThanOrEqual(2);
+    expect(
+      Math.abs(savedEditPlacement.editWidth - savedEditPlacement.selectWidth),
+    ).toBeLessThanOrEqual(2);
+  }
   await dialog.getByRole("button", { name: "Edit Selected Character" }).click();
 
   await expect(page.locator("#landingPage")).toBeHidden();
@@ -260,7 +362,7 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   };
 
   await expect(page.locator("#landingCatalogBtn")).toHaveCount(0);
-  await page.locator("#landingContinueBtn").click();
+  await enterTracker(page);
   await openHeaderMenu(page);
   await page.locator("#catalogMenuBtn").click();
   await expect(page.locator("#landingPage")).toBeHidden();
@@ -360,16 +462,12 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
     0,
   );
 
-  await page.locator("#landingContinueBtn").click();
-  await expect(page.locator("#landingPage")).toBeHidden();
-  await expect(page.locator(".shell")).toBeVisible();
+  await enterTracker(page);
 
   await page.reload();
   await expect(page.locator("#landingPage")).toBeVisible();
   await expect(page.locator(".shell")).toBeHidden();
-  await page.locator("#landingContinueBtn").click();
-  await expect(page.locator("#landingPage")).toBeHidden();
-  await expect(page.locator(".shell")).toBeVisible();
+  await enterTracker(page);
 
   for (const tab of ["Character", "Inventory", "Arcane", "Notes"]) {
     await page.getByRole("button", { name: tab, exact: true }).click();

@@ -46,7 +46,7 @@ This document is the source of truth for Character Setup lifecycle, the boundary
 
 ### Implemented now
 
-- Minimal landing page with Continue, Create Character, Import JSON, saved-character selection, empty-state sample loading, local-storage note, and `Sources & Rulesets` access.
+- Minimal landing page with Create New Character, Import Character, empty-state sample loading, saved-character `Continue as <character name>` selection, local-storage note, and `Sources & Rulesets` access.
 - Read-only `Sources & Rulesets` page for the current Deadlands-focused profile.
 - Character Setup shell for created and imported characters, with `setupStatus` deciding whether setup review is needed.
 - `setupStatus` lifecycle: created and imported characters default to `needsReview`; confirmed setup becomes `complete`; legacy/sample saves without a value normalize to `complete`.

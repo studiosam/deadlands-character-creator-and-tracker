@@ -775,6 +775,7 @@ async function openCreateEditCharacterDialog() {
               valueFromSelect: true,
               label: "Edit Selected Character",
               ghost: true,
+              className: "dialog-choice-edit-selected",
             },
           ]
         : []),
@@ -801,9 +802,24 @@ function renderLandingPage(options = {}) {
   const entries = characterLibraryEntries();
   const activeId = characterLibrary?.activeCharacterId || "";
   const hasSavedCharacters = Boolean(entries.length);
+  const continueButton = $("#landingContinueBtn");
+  const createButton = $("#landingCreateBtn");
+  const secondaryActions = $(".landing-secondary-actions");
 
   els.landingCharacterPicker?.classList.toggle("hidden", !hasSavedCharacters);
+  continueButton?.classList.toggle("hidden", !hasSavedCharacters);
   $("#landingLoadSampleBtn")?.classList.toggle("hidden", hasSavedCharacters);
+  secondaryActions?.classList.toggle(
+    "landing-new-character-first",
+    !hasSavedCharacters,
+  );
+  if (createButton) {
+    createButton.textContent = hasSavedCharacters
+      ? "Create/Edit Character"
+      : "Create New Character";
+    createButton.classList.toggle("ghost", hasSavedCharacters);
+    createButton.classList.toggle("landing-primary", !hasSavedCharacters);
+  }
 
   if (els.landingCharacterSelect) {
     const options = entries.map((entry) => {
@@ -862,7 +878,7 @@ function updateLandingPrimaryLabel() {
   const selected = selectedLandingCharacterSlot();
   label.textContent = selected
     ? `Continue as ${landingCharacterName(selected)}`
-    : "Open Tracker";
+    : "Continue Character";
 }
 
 async function openLandingCharacter(id) {
@@ -882,7 +898,15 @@ async function openLandingCharacter(id) {
 async function continueFromLandingPage() {
   const selected = selectedLandingCharacterSlot();
   if (selected) await openLandingCharacter(selected.id);
-  else closeLandingPage("play");
+  else await startCharacterSetupCreation();
+}
+
+async function handleLandingCreateCharacter() {
+  if (characterLibraryEntries().length) {
+    await openCreateEditCharacterDialog();
+    return;
+  }
+  await startCharacterSetupCreation();
 }
 
 function populateSampleCharacterSelect() {
@@ -961,6 +985,11 @@ async function loadSelectedSampleCharacter() {
       $("#demoWelcomePanel").dataset.manualOpen = "false";
     render();
     setCreatorMode(false);
+    saveCharacterSlot(character, {
+      resetUndoHistory: true,
+      skipUndo: true,
+    });
+    if (typeof renderUndoControls === "function") renderUndoControls();
     renderDemoExperience();
     appToast(`${sample.name} loaded in demo mode.`, "success");
   } catch (error) {
@@ -1891,7 +1920,7 @@ $("#landingContinueBtn").onclick = continueFromLandingPage;
 if (els.landingCharacterSelect)
   els.landingCharacterSelect.onchange = updateLandingPrimaryLabel;
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
-$("#landingCreateBtn").onclick = openCreateEditCharacterDialog;
+$("#landingCreateBtn").onclick = handleLandingCreateCharacter;
 $("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
 $("#landingLocalDataBtn").onclick = () => closeLandingPage("localData");
 $("#landingPrivacyLegalBtn").onclick = () => closeLandingPage("privacyLegal");

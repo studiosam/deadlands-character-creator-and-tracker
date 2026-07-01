@@ -51,15 +51,19 @@
           <select id="landingCharacterSelect"></select>
         </div>
         <div class="landing-actions">
-          <button id="landingContinueBtn" class="landing-primary" type="button">
-            <span id="landingContinueLabel">Open Tracker</span>
+          <button
+            id="landingContinueBtn"
+            class="landing-primary hidden"
+            type="button"
+          >
+            <span id="landingContinueLabel">Continue Character</span>
           </button>
-          <div class="landing-secondary-actions">
-            <button id="landingCreateBtn" class="ghost" type="button">
-              Create/Edit Character
+          <div class="landing-secondary-actions landing-new-character-first">
+            <button id="landingCreateBtn" class="landing-primary" type="button">
+              Create New Character
             </button>
             <button id="landingImportBtn" class="ghost" type="button">
-              Import JSON
+              Import Character
             </button>
           </div>
           <button
@@ -2072,8 +2076,8 @@
           <span id="appDialogSelectText"></span>
           <select id="appDialogSelect"></select>
         </label>
-        <div id="appDialogChoices" class="dialog-choices hidden"></div>
         <div class="controls dialog-actions">
+          <div id="appDialogChoices" class="dialog-choices hidden"></div>
           <button
             id="appDialogCancelBtn"
             class="ghost"

@@ -31,11 +31,11 @@ table workflow checks that are not yet practical to automate.
 
 ## Landing page
 
-- [ ] Empty state shows Continue/Open Tracker, Create Character, Import JSON,
-      Try sample, Sources & Rulesets, and the local-storage/unofficial-tool note.
+- [ ] Empty state shows Create New Character, Import Character, Try sample,
+      Sources & Rulesets, and the local-storage/unofficial-tool note.
 - [ ] Saved-character state shows the saved-character selector and updates the
       primary action label to `Continue as <character name>`.
-- [ ] Import JSON on the landing page can paste JSON or select a file and does
+- [ ] Import Character on the landing page can paste JSON or select a file and does
       not enter the tracker until import is confirmed.
 - [ ] Mobile layout stacks and scrolls without clipping landing controls.
 

@@ -351,7 +351,7 @@ test("selects and opens a saved character from the minimal landing page @mobile"
     `Continue as ${firstName}`,
   );
 
-  await page.locator("#landingContinueBtn").click();
+  await enterTracker(page);
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator("#characterName")).toContainText(firstName);
 
@@ -435,7 +435,7 @@ test("deletes only the selected character and preserves the remaining character"
   const deleteName = "Character To Delete";
   const keepName = "Character To Keep";
 
-  await page.locator("#landingContinueBtn").click();
+  await enterTracker(page);
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator(".shell")).toBeVisible();
 
@@ -538,7 +538,7 @@ test("deletes only the selected character and preserves the remaining character"
 
   await page.reload();
   if (await page.locator("#landingPage").isVisible()) {
-    await page.locator("#landingContinueBtn").click();
+    await enterTracker(page);
   }
   await expect(page.locator("#characterName")).toContainText(keepName);
 
@@ -560,7 +560,7 @@ test("deletes only the selected character and preserves the remaining character"
 });
 
 test("imports a Savaged.us sample through paste import", async ({ page }) => {
-  await page.locator("#landingContinueBtn").click();
+  await enterTracker(page);
   const sample = await page.request.get(
     "/docs/Sample%20Characters/savaged-us-json-export-character-Lehi%20Larson.json",
   );
@@ -601,7 +601,7 @@ test("round-trips exported tracker JSON through import @mobile", async ({
   const characterName = "Backup Recovery Character";
   const noteText = "Round trip smoke note";
 
-  await page.locator("#landingContinueBtn").click();
+  await enterTracker(page);
   await page.locator("#headerToolsMenu summary").click();
   await page.locator("#characterLibraryMenuBtn").click();
   await expect(page.locator("#libraryPanel")).toBeVisible();
@@ -668,7 +668,7 @@ test("round-trips exported tracker JSON through import @mobile", async ({
 
   await page.reload();
   if (await page.locator("#landingPage").isVisible()) {
-    await page.locator("#landingContinueBtn").click();
+    await enterTracker(page);
   }
 
   await expect(page.locator("#characterName")).toContainText(characterName);

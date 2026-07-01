@@ -108,6 +108,8 @@ function openAppDialog(options) {
       button.type = "button";
       button.textContent = choice.label;
       button.className = choice.danger ? "danger" : choice.ghost ? "ghost" : "";
+      if (choice.className)
+        button.classList.add(...choice.className.split(" "));
       button.onclick = () =>
         resolveAppDialog(choice.valueFromSelect ? select.value : choice.value);
       choices.appendChild(button);

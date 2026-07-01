@@ -65,7 +65,11 @@ async function clearAppStorage(page) {
 }
 
 async function enterTracker(page) {
-  await page.locator("#landingContinueBtn").click();
+  if (await page.locator("#landingContinueBtn").isVisible()) {
+    await page.locator("#landingContinueBtn").click();
+  } else {
+    await page.locator("#landingLoadSampleBtn").click();
+  }
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator(".shell")).toBeVisible();
 }
@@ -153,8 +157,12 @@ async function openCharacterSetupReview(page) {
 
 async function startNewCharacterFromLanding(page) {
   await page.locator("#landingCreateBtn").click();
+  if (!(await page.locator("#appDialog").isVisible())) {
+    await expect(page.locator("#landingPage")).toBeHidden();
+    await expect(page.locator("#characterSetupPanel")).toBeVisible();
+    return;
+  }
   const dialog = page.locator("#appDialog");
-  await expect(dialog).toBeVisible();
   await expect(dialog.locator("#appDialogSelectLabel")).toBeHidden();
   await dialog.getByRole("button", { name: "Create New Character" }).click();
   await expect(dialog).toBeHidden();

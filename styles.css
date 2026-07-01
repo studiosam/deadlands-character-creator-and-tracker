@@ -333,6 +333,10 @@ h3 {
   gap: 0.75rem;
 }
 
+.landing-secondary-actions.landing-new-character-first {
+  grid-template-columns: 1fr;
+}
+
 .landing-content:has(.landing-character-picker:not(.hidden)) {
   grid-template-columns: repeat(2, minmax(14rem, 17rem));
   align-items: end;
@@ -613,7 +617,10 @@ h3 {
 }
 
 .app-dialog {
-  width: min(32rem, calc(100vw - 2rem));
+  box-sizing: border-box;
+  width: max-content;
+  min-width: min(24rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-lg);
   background: rgba(18, 22, 31, 0.98);
@@ -629,19 +636,33 @@ h3 {
 
 .app-dialog form {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.75rem;
   padding: 1.2rem;
 }
 
 .app-dialog h2 {
-  margin-bottom: 0;
   font-size: 1.2rem;
 }
 
 .app-dialog p {
-  margin-bottom: 0;
+  max-width: 32rem;
   color: var(--muted);
+  line-height: 1.45;
   white-space: pre-wrap;
+}
+
+.app-dialog h2,
+.app-dialog p,
+.app-dialog label {
+  margin: 0;
+}
+
+.app-dialog label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
 }
 
 .dialog-choices,
@@ -650,6 +671,24 @@ h3 {
   flex-wrap: wrap;
   gap: 0.65rem;
   justify-content: flex-end;
+}
+
+.dialog-actions {
+  align-items: center;
+  justify-self: end;
+  width: max-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+}
+
+.dialog-actions .dialog-choices:not(.hidden) {
+  display: contents;
+}
+
+.app-dialog .dialog-actions button {
+  flex: 0 1 auto;
+  min-width: max-content;
+  white-space: nowrap;
 }
 
 .utility-panel {
@@ -3407,7 +3446,7 @@ h3 {
     min-height: 100dvh;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: 1rem 1rem 2rem;
+    padding: 1rem 1rem calc(7rem + env(safe-area-inset-bottom));
     background-position: 66% center;
   }
 
@@ -3449,12 +3488,23 @@ h3 {
   }
 
   .landing-footer-note {
-    position: static;
-    order: 10;
-    width: auto;
-    max-width: 100%;
-    margin-top: 0.5rem;
-    transform: none;
+    position: fixed;
+    bottom: calc(0.65rem + env(safe-area-inset-bottom));
+    left: 50%;
+    flex-wrap: wrap;
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    overflow: visible;
+    line-height: 1.35;
+    white-space: normal;
+    transform: translateX(-50%);
+  }
+
+  .landing-footer-note > span {
+    flex: 1 1 100%;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .paste-import-panel.landing-import-panel {
@@ -3858,6 +3908,17 @@ h3 {
   .dialog-actions button,
   .dialog-choices button {
     min-height: 2.55rem;
+  }
+
+  .app-dialog .dialog-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .app-dialog .dialog-actions button.dialog-choice-edit-selected {
+    order: -1;
+    flex: 1 1 100%;
+    width: 100%;
   }
 
   .form,
