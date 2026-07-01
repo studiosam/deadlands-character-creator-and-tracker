@@ -1731,7 +1731,6 @@ if (els.landingCharacterSelect)
   els.landingCharacterSelect.onchange = updateLandingPrimaryLabel;
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#landingCreateBtn").onclick = startCharacterSetupCreation;
-$("#landingCatalogBtn").onclick = () => closeLandingPage("catalog");
 $("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
 $("#landingSourcesRulesetsBtn").onclick = () =>
   closeLandingPage("sourcesRulesets");

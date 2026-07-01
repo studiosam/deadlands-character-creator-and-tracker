@@ -96,7 +96,10 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
     ).toBeVisible();
   };
 
-  await page.locator("#landingCatalogBtn").click();
+  await expect(page.locator("#landingCatalogBtn")).toHaveCount(0);
+  await page.locator("#landingContinueBtn").click();
+  await openHeaderMenu(page);
+  await page.locator("#catalogMenuBtn").click();
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(panel).toBeVisible();
   await expect(page.locator(".app-tabs [data-app-tab='catalog']")).toHaveCount(
@@ -116,6 +119,12 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
     panel.getByRole("button", { name: /^(Add|Save|Apply)\b/i }),
   ).toHaveCount(0);
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
+
+  await openHeaderMenu(page);
+  await page.locator("#creatorModeBtn").click();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await page.locator("#characterSetupPanel [data-app-tab='catalog']").click();
+  await expect(panel).toBeVisible();
 });
 
 test("shows the read-only sources and rulesets page from the global menu", async ({
