@@ -80,6 +80,7 @@ window.visualViewport?.addEventListener(
 
 window.addEventListener("beforeunload", (event) => {
   if (!isUnsavedCharacterDraft()) return;
+  if (hasSavedSetupDraftState()) return;
   event.preventDefault();
   event.returnValue = "";
 });
@@ -99,6 +100,7 @@ document.addEventListener("click", async (event) => {
     collectConceptInputs();
     characterSetupStep = setupStep.dataset.setupStep;
     renderCharacterSetup();
+    save();
   }
   const setupAction = event.target?.closest?.("[data-setup-action]");
   if (setupAction?.dataset.setupAction === "nextSetupStep") {
@@ -506,9 +508,9 @@ els.localDataClearDemoFlagBtn.onclick = () => {
 els.localDataClearDraftBtn.onclick = async () => {
   if (
     !(await appConfirm(
-      "This removes only the saved character creation draft.",
+      "This removes only saved character creation/setup drafts. Saved character slots are unchanged.",
       {
-        title: "Clear creator draft?",
+        title: "Clear creation drafts?",
         confirmText: "Clear Draft",
         danger: true,
       },
@@ -517,9 +519,10 @@ els.localDataClearDraftBtn.onclick = async () => {
     return;
   creationDraft = emptyDraft();
   storageAdapter.remove(CREATION_KEY);
+  clearSetupResumeState();
   if ($("#creationPanel")?.classList.contains("active")) renderCreator();
   renderLocalDataSummary();
-  appToast("Creator draft cleared.", "success");
+  appToast("Creator and setup drafts cleared.", "success");
 };
 els.localDataClearAllBtn.onclick = async () => {
   if (
@@ -538,6 +541,7 @@ els.localDataClearAllBtn.onclick = async () => {
   storageAdapter.remove(CHARACTER_LIBRARY_KEY);
   storageAdapter.remove(UNDO_HISTORY_KEY);
   storageAdapter.remove(CREATION_KEY);
+  clearSetupResumeState();
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, false);
   characterDraftMode = false;

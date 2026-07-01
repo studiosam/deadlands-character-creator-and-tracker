@@ -331,8 +331,8 @@ function renderSetupPersistencePanel() {
   if (!reviewStep) {
     return `<div class="setup-persistence-panel setup-progress-panel${isUnsavedCharacterDraft() ? " unsaved" : ""}">
       <div>
-        <strong>${isUnsavedCharacterDraft() ? "Unsaved setup draft" : "Character setup in progress"}</strong>
-        <p>Use the Next button at the bottom of each step. Save and finish controls appear on Review.</p>
+        <strong>${isUnsavedCharacterDraft() ? "Setup draft saved locally" : "Character setup in progress"}</strong>
+        <p>Use the Next button at the bottom of each step. Progress is saved locally; final save controls appear on Review.</p>
       </div>
       ${
         isUnsavedCharacterDraft()
@@ -349,7 +349,7 @@ function renderSetupPersistencePanel() {
     return `<div class="setup-persistence-panel unsaved">
       <div>
         <strong>Review and save character</strong>
-        <p>This character is temporary until you save it to the local character library. Finish setup saves it and opens Combat.</p>
+        <p>This draft resumes on reload, but it is not a saved character slot until you save or finish setup.</p>
       </div>
       <div class="creator-actions">
         <button type="button" data-setup-action="saveDraftCharacter">Save Character</button>
@@ -426,7 +426,7 @@ function renderSetupConcept() {
     </div>
     <p class="creator-note">${
       isUnsavedCharacterDraft()
-        ? "Concept edits update this temporary draft. Save and finish controls appear on Review."
+        ? "Concept edits update this locally saved setup draft. Character slot save controls appear on Review."
         : "Concept edits update the active tracker character through the normal local save path."
     }</p>
   </section>`;

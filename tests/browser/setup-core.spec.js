@@ -4,6 +4,8 @@ const {
   useAppTestHooks,
   STORAGE_KEY,
   CHARACTER_LIBRARY_KEY,
+  SETUP_DRAFT_KEY,
+  SETUP_PROGRESS_KEY,
   clearAppStorage,
   enterTracker,
   reloadIntoTracker,
@@ -56,10 +58,10 @@ test("starts new characters directly in character setup @mobile", async ({
     "Untitled Character",
   );
   await expect(page.locator(".setup-persistence-panel.unsaved")).toContainText(
-    "Unsaved setup draft",
+    "Setup draft saved locally",
   );
   await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Save and finish controls appear on Review",
+    "Progress is saved locally",
   );
   await expect(
     page.locator("[data-setup-action='saveDraftCharacter']"),
@@ -85,25 +87,55 @@ test("starts new characters directly in character setup @mobile", async ({
   ).not.toHaveCount(0);
 
   const stored = await page.evaluate(
-    ({ libraryKey, storageKey }) => {
+    ({ libraryKey, setupDraftKey, setupProgressKey, storageKey }) => {
       const library = JSON.parse(localStorage.getItem(libraryKey) || "null");
+      const setupDraft = JSON.parse(
+        localStorage.getItem(setupDraftKey) || "null",
+      );
+      const setupProgress = JSON.parse(
+        localStorage.getItem(setupProgressKey) || "null",
+      );
       const tracker = JSON.parse(localStorage.getItem(storageKey) || "null");
       return {
         slotCount: Object.keys(library?.charactersById || {}).length,
         activeSource:
           library?.charactersById?.[library.activeCharacterId]?.source || "",
+        setupDraftSource: setupDraft?.character?.source || "",
+        setupDraftStep: setupDraft?.step || "",
+        setupProgressStep: setupProgress?.step || "",
         trackerSource: tracker?.source || "",
         hasBaseline: Boolean(tracker?.creationBaseline),
       };
     },
-    { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
+    {
+      libraryKey: CHARACTER_LIBRARY_KEY,
+      setupDraftKey: SETUP_DRAFT_KEY,
+      setupProgressKey: SETUP_PROGRESS_KEY,
+      storageKey: STORAGE_KEY,
+    },
   );
   expect(stored).toEqual({
     slotCount: 0,
     activeSource: "",
+    setupDraftSource: "created",
+    setupDraftStep: "attributesSkills",
+    setupProgressStep: "attributesSkills",
     trackerSource: "",
     hasBaseline: false,
   });
+
+  await page.reload();
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterName")).toContainText(
+    "Untitled Character",
+  );
+  await expect(
+    page.locator("[data-setup-step='attributesSkills']"),
+  ).toHaveAttribute("aria-current", "step");
+  await expect(page.locator("#setupTraitsPanel")).toContainText(
+    "Edit starting Attributes",
+  );
 
   await page.locator("[data-setup-step='review']").click();
   await page.locator("[data-setup-action='saveDraftCharacter']").click();

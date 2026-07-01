@@ -8,6 +8,18 @@
 let character = null;
 let characterLibrary = null;
 let characterDraftMode = false;
+const CHARACTER_SETUP_STEPS = [
+  { id: "concept", label: "Concept" },
+  { id: "hindrances", label: "Hindrances" },
+  { id: "attributesSkills", label: "Traits" },
+  { id: "edges", label: "Edges" },
+  { id: "powers", label: "Powers" },
+  { id: "gear", label: "Gear" },
+  { id: "review", label: "Review" },
+];
+var characterSetupStep = "concept";
+var characterSetupReviewOpen = false;
+var setupResumeOnBoot = false;
 let saveTimer = null;
 let edgeEditingId = "";
 let hindranceEditingId = "";

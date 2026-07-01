@@ -2,6 +2,8 @@ const { test, expect } = require("@playwright/test");
 
 const STORAGE_KEY = "deadlands-tracker-v2";
 const CHARACTER_LIBRARY_KEY = "deadlands-character-library-v1";
+const SETUP_DRAFT_KEY = "deadlands-setup-draft-v1";
+const SETUP_PROGRESS_KEY = "deadlands-setup-progress-v1";
 const runtimeErrorsByPage = new WeakMap();
 
 function installRuntimeErrorCollectors(page) {
@@ -760,6 +762,8 @@ module.exports = {
   useAppTestHooks,
   STORAGE_KEY,
   CHARACTER_LIBRARY_KEY,
+  SETUP_DRAFT_KEY,
+  SETUP_PROGRESS_KEY,
   clearAppStorage,
   enterTracker,
   reloadIntoTracker,

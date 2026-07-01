@@ -439,6 +439,79 @@ function setSaveState(message) {
   els.saveState.textContent = message;
 }
 
+function validSetupStepId(stepId, fallback = "concept") {
+  const value = String(stepId || "");
+  return CHARACTER_SETUP_STEPS.some((step) => step.id === value)
+    ? value
+    : fallback;
+}
+
+function saveSetupProgressState(stepId = characterSetupStep) {
+  const step = validSetupStepId(stepId);
+  storageAdapter.writeJson(SETUP_PROGRESS_KEY, {
+    schemaVersion: APP_SCHEMA_VERSION,
+    activeCharacterId: characterLibrary?.activeCharacterId || "",
+    characterDraftMode: isUnsavedCharacterDraft(),
+    step,
+    updatedAt: new Date().toISOString(),
+  });
+  return step;
+}
+
+function saveSetupDraftState(stepId = characterSetupStep) {
+  if (!character) return validSetupStepId(stepId);
+  const step = saveSetupProgressState(stepId);
+  storageAdapter.writeJson(SETUP_DRAFT_KEY, {
+    schemaVersion: APP_SCHEMA_VERSION,
+    step,
+    savedAt: new Date().toISOString(),
+    character: serializeCharacterForStorage(character),
+  });
+  return step;
+}
+
+function clearSetupDraftState() {
+  storageAdapter.remove(SETUP_DRAFT_KEY);
+}
+
+function clearSetupResumeState() {
+  clearSetupDraftState();
+  storageAdapter.remove(SETUP_PROGRESS_KEY);
+  setupResumeOnBoot = false;
+}
+
+function hasSavedSetupDraftState() {
+  return storageAdapter.has(SETUP_DRAFT_KEY);
+}
+
+function restoreSetupDraftState() {
+  const stored = storageAdapter.readJson(SETUP_DRAFT_KEY, null);
+  if (!stored?.character || typeof stored.character !== "object") return null;
+
+  characterDraftMode = true;
+  characterSetupReviewOpen = true;
+  characterSetupStep = validSetupStepId(stored.step);
+  setupResumeOnBoot = true;
+  return normalize(stored.character, {
+    defaultSetupStatus: "needsReview",
+  });
+}
+
+function restoreSetupProgressState(data) {
+  const activeId = characterLibrary?.activeCharacterId || "";
+  const progress = storageAdapter.readJson(SETUP_PROGRESS_KEY, null);
+  if (
+    !activeId ||
+    progress?.activeCharacterId !== activeId ||
+    data?.setupStatus !== "needsReview"
+  )
+    return;
+
+  characterSetupReviewOpen = true;
+  characterSetupStep = validSetupStepId(progress.step);
+  setupResumeOnBoot = true;
+}
+
 function saveCharacterSlot(data = character, metadata = {}) {
   if (!data) return null;
   if (
@@ -448,6 +521,8 @@ function saveCharacterSlot(data = character, metadata = {}) {
   )
     return null;
   if (data === character) characterDraftMode = false;
+  if (data === character && data?.setupStatus === "complete")
+    clearSetupResumeState();
   if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
   const activeId = metadata.id || characterLibrary.activeCharacterId;
   const existing = activeId ? characterLibrary.charactersById[activeId] : null;
@@ -517,12 +592,17 @@ async function saveUnsavedCharacterDraft() {
   });
   character = normalize(entry.character);
   characterDraftMode = false;
+  clearSetupDraftState();
+  if (character.setupStatus === "needsReview")
+    saveSetupProgressState(characterSetupStep);
+  else clearSetupResumeState();
   setSaveState("Saved");
   return entry;
 }
 
 function discardUnsavedCharacterDraft() {
   if (!isUnsavedCharacterDraft()) return false;
+  clearSetupResumeState();
   characterDraftMode = false;
   const active = activeCharacterSlot();
   if (active) {
@@ -560,6 +640,7 @@ async function resolveUnsavedCharacterDraft(message) {
 
 function addCharacterSlot(data, metadata = {}) {
   characterDraftMode = false;
+  clearSetupResumeState();
   if (typeof characterSetupReviewOpen !== "undefined")
     characterSetupReviewOpen = false;
   if (!characterLibrary) characterLibrary = emptyCharacterLibrary();
@@ -590,6 +671,7 @@ function activateCharacterSlot(id) {
   const entry = characterLibrary?.charactersById?.[id];
   if (!entry) return false;
   characterDraftMode = false;
+  clearSetupResumeState();
   if (typeof characterSetupReviewOpen !== "undefined")
     characterSetupReviewOpen = false;
   characterLibrary.activeCharacterId = id;
@@ -607,6 +689,7 @@ function activateCharacterSlot(id) {
 function removeCharacterSlot(id) {
   if (!characterLibrary?.charactersById?.[id]) return false;
   const removingActive = characterLibrary.activeCharacterId === id;
+  if (removingActive) clearSetupResumeState();
   delete characterLibrary.charactersById[id];
   if (removingActive) {
     if (typeof characterSetupReviewOpen !== "undefined")
@@ -665,18 +748,25 @@ function duplicateCharacterSlot(id) {
 
 function loadCharacter() {
   characterLibrary = loadCharacterLibrary();
+  const setupDraft = restoreSetupDraftState();
+  if (setupDraft) return setupDraft;
+
   const active = activeCharacterSlot();
-  return active
+  const loaded = active
     ? normalize(active.character)
     : normalize(clone(defaultCharacter));
+  restoreSetupProgressState(loaded);
+  return loaded;
 }
 
 function save() {
   if (isUnsavedCharacterDraft()) {
-    setSaveState("Draft not saved");
+    saveSetupDraftState(characterSetupStep);
+    setSaveState("Draft saved locally");
     return;
   }
   saveCharacterSlot(character);
+  if (characterSetupReviewMode()) saveSetupProgressState(characterSetupStep);
   if (!els.saveState) return;
   els.saveState.textContent = "Saving…";
   clearTimeout(saveTimer);

@@ -5,18 +5,6 @@
  * UI surfaces, and delegates feature-specific sections to focused renderers.
  * Keep long-lived data migration in storage.js rather than hiding it here.
  */
-const CHARACTER_SETUP_STEPS = [
-  { id: "concept", label: "Concept" },
-  { id: "hindrances", label: "Hindrances" },
-  { id: "attributesSkills", label: "Traits" },
-  { id: "edges", label: "Edges" },
-  { id: "powers", label: "Powers" },
-  { id: "gear", label: "Gear" },
-  { id: "review", label: "Review" },
-];
-var characterSetupStep = "concept";
-var characterSetupReviewOpen = false;
-
 function characterSetupReviewMode() {
   return character?.setupStatus === "needsReview" || characterSetupReviewOpen;
 }
@@ -336,6 +324,7 @@ function renderLocalDataSummary() {
   const powerPoints = powerPointResource();
   const isDemoMode = storageAdapter.readFlag(DEMO_MODE_KEY);
   const hasDraft = storageAdapter.has(CREATION_KEY);
+  const hasSetupDraft = storageAdapter.has(SETUP_DRAFT_KEY);
   const hasTrackerSave = storageAdapter.has(STORAGE_KEY);
   const source = sourceLabel();
 
@@ -376,7 +365,7 @@ function renderLocalDataSummary() {
     [
       "Tracker Save",
       isUnsavedCharacterDraft()
-        ? "Draft not saved"
+        ? "Setup draft saved separately"
         : hasTrackerSave
           ? localJsonSize(STORAGE_KEY)
           : "Not saved yet",
@@ -390,6 +379,10 @@ function renderLocalDataSummary() {
     [
       "Creator Draft",
       hasDraft ? localJsonSize(CREATION_KEY) : "No draft saved",
+    ],
+    [
+      "Setup Draft",
+      hasSetupDraft ? localJsonSize(SETUP_DRAFT_KEY) : "No setup draft saved",
     ],
     ["Demo Mode", isDemoMode ? "On" : "Off"],
     [

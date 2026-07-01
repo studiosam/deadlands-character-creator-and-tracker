@@ -15,6 +15,7 @@ function importJsonText(text) {
   const payload = unwrapImportPayload(data);
   characterDraftMode = false;
   characterSetupReviewOpen = false;
+  clearSetupResumeState();
   if (payload.type === "full-state") {
     characterLibrary = payload.characterLibrary
       ? normalizeCharacterLibrary(payload.characterLibrary)

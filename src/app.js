@@ -15,6 +15,12 @@ function performInitialRender() {
   catalogs();
   updatePreviews();
   render();
+  if (setupResumeOnBoot) {
+    setLandingVisible(false);
+    setAppTab("character", { history: false });
+    renderDemoExperience();
+    return;
+  }
   renderLandingPage();
   renderDemoExperience();
 }

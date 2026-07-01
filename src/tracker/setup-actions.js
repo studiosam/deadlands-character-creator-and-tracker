@@ -1121,6 +1121,7 @@ async function confirmSetupReview() {
 function reopenSetupReview() {
   characterSetupReviewOpen = true;
   characterSetupStep = "review";
+  saveSetupProgressState(characterSetupStep);
   render();
   $("#characterSetupPanel")?.scrollIntoView({
     behavior: "smooth",

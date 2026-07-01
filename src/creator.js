@@ -705,6 +705,7 @@ async function startCharacterSetupCreation() {
   characterSetupStep = "concept";
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
+  saveSetupDraftState(characterSetupStep);
   $("#demoWelcomePanel")?.classList.add("hidden");
   setLandingVisible(false);
   render();
@@ -714,8 +715,8 @@ async function startCharacterSetupCreation() {
     behavior: "smooth",
     block: "start",
   });
-  setSaveState("Draft not saved");
-  appToast("Unsaved character draft started in Character Setup.", "success");
+  setSaveState("Draft saved locally");
+  appToast("Character setup draft started and saved locally.", "success");
 }
 
 async function openSavedCharacterForSetupEdit(id) {
@@ -734,6 +735,7 @@ async function openSavedCharacterForSetupEdit(id) {
   if (!activateCharacterSlot(id)) return;
   characterSetupReviewOpen = true;
   characterSetupStep = "review";
+  saveSetupProgressState(characterSetupStep);
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, true);
   setLandingVisible(false);
   const welcomePanel = $("#demoWelcomePanel");
