@@ -45,17 +45,43 @@ useAppTestHooks();
 test("settings panel exposes backup and local data controls", async ({
   page,
 }) => {
-  await page.locator("#landingContinueBtn").click();
-  await page.locator("#headerToolsMenu summary").click();
-  await page.locator("#settingsMenuBtn").click();
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await page.locator("#landingSettingsBtn").click();
 
+  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator("#settingsPanel")).toBeVisible();
   await expect(page.locator("#settingsStatusBadges")).toContainText("Version");
   await expect(page.locator("#settingsStorageDetails")).toContainText(
     "Tracker Save",
   );
+  await expect(page.locator("#settingsBackupDataSection")).toContainText(
+    "Backups and Local Data",
+  );
+  await expect(page.locator("#settingsLocalDataControlsSection")).toContainText(
+    "Clear Local Data",
+  );
+  await expect(page.locator("#settingsPrivacyLegalSection")).toContainText(
+    "Privacy and Legal Notes",
+  );
   await expect(page.locator("#settingsDemoLink")).toHaveAttribute(
     "href",
     /studiosam\.github\.io/,
+  );
+
+  await page.evaluate(() => window.history.back());
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await page.locator("#landingLocalDataBtn").click();
+  await expect(page.locator("#settingsBackupDataSection")).toBeVisible();
+  await expect(page.locator("#settingsBackupDataSection")).toContainText(
+    "Tracker Save",
+  );
+
+  await page.evaluate(() => window.history.back());
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await page.locator("#landingPrivacyLegalBtn").click();
+  await expect(page.locator("#settingsPrivacyLegalSection")).toBeVisible();
+  await expect(page.locator("#settingsPrivacyLegalSection")).toContainText(
+    "License",
   );
 
   await page.locator("#settingsShowWelcomeBtn").click();

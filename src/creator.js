@@ -729,6 +729,16 @@ function closeLandingPage(tabName = "play", options = {}) {
   $(".shell")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function openLandingSettings(sectionId = "") {
+  closeLandingPage("settings");
+  if (!sectionId) return;
+  requestAnimationFrame(() => {
+    document
+      .getElementById(sectionId)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 async function openLandingPage() {
   if (
     !(await resolveUnsavedCharacterDraft(
@@ -1789,6 +1799,11 @@ if (els.landingCharacterSelect)
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#landingCreateBtn").onclick = startCharacterSetupCreation;
 $("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
+$("#landingSettingsBtn").onclick = () => openLandingSettings();
+$("#landingLocalDataBtn").onclick = () =>
+  openLandingSettings("settingsBackupDataSection");
+$("#landingPrivacyLegalBtn").onclick = () =>
+  openLandingSettings("settingsPrivacyLegalSection");
 $("#landingSourcesRulesetsBtn").onclick = () =>
   closeLandingPage("sourcesRulesets");
 $("#mainMenuBtn").onclick = openLandingPage;

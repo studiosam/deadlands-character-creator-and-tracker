@@ -73,6 +73,27 @@
         <p class="landing-footer-note">
           <span>Unofficial fan tool. Saves stay in this browser.</span>
           <button
+            id="landingSettingsBtn"
+            class="landing-footer-link"
+            type="button"
+          >
+            Settings
+          </button>
+          <button
+            id="landingLocalDataBtn"
+            class="landing-footer-link"
+            type="button"
+          >
+            Local Data
+          </button>
+          <button
+            id="landingPrivacyLegalBtn"
+            class="landing-footer-link"
+            type="button"
+          >
+            Privacy & Legal
+          </button>
+          <button
             id="landingSourcesRulesetsBtn"
             class="landing-footer-link"
             type="button"
@@ -1697,13 +1718,14 @@
             <div id="settingsAppDetails" class="settings-detail-grid"></div>
           </section>
 
-          <section class="card settings-card">
+          <section id="settingsBackupDataSection" class="card settings-card">
             <div class="section-title">
               <div>
-                <h2>Backups and Data</h2>
+                <h2>Backups and Local Data</h2>
                 <p>
                   Exports are the backup and portability path for this local
-                  app.
+                  app. The storage list shows what this browser currently has
+                  saved.
                 </p>
               </div>
             </div>
@@ -1743,11 +1765,14 @@
             </div>
           </section>
 
-          <section class="card settings-card">
+          <section id="settingsPrivacyLegalSection" class="card settings-card">
             <div class="section-title">
               <div>
-                <h2>Privacy and Notice</h2>
-                <p>Local data, unofficial status, and rulebook boundaries.</p>
+                <h2>Privacy and Legal Notes</h2>
+                <p>
+                  Local data, unofficial status, license notes, and rulebook
+                  boundaries.
+                </p>
               </div>
             </div>
             <div class="settings-copy-list">
@@ -1779,7 +1804,10 @@
             </div>
           </section>
 
-          <section class="card settings-card danger-zone">
+          <section
+            id="settingsLocalDataControlsSection"
+            class="card settings-card danger-zone"
+          >
             <div class="section-title">
               <div>
                 <h2>Local Data Controls</h2>
