@@ -753,24 +753,33 @@ async function openSavedCharacterForSetupEdit(id) {
 
 async function openCreateEditCharacterDialog() {
   const savedCharacters = characterLibraryEntries();
-  const options = [
-    { value: "__new__", label: "Create a new character" },
-    ...savedCharacters.map((entry) => ({
-      value: entry.id,
-      label: `Edit ${landingCharacterName(entry)}`,
-    })),
-  ];
-  const choice = await appSelect(
-    savedCharacters.length
-      ? "Start a new character, or open a saved character in Character Setup."
-      : "No saved characters are available yet. Start a new character in Character Setup.",
-    options,
-    {
-      title: "Create/Edit Character",
-      confirmText: "Continue",
-      selectLabel: "Character action",
-    },
-  );
+  const editOptions = savedCharacters.map((entry) => ({
+    value: entry.id,
+    label: landingCharacterName(entry),
+  }));
+  const choice = await openAppDialog({
+    title: "Create/Edit Character",
+    message:
+      savedCharacters.length > 0
+        ? "Create a new character, or choose a saved character to edit in Character Setup."
+        : "No saved characters are available yet. Start a new character in Character Setup.",
+    cancelText: "Cancel",
+    select: savedCharacters.length > 0,
+    selectLabel: "Saved character",
+    selectOptions: editOptions,
+    choices: [
+      { value: "__new__", label: "Create New Character" },
+      ...(savedCharacters.length
+        ? [
+            {
+              valueFromSelect: true,
+              label: "Edit Selected Character",
+              ghost: true,
+            },
+          ]
+        : []),
+    ],
+  });
   if (choice === null) return;
   if (choice === "__new__") {
     await startCharacterSetupCreation();

@@ -529,10 +529,10 @@ els.localDataClearDraftBtn.onclick = async () => {
 els.localDataClearAllBtn.onclick = async () => {
   if (
     !(await appConfirm(
-      "This removes all character slots, the active tracker save, creator draft, demo flags, and welcome preference from this browser. Export a full backup first if this data matters.",
+      "This will permanently erase all saved characters and all local tracker data from this browser. This is destructive and cannot be undone. Export a full backup first if this data matters.",
       {
-        title: "Clear all local data?",
-        confirmText: "Clear Local Data",
+        title: "Permanently clear local data?",
+        confirmText: "Permanently Clear Local Data",
         danger: true,
       },
     ))

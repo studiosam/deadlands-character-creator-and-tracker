@@ -120,6 +120,23 @@ test("local data and privacy links open distinct panels", async ({ page }) => {
   await expect(page.locator("#localDataBackupSection")).toContainText(
     "Tracker Save",
   );
+  await page.locator("#localDataClearAllBtn").click();
+  const clearDialog = page.locator("#appDialog");
+  await expect(clearDialog).toBeVisible();
+  await expect(clearDialog.locator("#appDialogTitle")).toHaveText(
+    "Permanently clear local data?",
+  );
+  await expect(clearDialog.locator("#appDialogMessage")).toContainText(
+    "permanently erase all saved characters",
+  );
+  await expect(clearDialog.locator("#appDialogMessage")).toContainText(
+    "destructive and cannot be undone",
+  );
+  await expect(clearDialog.locator("#appDialogConfirmBtn")).toHaveText(
+    "Permanently Clear Local Data",
+  );
+  await clearDialog.locator("#appDialogCancelBtn").click();
+  await expect(clearDialog).toBeHidden();
 
   await page.evaluate(() => window.history.back());
   await expect(page.locator("#landingPage")).toBeVisible();
@@ -170,6 +187,23 @@ test("opens sources and rulesets from the landing footer", async ({ page }) => {
 test("landing create edit button can start or edit characters", async ({
   page,
 }) => {
+  await expect(page.locator("#landingPage")).toBeVisible();
+  await page.locator("#landingCreateBtn").click();
+  let dialog = page.locator("#appDialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("#appDialogTitle")).toHaveText(
+    "Create/Edit Character",
+  );
+  await expect(dialog.locator("#appDialogSelectLabel")).toBeHidden();
+  await expect(
+    dialog.getByRole("button", { name: "Create New Character" }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Edit Selected Character" }),
+  ).toHaveCount(0);
+  await dialog.locator("#appDialogCancelBtn").click();
+  await expect(dialog).toBeHidden();
+
   await enterTracker(page);
   await saveCurrentCharacter(page);
   await renameActiveCharacter(page, "Saved Dusty");
@@ -182,21 +216,26 @@ test("landing create edit button can start or edit characters", async ({
   );
   await page.locator("#landingCreateBtn").click();
 
-  const dialog = page.locator("#appDialog");
+  dialog = page.locator("#appDialog");
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("#appDialogTitle")).toHaveText(
     "Create/Edit Character",
   );
-  await expect(dialog.locator("#appDialogSelect")).toContainText(
-    "Create a new character",
+  await expect(
+    dialog.getByRole("button", { name: "Create New Character" }),
+  ).toBeVisible();
+  await expect(dialog.locator("#appDialogSelectLabel")).toBeVisible();
+  await expect(dialog.locator("#appDialogSelectText")).toHaveText(
+    "Saved character",
   );
-  await expect(dialog.locator("#appDialogSelect")).toContainText(
-    "Edit Saved Dusty",
+  await expect(dialog.locator("#appDialogSelect")).toContainText("Saved Dusty");
+  await expect(dialog.locator("#appDialogSelect")).not.toContainText(
+    "Create a new character",
   );
   await dialog
     .locator("#appDialogSelect")
-    .selectOption({ label: "Edit Saved Dusty" });
-  await dialog.locator("#appDialogConfirmBtn").click();
+    .selectOption({ label: "Saved Dusty" });
+  await dialog.getByRole("button", { name: "Edit Selected Character" }).click();
 
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);

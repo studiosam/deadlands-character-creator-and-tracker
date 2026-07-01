@@ -155,8 +155,8 @@ async function startNewCharacterFromLanding(page) {
   await page.locator("#landingCreateBtn").click();
   const dialog = page.locator("#appDialog");
   await expect(dialog).toBeVisible();
-  await dialog.locator("#appDialogSelect").selectOption("__new__");
-  await dialog.locator("#appDialogConfirmBtn").click();
+  await expect(dialog.locator("#appDialogSelectLabel")).toBeHidden();
+  await dialog.getByRole("button", { name: "Create New Character" }).click();
   await expect(dialog).toBeHidden();
 }
 
