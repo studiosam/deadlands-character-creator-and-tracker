@@ -1,10 +1,17 @@
-# Deadlands Character Creator and Tracker
+# Deadlands Character Tracker
 
 An unofficial browser-based table companion for Deadlands: The Weird West and
-SWADE play. It combines a character tracker, character creation draft, combat
-dashboard, inventory manager, arcane tools, notes, and Savaged.us JSON import
-support in a static web app that can run from GitHub Pages or directly from the
+SWADE play. It is primarily a local-first live campaign tracker and player
+dashboard for use after character creation: combat state, inventory, arcane
+resources, active powers, notes, advancement history, and table reminders live
+in one static web app that can run from GitHub Pages or directly from the
 project folder.
+
+Character Setup is included as setup scaffolding and review support for this
+prototype, but the app is not a replacement for Savaged.us, Pinnacle products,
+the official books, or a full VTT. In a real official integration, Savaged.us or
+another licensed builder would remain the source of truth for official
+character creation and complete catalogs.
 
 This project is portfolio-first: it demonstrates product thinking, stateful
 front-end architecture without a framework, import normalization, local data
@@ -33,16 +40,19 @@ want a local, private, session-focused tracker at the table.
   declarations.
 - Manage weapons, loaded rounds, reserve ammunition, armor by location, gear,
   vehicles, storage locations, carrying capacity, and encumbrance.
-- Build a Deadlands/SWADE character through Character Setup, confirm setup, and
-  start play from the Combat tab.
+- Build or review a Deadlands/SWADE character through Character Setup, confirm
+  setup, and start play from the Combat tab.
 - Review imported or newly created characters through the `setupStatus`
   lifecycle: characters start as `needsReview`, confirmed setup becomes
   `complete`, and Review Setup can intentionally reopen setup later.
 - Use the Character tab as a reference-focused Character Sheet after setup is
   complete, while keeping the setup workflow hidden by default.
 - Browse a read-only Catalog reference for Edges, Hindrances, and Powers.
-- Track Arcane Backgrounds, Power Points, known powers, active powers, and
-  Huckster Dealing with the Devil helper state.
+- Track Arcane Backgrounds, Power Points, known powers, active powers, variable
+  Power Point spending, and Huckster Dealing with the Devil helper state.
+- Track Deadlands-specific player bookkeeping for Mad Scientist devices,
+  Huckster state, and Agent/Ranger organization records without automating
+  Marshal-facing outcomes.
 - Import Savaged.us JSON exports and preserve app-owned tracker data through
   localStorage and JSON export/import.
 - Undo or redo recent per-character tracker changes with snapshot history that
@@ -58,19 +68,37 @@ want a local, private, session-focused tracker at the table.
 ## Current Scope
 
 - Implemented: combat tracking, Combat Declaration, inventory/equipment
-  management, local character library, JSON import/export, minimal landing
-  page, read-only Sources & Rulesets, Character Setup review, confirmed
-  Character Sheet mode, Characters panel profile editing, global undo/redo, and
-  automated browser/static checks.
-- Partially implemented: created-character starting baselines, Hindrance
-  benefit spending, starting Edge source tracking, Power and Gear setup
-  workflows, and Advancement data/forms.
-- Planned next: keep post-confirmation character reference separate from setup,
-  profile management, inventory, arcane tools, and the existing Advancement
-  workflow.
-- Deferred: full Edge prerequisite enforcement, full Power legality validation,
+  management, active powers, local character library, JSON import/export,
+  minimal landing page, read-only Sources & Rulesets, Character Setup review,
+  confirmed Character Sheet mode, Characters panel profile editing, global
+  undo/redo, Deadlands bookkeeping records, and automated browser/static checks.
+- Implemented setup scaffolding: concept, Attributes, Skills, Human Free Edge,
+  optional Hindrances with benefit spending, Powers setup, Gear purchases,
+  setup source tracking, GM/table exception markers, setup review, and creation
+  baseline snapshots for eligible created pre-advance characters.
+- Implemented Advancement baseline: canonical app-owned Advancement entries,
+  supported application for existing advancement types, persistence,
+  import-history handling, and safe undo checks where reliable before/after
+  data exists.
+- Deferred: full Edge prerequisite enforcement, full Power effect automation,
   free/source-granted starting gear modeling, imported advanced-character
-  baseline reconstruction, and editable campaign/source configuration.
+  baseline reconstruction, editable campaign/source configuration, and any
+  system that would replace Marshal adjudication.
+
+## Known Limitations
+
+- The app does not replace official books, licensed catalogs, Savaged.us, or a
+  VTT.
+- The app uses short app-facing summaries and reminders; it does not include
+  full rules text or rulebook tables.
+- The app does not automate full combat resolution, attack/damage outcomes,
+  Fear tables, duels, travel systems, or Marshal-facing decisions.
+- There is no cloud sync, account system, shared campaign storage, telemetry, or
+  analytics. Data stays in browser local storage unless the user exports or
+  imports JSON backups.
+- Imported or already-advanced characters may require review because external
+  exports do not always contain enough information to reconstruct original
+  creation choices or safe before/after advancement data.
 
 ## Demo and Screenshots
 
@@ -100,8 +128,10 @@ Recommended portfolio screenshots/GIFs:
   character normally carries, Combat Load assumes droppable backpack/container
   load is dropped, Carrying Capacity is the base penalty threshold, and Maximum
   Normal Carry is only a separate out-of-combat allowance when shown.
-- Arcane tab showing Power Points and known powers.
-- Character Setup review and confirmed Character Sheet mode.
+- Arcane tab showing Power Points, known powers, active powers, runtime
+  reminders, and variable Power Point spend details.
+- Character Setup review, confirmed Character Sheet mode, and creation baseline
+  audit.
 - Characters panel profile editor.
 - Read-only Sources & Rulesets page.
 - Savaged.us import flow with import warnings.
@@ -132,8 +162,9 @@ Recommended portfolio screenshots/GIFs:
   pages.
 - Playwright tests cover load, responsive tabs, sample loading, landing flows,
   setupStatus, profile editing, imports, export/import round trips, persistence,
-  character-library isolation, inventory, global undo/redo, Combat Declaration,
-  and core combat controls.
+  character-library isolation, inventory, setup flows, active powers,
+  Advancement, Deadlands bookkeeping, global undo/redo, Combat Declaration, and
+  core combat controls.
 
 ## Import and Export Formats
 

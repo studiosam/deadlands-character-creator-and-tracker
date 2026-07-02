@@ -77,7 +77,7 @@ edits after setup: switching, renaming, duplicating, deleting, exporting, and
 editing identity/profile text. Normal Character Sheet reference is kept separate
 from profile management and from post-creation rules changes.
 
-Recent polish adds:
+Recent product work adds:
 
 - Minimal landing page with saved-character selection and docked JSON import.
 - Read-only Sources & Rulesets page for the current Deadlands-focused profile.
@@ -85,6 +85,16 @@ Recent polish adds:
 - Characters panel profile editor.
 - Combat Declaration for GM-facing player intent and GM-adjudicated result
   bookkeeping without roll automation.
+- Character Setup scaffolding for Concept, Attributes, Skills, Human Free Edge,
+  optional Hindrances with benefits, Powers, Gear purchases, setup source
+  tracking, creation baselines, and Review.
+- Active Power runtime records with duration reminders, maintenance state,
+  variable Power Point spend breakdowns, target/raise/mode notes, and status
+  transitions.
+- Deadlands-specific player bookkeeping for Huckster state, Mad Scientist
+  devices, and Agent/Ranger organization records.
+- Canonical app-owned Advancement ledger entries for supported Advancement
+  types, with safe undo checks where reliable before/after data exists.
 - Global per-character undo/redo that survives reloads.
 - A demo-mode banner so sample data is not mistaken for a campaign save.
 - App-styled dialogs and toasts for destructive actions, imports, exports, and
@@ -104,10 +114,10 @@ Recent polish adds:
 ## Next Steps
 
 - Add final screenshots/GIFs to the README.
-- Expand automated tests around remaining manual rules-heavy workflows without
-  broadening MVP scope.
-- Keep Advancement paused until its workflow boundary is separated from the
-  normal Character Sheet.
+- Prioritize UX readiness, table-use polish, stale-copy cleanup, and focused
+  regression coverage without broadening MVP mechanics scope.
+- Keep future mechanics table-driven: add reminders or bookkeeping only when a
+  real session shows direct controls are not enough.
 - Gather user feedback from real sessions before investing in paid-product
   packaging.
 - Maintain the source-available non-commercial posture unless the generic app

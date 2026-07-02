@@ -2,30 +2,33 @@
 
 ## Automated coverage note
 
-The core browser regression tests now live in `tests/browser/app.spec.js` and
-cover app load, tab switching, minimal landing flows, saved-character selection,
-setupStatus, confirmed Character Sheet cleanup, Characters panel profile
-editing, sample loading, Savaged.us paste import, export/import round trip,
-persistence, inventory item persistence, canonical Advancement ledger save/reload
-coverage, global undo/redo, Combat Declaration, and core combat controls across
-desktop and mobile viewports. Keep this checklist for rules-heavy validation and
-table workflow checks that are not yet practical to automate.
+The core browser regression tests now live in domain specs under
+`tests/browser/` and cover app load, tab switching, minimal landing flows,
+saved-character selection, setupStatus, confirmed Character Sheet cleanup,
+Characters panel profile editing, sample loading, Savaged.us paste import,
+export/import round trips, persistence, inventory item persistence, setup
+source tracking, canonical Advancement ledger save/reload coverage, active
+powers, Deadlands bookkeeping, global undo/redo, Combat Declaration, and core
+combat controls across desktop and mobile viewports. Keep this checklist for
+rules-heavy validation and table workflow checks that are not yet practical to
+automate.
 
 ## Current manual status
 
 - Implemented and still worth manual regression: Power catalog workflow, Arcane
-  Background compatibility, variable Power Point spending, setup review, landing
-  page import/selection, Sources & Rulesets, Characters panel profile editing,
-  confirmed Character Sheet reference mode, Combat Declaration, and global
-  undo/redo.
-- Partially implemented: Advancement storage, adaptive forms, application
-  helpers, skill filtering, and canonical ledger entries exist. Automated tests
-  cover supported apply types and imported history; the manual Advancement
-  sections below focus on editing, removal/undo, and rules-heavy table review.
-- Deferred for MVP: full Edge prerequisite validation, full Power legality
-  validation, free/source-granted starting gear modeling, imported
-  advanced-character baseline reconstruction, and editable campaign/source
-  configuration.
+  Background compatibility, variable Power Point spending, setup review,
+  optional Hindrances and benefit spending, Gear purchases, landing page
+  import/selection, Sources & Rulesets, Characters panel profile editing,
+  confirmed Character Sheet reference mode, active powers, Deadlands
+  bookkeeping, Combat Declaration, and global undo/redo.
+- Advancement storage, adaptive forms, application helpers, skill filtering,
+  canonical ledger entries, supported application types, imported history, and
+  safe undo checks are implemented. The manual Advancement sections below focus
+  on editing, removal/undo, and rules-heavy table review.
+- Deferred for MVP: full Edge prerequisite validation, full Power effect
+  automation, free/source-granted starting gear modeling, imported
+  advanced-character baseline reconstruction, full combat resolution, cloud
+  sync/accounts, and editable campaign/source configuration.
 
 # Landing, Sources, Setup, and Character Sheet Tests
 

@@ -22,9 +22,9 @@ the rules.
   load, combat load, carried load, and off-person storage.
 - Catalogs: substantial Deadlands and SWADE Edges, Hindrances, Powers, Gear,
   Armor, Weapons, and Vehicles.
-- Character Setup shell: Concept, Human ancestry review, Hindrances, Trait
-  spending, partial starting Edge enforcement, starting Powers selection,
-  Powers audit, starting Gear purchases, Gear audit, and Review.
+- Character Setup shell: Concept, Attributes, Skills, Human Free Edge, optional
+  Hindrances with benefit spending, Powers setup, Gear purchases, setup source
+  audit, GM/table exception markers, creation baseline snapshots, and Review.
 - Advancement: canonical ledger entries for current supported advancement
   types, canonical changes, application, persistence, and safe undo model.
 - Arcane support: Arcane Background profiles, Power Points, known powers,
@@ -37,21 +37,29 @@ the rules.
 
 ### Character Creation
 
-- Starting Powers selection is partially implemented. The app can identify
-  Arcane Background expectations, required starting powers, Power Points, and
-  obvious mismatches, and created pre-advance characters can add/remove
-  source-tagged setup starting powers and set source-tagged starting Power
-  Points. Remaining work includes stronger Power legality validation and
-  creation-baseline coverage.
-- Starting Gear purchases are partially implemented. The app tracks equipment
-  and load well, uses screenshot-aligned catalog data, and created pre-advance
-  characters can buy source-tagged catalog gear from setup funds. Remaining work
-  includes free gear, organization gear, and setup exception records.
-- Creation baselines now snapshot finalized eligible created characters across
+- Character Setup is feature-complete for the current MVP scaffolding: created
+  pre-advance characters can draft Concept, Attributes, Skills, Human Free Edge,
+  optional Hindrances and benefits, Powers, Gear purchases, setup source fields,
+  and Review.
+- New SWADE / Deadlands setup characters use the current baseline skill model:
+  Athletics, Common Knowledge, Notice, Persuasion, and Stealth start at `d4`;
+  Language starts at `d8`; other default setup skills start Unskilled unless
+  purchased or granted.
+- Starting Powers selection identifies Arcane Background expectations, required
+  starting powers, Power Points, and obvious mismatches. Eligible created
+  pre-advance characters can add/remove source-tagged setup starting powers and
+  set source-tagged starting Power Points.
+- Starting Gear purchases use screenshot-aligned catalog data. Eligible created
+  pre-advance characters can buy source-tagged catalog gear, ammunition, armor,
+  weapons, and vehicles from setup funds.
+- Creation baselines snapshot finalized eligible created characters across
   Attributes, Skills, Hindrances, starting Edges, Powers, Gear, money, and setup
-  source fields. Basic GM/table exception marking now stores metadata on the
-  affected record and in `setupExceptions`. Remaining work is richer exception
-  notes and free/source-granted gear modeling.
+  source fields. Basic GM/table exception marking stores metadata on the
+  affected record and in `setupExceptions`.
+- Remaining Character Setup work is polish or explicit backlog: richer
+  exception notes, free/source-granted gear modeling, organization-granted gear,
+  full Edge prerequisite validation, and stronger table-dependent Power
+  validation.
 - Imported advanced characters are not reconstructed back to original creation
   state, and that should remain advisory rather than blocking.
 
@@ -105,10 +113,12 @@ the rules.
 
 ### Deadlands Setting Rules
 
-- Deadlands setting rules are mostly not automated. High-value future areas
-  include Fear levels and Fear results, formal duels, Harrowed/manitou rules,
-  infernal devices, ghost rock, superstitions, hangings, stampedes, travel
-  hazards, organization favors/ranks, and tale-telling effects.
+- Deadlands setting rules are mostly handled as player-owned bookkeeping and
+  reminders, not automation. Implemented focused slices include Huckster helper
+  state, Mad Scientist device records, and Agent/Ranger organization records.
+- High-value future areas, if actual table use justifies them, include
+  Harrowed player-state reminders, formal duel notes, ghost rock,
+  superstitions, tale-telling hooks, and travel/resource reminders.
 - Marshal-facing systems such as encounter generation, Fear Level management,
   adventure generation, and creature/NPC stat blocks are outside the current
   player tracker but may become a separate mode later.
@@ -122,19 +132,27 @@ the rules.
 
 ## Roadmap Phases
 
-### Phase 1: Finish Character Setup Mechanics
+### Phase 1: Character Setup Mechanics
+
+Status: complete for current MVP setup scaffolding.
 
 Goal: make app-created characters explainable from creation baseline plus
 Advancement.
 
-1. Harden starting Powers setup selection and validation.
-2. Validate Arcane Background power lists, required starting powers, starting
+Completed scope:
+
+1. Starting Powers setup selection and validation for eligible created
+   pre-advance characters.
+2. Arcane Background profile checks for required starting powers, starting
    power counts, and starting Power Points.
-3. Harden starting Gear purchase validation and source tracking.
-4. Extend creation baselines to Hindrances, starting Edges, Powers, Gear, and
-   money. Completed for eligible finalized created characters.
-5. Add explicit GM or table exception records for setup-time deviations.
-   Basic metadata marking is implemented; richer notes remain follow-up work.
+3. Starting Gear purchase validation and source tracking for catalog gear,
+   ammunition, armor, weapons, and vehicles.
+4. Creation baselines for finalized eligible created characters across
+   Attributes, Skills, Hindrances, starting Edges, Powers, Gear, money, and
+   setup source fields.
+5. Explicit GM/table exception records for setup-time deviations.
+6. Optional Hindrance flow: players may take no Hindrances, but benefits can
+   only be spent from earned counted Hindrance points.
 
 Completion criteria:
 
@@ -153,8 +171,11 @@ Completion criteria:
   validation, creation baseline persistence, setup source persistence, setup
   exception persistence, and reload/export/import behavior.
 
-Phase 1 is not complete until the app can answer: "What did this character
-start with, what rule or source granted it, and what later changed?"
+Phase 1 is complete for the current MVP setup/source-tracking scope. Remaining
+work belongs to follow-up backlog slices rather than blocking the live tracker:
+richer exception notes, free/source-granted gear modeling,
+organization-granted gear, full Edge prerequisite validation, and imported
+advanced-character baseline reconstruction.
 
 ### Advancement Backlog
 
@@ -419,7 +440,7 @@ rules-engine expansion.
 
 ### Phase 5: Deadlands-Specific Player Subsystems
 
-Status: active next phase.
+Status: complete for current MVP bookkeeping scope.
 
 Goal: support the Weird West mechanics that players repeatedly need to track or
 remember without replacing the Marshal, reproducing full tables, or building a
@@ -487,9 +508,23 @@ Completion criteria:
 - Browser tests cover persistence, reload, export/import where relevant, and one
   representative player-facing workflow per implemented subsystem.
 
-Phase 5 is not complete until the app supports the major Weird West-only
-mechanics players repeatedly need at the table, at the same low-automation level
-used by the rest of the tracker.
+Phase 5 is complete for the current player-owned bookkeeping scope. Further
+Deadlands setting work should be based on observed table use, not speculative
+automation.
+
+### Future / Backlog Systems
+
+These systems are not part of the current MVP unless table use proves a clear
+player-facing need:
+
+- Full Fear table automation or Fear Level tracking.
+- Formal duel engine.
+- Harrowed Dominion/manitou engine.
+- Full combat engine, attack automation, damage automation, Soak automation, or
+  Marshal-facing outcome decisions.
+- Travel simulator, hazard generator, or campaign-resource engine.
+- Organization favor adjudication beyond player-owned favor/rank notes.
+- Infernal-device malfunction rules engine beyond reminders and status notes.
 
 ### Phase 6: Ruleset Configuration And Marshal Tools
 
@@ -521,30 +556,27 @@ Completion criteria:
 Phase 6 is not complete until ruleset configuration is reliable enough that a
 user can tell which source profile produced each available choice.
 
-## Recommended Next Slice
+## Recommended Next Work
 
-Validate the implemented Phase 5 bookkeeping slices in table use before adding
-another setting subsystem.
+The mechanics roadmap is at feature-complete MVP scope for a player-owned live
+tracker. The next work should be UX readiness, table-use polish, documentation,
+bug fixes, and focused tests rather than another speculative mechanics phase.
 
-Any next Phase 5 slice should:
+Future mechanics slices should be accepted only when they:
 
-- Store only player-owned facts, reminders, and GM-adjudicated notes.
+- Store player-owned facts, reminders, or GM-adjudicated notes.
 - Persist and round-trip through reload/export/import.
-- Show concise reminders in the tracker without forcing an unnecessary
-  workflow.
+- Show concise reminders without forcing unnecessary workflow.
+- Improve an observed table-use problem that direct controls do not already
+  solve.
 - Add focused browser tests for creation, editing, reload, export/import, and
   rendering.
 
-Likely future candidates, if table use proves they are needed:
-
-1. Harrowed player-state reminders with clear Marshal-secret boundaries.
-2. Formal duel helper for hole-card count and declaration notes.
-3. Ghost-rock, travel, tale-telling, or superstition reminder/resource notes.
-
-It should not:
+They should not:
 
 - Build a full Fear subsystem, duel engine, Harrowed Dominion engine,
-  infernal-device rules engine, or organization favor adjudicator.
+  infernal-device rules engine, organization favor adjudicator, combat engine,
+  or travel system.
 - Copy rulebook tables or long rule text.
 - Add GM-facing automation that does not improve the player tracker.
 

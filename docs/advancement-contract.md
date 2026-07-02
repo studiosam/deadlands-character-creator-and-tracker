@@ -136,7 +136,7 @@ Inspected files:
 - `src/tracker/storage.js`
 - `src/tracker/constants.js`
 - `src/persistence.js`
-- `tests/browser/app.spec.js`
+- `tests/browser/advancement.spec.js`
 
 ### Supported Type Classification
 

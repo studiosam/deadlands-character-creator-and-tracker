@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This file is a project reference for adding a real power catalog and power-selection workflow to the Deadlands character creator and tracker. It lists every power that appears in the reviewed *Deadlands: The Weird West* player Arcane Background power lists, plus the Deadlands-specific powers from the book.
+This file is a project reference for maintaining the power catalog and power-selection workflow in the Deadlands tracker. It lists every power that appears in the reviewed *Deadlands: The Weird West* player Arcane Background power lists, plus the Deadlands-specific powers from the book.
 
-This is meant for app implementation and table reference. It uses short app-facing summaries rather than full rulebook text.
+This is meant for app implementation and table reference. It uses short app-facing summaries rather than full rulebook text, and it should stay aligned with the live catalog and Character Setup power workflow.
 
 ## Sources reviewed
 

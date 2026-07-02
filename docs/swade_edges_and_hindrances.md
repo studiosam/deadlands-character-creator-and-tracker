@@ -2,13 +2,13 @@
 
 ## Purpose
 
-This file documents core *Savage Worlds Adventure Edition* Edges and Hindrances for the Deadlands character creator and tracker. It is meant to sit beside the Deadlands-specific reference file.
+This file documents core *Savage Worlds Adventure Edition* Edges and Hindrances for the Deadlands tracker. It sits beside the Deadlands-specific reference file and supports the live catalog/audit work.
 
-The app should eventually support both of these files:
+The current reference pair is:
 
 ```txt
-docs/deadlands_edges_hindrances_catalog_with_summaries.md
-docs/swade_core_edges_hindrances_reference.md
+docs/deadlands-edges-and-hindrances.md
+docs/swade_edges_and_hindrances.md
 ```
 
 ## Source notes
