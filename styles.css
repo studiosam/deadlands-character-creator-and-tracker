@@ -2449,33 +2449,7 @@ h3 {
 }
 
 .setup-review-grid.setup-hindrance-summary-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.setup-hindrance-summary-grid .setup-detail {
-  position: relative;
-  padding-right: 2rem;
-  text-align: center;
-}
-
-.setup-hindrance-summary-grid .setup-detail-label {
-  position: static;
-  display: inline;
-}
-
-.setup-hindrance-summary-grid .setup-detail-label > span:first-child::after {
-  content: ":";
-}
-
-.setup-hindrance-summary-grid .setup-detail strong {
-  display: inline;
-  margin: 0 0 0 0.25rem;
-}
-
-.setup-hindrance-summary-grid .setup-detail-help {
-  position: absolute;
-  top: 0.55rem;
-  right: 0.6rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .setup-form-grid label {
@@ -2920,12 +2894,17 @@ h3 {
 }
 
 .setup-status.incomplete,
-.setup-status.needs-review {
+.setup-status.needs-review,
+.setup-status.needs-severity,
+.setup-status.overspent,
+.setup-status.needs-fix {
   border-color: rgba(145, 86, 25, 0.4);
   background: rgba(213, 154, 69, 0.15);
 }
 
-.setup-status.planned {
+.setup-status.planned,
+.setup-status.optional,
+.setup-status.ready {
   border-color: rgba(72, 48, 26, 0.24);
   background: rgba(255, 250, 239, 0.36);
   color: var(--dossier-muted);
@@ -2965,6 +2944,14 @@ h3 {
 .setup-trait-group {
   display: grid;
   gap: 0.6rem;
+}
+
+.setup-section-heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .setup-trait-group h4 {
@@ -3234,11 +3221,13 @@ h3 {
   line-height: 1.35;
 }
 
+.setup-trait-editor-row .setup-detail-help,
 .setup-trait-editor-row .attribute-help,
 .attribute-die-card .attribute-help {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin-top: 0;
   overflow-wrap: normal;
   color: var(--dossier-ink);
   font-size: 0.72rem;
@@ -3321,7 +3310,8 @@ h3 {
 }
 
 .setup-attribute-points-card,
-.setup-skill-points-card {
+.setup-skill-points-card,
+.setup-hindrance-meter-card {
   border-left-color: rgba(42, 96, 85, 0.68);
   background:
     linear-gradient(180deg, rgba(255, 250, 239, 0.72), rgba(245, 235, 213, 0.62)),
@@ -3331,6 +3321,20 @@ h3 {
 .setup-attribute-points-card .setup-attribute-editor-heading,
 .setup-skill-points-card .setup-skill-editor-heading {
   padding-right: 3.85rem;
+}
+
+.setup-hindrance-meter-card {
+  position: relative;
+}
+
+.setup-hindrance-meter-card .setup-attribute-editor-heading {
+  padding-right: 2.15rem;
+}
+
+.setup-hindrance-meter-card .setup-detail-help {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
 }
 
 .setup-attribute-meter,

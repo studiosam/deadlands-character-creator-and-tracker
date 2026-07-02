@@ -190,13 +190,111 @@ function addSetupHindrance() {
   appToast(`${catalogEntry.name} added.`, "success");
 }
 
-function removeSetupHindrance(id) {
+function resetSetupHindranceBenefitSpending() {
+  character.creation = {
+    normalAttributePointsAvailable: 5,
+    normalSkillPointsAvailable: 12,
+    ...(character.creation || {}),
+  };
+
+  const moneyBenefits = setupCreationBenefitValue("extraMoneyFromHindrances");
+  if (moneyBenefits)
+    updateSetupMoneyForBenefitChange(
+      "extraMoneyFromHindrances",
+      -moneyBenefits,
+    );
+
+  SETUP_HINDRANCE_BENEFITS.forEach((benefit) => {
+    character.creation[benefit.key] = 0;
+  });
+
+  character.edges = (character.edges || []).filter(
+    (edge) => setupEdgeCreationSource(edge) !== "hindrance-benefit",
+  );
+}
+
+async function confirmResetSetupHindranceBenefits(message, title) {
+  return appConfirm(message, {
+    title,
+    confirmText: "Reset Benefits",
+    cancelText: "Go Back",
+  });
+}
+
+async function removeSetupHindrance(id) {
   if (!id) return;
+  const existing = character.hindrances || [];
+  const hindrance = existing.find((item) => item.id === id);
+  if (!hindrance) return;
+
+  const nextStats = (() => {
+    const remaining = existing.filter((item) => item.id !== id);
+    const total = remaining.reduce(
+      (sum, item) => sum + hindrancePointValue(item),
+      0,
+    );
+    return {
+      count: remaining.length,
+      total,
+      benefitCap: 4,
+      benefitPoints: Math.min(total, 4),
+      overCap: total > 4,
+      unknownCount: remaining.filter(
+        (item) => !["Minor", "Major"].includes(item?.severity),
+      ).length,
+    };
+  })();
+  const nextSpending = setupHindranceBenefitSpending(nextStats);
+  const shouldResetBenefits = nextSpending.spent > nextSpending.available;
+  if (
+    shouldResetBenefits &&
+    !(await confirmResetSetupHindranceBenefits(
+      "Removing this Hindrance lowers your available Benefit Points below the benefits already spent. Reset Hindrance benefit spending now, then choose benefits again from the remaining budget.",
+      "Reset Hindrance benefits?",
+    ))
+  )
+    return;
+
   removeHindrance(character, id);
+  if (shouldResetBenefits) resetSetupHindranceBenefitSpending();
   if (setupHasNoHindrances()) clearNoSetupHindranceAcknowledgement();
   render();
   save();
-  appToast("Hindrance removed.", "success");
+  appToast(
+    shouldResetBenefits
+      ? "Hindrance removed and benefit spending reset."
+      : "Hindrance removed.",
+    "success",
+  );
+}
+
+async function resetSetupHindrances() {
+  if (!ensureSetupTraitsEditable()) return;
+  const stats = hindrancePointStats();
+  const spending = setupHindranceBenefitSpending(stats);
+  const hasAnythingToReset =
+    stats.count ||
+    spending.spent ||
+    setupHindranceBenefitEdges().length ||
+    character.creation?.noHindrancesAcknowledged;
+  if (!hasAnythingToReset) return;
+
+  const confirmed = await appConfirm(
+    "This removes all selected Hindrances, clears all Hindrance benefit spending, removes Hindrance benefit Edges, and removes any extra starting money bought with Hindrance benefits. Attribute or Skill choices made with those benefits may need adjustment on their setup steps.",
+    {
+      title: "Reset Hindrances?",
+      confirmText: "Reset Hindrances",
+      cancelText: "Keep Current",
+    },
+  );
+  if (!confirmed) return;
+
+  character.hindrances = [];
+  resetSetupHindranceBenefitSpending();
+  if (character.creation) character.creation.noHindrancesAcknowledged = false;
+  render();
+  save();
+  appToast("Hindrances and benefit spending reset.", "success");
 }
 
 function setupCanDecreaseHindranceBenefit(key, nextValue) {

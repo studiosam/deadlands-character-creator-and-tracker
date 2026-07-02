@@ -25,6 +25,32 @@ function setupDetail(label, value, helpText = "") {
   </div>`;
 }
 
+function setupMeterSummary(label, value, max, helpText = "") {
+  const safeValue = Math.max(0, Number(value) || 0);
+  const safeMax = Math.max(0, Number(max) || 0);
+  const percentage =
+    safeMax > 0 ? Math.min(100, Math.max(0, (safeValue / safeMax) * 100)) : 0;
+  const help = String(helpText || "").trim();
+  const fill =
+    percentage > 0
+      ? `<span class="setup-attribute-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>`
+      : "";
+  return `<article class="setup-trait-editor-row setup-attribute-points-card setup-hindrance-meter-card">
+    ${
+      help
+        ? `<span class="setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
+        : ""
+    }
+    <div class="setup-attribute-editor-heading">
+      <strong>${esc(label)}</strong>
+      <span>${safeValue} / ${safeMax}</span>
+    </div>
+    <div class="setup-attribute-meter" role="meter" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${safeMax}" aria-valuenow="${safeValue}">
+      ${fill}
+    </div>
+  </article>`;
+}
+
 function attributeHelpMarkup(label, helpText = "") {
   const help = String(helpText || "").trim();
   return help
@@ -290,7 +316,7 @@ function renderSetupHindranceBenefitRows(stats) {
   const overSpent = spending.spent > spending.available;
   return `<section class="setup-trait-group setup-benefit-spending" aria-labelledby="setupHindranceBenefitsHeading">
     <h4 id="setupHindranceBenefitsHeading">Spend Hindrance Benefits</h4>
-    <p class="creator-note">Counted Hindrance points may buy Attribute raises, extra Edge slots, Skill points, or extra starting money.</p>
+    <p class="creator-note">Benefit Points may buy Attribute raises, extra Edge slots, Skill points, or extra starting money.</p>
     <div class="setup-trait-editor-list">
       ${spending.items
         .map((item) => {
@@ -321,6 +347,15 @@ function renderSetupHindranceBenefitRows(stats) {
     ${renderSetupHindranceBenefitEdgeSelection()}
     ${renderSetupHindranceBenefitSkillSelection()}
   </section>`;
+}
+
+function setupHindranceResetAvailable(stats, spending) {
+  return Boolean(
+    stats.count ||
+    spending.spent ||
+    setupHindranceBenefitEdges().length ||
+    character.creation?.noHindrancesAcknowledged,
+  );
 }
 
 function renderSetupHindranceBenefitEdgeSelection() {
@@ -455,7 +490,16 @@ function renderCharacterSetup() {
     (step, index) => {
       const active = step.id === characterSetupStep;
       const status = characterSetupStatus(step.id);
-      const statusLabel = status === "Not applicable" ? "N/A" : status;
+      const statusLabel =
+        step.id === "hindrances"
+          ? setupHindranceStatusLabel(
+              status,
+              hindrancePointStats(),
+              setupHindranceBenefitSpending(),
+            )
+          : status === "Not applicable"
+            ? "N/A"
+            : status;
       return `<button class="setup-step ${active ? "active" : ""}" type="button" data-setup-step="${esc(step.id)}"${active ? ' aria-current="step"' : ""}>
         <span class="setup-step-label"><span class="setup-step-number">${index + 1}.</span><span>${esc(step.label)}</span></span>
         ${setupStatusMarkup(status, statusLabel)}
@@ -687,38 +731,51 @@ function setupHindranceDisplaySummary(hindrance, selectedSeverity = "") {
   );
 }
 
+function setupHindranceStatusLabel(status, stats, spending) {
+  if (stats.unknownCount) return "Needs Severity";
+  if (spending.spent > spending.available) return "Overspent";
+  if (status === "Needs review") return "Needs Fix";
+  if (status === "Complete") return stats.count ? "Ready" : "Optional";
+  return status;
+}
+
 function renderSetupHindrances() {
   const stats = hindrancePointStats();
   const spending = setupHindranceBenefitSpending(stats);
   const status = characterSetupStatus("hindrances");
+  const statusLabel = setupHindranceStatusLabel(status, stats, spending);
   return `<section id="setupHindrancesPanel" class="setup-step-panel" aria-labelledby="setupHindrancesHeading">
     <div class="section-title">
       <div>
         <h3 id="setupHindrancesHeading">Hindrances</h3>
-        <p>Hindrances are optional flaws, obligations, or complications. If you take them, counted points can buy Attribute points, Edges, Skill points, or starting money.<br>Minor = 1 point. Major = 2 points. Up to ${stats.benefitCap} points count by default.</p>
+        <p>Hindrances are optional flaws, obligations, or complications. Minor Hindrances grant 1 Benefit Point, and Major Hindrances grant 2. Up to ${stats.benefitCap} Benefit Points can be spent on starting benefits.</p>
       </div>
-      ${setupStatusMarkup(status)}
+      ${setupStatusMarkup(status, statusLabel)}
     </div>
     <div class="setup-review-grid setup-hindrance-summary-grid">
-      ${setupDetail("Selected", `${stats.count}`, "The number of Hindrance records currently selected for this character.")}
-      ${setupDetail("Counted", `${stats.benefitPoints} / ${stats.benefitCap}`, "The Hindrance points currently allowed to spend under the default starting benefit cap.")}
-      ${setupDetail("Spent", `${spending.spent} / ${spending.available}`, "The counted Hindrance points already allocated to starting benefits below.")}
-      ${setupDetail("Remaining", `${spending.remaining}`, "Counted Hindrance points still available to spend on starting benefits.")}
+      ${setupMeterSummary("Benefit Points", stats.benefitPoints, stats.benefitCap, "Earned Hindrance Benefit Points that count toward starting benefits under the default cap.")}
+      ${setupMeterSummary("Benefits Spent", spending.spent, spending.available, "Benefit Points already allocated to starting benefits below.")}
     </div>
     ${
       stats.overCap
-        ? `<div class="entry-advisory"><p>You may record more than ${stats.benefitCap} Hindrance points for character flavor, but only ${stats.benefitCap} points should count for starting benefits by default.</p><p><strong>Above the standard cap:</strong> ${stats.total} Hindrance points selected; extra rewards require a table or GM exception.</p></div>`
+        ? `<div class="entry-advisory"><p>You may record more than ${stats.benefitCap} Hindrance points for character flavor, but only ${stats.benefitCap} Benefit Points should count for starting benefits by default.</p><p><strong>Above the standard cap:</strong> ${stats.total} Hindrance points selected; extra rewards require a table or GM exception.</p></div>`
         : ""
     }
     ${
       stats.unknownCount
-        ? '<p class="entry-warning">Needs review: one or more Hindrances need Minor or Major severity.</p>'
+        ? '<p class="entry-warning">Needs Severity: one or more Hindrances need Minor or Major severity.</p>'
+        : ""
+    }
+    ${
+      spending.spent > spending.available
+        ? `<p class="entry-warning">Overspent: ${spending.spent} Benefit Points are spent, but only ${spending.available} are available.</p>`
         : ""
     }
     ${renderSetupHindranceSelectionControls()}
     <section class="setup-trait-group setup-selected-hindrances" aria-labelledby="setupSelectedHindrancesHeading">
-      <div>
+      <div class="setup-section-heading-row">
         <h4 id="setupSelectedHindrancesHeading">Selected Hindrances</h4>
+        <button class="ghost small-action danger-lite" type="button" data-setup-action="resetSetupHindrances"${setupHindranceResetAvailable(stats, spending) ? "" : " disabled"}>Reset Hindrances</button>
       </div>
       <div class="setup-hindrance-list">
         ${renderSetupHindranceRows()}
@@ -1777,17 +1834,17 @@ function renderSetupReview() {
       edgeSelectionEditable &&
       hindranceStats.count &&
       hindranceSpending.remaining > 0
-        ? '<p class="entry-warning">Hindrances incomplete: spend remaining counted Hindrance points or remove enough Hindrances to leave no unspent counted points.</p>'
+        ? '<p class="entry-warning">Hindrances incomplete: spend remaining Benefit Points or remove enough Hindrances to leave no unspent Benefit Points.</p>'
         : ""
     }
     ${
       hindranceStats.overCap
-        ? `<p class="entry-advisory"><strong>Above the standard Hindrance benefit cap:</strong> ${hindranceStats.total} points selected, ${hindranceStats.benefitPoints} counted under default rules. Record any extra reward as a table or GM exception.</p>`
+        ? `<p class="entry-advisory"><strong>Above the standard Hindrance benefit cap:</strong> ${hindranceStats.total} points selected, ${hindranceStats.benefitPoints} Benefit Points under default rules. Record any extra reward as a table or GM exception.</p>`
         : ""
     }
     ${
       hindranceSpending.spent > hindranceSpending.available
-        ? '<p class="entry-warning">Needs review: Hindrance benefit spending exceeds counted Hindrance points.</p>'
+        ? '<p class="entry-warning">Needs review: Hindrance benefit spending exceeds earned Benefit Points.</p>'
         : ""
     }
     ${

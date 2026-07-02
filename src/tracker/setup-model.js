@@ -27,8 +27,7 @@ function characterSetupStatus(stepId) {
     );
     if (stats.unknownCount) return "Needs review";
     if (!setupTraitsEditable()) return "Complete";
-    if (!stats.count && !character.creation?.noHindrancesAcknowledged)
-      return "Incomplete";
+    if (!stats.count && !spending.spent) return "Complete";
     if (spending.spent > spending.available) return "Needs review";
     if (
       edgeReport.tooManyHindranceBenefitEdges ||

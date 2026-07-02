@@ -581,7 +581,7 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await expect(page.locator("#appTabs")).toBeHidden();
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
-    "Complete",
+    "Ready",
   );
   await page.locator("[data-setup-step='hindrances']").click();
   const hindrancePanel = page.locator("#setupHindrancesPanel");

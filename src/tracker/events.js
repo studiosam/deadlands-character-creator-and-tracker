@@ -124,7 +124,9 @@ document.addEventListener("click", async (event) => {
   } else if (setupAction?.dataset.setupAction === "addHindrance") {
     addSetupHindrance();
   } else if (setupAction?.dataset.setupAction === "removeHindrance") {
-    removeSetupHindrance(setupAction.dataset.hindranceId || "");
+    await removeSetupHindrance(setupAction.dataset.hindranceId || "");
+  } else if (setupAction?.dataset.setupAction === "resetSetupHindrances") {
+    await resetSetupHindrances();
   } else if (setupAction?.dataset.setupAction === "incHindranceBenefit") {
     changeSetupHindranceBenefit(setupAction.dataset.benefitKey || "", 1);
   } else if (setupAction?.dataset.setupAction === "decHindranceBenefit") {
