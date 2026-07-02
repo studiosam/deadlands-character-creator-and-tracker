@@ -258,10 +258,30 @@ Scripts:
 - `npm run lint`: run static project checks.
 - `npm run test:static`: run static parse and lint checks.
 - `npm run test:browser`: run the Playwright browser suite.
-- `npm run test:browser:fast`: run the desktop Playwright project only.
+- `npm run test:browser:desktop`: run the full browser suite on the desktop
+  Playwright project only.
+- `npm run test:browser:mobile`: run the full browser suite on the mobile
+  Playwright project only.
+- `npm run test:browser:fast`: alias for the desktop browser suite.
+- `npm run test:setup`, `npm run test:advancement`,
+  `npm run test:inventory`, `npm run test:powers`, `npm run test:combat`,
+  `npm run test:deadlands`, `npm run test:import`, and `npm run test:undo`:
+  run targeted feature batches across configured browser projects.
+- `npm run test:setup:desktop`: run setup tests on desktop only for faster
+  local iteration.
 - `npm test`: run static checks and the Playwright browser suite.
 - `npm run format`: format project files with Prettier.
 - `npm run format:check`: check formatting without rewriting files.
+
+Recommended local workflow:
+
+1. While developing, run the smallest relevant targeted desktop command, such
+   as `npm run test:setup:desktop` or `npx playwright test --project=desktop
+tests/browser/setup-edges.spec.js`.
+2. Before committing, run the full targeted feature group, such as
+   `npm run test:setup`, `npm run test:powers`, or `npm run test:inventory`.
+3. Before pushing, release, or broader handoff, run `npm test` as the final
+   safety gate.
 
 See [docs/project-documentation-guide.md](docs/project-documentation-guide.md)
 for the source comment and project documentation standard.

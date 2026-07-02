@@ -26,6 +26,191 @@ const DEADLANDS_HINDRANCE_CATALOG = [
   isCustom: false,
 }));
 
+const HINDRANCE_SETUP_SUMMARIES = {
+  "dl-hindrance-ailin": {
+    shortSummary:
+      "Makes Fatigue harder to resist; Critical Failures need Marshal review.",
+    severitySummaries: {
+      Minor: "-1 to rolls made to resist Fatigue. Critical Failure: ask the Marshal about serious worsening.",
+      Major: "-2 to rolls made to resist Fatigue. Critical Failure: ask the Marshal about serious worsening.",
+    },
+  },
+  "dl-hindrance-talisman": {
+    shortSummary:
+      "Arcane character depends on a talisman; not normally available to Mad Scientists.",
+    severitySummaries: {
+      Minor:
+        "Requires an Arcane Background. -1 to arcane skill rolls when the talisman is not carried. Not normally for Mad Scientists.",
+      Major:
+        "Requires an Arcane Background. -2 to arcane skill rolls when the talisman is not carried. Not normally for Mad Scientists.",
+    },
+  },
+  "dl-hindrance-trouble-magnet": {
+    shortSummary:
+      "Bad luck escalates Critical Failures or makes the character the target of random trouble.",
+    severitySummaries: {
+      Minor:
+        "Critical Failure consequences can worsen at Marshal discretion.",
+      Major:
+        "When a random character is negatively affected, this character is the target.",
+    },
+  },
+  "swade-hindrance-bad-eyes": {
+    shortSummary:
+      "Vision-dependent Trait rolls suffer a penalty unless corrected.",
+    severitySummaries: {
+      Minor:
+        "-1 to vision-dependent Trait rolls, such as ranged attacks or visual Notice. Glasses or correction may negate it.",
+      Major:
+        "-2 to vision-dependent Trait rolls, such as ranged attacks or visual Notice. Track lost or broken correction manually.",
+    },
+  },
+  "swade-hindrance-delusional": {
+    shortSummary:
+      "Believes something false or irrational. Minor is limited; Major is frequent, obvious, or dangerous.",
+  },
+  "swade-hindrance-driven": {
+    shortSummary:
+      "Compelled by a goal, mission, or obsession. Major creates stronger pressure and risk.",
+  },
+  "swade-hindrance-enemy": {
+    shortSummary:
+      "A person or group opposes the character. Major means the enemy is more dangerous, powerful, or persistent.",
+  },
+  "swade-hindrance-greedy": {
+    shortSummary:
+      "Fixates on wealth or possessions. Major can push serious risks or conflict over valuables.",
+  },
+  "swade-hindrance-habit": {
+    shortSummary:
+      "Dependency or compulsion. Major deprivation can trigger Vigor or Fatigue reminders.",
+    severitySummaries: {
+      Minor: "Mostly social or narrative dependency; record the habit clearly.",
+      Major:
+        "Going without the habit can trigger a Vigor roll or Fatigue. Resolve addiction details manually.",
+    },
+  },
+  "swade-hindrance-hard-of-hearing": {
+    shortSummary: "Hearing-based Notice is impaired.",
+    severitySummaries: {
+      Minor: "-4 to hearing-based Notice rolls.",
+      Major: "Automatically fails hearing-based Notice rolls.",
+    },
+  },
+  "swade-hindrance-jealous": {
+    shortSummary:
+      "Envies others' success, attention, or possessions. Major causes broader or more destructive conflict.",
+  },
+  "swade-hindrance-obligation": {
+    shortSummary:
+      "Regular duty or responsibility consumes time and creates story pressure.",
+    severitySummaries: {
+      Minor:
+        "Roughly 20 hours most weeks owed to duty or responsibility. Scheduling/story pressure, not a roll modifier.",
+      Major:
+        "Roughly 40+ hours most weeks owed to duty or responsibility. Scheduling/story pressure, not a roll modifier.",
+    },
+  },
+  "swade-hindrance-outsider": {
+    shortSummary:
+      "Does not fit local society; Persuasion suffers outside the character's own group.",
+    severitySummaries: {
+      Minor:
+        "-2 to Persuasion rolls made to influence people outside the character's own group.",
+      Major:
+        "-2 to Persuasion outside the character's own group, and few or no legal rights in the main campaign area.",
+    },
+  },
+  "swade-hindrance-pacifist": {
+    shortSummary:
+      "Avoids violence. Major is stricter and limits harming living sapient beings except under extreme need.",
+  },
+  "swade-hindrance-phobia": {
+    shortSummary: "Exposure to the feared thing penalizes Trait rolls.",
+    severitySummaries: {
+      Minor: "-1 to all Trait rolls while exposed to the feared thing.",
+      Major: "-2 to all Trait rolls while exposed to the feared thing.",
+    },
+  },
+  "swade-hindrance-ruthless": {
+    shortSummary:
+      "Will do harsh things to achieve goals. Major can include harming anyone who stands in the way.",
+  },
+  "swade-hindrance-secret": {
+    shortSummary:
+      "No constant modifier. If exposed, replace with an appropriate consequence or Marshal-approved result.",
+  },
+  "swade-hindrance-shamed": {
+    shortSummary:
+      "Haunted by a shameful act or failure. Major means it is known to others or can be used against the character.",
+  },
+  "swade-hindrance-slow": {
+    shortSummary:
+      "Reduces Pace and running die; Major also affects Athletics. Cannot take Fleet-Footed.",
+    severitySummaries: {
+      Minor: "Pace -1 and running die reduced one step. Cannot take Fleet-Footed.",
+      Major:
+        "Pace -2, running die reduced one step, and -2 to Athletics rolls and rolls resisting Athletics. Cannot take Fleet-Footed.",
+    },
+  },
+  "swade-hindrance-suspicious": {
+    shortSummary:
+      "Distrustful or paranoid. Major makes it harder for others to Support this character.",
+    severitySummaries: {
+      Minor: "Mostly narrative distrust or paranoia.",
+      Major: "-2 to Support rolls made to aid this character.",
+    },
+  },
+  "swade-hindrance-thin-skinned": {
+    shortSummary: "Penalty when resisting Taunt attacks.",
+    severitySummaries: {
+      Minor: "-2 when resisting Taunt attacks.",
+      Major: "-4 when resisting Taunt attacks.",
+    },
+  },
+  "swade-hindrance-ugly": {
+    shortSummary: "Appearance affects Persuasion.",
+    severitySummaries: {
+      Minor: "-1 to Persuasion rolls affected by appearance.",
+      Major: "-2 to Persuasion rolls affected by appearance.",
+    },
+  },
+  "swade-hindrance-vengeful": {
+    shortSummary:
+      "Seeks payback for wrongs. Major pushes toward harsher or escalating retaliation.",
+  },
+  "swade-hindrance-vow": {
+    shortSummary:
+      "Sworn oath, code, duty, or promise. Major is more restrictive, dangerous, or frequent.",
+  },
+  "swade-hindrance-wanted": {
+    shortSummary:
+      "Wanted by authorities or another enforcing power. Major means stronger pursuit or harsher consequences.",
+  },
+  "swade-hindrance-young": {
+    shortSummary:
+      "Changes creation Attribute/Skill budgets and grants extra starting Bennies.",
+    severitySummaries: {
+      Minor:
+        "Creation budget: 4 Attribute points and 10 Skill points. Starts each session with +1 Benny.",
+      Major:
+        "Creation budget: 3 Attribute points and 10 Skill points, applies Small, and starts each session with +2 Bennies.",
+    },
+  },
+};
+
+function enhanceHindranceCatalogEntry(item) {
+  const detail = HINDRANCE_SETUP_SUMMARIES[item.id];
+  if (!detail) return item;
+  return {
+    ...item,
+    ...detail,
+    severitySummaries: detail.severitySummaries
+      ? { ...detail.severitySummaries }
+      : undefined,
+  };
+}
+
 const DEADLANDS_EDGE_CATALOG = [
   ["dl-edge-arcane-background-blessed", "Arcane Background (Blessed)", "Background", "Novice", "Spirit d6+, Faith d4+", "Grants Blessed casting: Faith arcane skill, 15 Power Points, holy symbol plus two chosen starting powers, Blessed power list, divine sin/backlash rules.", "Required"],
   ["dl-edge-arcane-background-chi-master", "Arcane Background (Chi Master)", "Background", "Novice", "Agility d6+, Spirit d6+, Martial Artist, Focus d4+", "Grants Chi Master casting: Focus arcane skill, 15 Power Points, deflection plus two chosen starting powers, internal/self-focused casting limitations.", "Required"],
@@ -335,7 +520,7 @@ const SWADE_CORE_EDGE_CATALOG = [
 const HINDRANCE_CATALOG = [
   ...SWADE_CORE_HINDRANCE_CATALOG,
   ...DEADLANDS_HINDRANCE_CATALOG,
-];
+].map(enhanceHindranceCatalogEntry);
 
 const EDGE_CATALOG = [
   ...SWADE_CORE_EDGE_CATALOG.filter(

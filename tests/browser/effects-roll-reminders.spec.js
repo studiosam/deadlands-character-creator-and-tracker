@@ -218,6 +218,105 @@ test("Hindrance roll modifier effects render on Character and Combat", async ({
   ]);
 });
 
+test("Flexible Hindrance mechanical reminders respect selected severity", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Flexible Hindrance Reminder Tester",
+    preferredId: "flexible-hindrance-reminder-tester",
+    hindranceIds: [
+      "dl-hindrance-ailin",
+      "swade-hindrance-bad-eyes",
+      "swade-hindrance-hard-of-hearing",
+      "swade-hindrance-suspicious",
+      "swade-hindrance-young",
+      "swade-hindrance-delusional",
+    ],
+    hindranceSeverities: {
+      "dl-hindrance-ailin": "Major",
+      "swade-hindrance-bad-eyes": "Minor",
+      "swade-hindrance-hard-of-hearing": "Major",
+      "swade-hindrance-suspicious": "Major",
+      "swade-hindrance-young": "Minor",
+      "swade-hindrance-delusional": "Major",
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const derived = page.locator("#characterDerivedDetails");
+  await expect(derived).toContainText("Ailin");
+  await expect(derived).toContainText("Resist Fatigue -2");
+  await expect(derived).toContainText("Bad Eyes");
+  await expect(derived).toContainText("Vision-dependent Trait rolls -1");
+  await expect(derived).toContainText("Hard of Hearing");
+  await expect(derived).toContainText(
+    "Automatically fails hearing-based Notice rolls",
+  );
+  await expect(derived).toContainText("Suspicious");
+  await expect(derived).toContainText("Support this character -2");
+  await expect(derived).toContainText("Young");
+  await expect(derived).toContainText("Starting Bennies +1");
+  await expect(derived).toContainText(
+    "Creation budget: 4 Attribute points and 10 Skill points",
+  );
+  await expect(derived).not.toContainText("Delusional:");
+
+  const computed = await page.evaluate(() =>
+    effectHookSummariesForSurface(character, "character").map((effect) => ({
+      sourceName: effect.sourceName,
+      target: effect.target,
+      type: effect.type,
+      value: effect.value,
+      displayLabel: effect.displayLabel,
+    })),
+  );
+  expect(computed).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        sourceName: expect.stringContaining("Ailin"),
+        target: "resist-fatigue",
+        type: "roll-modifier",
+        value: -2,
+        displayLabel: "Resist Fatigue -2",
+      }),
+      expect.objectContaining({
+        sourceName: expect.stringContaining("Bad Eyes"),
+        target: "vision-dependent-traits",
+        type: "roll-modifier",
+        value: -1,
+        displayLabel: "Vision-dependent Trait rolls -1",
+      }),
+      expect.objectContaining({
+        sourceName: expect.stringContaining("Hard of Hearing"),
+        target: "hearing-notice",
+        type: "reminder",
+        displayLabel: "Automatically fails hearing-based Notice rolls",
+      }),
+      expect.objectContaining({
+        sourceName: expect.stringContaining("Suspicious"),
+        target: "support-this-character",
+        type: "roll-modifier",
+        value: -2,
+        displayLabel: "Support this character -2",
+      }),
+      expect.objectContaining({
+        sourceName: expect.stringContaining("Young"),
+        target: "starting-bennies",
+        type: "session-resource-modifier",
+        value: 1,
+        displayLabel: "Starting Bennies +1",
+      }),
+    ]),
+  );
+  expect(computed).not.toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        sourceName: "Delusional",
+      }),
+    ]),
+  );
+});
+
 test("Expanded Edge roll modifier effects render and replace improved variants", async ({
   page,
 }) => {

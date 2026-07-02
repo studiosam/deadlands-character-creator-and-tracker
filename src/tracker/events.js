@@ -209,6 +209,8 @@ document.addEventListener("change", (event) => {
     syncSetupHindranceSeverity();
     updateSetupHindranceSelectionPreview();
   }
+  if (event.target?.closest?.("#setupHindranceSeverityInput"))
+    updateSetupHindranceSelectionPreview();
   if (event.target?.closest?.("#setupHumanFreeEdgeSelect"))
     updateSetupEdgeSelectionPreview(
       "setupHumanFreeEdgeSelect",

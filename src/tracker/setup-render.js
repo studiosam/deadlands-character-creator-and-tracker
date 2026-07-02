@@ -190,8 +190,8 @@ function setupEdgeAuditCard(edge) {
       : null;
   const requirements = catalog?.requirements || edge.requirements || "";
   const summary =
-    catalog?.shortSummary ||
     setupArcaneBackgroundSummary(arcaneConfig) ||
+    catalog?.shortSummary ||
     edge.shortSummary ||
     edge.notes ||
     "";
@@ -590,18 +590,18 @@ function renderSetupConcept() {
 function renderSetupHindranceRows() {
   return (character.hindrances || []).length
     ? character.hindrances
-        .map(
-          (hindrance) =>
-            `<article class="setup-hindrance-row">
+        .map((hindrance) => {
+          const summary = setupHindranceDisplaySummary(hindrance);
+          return `<article class="setup-hindrance-row">
               <div class="setup-hindrance-card-copy">
                 <strong>${esc(hindrance.name || "Unnamed Hindrance")}</strong>
                 <span class="setup-hindrance-meta">${esc(hindrance.severity || "Unknown")} • ${esc(hindrancePointText(hindrance))}</span>
-                ${hindrance.shortSummary ? `<p class="setup-hindrance-summary">${esc(hindrance.shortSummary)}</p>` : ""}
+                ${summary ? `<p class="setup-hindrance-summary">${esc(summary)}</p>` : ""}
                 ${hindrance.notes ? `<p class="setup-hindrance-notes">Note: ${esc(hindrance.notes)}</p>` : ""}
               </div>
               <button class="ghost tag-action danger-lite" type="button" data-setup-action="removeHindrance" data-hindrance-id="${esc(hindrance.id)}">Remove</button>
-            </article>`,
-        )
+            </article>`;
+        })
         .join("")
     : emptyState("No Hindrances selected yet.");
 }
@@ -634,6 +634,7 @@ function setupHindranceCatalogOptions(placeholder) {
 
 function setupHindranceSelectionPreviewMarkup(
   hindranceId,
+  selectedSeverity = "",
   emptyText = "Choose a Hindrance to preview what it does.",
 ) {
   const hindrance = chosen(HINDRANCE_CATALOG, hindranceId || "");
@@ -643,8 +644,7 @@ function setupHindranceSelectionPreviewMarkup(
   const severity = hindrance.severity
     ? `<span>${esc(hindrance.severity)}</span>`
     : "";
-  const summary =
-    hindrance.shortSummary || hindrance.summary || hindrance.notes || "";
+  const summary = setupHindranceDisplaySummary(hindrance, selectedSeverity);
   return `<div class="setup-hindrance-selection-preview">
     <strong>${esc(hindrance.name)}</strong>
     ${severity}
@@ -654,9 +654,37 @@ function setupHindranceSelectionPreviewMarkup(
 
 function updateSetupHindranceSelectionPreview() {
   const select = document.getElementById("setupHindranceCatalogSelect");
+  const severity = document.getElementById("setupHindranceSeverityInput");
   const preview = document.getElementById("setupHindrancePreview");
   if (!select || !preview) return;
-  preview.innerHTML = setupHindranceSelectionPreviewMarkup(select.value);
+  preview.innerHTML = setupHindranceSelectionPreviewMarkup(
+    select.value,
+    severity?.value || "",
+  );
+}
+
+function setupHindranceCatalogEntryForRecord(hindrance) {
+  const catalogId = hindrance?.catalogId || hindrance?.id || "";
+  const name = plainEntryName(hindrance?.name);
+  return (
+    chosen(HINDRANCE_CATALOG, catalogId) ||
+    HINDRANCE_CATALOG.find((item) => plainEntryName(item.name) === name) ||
+    null
+  );
+}
+
+function setupHindranceDisplaySummary(hindrance, selectedSeverity = "") {
+  const catalog = setupHindranceCatalogEntryForRecord(hindrance) || hindrance;
+  const severity = selectedSeverity || hindrance?.severity || "";
+  return (
+    catalog?.severitySummaries?.[severity] ||
+    hindrance?.severitySummaries?.[severity] ||
+    catalog?.shortSummary ||
+    hindrance?.shortSummary ||
+    hindrance?.summary ||
+    hindrance?.notes ||
+    ""
+  );
 }
 
 function renderSetupHindrances() {

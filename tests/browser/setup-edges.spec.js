@@ -118,6 +118,14 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(
     entryCard.locator("#setupHindranceSeverityInput"),
   ).not.toHaveClass(/locked/);
+  await entryCard.locator("#setupHindranceSeverityInput").selectOption("Minor");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "-1 to rolls made to resist Fatigue",
+  );
+  await entryCard.locator("#setupHindranceSeverityInput").selectOption("Major");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "-2 to rolls made to resist Fatigue",
+  );
   await page
     .locator("#setupHindranceCatalogSelect")
     .selectOption("swade-hindrance-bad-luck");
@@ -204,6 +212,95 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(reviewPanel).toContainText("Hindrance Benefit Cap");
   await expect(reviewPanel).toContainText("Bad Luck");
   await expect(reviewPanel).toContainText("Cursed");
+});
+
+test("flexible Hindrances expose Minor and Major descriptions without fake fixed modifiers", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await openCharacterSetupReview(page);
+  await page.locator("[data-setup-step='hindrances']").click();
+
+  const expectedFlexibleIds = [
+    "dl-hindrance-ailin",
+    "dl-hindrance-talisman",
+    "dl-hindrance-trouble-magnet",
+    "swade-hindrance-bad-eyes",
+    "swade-hindrance-delusional",
+    "swade-hindrance-driven",
+    "swade-hindrance-enemy",
+    "swade-hindrance-greedy",
+    "swade-hindrance-habit",
+    "swade-hindrance-hard-of-hearing",
+    "swade-hindrance-jealous",
+    "swade-hindrance-obligation",
+    "swade-hindrance-outsider",
+    "swade-hindrance-pacifist",
+    "swade-hindrance-phobia",
+    "swade-hindrance-ruthless",
+    "swade-hindrance-secret",
+    "swade-hindrance-shamed",
+    "swade-hindrance-slow",
+    "swade-hindrance-suspicious",
+    "swade-hindrance-thin-skinned",
+    "swade-hindrance-ugly",
+    "swade-hindrance-vengeful",
+    "swade-hindrance-vow",
+    "swade-hindrance-wanted",
+    "swade-hindrance-young",
+  ];
+
+  const catalogSeverities = await page.evaluate(
+    (ids) =>
+      Object.fromEntries(
+        ids.map((id) => [
+          id,
+          HINDRANCE_CATALOG.find((item) => item.id === id)?.severity,
+        ]),
+      ),
+    expectedFlexibleIds,
+  );
+  for (const id of expectedFlexibleIds) {
+    expect(catalogSeverities[id]).toBe("Minor or Major");
+  }
+
+  const entryCard = page.locator(".setup-hindrance-entry-card");
+  await entryCard
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-bad-eyes");
+  await expect(entryCard.locator("#setupHindranceSeverityInput")).toBeEnabled();
+  await entryCard.locator("#setupHindranceSeverityInput").selectOption("Minor");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "-1 to vision-dependent Trait rolls",
+  );
+  await entryCard.locator("#setupHindranceSeverityInput").selectOption("Major");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "-2 to vision-dependent Trait rolls",
+  );
+
+  await entryCard
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-delusional");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "Believes something false or irrational",
+  );
+  await expect(entryCard.locator("#setupHindrancePreview")).not.toContainText(
+    "-1",
+  );
+  await expect(entryCard.locator("#setupHindrancePreview")).not.toContainText(
+    "-2",
+  );
+
+  await entryCard
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-slow");
+  await entryCard.locator("#setupHindranceSeverityInput").selectOption("Major");
+  await page.locator("#setupAddHindranceBtn").click();
+  const slowCard = page.locator(".setup-hindrance-row").filter({
+    hasText: "Slow",
+  });
+  await expect(slowCard).toContainText("Pace -2");
+  await expect(slowCard).toContainText("Athletics");
 });
 
 test("spends hindrance benefits and selects source-tracked setup edges", async ({
