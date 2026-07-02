@@ -610,6 +610,15 @@ test("shows human ancestry in concept setup", async ({ page }) => {
   await expect(conceptPanel).toContainText("Race / Ancestry");
   await expect(conceptPanel).toContainText("Human");
   await expect(conceptPanel).not.toContainText("Supported by This Profile");
+  await expect(conceptPanel.locator(".setup-readonly-field")).toContainText(
+    "Race / Ancestry",
+  );
+  await expect(conceptPanel.locator(".setup-readonly-value")).toHaveText(
+    "Human",
+  );
+  await expect(conceptPanel.locator(".setup-readonly-value")).not.toContainText(
+    "Race / Ancestry",
+  );
 
   const ancestryFollowsPlayer = await conceptPanel
     .getByText("Race / Ancestry")

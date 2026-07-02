@@ -207,6 +207,16 @@ document.addEventListener("change", (event) => {
   if (event.target?.closest?.("[data-catalog-filter]")) renderCatalogBrowser();
   if (event.target?.closest?.("#setupHindranceCatalogSelect"))
     syncSetupHindranceSeverity();
+  if (event.target?.closest?.("#setupHumanFreeEdgeSelect"))
+    updateSetupEdgeSelectionPreview(
+      "setupHumanFreeEdgeSelect",
+      "setupHumanFreeEdgePreview",
+    );
+  if (event.target?.closest?.("#setupHindranceBenefitEdgeSelect"))
+    updateSetupEdgeSelectionPreview(
+      "setupHindranceBenefitEdgeSelect",
+      "setupHindranceBenefitEdgePreview",
+    );
 });
 
 els.armorSelect.onchange = () => {

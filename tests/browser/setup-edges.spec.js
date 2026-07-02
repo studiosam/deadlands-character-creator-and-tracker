@@ -76,8 +76,33 @@ test("selects hindrances in character setup and summarizes point expectations", 
   const entryCard = hindrancePanel.locator(".setup-hindrance-entry-card");
   await expect(entryCard).toContainText("Add Hindrance");
   await expect(entryCard.locator("#setupHindranceCatalogSelect")).toBeVisible();
+  await expect(
+    entryCard.locator("#setupHindranceCatalogSelect"),
+  ).not.toContainText("Savage Worlds Adventure Edition");
+  await expect(
+    entryCard.locator("#setupHindranceCatalogSelect"),
+  ).not.toContainText("Deadlands");
   await expect(entryCard.locator("#setupHindranceSeverityInput")).toBeVisible();
   await expect(entryCard.locator("#setupHindranceNotesInput")).toBeVisible();
+  await entryCard
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("dl-hindrance-cursed");
+  await expect(entryCard.locator("#setupHindranceSeverityInput")).toHaveValue(
+    "Major",
+  );
+  await expect(
+    entryCard.locator("#setupHindranceSeverityInput"),
+  ).toBeDisabled();
+  await expect(entryCard.locator("#setupHindranceSeverityInput")).toHaveClass(
+    /locked/,
+  );
+  await entryCard
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("dl-hindrance-ailin");
+  await expect(entryCard.locator("#setupHindranceSeverityInput")).toBeEnabled();
+  await expect(
+    entryCard.locator("#setupHindranceSeverityInput"),
+  ).not.toHaveClass(/locked/);
   const hindranceLayout = await hindrancePanel.evaluate((panel) => {
     const topFor = (selector) =>
       panel.querySelector(selector).getBoundingClientRect().top;
@@ -207,16 +232,23 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await page
     .locator("#setupHumanFreeEdgeSelect")
     .selectOption("swade-edge-alertness");
+  await expect(page.locator("#setupHumanFreeEdgePreview")).toContainText(
+    "Alertness",
+  );
+  await expect(page.locator("#setupHumanFreeEdgePreview")).toContainText(
+    "Notice rolls",
+  );
   await edgesPanel.getByRole("button", { name: "Add Free Edge" }).click();
   await expect(edgesPanel).toContainText("Alertness");
   const alertnessCard = edgesPanel
     .locator(".setup-edge-card")
     .filter({ hasText: "Alertness" });
+  await expect(alertnessCard).toContainText("Effect:");
   await expect(alertnessCard).toContainText("Notice rolls");
+  await expect(alertnessCard).toContainText("Requirements:");
   await expect(alertnessCard).not.toContainText("Human free Edge");
   await expect(alertnessCard).not.toContainText("Complete");
   await expect(alertnessCard).not.toContainText("Catalog matched");
-  await expect(alertnessCard).not.toContainText("Novice");
   await expect(alertnessCard).not.toContainText("Subchoice");
   await expect(alertnessCard.getByText("Details")).toHaveCount(0);
 
@@ -292,6 +324,9 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await hindrancePanel
     .locator("#setupHindranceBenefitEdgeSelect")
     .selectOption("swade-edge-berserk");
+  await expect(
+    hindrancePanel.locator("#setupHindranceBenefitEdgePreview"),
+  ).toContainText("Berserk");
   await hindrancePanel
     .getByRole("button", { name: "Add Hindrance Benefit Edge" })
     .click();

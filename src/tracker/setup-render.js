@@ -190,8 +190,8 @@ function setupEdgeAuditCard(edge) {
       : null;
   const requirements = catalog?.requirements || edge.requirements || "";
   const summary =
-    setupArcaneBackgroundSummary(arcaneConfig) ||
     catalog?.shortSummary ||
+    setupArcaneBackgroundSummary(arcaneConfig) ||
     edge.shortSummary ||
     edge.notes ||
     "";
@@ -225,8 +225,8 @@ function setupEdgeAuditCard(edge) {
     <div class="setup-edge-card-head">
       <div>
         <h4>${esc(edge.name || "Unnamed Edge")}</h4>
-        ${summary ? `<p class="setup-edge-summary">${esc(summary)}</p>` : ""}
-        ${showVisibleRequirements ? `<p class="setup-edge-requirements"><strong>Requirements:</strong> ${esc(requirements)}</p>` : ""}
+        ${summary ? `<p class="setup-edge-effect"><strong>Effect:</strong> ${esc(summary)}</p>` : ""}
+        ${requirements ? `<p class="setup-edge-requirements${showVisibleRequirements ? " warning" : ""}"><strong>Requirements:</strong> ${esc(requirements)}</p>` : ""}
       </div>
       <div class="setup-edge-badges">
         ${visibleBadges}
@@ -345,6 +345,7 @@ function renderSetupHindranceBenefitEdgeSelection() {
               <span>${openSlots} open</span>
             </div>
             <label>Edge<select id="setupHindranceBenefitEdgeSelect">${setupEdgeCatalogOptions("Choose Hindrance Benefit Edge...")}</select></label>
+            <div id="setupHindranceBenefitEdgePreview" class="setup-edge-preview-slot">${setupEdgeSelectionPreviewMarkup("")}</div>
             <button type="button" data-setup-action="addHindranceBenefitEdge">Add Hindrance Benefit Edge</button>
           </article>`
         : '<p class="creator-note">All paid Edge slots are filled. Remove a selected Hindrance benefit Edge before choosing a different one.</p>'
@@ -566,7 +567,10 @@ function renderSetupConcept() {
       <label>Age<input id="setupAgeInput" data-concept-field="age" value="${esc(character.age || "")}" placeholder="32" autocomplete="off"></label>
       <label>Profession or Title<input id="setupArchetypeInput" data-concept-field="archetype" value="${esc(character.archetype || "")}" placeholder="Profession or Title" autocomplete="off"></label>
       <label>Player Name<input id="setupPlayerInput" data-concept-field="player" value="${esc(character.player || "")}" placeholder="Player Name" autocomplete="off"></label>
-      <div class="setup-form-detail readonly">${setupDetail("Race / Ancestry", character.ancestry || "Human")}</div>
+      <div class="setup-readonly-field">
+        <span>Race / Ancestry</span>
+        <div class="setup-form-detail readonly"><div class="setup-readonly-value"><strong>${esc(character.ancestry || "Human")}</strong></div></div>
+      </div>
       <label class="setup-wide">Description<textarea id="setupDescriptionInput" data-concept-field="description" rows="4" placeholder="Tall, wary, dusty coat">${esc(character.description || "")}</textarea></label>
       <label class="setup-wide">Background<textarea id="setupBackgroundInput" data-concept-field="background" rows="5" placeholder="Why they ride">${esc(character.background || "")}</textarea></label>
       <datalist id="setupGenderOptions">
@@ -607,7 +611,7 @@ function renderSetupHindranceSelectionControls() {
     <h4 id="setupHindranceEntryHeading">Add Hindrance</h4>
     <p class="creator-note">Choose the Hindrance, confirm its severity, and add any table-specific notes before spending its benefit points.</p>
     <div class="setup-form-grid setup-hindrance-form">
-      <label class="setup-hindrance-name">Hindrance<select id="setupHindranceCatalogSelect">${entryCatalogOptions(HINDRANCE_CATALOG, "Choose Hindrance...")}</select></label>
+      <label class="setup-hindrance-name">Hindrance<select id="setupHindranceCatalogSelect">${setupHindranceCatalogOptions("Choose Hindrance...")}</select></label>
       <label class="setup-hindrance-severity">Severity<select id="setupHindranceSeverityInput"><option value="Minor">Minor</option><option value="Major">Major</option></select></label>
       <label class="setup-hindrance-notes">Notes<input id="setupHindranceNotesInput" autocomplete="off" placeholder="Optional detail, obligation, enemy, vow, phobia, etc."></label>
       <div class="creator-actions setup-wide">
@@ -615,6 +619,16 @@ function renderSetupHindranceSelectionControls() {
       </div>
     </div>
   </section>`;
+}
+
+function setupHindranceCatalogOptions(placeholder) {
+  return [
+    `<option value="">${placeholder}</option>`,
+    ...HINDRANCE_CATALOG.map(
+      (item) =>
+        `<option value="${esc(item.id)}">${esc(item.name)}${item.severity ? ` • ${esc(item.severity)}` : ""}</option>`,
+    ),
+  ].join("");
 }
 
 function renderSetupHindrances() {
@@ -954,6 +968,34 @@ function setupEdgeCatalogOptions(placeholder) {
   ].join("");
 }
 
+function setupEdgeSelectionPreviewMarkup(
+  edgeId,
+  emptyText = "Choose an Edge to preview what it does.",
+) {
+  const edge = chosen(EDGE_CATALOG, edgeId || "");
+  if (!edge) {
+    return `<div class="setup-edge-selection-preview empty">${esc(emptyText)}</div>`;
+  }
+  const details = [edge.category, edge.rank].filter(Boolean).join(" • ");
+  const requirements = edge.requirements
+    ? `<p><strong>Requirements:</strong> ${esc(edge.requirements)}</p>`
+    : "";
+  const summary = edge.shortSummary || edge.summary || edge.notes || "";
+  return `<div class="setup-edge-selection-preview">
+    <strong>${esc(edge.name)}</strong>
+    ${details ? `<span>${esc(details)}</span>` : ""}
+    ${summary ? `<p>${esc(summary)}</p>` : "<p>No short summary recorded yet.</p>"}
+    ${requirements}
+  </div>`;
+}
+
+function updateSetupEdgeSelectionPreview(selectId, previewId) {
+  const select = document.getElementById(selectId);
+  const preview = document.getElementById(previewId);
+  if (!select || !preview) return;
+  preview.innerHTML = setupEdgeSelectionPreviewMarkup(select.value);
+}
+
 function renderSetupEdgeSelectionControls() {
   const canEdit = setupTraitsEditable();
   const report = setupStartingEdgeValidationReport();
@@ -976,6 +1018,7 @@ function renderSetupEdgeSelectionControls() {
             <span>${humanEdges} / ${expectedHumanEdges} selected</span>
           </div>
           <label>Edge<select id="setupHumanFreeEdgeSelect"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>${setupEdgeCatalogOptions("Choose Free Edge...")}</select></label>
+          <div id="setupHumanFreeEdgePreview" class="setup-edge-preview-slot">${setupEdgeSelectionPreviewMarkup("")}</div>
           <button type="button" data-setup-action="addHumanFreeEdge"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>Add Free Edge</button>
         </article>`
         : '<p class="creator-note">This ancestry does not grant a built-in Human free Edge.</p>'

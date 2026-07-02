@@ -128,6 +128,12 @@ function setupHindranceSeverityForCatalog(catalogEntry, selectedSeverity = "") {
   return selectedSeverity === "Major" ? "Major" : "Minor";
 }
 
+function setupHindranceHasFixedSeverity(catalogEntry) {
+  return (
+    catalogEntry?.severity === "Major" || catalogEntry?.severity === "Minor"
+  );
+}
+
 function addSetupHindrance() {
   const catalogSelect = $("#setupHindranceCatalogSelect");
   const severityInput = $("#setupHindranceSeverityInput");
@@ -1046,6 +1052,12 @@ function syncSetupHindranceSeverity() {
     catalogEntry,
     severityInput.value,
   );
+  const fixedSeverity = setupHindranceHasFixedSeverity(catalogEntry);
+  severityInput.disabled = fixedSeverity;
+  severityInput.classList.toggle("locked", fixedSeverity);
+  severityInput.title = fixedSeverity
+    ? "This Hindrance has only one allowed severity."
+    : "";
 }
 
 function setupExceptionTarget(collection, recordId) {

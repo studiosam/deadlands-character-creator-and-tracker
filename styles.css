@@ -2486,6 +2486,14 @@ h3 {
   font-weight: 800;
 }
 
+.setup-readonly-field {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--dossier-muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 .setup-form-grid input,
 .setup-form-grid select,
 .setup-form-grid textarea {
@@ -2508,8 +2516,19 @@ h3 {
   background: rgba(255, 250, 239, 0.26);
 }
 
-.setup-form-detail.readonly .setup-detail strong {
+.setup-form-detail.readonly .setup-detail strong,
+.setup-readonly-value strong {
   color: var(--dossier-muted);
+}
+
+.setup-readonly-value {
+  display: flex;
+  align-items: center;
+  min-height: 2.55rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--dossier-rule);
+  border-radius: var(--radius-md);
+  background: rgba(255, 250, 239, 0.26);
 }
 
 .setup-wide {
@@ -2536,6 +2555,15 @@ h3 {
 .setup-hindrance-form .setup-hindrance-severity,
 .setup-hindrance-form .setup-hindrance-notes {
   grid-column: auto;
+}
+
+.setup-hindrance-severity select.locked:disabled {
+  cursor: not-allowed;
+  border-color: var(--dossier-rule);
+  background: rgba(255, 250, 239, 0.26);
+  color: var(--dossier-muted);
+  font-weight: 900;
+  opacity: 1;
 }
 
 .setup-hindrance-list,
@@ -2623,6 +2651,7 @@ h3 {
 }
 
 .setup-edge-card-head p,
+.setup-edge-effect,
 .setup-edge-summary,
 .setup-edge-requirements,
 .setup-edge-advisories p {
@@ -2631,8 +2660,16 @@ h3 {
   line-height: 1.35;
 }
 
+.setup-edge-effect strong {
+  color: var(--dossier-ink);
+}
+
 .setup-edge-requirements {
   margin-top: 0.35rem;
+}
+
+.setup-edge-requirements.warning {
+  color: #8c3328;
 }
 
 .setup-edge-requirements strong {
@@ -3011,6 +3048,30 @@ h3 {
   font: inherit;
 }
 
+.setup-edge-preview-slot {
+  grid-column: 2 / 3;
+}
+
+.setup-edge-selection-preview {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px dashed rgba(112, 76, 35, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 250, 239, 0.58);
+  color: var(--ink);
+}
+
+.setup-edge-selection-preview.empty {
+  color: var(--muted);
+}
+
+.setup-edge-selection-preview p,
+.setup-edge-selection-preview span {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
 .setup-edge-pick-card button {
   align-self: end;
   min-height: 2.55rem;
@@ -3313,6 +3374,10 @@ h3 {
   .setup-edge-pick-card {
     grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
+  }
+
+  .setup-edge-preview-slot {
+    grid-column: auto;
   }
 
   .setup-edge-pick-card button {
