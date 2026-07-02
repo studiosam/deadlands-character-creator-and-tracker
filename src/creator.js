@@ -1104,6 +1104,7 @@ function renderAttributes(spent, available) {
 function renderSkills(stats) {
   const available = SKILL_DEFS.filter(
     (definition) =>
+      isUserFacingSkillName(definition[0]) &&
       !creationDraft.skills.some(
         (skill) =>
           skill.name === definition[0] ||
@@ -1121,8 +1122,10 @@ function renderSkills(stats) {
       </div>
       <div class="creator-list">
         ${creationDraft.skills
+          .map((skill, index) => ({ skill, index }))
+          .filter(({ skill }) => isUserFacingSkill(skill))
           .map(
-            (skill, index) =>
+            ({ skill, index }) =>
               `<div class="creator-row"><div><strong>${esc(skill.name)}</strong><span class="meta">${skill.die} • ${skill.linkedAttribute} • cost ${skillCost(skill)}</span>${skill.notes ? `<p class="creator-note">${esc(skill.notes)}</p>` : ""}</div><div class="creator-actions"><button data-cc="decSkill" data-i="${index}">−</button><button data-cc="incSkill" data-i="${index}">+</button>${skill.core ? '<span class="pill">Core</span>' : `<button data-cc="removeSkill" data-i="${index}" class="delete-small">×</button>`}</div></div>`,
           )
           .join("")}

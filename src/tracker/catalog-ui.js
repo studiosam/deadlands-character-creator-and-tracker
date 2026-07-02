@@ -78,7 +78,7 @@ function catalogs() {
     (item) => money(item.costCents),
   );
   els.edgeCatalogSelect.innerHTML = entryCatalogOptions(
-    EDGE_CATALOG,
+    EDGE_CATALOG.filter(isUserFacingEdgeCatalogEntry),
     "Manual Edge or choose from catalog…",
   );
   els.hindranceCatalogSelect.innerHTML = entryCatalogOptions(
@@ -109,7 +109,7 @@ function catalogBrowserTypes() {
     edges: {
       label: "Edges",
       empty: "No matching Edges.",
-      records: () => EDGE_CATALOG || [],
+      records: () => (EDGE_CATALOG || []).filter(isUserFacingEdgeCatalogEntry),
     },
     hindrances: {
       label: "Hindrances",

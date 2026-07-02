@@ -485,6 +485,7 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   await page.locator("[data-setup-step='skills']").click();
   const setupSkillsPanel = page.locator("#setupSkillsPanel");
   await expect(setupSkillsPanel).toContainText("Skills");
+  await expect(setupSkillsPanel).not.toContainText("Psionics");
 
   const shootingChip = setupSkillsPanel
     .locator(".skill-chip")
@@ -807,6 +808,7 @@ test("edits setup traits for created characters and stores the creation baseline
   await expect(setupSkillsPanel.locator("#setupSkillsListHeading")).toHaveText(
     "Skills",
   );
+  await expect(setupSkillsPanel).not.toContainText("Psionics");
   await expect(setupSkillsPanel).not.toContainText("Draft starting Skills");
   await expect(setupSkillsPanel).toContainText("Skill Points");
   await expect(setupSkillsPanel).toContainText("0 / 12");

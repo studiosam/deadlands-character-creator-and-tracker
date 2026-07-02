@@ -72,6 +72,30 @@ function skillReferenceName(name) {
   return text;
 }
 
+function isUserFacingSkillName(name) {
+  const referenceName = skillReferenceName(name);
+  return !USER_FACING_HIDDEN_SKILL_NAMES.includes(referenceName);
+}
+
+function isUserFacingSkill(skill) {
+  return isUserFacingSkillName(typeof skill === "string" ? skill : skill?.name);
+}
+
+function referencesHiddenSkillText(value) {
+  const text = String(value || "").toLowerCase();
+  return USER_FACING_HIDDEN_SKILL_NAMES.some((name) =>
+    text.includes(String(name).toLowerCase()),
+  );
+}
+
+function isUserFacingEdgeCatalogEntry(edge) {
+  return !referencesHiddenSkillText(
+    [edge?.name, edge?.requirements, edge?.shortSummary, edge?.subchoice].join(
+      " ",
+    ),
+  );
+}
+
 function attributeUseNote(name) {
   return ATTRIBUTE_USE_NOTES[String(name || "").toLowerCase()] || "";
 }

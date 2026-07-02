@@ -71,7 +71,7 @@ test("selects hindrances in character setup and summarizes point expectations", 
   const hindranceHelp = hindrancePanel.locator(".setup-detail-help");
   await expect(hindranceHelp).toHaveCount(4);
   await expect(hindranceHelp.first()).toHaveAttribute(
-    "title",
+    "aria-label",
     /number of Hindrance records currently selected/,
   );
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(

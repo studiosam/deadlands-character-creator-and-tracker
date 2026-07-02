@@ -321,14 +321,14 @@ function skillOptionSort(left, right) {
 }
 
 function deadlandsSkillLibraryOptions() {
-  return Object.entries(SKILL_LINKED_ATTRIBUTES).map(
-    ([name, linkedAttribute]) => ({
+  return Object.entries(SKILL_LINKED_ATTRIBUTES)
+    .filter(([name]) => isUserFacingSkillName(name))
+    .map(([name, linkedAttribute]) => ({
       name,
       die: "",
       linkedAttribute,
       unskilled: true,
-    }),
-  );
+    }));
 }
 
 function twoSkillAdvanceCandidates() {
@@ -337,7 +337,7 @@ function twoSkillAdvanceCandidates() {
     candidates.set(plainEntryName(skill.name), skill);
   });
   (character.skills || []).forEach((skill) => {
-    if (!skill?.name) return;
+    if (!skill?.name || !isUserFacingSkill(skill)) return;
     const die = skillValue(skill);
     candidates.set(plainEntryName(skill.name), {
       ...skill,
@@ -355,7 +355,12 @@ function eligibleSkillsForAdvanceMode(mode, excludedNames = []) {
       : [...(character.skills || [])];
   return sourceSkills
     .filter((skill) => {
-      if (!skill.name || excluded.has(plainEntryName(skill.name))) return false;
+      if (
+        !skill.name ||
+        !isUserFacingSkill(skill) ||
+        excluded.has(plainEntryName(skill.name))
+      )
+        return false;
       if (mode === "single")
         return canUseSingleSkillAdvance(character, skill.name).ok;
       if (mode === "two")
@@ -372,7 +377,9 @@ function skillSelectMarkup(
   mode = "all",
   excludedNames = [],
 ) {
-  const skills = [...(character.skills || [])].sort(skillOptionSort);
+  const skills = [...(character.skills || [])]
+    .filter(isUserFacingSkill)
+    .sort(skillOptionSort);
   const eligibleSkills =
     mode === "all" ? skills : eligibleSkillsForAdvanceMode(mode, excludedNames);
   return `<label>${esc(label)}<select id="${esc(id)}">${optionMarkup("", "Choose skill", !selectedName)}${eligibleSkills
@@ -592,7 +599,19 @@ function renderAdvanceDynamicFields(advance = null) {
     const selected = targets[0]?.catalogId || targets[0]?.targetId || "";
     const custom = selected ? "" : targets[0]?.targetName || "";
     if (custom && !selected) advanceManualEdgeMode = true;
-    els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid"><label>Edge<select id="advanceEdgeSelect">${optionMarkup("", "Choose Edge", !selected)}${EDGE_CATALOG.map((edge) => optionMarkup(edge.id, `${edge.name} ? ${edge.rank || "Unknown"}`, edge.id === selected)).join("")}</select></label><button id="advanceManualEdgeToggle" class="ghost small-action" type="button">${advanceManualEdgeMode ? "Use Edge dropdown" : "Use manual entry"}</button><label id="advanceManualEdgeField" class="${advanceManualEdgeMode ? "" : "hidden"}">Manual Edge<input id="advanceEdgeCustomInput" value="${esc(custom)}" placeholder="Custom Edge name" /></label><p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
+    els.advanceDynamicFields.innerHTML = `<div class="advancement-dynamic-grid"><label>Edge<select id="advanceEdgeSelect">${optionMarkup("", "Choose Edge", !selected)}${EDGE_CATALOG.filter(
+      isUserFacingEdgeCatalogEntry,
+    )
+      .map((edge) =>
+        optionMarkup(
+          edge.id,
+          `${edge.name} ? ${edge.rank || "Unknown"}`,
+          edge.id === selected,
+        ),
+      )
+      .join(
+        "",
+      )}</select></label><button id="advanceManualEdgeToggle" class="ghost small-action" type="button">${advanceManualEdgeMode ? "Use Edge dropdown" : "Use manual entry"}</button><label id="advanceManualEdgeField" class="${advanceManualEdgeMode ? "" : "hidden"}">Manual Edge<input id="advanceEdgeCustomInput" value="${esc(custom)}" placeholder="Custom Edge name" /></label><p id="advanceGeneratedSummary" class="preview full"></p><p id="advanceDynamicWarning" class="entry-warning hidden full"></p></div>`;
   } else if (type === "Increase Skill") {
     const selected = targets[0]?.targetName || "";
     const eligibleCount = eligibleSkillsForAdvanceMode("single").length;

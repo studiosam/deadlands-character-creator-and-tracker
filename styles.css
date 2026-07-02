@@ -2881,6 +2881,11 @@ h3 {
   margin-top: 1rem;
 }
 
+#setupTraitsPanel > .setup-trait-groups,
+#setupSkillsPanel > .setup-trait-groups {
+  margin-top: 0;
+}
+
 .setup-trait-group {
   display: grid;
   gap: 0.6rem;
@@ -2899,6 +2904,11 @@ h3 {
 
 .setup-skills-group > * + * {
   margin-top: 0.6rem;
+}
+
+.setup-skills-group > .setup-skill-rules-note {
+  margin: 0.75rem 0 0.9rem;
+  line-height: 1.45;
 }
 
 .setup-skill-attribute-groups {

@@ -382,6 +382,13 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
     "Browse Edges, Hindrances, and Powers without editing the character.",
   );
   await assertCatalogMode("Edges");
+  await page.locator("#catalogSearchInput").fill("Psionics");
+  await expect(panel.locator("#catalogResultsList")).toContainText(
+    "No matching Edges.",
+  );
+  await expect(panel).not.toContainText("Mentalist");
+  await expect(panel).not.toContainText("Psionics");
+  await page.locator("#catalogSearchInput").fill("");
   await page.locator("[data-catalog-type='hindrances']").click();
   await assertCatalogMode("Hindrances");
   await page.locator("[data-catalog-type='powers']").click();

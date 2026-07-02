@@ -813,10 +813,9 @@ function setupSkillPointCost(skill) {
 }
 function setupSkillPointStats() {
   const rules = setupCreationRules();
-  const spent = (character.skills || []).reduce(
-    (sum, skill) => sum + setupSkillPointCost(skill),
-    0,
-  );
+  const spent = (character.skills || [])
+    .filter(isUserFacingSkill)
+    .reduce((sum, skill) => sum + setupSkillPointCost(skill), 0);
   const available = rules.normalSkillPoints + rules.extraSkillPoints;
   return {
     ...rules,
@@ -1084,7 +1083,9 @@ function setupEdgeRequirementPartMet(part) {
   }
 
   const edgeRequirement = EDGE_CATALOG.find(
-    (edge) => plainEntryName(edge.name) === normalized,
+    (edge) =>
+      isUserFacingEdgeCatalogEntry(edge) &&
+      plainEntryName(edge.name) === normalized,
   );
   if (edgeRequirement) return setupHasEdgeNamed(edgeRequirement.name);
 
@@ -1120,6 +1121,7 @@ function setupEligibleStartingEdges() {
   );
   return EDGE_CATALOG.filter(
     (edge) =>
+      isUserFacingEdgeCatalogEntry(edge) &&
       !selectedNames.has(plainEntryName(edge.name)) &&
       setupEdgeEligibility(edge).eligible,
   );

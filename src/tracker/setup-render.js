@@ -44,12 +44,18 @@ function sortedAttributeEntries() {
 }
 
 function sortedSkills() {
-  return [...(character.skills || [])].sort((left, right) =>
-    String(left.name || "").localeCompare(String(right.name || ""), undefined, {
-      numeric: true,
-      sensitivity: "base",
-    }),
-  );
+  return [...(character.skills || [])]
+    .filter(isUserFacingSkill)
+    .sort((left, right) =>
+      String(left.name || "").localeCompare(
+        String(right.name || ""),
+        undefined,
+        {
+          numeric: true,
+          sensitivity: "base",
+        },
+      ),
+    );
 }
 
 function setupSkillAttributeKey(value) {
@@ -61,8 +67,9 @@ function setupSkillAttributeKey(value) {
 function setupSkillCatalogEntries() {
   const recordedSkills = sortedSkills();
   const usedRecordedIndexes = new Set();
-  const entries = Object.entries(SKILL_LINKED_ATTRIBUTES).map(
-    ([name, linkedAttribute]) => {
+  const entries = Object.entries(SKILL_LINKED_ATTRIBUTES)
+    .filter(([name]) => isUserFacingSkillName(name))
+    .map(([name, linkedAttribute]) => {
       const recordedIndex = recordedSkills.findIndex(
         (skill, index) =>
           !usedRecordedIndexes.has(index) &&
@@ -86,8 +93,7 @@ function setupSkillCatalogEntries() {
         linkedAttribute,
         isUnskilled: true,
       };
-    },
-  );
+    });
 
   recordedSkills.forEach((skill, index) => {
     if (usedRecordedIndexes.has(index) || !skill.name) return;
@@ -773,7 +779,7 @@ function renderSetupSkills() {
         <h4 id="setupSkillsListHeading">Skills</h4>
         ${
           editable
-            ? `<p class="creator-note">Non-core skills cost 1 point at or below their linked Attribute and 2 points per step above it. Core skills start at d4 for free. Missing skills start at d4-2 before purchase.</p>
+            ? `<p class="creator-note setup-skill-rules-note">Athletics, Common Knowledge, Notice, Persuasion, and Stealth start at d4; Language starts at d8. Other skills start Unskilled (d4-2).<br />Each purchased step costs 1 point up to the linked Attribute, or 2 points above it.</p>
         <div class="setup-trait-editor-list setup-skill-editor-list setup-skill-overview-list">
           ${setupSkillPointCard(skillPointStats)}
         </div>`
@@ -797,7 +803,9 @@ function setupEdgeCatalogOptions(placeholder) {
       .map((edge) => plainEntryName(edge.name)),
   );
   const availableEdges = setupEligibleStartingEdges().filter(
-    (edge) => !selectedNames.has(plainEntryName(edge.name)),
+    (edge) =>
+      isUserFacingEdgeCatalogEntry(edge) &&
+      !selectedNames.has(plainEntryName(edge.name)),
   );
   return [
     `<option value="">${placeholder}</option>`,
