@@ -90,11 +90,15 @@ test("starts new characters directly in character setup @mobile", async ({
   await expect(page.locator("[data-setup-step='concept']")).toContainText(
     "Incomplete",
   );
-  await expect(page.locator(".setup-persistence-panel.unsaved")).toContainText(
-    "Setup draft saved locally",
+  await expect(page.locator(".setup-persistence-panel")).toHaveCount(0);
+  await expect(page.locator("#characterSetupPanel")).toContainText(
+    "Use the Next button at the bottom of each step.",
   );
-  await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Progress is saved locally",
+  await expect(page.locator("#characterSetupPanel")).toContainText(
+    "Progress is saved locally.",
+  );
+  await expect(page.locator("#characterSetupPanel")).toContainText(
+    "Final save controls appear on Review.",
   );
   await expect(
     page.locator("[data-setup-action='saveDraftCharacter']"),
@@ -277,6 +281,10 @@ test("starts new characters directly in character setup @mobile", async ({
     )
     .toBe(1);
 
+  await page.locator("[data-setup-step='review']").click();
+  await expect(
+    page.locator("[data-setup-action='discardDraftCharacter']"),
+  ).toBeVisible();
   await page.locator("[data-setup-action='discardDraftCharacter']").click();
   await expect(page.locator("#appDialog")).toBeVisible();
   await page.locator("#appDialogConfirmBtn").click();
@@ -394,6 +402,7 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await expect(page.locator("#characterBasicsList")).not.toContainText(
     "Novice",
   );
+  await expect(page.locator("#characterBasicsList")).toBeHidden();
   await expect(page.locator("#characterDerivedDetails")).toContainText("Pace");
   await expect(page.locator("#characterDerivedDetails")).toContainText("Parry");
   await expect(page.locator("#characterDerivedDetails")).toContainText(
@@ -473,6 +482,12 @@ test("finishes character setup and starts playing with a saved character", async
   await page.locator("#setupAgeInput").fill("29");
   await page.locator("#setupArchetypeInput").fill("Trail Scout");
   await page.locator("#setupPlayerInput").fill("Playwright");
+  await expect(page.locator("#characterDossierSubtitle")).not.toContainText(
+    "Playwright",
+  );
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(
+    "Trail Scout",
+  );
 
   await expect(page.locator("[data-setup-action='finishSetup']")).toHaveCount(
     0,
@@ -590,14 +605,27 @@ test("shows human ancestry in concept setup", async ({ page }) => {
   await expect(conceptPanel).toContainText("Human");
   await expect(conceptPanel).not.toContainText("Supported by This Profile");
 
+  const ancestryFollowsPlayer = await conceptPanel
+    .getByText("Race / Ancestry")
+    .first()
+    .evaluate((ancestryElement) => {
+      const playerInput = document.querySelector("#setupPlayerInput");
+      return Boolean(
+        playerInput &&
+        playerInput.compareDocumentPosition(ancestryElement) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    });
+  expect(ancestryFollowsPlayer).toBe(true);
+
   const fixedAncestryTop = await conceptPanel
     .getByText("Race / Ancestry")
     .first()
     .evaluate((element) => element.getBoundingClientRect().top);
-  const backgroundTop = await page
-    .locator("#setupBackgroundInput")
+  const descriptionTop = await page
+    .locator("#setupDescriptionInput")
     .evaluate((element) => element.getBoundingClientRect().top);
-  expect(fixedAncestryTop).toBeGreaterThan(backgroundTop);
+  expect(fixedAncestryTop).toBeLessThan(descriptionTop);
 
   const stepTopSpread = await page
     .locator("#characterSetupStepper .setup-step")

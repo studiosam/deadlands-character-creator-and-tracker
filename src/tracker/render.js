@@ -43,6 +43,20 @@ function characterIdentitySubtitle(separator = " ") {
     .join(separator);
 }
 
+function characterDossierSubtitleText(separator = " \u2022 ") {
+  const setupMode = characterSetupReviewMode();
+  return [
+    setupMode ? "" : character.player,
+    character.gender,
+    character.age,
+    character.rank,
+    character.ancestry,
+    character.archetype,
+  ]
+    .filter(Boolean)
+    .join(separator);
+}
+
 function characterDisplayName() {
   return String(character?.name || "").trim() || "Unnamed Character";
 }
@@ -53,7 +67,7 @@ function renderCharacterIdentityDisplays() {
   if (els.characterSummaryName)
     els.characterSummaryName.textContent = characterDisplayName();
   if (els.characterDossierSubtitle)
-    els.characterDossierSubtitle.textContent = characterIdentitySubtitle(" • ");
+    els.characterDossierSubtitle.textContent = characterDossierSubtitleText();
 }
 
 function render() {
@@ -451,25 +465,9 @@ function renderEncumbrance() {
 
 function renderCharacterSummary() {
   els.characterSummaryName.textContent = character.name;
-  els.characterDossierSubtitle.textContent = [
-    character.rank,
-    character.ancestry,
-    character.archetype,
-  ]
-    .filter(Boolean)
-    .join(" • ");
+  els.characterDossierSubtitle.textContent = characterDossierSubtitleText();
   els.characterSourceBadge.textContent = sourceLabel();
-  els.characterBasicsList.innerHTML = [
-    ["Profession or Title", character.archetype],
-    ["Player Name", character.player],
-    ["Gender", character.gender],
-    ["Age", character.age],
-  ]
-    .map(
-      ([label, value]) =>
-        `<div class="dossier-meta-item"><span>${label}</span><strong>${esc(value || "—")}</strong></div>`,
-    )
-    .join("");
+  els.characterBasicsList.innerHTML = "";
 
   const powerPoints = powerPointResource();
   els.characterStatusStrip.innerHTML = "";

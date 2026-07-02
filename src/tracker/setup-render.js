@@ -17,7 +17,7 @@ function setupDetail(label, value, helpText = "") {
       <span>${esc(label)}</span>
       ${
         help
-          ? `<span class="setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" title="${esc(help)}" data-tooltip="${esc(help)}">?</span>`
+          ? `<span class="setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
           : ""
       }
     </div>
@@ -28,7 +28,7 @@ function setupDetail(label, value, helpText = "") {
 function attributeHelpMarkup(label, helpText = "") {
   const help = String(helpText || "").trim();
   return help
-    ? `<span class="attribute-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" title="${esc(help)}" data-tooltip="${esc(help)}">?</span>`
+    ? `<span class="attribute-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
     : "";
 }
 
@@ -340,26 +340,14 @@ function renderCharacterSetup() {
   };
 
   els.characterSetupContent.innerHTML =
-    renderSetupPersistencePanel() +
+    (characterSetupStep === "review" ? renderSetupPersistencePanel() : "") +
     (renderers[characterSetupStep]?.() || renderSetupConcept()) +
     renderSetupStepNavigation();
 }
 
 function renderSetupPersistencePanel() {
   const reviewStep = characterSetupStep === "review";
-  if (!reviewStep) {
-    return `<div class="setup-persistence-panel setup-progress-panel${isUnsavedCharacterDraft() ? " unsaved" : ""}">
-      <div>
-        <strong>${isUnsavedCharacterDraft() ? "Setup draft saved locally" : "Character setup in progress"}</strong>
-        <p>Use the Next button at the bottom of each step. Progress is saved locally; final save controls appear on Review.</p>
-      </div>
-      ${
-        isUnsavedCharacterDraft()
-          ? '<div class="creator-actions"><button class="ghost danger-lite" type="button" data-setup-action="discardDraftCharacter">Discard Draft</button></div>'
-          : ""
-      }
-    </div>`;
-  }
+  if (!reviewStep) return "";
 
   const finishLabel = character.creation?.finalized
     ? "Start Playing"
@@ -431,28 +419,21 @@ function renderSetupConcept() {
       <label>Gender<input id="setupGenderInput" data-concept-field="gender" value="${esc(character.gender || "")}" placeholder="Gender Identity" autocomplete="off" list="setupGenderOptions"></label>
       <label>Age<input id="setupAgeInput" data-concept-field="age" value="${esc(character.age || "")}" placeholder="32" autocomplete="off"></label>
       <label>Profession or Title<input id="setupArchetypeInput" data-concept-field="archetype" value="${esc(character.archetype || "")}" placeholder="Profession or Title" autocomplete="off"></label>
-      <label>Player name<input id="setupPlayerInput" data-concept-field="player" value="${esc(character.player || "")}" placeholder="Player Name" autocomplete="off"></label>
-      <label class="setup-wide">Description<textarea id="setupDescriptionInput" data-concept-field="description" rows="5" placeholder="Tall, wary, dusty coat">${esc(character.description || "")}</textarea></label>
-      <label class="setup-wide">Background<textarea id="setupBackgroundInput" data-concept-field="background" rows="6" placeholder="Why they ride">${esc(character.background || "")}</textarea></label>
+      <label>Player Name<input id="setupPlayerInput" data-concept-field="player" value="${esc(character.player || "")}" placeholder="Player Name" autocomplete="off"></label>
+      <div class="setup-form-detail readonly">${setupDetail("Race / Ancestry", character.ancestry || "Human")}</div>
+      <label class="setup-wide">Description<textarea id="setupDescriptionInput" data-concept-field="description" rows="4" placeholder="Tall, wary, dusty coat">${esc(character.description || "")}</textarea></label>
+      <label class="setup-wide">Background<textarea id="setupBackgroundInput" data-concept-field="background" rows="5" placeholder="Why they ride">${esc(character.background || "")}</textarea></label>
       <datalist id="setupGenderOptions">
         <option value="Female"></option>
         <option value="Male"></option>
         <option value="Nonbinary"></option>
       </datalist>
     </div>
-    <div class="setup-review-grid">
-      ${setupDetail("Race / Ancestry", character.ancestry || "Human")}
-    </div>
     ${
       isHumanAncestry(character.ancestry)
         ? ""
         : '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
     }
-    <p class="creator-note">${
-      isUnsavedCharacterDraft()
-        ? "Concept edits update this locally saved setup draft. Character slot save controls appear on Review."
-        : "Concept edits update the active tracker character through the normal local save path."
-    }</p>
   </section>`;
 }
 
@@ -629,6 +610,36 @@ function setupSkillPointCard(skillStats) {
   </article>`;
 }
 
+function setupSkillUpgradeCost(skill) {
+  if (!skill?.name) return Infinity;
+  const currentCost = skill.isUnskilled ? 0 : setupSkillPointCost(skill);
+  const definition = setupSkillDefinition(skill.name);
+  const nextSkill = skill.isUnskilled
+    ? {
+        name: skill.name,
+        die: setupStartingSkillBaselineDie(skill.name) || "d4",
+        linkedAttribute: skill.linkedAttribute || definition.linkedAttribute,
+        core: definition.core,
+      }
+    : { ...skill };
+
+  if (!skill.isUnskilled) {
+    const currentIndex = getDieStepIndex(skill.die || skill.value);
+    if (currentIndex < 0 || currentIndex >= DIE_STEPS.length - 1)
+      return Infinity;
+    nextSkill.die = setupTraitDieFromIndex(currentIndex + 1);
+  }
+
+  return Math.max(0, setupSkillPointCost(nextSkill) - currentCost);
+}
+
+function setupSkillUpgradeCostText(skill) {
+  const upgradeCost = setupSkillUpgradeCost(skill);
+  return Number.isFinite(upgradeCost)
+    ? `Upgrade Cost ${upgradeCost}`
+    : "Upgrade Cost —";
+}
+
 function setupSkillEditorRow(skill) {
   const linkedAttribute = setupSkillAttributeKey(skill.linkedAttribute);
   const referenceName = skillReferenceName(skill.name);
@@ -637,21 +648,14 @@ function setupSkillEditorRow(skill) {
     ? "d4-2"
     : skill.die || skill.value || "—";
   const index = getDieStepIndex(skill.die || skill.value);
-  const cost = skill.isUnskilled ? 0 : setupSkillPointCost(skill);
-  const core = skill.core || setupSkillIsCoreName(skill.name);
   const baselineDie = setupStartingSkillBaselineDie(skill.name);
   const baselineIndex = baselineDie ? getDieStepIndex(baselineDie) : -1;
   const decreaseDisabled = skill.isUnskilled || index <= baselineIndex;
   const increaseDisabled = !skill.isUnskilled && index >= DIE_STEPS.length - 1;
-  const meta = [
-    displayDie,
-    skill.isUnskilled ? "Unskilled" : `Cost ${cost}`,
-    core ? "Core" : "",
-  ].filter(Boolean);
+  const meta = [setupSkillUpgradeCostText(skill)].filter(Boolean);
   const help = [
     useNote,
     `Linked attribute: ${displayNameFromKey(linkedAttribute) || linkedAttribute}.`,
-    skill.isUnskilled ? "Unskilled roll: d4-2." : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -769,11 +773,11 @@ function renderSetupSkills() {
         <h4 id="setupSkillsListHeading">Skills</h4>
         ${
           editable
-            ? `<p class="creator-note">Non-core skills cost 1 point at or below their linked Attribute and 2 points per step above it. Core skills start at d4 for free. Missing skills are shown as unskilled d4-2.</p>
+            ? `<p class="creator-note">Non-core skills cost 1 point at or below their linked Attribute and 2 points per step above it. Core skills start at d4 for free. Missing skills start at d4-2 before purchase.</p>
         <div class="setup-trait-editor-list setup-skill-editor-list setup-skill-overview-list">
           ${setupSkillPointCard(skillPointStats)}
         </div>`
-            : '<p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown as unskilled d4-2.</p>'
+            : '<p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown at d4-2.</p>'
         }
         ${renderSetupTraitSkillGroup(setupSkills)}
       </section>

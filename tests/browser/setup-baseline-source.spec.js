@@ -855,8 +855,8 @@ test("edits setup traits for created characters and stores the creation baseline
   await expect(
     languageRow.locator("[data-setup-action='decSkill']"),
   ).toBeDisabled();
-  await expect(languageRow).toContainText("Core");
-  await expect(languageRow).toContainText("Cost 0");
+  await expect(languageRow).not.toContainText("Core");
+  await expect(languageRow).toContainText("Upgrade Cost 2");
   const shootingRow = setupSkillsPanel
     .locator(".setup-trait-editor-row.skill-row")
     .filter({ hasText: "Shooting" });
@@ -880,12 +880,14 @@ test("edits setup traits for created characters and stores the creation baseline
   await expect(shootingRow.locator(".setup-die-step.current")).toHaveText(
     "d4-2",
   );
+  await expect(shootingRow).not.toContainText("Unskilled");
+  await expect(shootingRow).toContainText("Upgrade Cost 1");
   await expect(shootingRow.locator(".setup-die-step.unavailable")).toHaveCount(
     0,
   );
   await shootingRow.locator("[data-setup-action='incSkill']").click();
   await expect(shootingRow.locator(".setup-die-step.current")).toHaveText("d4");
-  await expect(shootingRow).toContainText("Cost 1");
+  await expect(shootingRow).toContainText("Upgrade Cost 1");
   await expect(setupSkillsPanel).toContainText("1 / 12");
   await expect(skillPointsCard.locator(".setup-skill-meter")).toHaveAttribute(
     "aria-valuenow",

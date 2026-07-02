@@ -207,7 +207,7 @@ const SKILL_USE_NOTES = {
   Piloting:
     "Operating flying machines and other aircraft when the setting allows them.",
   Psionics:
-    "Using psychic powers for characters with a psionic Arcane Background.",
+    "Using psychic powers for characters with a psionic Arcane Background. Generally not utilized in Deadlands under normal conditions; retained for Savaged.us and broader SWADE compatibility.",
   Repair:
     "Fixing, maintaining, disabling, or jury-rigging devices, weapons, and machinery.",
   Research:

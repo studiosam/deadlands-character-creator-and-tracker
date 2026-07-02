@@ -224,10 +224,10 @@ test("edits active character profile from the characters panel", async ({
   await expect(page.locator("#characterDossierSubtitle")).toContainText(
     archetype,
   );
-  await expect(page.locator("#characterBasicsList")).toContainText(archetype);
-  await expect(page.locator("#characterBasicsList")).toContainText(player);
-  await expect(page.locator("#characterBasicsList")).toContainText(age);
-  await expect(page.locator("#characterBasicsList")).toContainText(gender);
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(player);
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(age);
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(gender);
+  await expect(page.locator("#characterBasicsList")).toBeHidden();
   await expect(page.locator("#characterBackgroundSummary")).toContainText(
     description,
   );
@@ -284,8 +284,13 @@ test("edits active character profile from the characters panel", async ({
   await expect(page.locator("#characterName")).toContainText(name);
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSummaryName")).toHaveText(name);
-  await expect(page.locator("#characterBasicsList")).toContainText(archetype);
-  await expect(page.locator("#characterBasicsList")).toContainText(player);
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(
+    archetype,
+  );
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(player);
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(age);
+  await expect(page.locator("#characterDossierSubtitle")).toContainText(gender);
+  await expect(page.locator("#characterBasicsList")).toBeHidden();
   await expect(page.locator("#characterBackgroundSummary")).toContainText(
     description,
   );

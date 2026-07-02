@@ -1036,7 +1036,7 @@ function renderBasics(concept) {
       <h2>1. Character Basics ${statusPill(Boolean(creationDraft.name), true)}</h2>
       <div class="creator-grid">
         <label>Character name<input data-cf="name" value="${esc(creationDraft.name)}"></label>
-        <label>Player name<input data-cf="player" value="${esc(creationDraft.player)}"></label>
+        <label>Player Name<input data-cf="player" value="${esc(creationDraft.player)}"></label>
         <label>Rank<input data-cf="rank" value="${esc(creationDraft.rank)}"></label>
         <label>Race / ancestry<input value="Human" disabled></label>
         <label>Concept<select data-cf="concept">${optionTags(CONCEPTS, creationDraft.concept)}</select></label>
