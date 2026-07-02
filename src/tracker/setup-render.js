@@ -696,7 +696,7 @@ function renderSetupHindrances() {
         ${renderSetupHindranceRows()}
       </div>
     </section>
-    ${renderSetupHindranceBenefitRows(stats)}
+    ${stats.count ? renderSetupHindranceBenefitRows(stats) : ""}
   </section>`;
 }
 

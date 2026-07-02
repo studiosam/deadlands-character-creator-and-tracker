@@ -73,6 +73,9 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Complete",
   );
+  await expect(hindrancePanel.locator(".setup-benefit-spending")).toHaveCount(
+    0,
+  );
   const entryCard = hindrancePanel.locator(".setup-hindrance-entry-card");
   await expect(entryCard).toContainText("Add Hindrance");
   await expect(entryCard.locator("#setupHindranceCatalogSelect")).toBeVisible();
@@ -115,18 +118,6 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(
     entryCard.locator("#setupHindranceSeverityInput"),
   ).not.toHaveClass(/locked/);
-  const hindranceLayout = await hindrancePanel.evaluate((panel) => {
-    const topFor = (selector) =>
-      panel.querySelector(selector).getBoundingClientRect().top;
-    return {
-      benefitsTop: topFor(".setup-benefit-spending"),
-      entryTop: topFor(".setup-hindrance-entry-card"),
-      selectedTop: topFor(".setup-selected-hindrances"),
-    };
-  });
-  expect(hindranceLayout.entryTop).toBeLessThan(hindranceLayout.selectedTop);
-  expect(hindranceLayout.selectedTop).toBeLessThan(hindranceLayout.benefitsTop);
-
   await page
     .locator("#setupHindranceCatalogSelect")
     .selectOption("swade-hindrance-bad-luck");
@@ -143,6 +134,18 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Complete",
   );
+  await expect(hindrancePanel.locator(".setup-benefit-spending")).toBeVisible();
+  const hindranceLayout = await hindrancePanel.evaluate((panel) => {
+    const topFor = (selector) =>
+      panel.querySelector(selector).getBoundingClientRect().top;
+    return {
+      benefitsTop: topFor(".setup-benefit-spending"),
+      entryTop: topFor(".setup-hindrance-entry-card"),
+      selectedTop: topFor(".setup-selected-hindrances"),
+    };
+  });
+  expect(hindranceLayout.entryTop).toBeLessThan(hindranceLayout.selectedTop);
+  expect(hindranceLayout.selectedTop).toBeLessThan(hindranceLayout.benefitsTop);
 
   await page
     .locator("#setupHindranceCatalogSelect")
