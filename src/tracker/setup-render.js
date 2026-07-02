@@ -5,9 +5,9 @@
  * state. It should call setup-actions.js for mutations and setup-model.js for
  * eligibility, warnings, and completion status.
  */
-function setupStatusMarkup(status) {
+function setupStatusMarkup(status, label = status) {
   const className = slugify(status);
-  return `<span class="setup-status ${className}">${esc(status)}</span>`;
+  return `<span class="setup-status ${className}">${esc(label)}</span>`;
 }
 
 function setupDetail(label, value, helpText = "") {
@@ -151,11 +151,36 @@ function setupEdgeBadge(label, tone = "") {
   return `<span class="setup-edge-badge${tone ? ` ${esc(tone)}` : ""}">${esc(label)}</span>`;
 }
 
+function setupEdgeSubchoiceIsRequirementFlag(value) {
+  if (value === true) return true;
+  const text = plainEntryName(value);
+  return text === "required" || text === "required choice";
+}
+
+function setupEdgeRecordedSubchoice(edge) {
+  return setupEdgeSubchoiceIsRequirementFlag(edge?.subchoice)
+    ? ""
+    : String(edge?.subchoice || "").trim();
+}
+
+function setupEdgeSubchoiceRequired(edge, catalog) {
+  return (
+    Boolean(setupEdgeRecordedSubchoice(edge)) ||
+    setupEdgeSubchoiceIsRequirementFlag(edge?.subchoice) ||
+    setupEdgeSubchoiceIsRequirementFlag(catalog?.subchoice)
+  );
+}
+
+function setupArcaneBackgroundSummary(arcaneConfig) {
+  return arcaneConfig
+    ? `${arcaneConfig.displayName} uses ${arcaneConfig.arcaneSkill} and starts with ${arcaneConfig.startingPowerPoints} Power Points.`
+    : "";
+}
+
 function setupEdgeAuditCard(edge) {
   const catalog = edgeCatalogEntry(edge);
   const arcaneConfig = arcaneBackgroundConfigFromEdge(edge.name);
   const likelySource = edgeLikelySource(edge);
-  const matchedAdvance = edgeMatchedAdvance(edge);
   const startingEdgeValidation =
     setupTraitsEditable() &&
     ["human-free-edge", "hindrance-benefit"].includes(
@@ -163,63 +188,48 @@ function setupEdgeAuditCard(edge) {
     )
       ? validateSetupStartingEdge(edge)
       : null;
-  const category = catalog?.category || edge.category || "Unknown";
-  const rank = catalog?.rank || edge.rank || "Unknown";
   const requirements = catalog?.requirements || edge.requirements || "";
   const summary =
-    catalog?.shortSummary || edge.shortSummary || edge.notes || "";
+    setupArcaneBackgroundSummary(arcaneConfig) ||
+    catalog?.shortSummary ||
+    edge.shortSummary ||
+    edge.notes ||
+    "";
+  const subchoiceRequired = setupEdgeSubchoiceRequired(edge, catalog);
+  const recordedSubchoice = setupEdgeRecordedSubchoice(edge);
   const removable =
     setupTraitsEditable() &&
     ["human-free-edge", "hindrance-benefit"].includes(
       setupEdgeCreationSource(edge),
     );
-  const source = [
-    edge.source,
-    edge.importNote ? `Import: ${edge.importNote}` : "",
-  ]
-    .filter(Boolean)
-    .join(" • ");
-  const badges = [
-    setupEdgeBadge(
-      likelySource,
-      likelySource.includes("unknown") ? "muted" : "",
-    ),
-    catalog
-      ? setupEdgeBadge("Catalog matched", "good")
-      : setupEdgeBadge("No catalog match", "warning"),
+  const visibleBadges = [
+    likelySource === "Hindrance benefit Edge"
+      ? setupEdgeBadge(likelySource)
+      : "",
     startingEdgeValidation && !startingEdgeValidation.valid
       ? setupEdgeBadge("Needs review", "warning")
-      : "",
-    arcaneConfig ? setupEdgeBadge("Arcane Background", "arcane") : "",
-    category && category !== "Unknown" ? setupEdgeBadge(category) : "",
-    rank && rank !== "Unknown" ? setupEdgeBadge(rank) : "",
+      : !startingEdgeValidation && !catalog
+        ? setupEdgeBadge("Manual review", "warning")
+        : "",
   ]
     .filter(Boolean)
     .join("");
-  const advisories = [
-    !catalog
-      ? "Catalog match not found; imported or custom text is preserved for review."
-      : "",
-    likelySource.includes("unknown")
-      ? "Creation source is not explicit. Treat this as an audit hint, not validation."
-      : "",
-    matchedAdvance
-      ? `Matched recorded Advance #${matchedAdvance.advanceNumber || matchedAdvance.number || "?"}.`
-      : "",
+  const visibleAdvisories = [
     ...(startingEdgeValidation?.messages || []),
-    arcaneConfig
-      ? `${arcaneConfig.displayName} uses ${arcaneConfig.arcaneSkill} and starts with ${arcaneConfig.startingPowerPoints} Power Points.`
-      : "",
+    subchoiceRequired && !recordedSubchoice ? "Subchoice required." : "",
   ].filter(Boolean);
+  const showVisibleRequirements =
+    requirements && startingEdgeValidation && !startingEdgeValidation.valid;
 
   return `<article class="setup-edge-card${arcaneConfig ? " arcane" : ""}">
     <div class="setup-edge-card-head">
       <div>
         <h4>${esc(edge.name || "Unnamed Edge")}</h4>
-        ${source ? `<p>${esc(source)}</p>` : ""}
+        ${summary ? `<p class="setup-edge-summary">${esc(summary)}</p>` : ""}
+        ${showVisibleRequirements ? `<p class="setup-edge-requirements"><strong>Requirements:</strong> ${esc(requirements)}</p>` : ""}
       </div>
       <div class="setup-edge-badges">
-        ${badges}
+        ${visibleBadges}
         ${
           removable
             ? `<button class="ghost tag-action danger-lite" type="button" data-setup-action="removeSetupEdge" data-edge-id="${esc(edge.id)}">Remove</button>`
@@ -227,17 +237,9 @@ function setupEdgeAuditCard(edge) {
         }
       </div>
     </div>
-    <div class="setup-edge-details">
-      ${setupDetail("Category", category)}
-      ${setupDetail("Rank", rank)}
-      ${setupDetail("Requirements", requirements || "None recorded")}
-      ${setupDetail("Subchoice", edge.subchoice || "None recorded")}
-      ${setupDetail("Likely Source", likelySource)}
-    </div>
-    ${summary ? `<p class="setup-edge-summary">${esc(summary)}</p>` : ""}
     ${
-      advisories.length
-        ? `<div class="setup-edge-advisories">${advisories
+      visibleAdvisories.length
+        ? `<div class="setup-edge-advisories">${visibleAdvisories
             .map((item) => `<p>${esc(item)}</p>`)
             .join("")}</div>`
         : ""
@@ -302,9 +304,9 @@ function renderSetupHindranceBenefitRows(stats) {
               <span>${esc(item.effect)} - costs ${item.cost} point${item.cost === 1 ? "" : "s"} each</span>
             </div>
             <div class="setup-trait-controls">
-              <button type="button" data-setup-action="decHindranceBenefit" data-benefit-key="${esc(item.key)}"${canDecrease ? "" : " disabled"}>-</button>
+              <button class="tag-action" type="button" data-setup-action="decHindranceBenefit" data-benefit-key="${esc(item.key)}"${canDecrease ? "" : " disabled"}>-</button>
               <span>${esc(`${item.count} ${label}`)}</span>
-              <button type="button" data-setup-action="incHindranceBenefit" data-benefit-key="${esc(item.key)}"${canIncrease ? "" : " disabled"}>+</button>
+              <button class="tag-action" type="button" data-setup-action="incHindranceBenefit" data-benefit-key="${esc(item.key)}"${canIncrease ? "" : " disabled"}>+</button>
             </div>
           </div>`;
         })
@@ -315,7 +317,133 @@ function renderSetupHindranceBenefitRows(stats) {
         ? `<p class="entry-warning">Needs review: ${spending.spent} Hindrance benefit points are spent, but only ${spending.available} are available.</p>`
         : ""
     }
+    ${renderSetupHindranceBenefitAttributeSelection()}
+    ${renderSetupHindranceBenefitEdgeSelection()}
+    ${renderSetupHindranceBenefitSkillSelection()}
   </section>`;
+}
+
+function renderSetupHindranceBenefitEdgeSelection() {
+  const canEdit = setupTraitsEditable();
+  const report = setupStartingEdgeValidationReport();
+  const edgeSlots = report.hindranceEdgeSlots;
+  const selectedEdges = report.hindranceBenefitEdges;
+  if (!canEdit || (!edgeSlots && !selectedEdges.length)) return "";
+
+  const openSlots = Math.max(0, edgeSlots - selectedEdges.length);
+  return `<div class="setup-hindrance-benefit-edge-selection">
+    <div class="setup-edge-pick-copy">
+      <strong>Hindrance Benefit Edges</strong>
+      <span>${selectedEdges.length} / ${edgeSlots} selected</span>
+    </div>
+    <p class="creator-note">You spent Hindrance points on extra starting Edge slots. Choose those paid Edges here.</p>
+    ${
+      openSlots
+        ? `<article class="setup-edge-pick-card">
+            <div class="setup-edge-pick-copy">
+              <strong>Paid Edge Slot</strong>
+              <span>${openSlots} open</span>
+            </div>
+            <label>Edge<select id="setupHindranceBenefitEdgeSelect">${setupEdgeCatalogOptions("Choose Hindrance Benefit Edge...")}</select></label>
+            <button type="button" data-setup-action="addHindranceBenefitEdge">Add Hindrance Benefit Edge</button>
+          </article>`
+        : '<p class="creator-note">All paid Edge slots are filled. Remove a selected Hindrance benefit Edge before choosing a different one.</p>'
+    }
+    <div class="setup-edge-list">
+      ${
+        selectedEdges.length
+          ? selectedEdges.map(setupEdgeAuditCard).join("")
+          : emptyState("No Hindrance benefit Edges selected yet.")
+      }
+    </div>
+  </div>`;
+}
+
+function renderSetupHindranceBenefitAttributeSelection() {
+  if (!setupTraitsEditable()) return "";
+  const purchasedRaises = setupCreationBenefitValue(
+    "extraAttributeRaisesFromHindrances",
+  );
+  if (!purchasedRaises) return "";
+
+  const attributeStats = setupAttributePointStats();
+  const openRaises = Math.max(
+    0,
+    attributeStats.available - attributeStats.spent,
+  );
+
+  return `<div class="setup-hindrance-benefit-selection">
+    <div class="setup-edge-pick-copy">
+      <strong>Hindrance Benefit Attribute Raises</strong>
+      <span>${attributeStats.spent} / ${attributeStats.available} total assigned</span>
+    </div>
+    <p class="creator-note">You spent Hindrance points on extra Attribute raises. Assign those raises here, or use the Attributes step.</p>
+    ${
+      openRaises
+        ? `<article class="setup-edge-pick-card">
+            <div class="setup-edge-pick-copy">
+              <strong>Paid Attribute Raise</strong>
+              <span>${openRaises} open</span>
+            </div>
+            <div class="setup-trait-editor-list setup-attribute-editor-list">
+              ${ATTRIBUTE_ORDER.map((key) => setupAttributeEditorRow(key, attributeStats)).join("")}
+            </div>
+          </article>`
+        : '<p class="creator-note">All paid Attribute raises are assigned. Lower an Attribute before choosing a different one.</p>'
+    }
+  </div>`;
+}
+
+function renderSetupHindranceBenefitSkillSelection() {
+  if (!setupTraitsEditable()) return "";
+  const purchasedPoints = setupCreationBenefitValue(
+    "extraSkillPointsFromHindrances",
+  );
+  if (!purchasedPoints) return "";
+
+  const skillStats = setupSkillPointStats();
+  const openPoints = Math.max(0, skillStats.available - skillStats.spent);
+  const setupSkills = setupSkillCatalogEntries();
+
+  return `<div class="setup-hindrance-benefit-selection">
+    <div class="setup-edge-pick-copy">
+      <strong>Hindrance Benefit Skill Points</strong>
+      <span>${skillStats.spent} / ${skillStats.available} total assigned</span>
+    </div>
+    <p class="creator-note">You spent Hindrance points on extra Skill points. Assign those points here, or use the Skills step.</p>
+    ${
+      openPoints
+        ? `<article class="setup-edge-pick-card">
+            <div class="setup-edge-pick-copy">
+              <strong>Paid Skill Points</strong>
+              <span>${openPoints} open</span>
+            </div>
+            <div class="setup-skill-attribute-groups">
+              ${ATTRIBUTE_ORDER.map((attributeKey) => {
+                const attributeSkills = setupSkills.filter(
+                  (skill) =>
+                    setupSkillAttributeKey(skill.linkedAttribute) ===
+                    attributeKey,
+                );
+                return `<section class="setup-skill-attribute-group" aria-label="${esc(displayNameFromKey(attributeKey))} paid skill options">
+                  <div class="setup-skill-attribute-heading">
+                    <h5>${esc(displayNameFromKey(attributeKey))}</h5>
+                    <span>Attribute ${esc(character.attributes?.[attributeKey] || "—")}</span>
+                  </div>
+                  <div class="setup-trait-editor-list setup-skill-editor-list">
+                    ${
+                      attributeSkills.length
+                        ? attributeSkills.map(setupSkillEditorRow).join("")
+                        : emptyState("No linked skills in this profile.")
+                    }
+                  </div>
+                </section>`;
+              }).join("")}
+            </div>
+          </article>`
+        : '<p class="creator-note">All paid Skill points are assigned. Lower a Skill before choosing different Skill purchases.</p>'
+    }
+  </div>`;
 }
 
 function renderCharacterSetup() {
@@ -326,9 +454,10 @@ function renderCharacterSetup() {
     (step, index) => {
       const active = step.id === characterSetupStep;
       const status = characterSetupStatus(step.id);
+      const statusLabel = status === "Not applicable" ? "N/A" : status;
       return `<button class="setup-step ${active ? "active" : ""}" type="button" data-setup-step="${esc(step.id)}"${active ? ' aria-current="step"' : ""}>
-        <span>${index + 1}. ${esc(step.label)}</span>
-        ${setupStatusMarkup(status)}
+        <span class="setup-step-label"><span class="setup-step-number">${index + 1}.</span><span>${esc(step.label)}</span></span>
+        ${setupStatusMarkup(status, statusLabel)}
       </button>`;
     },
   ).join("");
@@ -400,14 +529,25 @@ function renderSetupStepNavigation() {
   const previousStep = CHARACTER_SETUP_STEPS[currentIndex - 1];
   const nextStep = CHARACTER_SETUP_STEPS[currentIndex + 1];
   if (!previousStep && !nextStep) return "";
+  const nextLabel = setupNextStepButtonLabel(nextStep);
   return `<div class="setup-step-navigation">
     <div class="setup-step-navigation-previous">
       ${previousStep ? `<button class="ghost" type="button" data-setup-action="previousSetupStep">Previous: ${esc(previousStep.label)}</button>` : ""}
     </div>
     <div class="setup-step-navigation-next">
-      ${nextStep ? `<button type="button" data-setup-action="nextSetupStep">Next: ${esc(nextStep.label)}</button>` : ""}
+      ${nextStep ? `<button type="button" data-setup-action="nextSetupStep">${esc(nextLabel)}</button>` : ""}
     </div>
   </div>`;
+}
+
+function setupNextStepButtonLabel(nextStep) {
+  if (!nextStep) return "";
+  if (characterSetupStep !== "hindrances") return `Next: ${nextStep.label}`;
+  const stats = hindrancePointStats();
+  if (!stats.count) return "Continue without Hindrances";
+  const spending = setupHindranceBenefitSpending(stats);
+  if (spending.remaining > 0) return "Continue with Unspent Hindrance Points";
+  return `Next: ${nextStep.label}`;
 }
 
 function renderSetupConcept() {
@@ -449,11 +589,11 @@ function renderSetupHindranceRows() {
         .map(
           (hindrance) =>
             `<article class="setup-hindrance-row">
-              <div>
+              <div class="setup-hindrance-card-copy">
                 <strong>${esc(hindrance.name || "Unnamed Hindrance")}</strong>
-                <span>${esc(hindrance.severity || "Unknown")} • ${esc(hindrancePointText(hindrance))}</span>
-                ${hindrance.shortSummary ? `<p>${esc(hindrance.shortSummary)}</p>` : ""}
-                ${hindrance.notes ? `<p>${esc(hindrance.notes)}</p>` : ""}
+                <span class="setup-hindrance-meta">${esc(hindrance.severity || "Unknown")} • ${esc(hindrancePointText(hindrance))}</span>
+                ${hindrance.shortSummary ? `<p class="setup-hindrance-summary">${esc(hindrance.shortSummary)}</p>` : ""}
+                ${hindrance.notes ? `<p class="setup-hindrance-notes">Note: ${esc(hindrance.notes)}</p>` : ""}
               </div>
               <button class="ghost tag-action danger-lite" type="button" data-setup-action="removeHindrance" data-hindrance-id="${esc(hindrance.id)}">Remove</button>
             </article>`,
@@ -485,16 +625,15 @@ function renderSetupHindrances() {
     <div class="section-title">
       <div>
         <h3 id="setupHindrancesHeading">Hindrances</h3>
-        <p>Select starting Hindrances, track their point value, and spend counted benefit points.</p>
+        <p>Hindrances are optional flaws, obligations, or complications. If you take them, counted points can buy Attribute points, Edges, Skill points, or starting money.<br>Minor = 1 point. Major = 2 points. Up to ${stats.benefitCap} points count by default.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>
-    <p class="creator-note setup-hindrance-explainer">Select at least one starting Hindrance unless your table allows an exception. Minor Hindrances count as 1 point and Major Hindrances count as 2 points. By default, only up to ${stats.benefitCap} Hindrance points count toward starting benefits; extra Hindrances can still be recorded for character flavor or GM/table exceptions.</p>
     <div class="setup-review-grid setup-hindrance-summary-grid">
-      ${setupDetail("Selected Hindrances", `${stats.count}`, "The number of Hindrance records currently selected for this character.")}
-      ${setupDetail("Benefit Points Counted", `${stats.benefitPoints} / ${stats.benefitCap}`, "The Hindrance points currently allowed to spend under the default starting benefit cap.")}
-      ${setupDetail("Benefit Points Spent", `${spending.spent} / ${spending.available}`, "The counted Hindrance points already allocated to starting benefits below.")}
-      ${setupDetail("Benefit Points Remaining", `${spending.remaining}`, "Counted Hindrance points still available to spend on starting benefits.")}
+      ${setupDetail("Selected", `${stats.count}`, "The number of Hindrance records currently selected for this character.")}
+      ${setupDetail("Counted", `${stats.benefitPoints} / ${stats.benefitCap}`, "The Hindrance points currently allowed to spend under the default starting benefit cap.")}
+      ${setupDetail("Spent", `${spending.spent} / ${spending.available}`, "The counted Hindrance points already allocated to starting benefits below.")}
+      ${setupDetail("Remaining", `${spending.remaining}`, "Counted Hindrance points still available to spend on starting benefits.")}
     </div>
     ${
       stats.overCap
@@ -510,7 +649,6 @@ function renderSetupHindrances() {
     <section class="setup-trait-group setup-selected-hindrances" aria-labelledby="setupSelectedHindrancesHeading">
       <div>
         <h4 id="setupSelectedHindrancesHeading">Selected Hindrances</h4>
-        <p class="creator-note">Review the chosen Hindrance cards before spending counted benefit points.</p>
       </div>
       <div class="setup-hindrance-list">
         ${renderSetupHindranceRows()}
@@ -821,36 +959,28 @@ function renderSetupEdgeSelectionControls() {
   const report = setupStartingEdgeValidationReport();
   const expectedHumanEdges = report.expectedHumanEdges;
   const humanEdges = report.humanFreeEdges.length;
-  const hindranceEdgeSlots = report.hindranceEdgeSlots;
-  const hindranceEdges = report.hindranceBenefitEdges.length;
 
   if (!canEdit) {
     return `<p class="entry-advisory"><strong>Audit only:</strong> imported or advanced characters keep their existing Edge records here. Use Advances for later Edge changes.</p>`;
   }
 
   return `<section class="setup-trait-group setup-edge-selection" aria-labelledby="setupEdgeSelectionHeading">
-    <h4 id="setupEdgeSelectionHeading">Draft Starting Edges</h4>
-    <p class="creator-note">Only currently eligible starting Edges are shown. Draft Human and Hindrance-benefit Edges here; unpaid extra Edges stay flagged until Hindrance benefit spending covers them.</p>
-    <div class="setup-review-grid">
-      ${setupDetail("Human Free Edge", `${humanEdges} / ${expectedHumanEdges}`)}
-      ${setupDetail("Draft Hindrance Benefit Edges", `${hindranceEdges} / ${hindranceEdgeSlots}`)}
-    </div>
+    <h4 id="setupEdgeSelectionHeading">Free Edge</h4>
+    <p class="creator-note setup-edge-rules-note">Choose the free Human starting Edge here. If Hindrance points buy extra Edges, choose those paid Edges on the Hindrances step.</p>
+    <div class="setup-edge-pick-list">
     ${
       expectedHumanEdges
-        ? `<div class="setup-form-grid">
-          <label class="setup-wide">Human free Edge<select id="setupHumanFreeEdgeSelect"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>${setupEdgeCatalogOptions("Choose Human free Edge...")}</select></label>
-          <div class="creator-actions setup-wide">
-            <button type="button" data-setup-action="addHumanFreeEdge"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>Add Human Free Edge</button>
+        ? `<article class="setup-edge-pick-card">
+          <div class="setup-edge-pick-copy">
+            <strong>Free Edge</strong>
+            <span>${humanEdges} / ${expectedHumanEdges} selected</span>
           </div>
-        </div>`
+          <label>Edge<select id="setupHumanFreeEdgeSelect"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>${setupEdgeCatalogOptions("Choose Free Edge...")}</select></label>
+          <button type="button" data-setup-action="addHumanFreeEdge"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>Add Free Edge</button>
+        </article>`
         : '<p class="creator-note">This ancestry does not grant a built-in Human free Edge.</p>'
     }
-    <div class="setup-form-grid">
-          <label class="setup-wide">Draft Hindrance benefit Edge<select id="setupHindranceBenefitEdgeSelect">${setupEdgeCatalogOptions("Choose draft Hindrance benefit Edge...")}</select></label>
-          <div class="creator-actions setup-wide">
-            <button type="button" data-setup-action="addHindranceBenefitEdge">Add Draft Hindrance Benefit Edge</button>
-          </div>
-        </div>
+    </div>
   </section>`;
 }
 
@@ -868,12 +998,55 @@ function renderSetupEdges() {
   const hindranceEdges = report.hindranceBenefitEdges.length;
   const edgeSelectionEditable = setupTraitsEditable();
   const status = characterSetupStatus("edges");
+  const warnings = [
+    edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
+      ? "Incomplete: choose paid Hindrance benefit Edges on the Hindrances step, or adjust Hindrance benefit spending."
+      : "",
+    edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
+      ? "Needs review: one or more Hindrance benefit Edges are not covered by Hindrance benefit spending and must be removed."
+      : "",
+    edgeSelectionEditable && report.invalidEdges.length
+      ? `Needs review: ${report.invalidEdges
+          .map((item) => item.validation.messages.join(" "))
+          .join(" ")}`
+      : "",
+    arcaneEdges.length > 1
+      ? "Needs review: more than one Arcane Background Edge is recorded."
+      : "",
+  ].filter(Boolean);
+
+  if (edgeSelectionEditable) {
+    return `<section id="setupEdgesPanel" class="setup-step-panel" aria-labelledby="setupEdgeSelectionHeading">
+      <div class="setup-trait-groups">
+        ${renderSetupEdgeSelectionControls()}
+        ${
+          warnings.length
+            ? `<div class="setup-review-warnings">${warnings
+                .map(
+                  (warning) => `<p class="entry-warning">${esc(warning)}</p>`,
+                )
+                .join("")}</div>`
+            : ""
+        }
+        <section class="setup-trait-group setup-selected-edges" aria-labelledby="setupSelectedEdgesHeading">
+          <h4 id="setupSelectedEdgesHeading">Selected Free Edge</h4>
+          <div class="setup-edge-list">
+            ${
+              edges.length
+                ? edges.map(setupEdgeAuditCard).join("")
+                : emptyState("No free Edge selected yet.")
+            }
+          </div>
+        </section>
+      </div>
+    </section>`;
+  }
 
   return `<section id="setupEdgesPanel" class="setup-step-panel" aria-labelledby="setupEdgesHeading">
     <div class="section-title">
       <div>
         <h3 id="setupEdgesHeading">Edges</h3>
-        <p>Select starting Edges and keep their creation source separate from later Advances. The selector enforces Rank, simple Trait die requirements, and prerequisite Edge names; complex prerequisites and GM exceptions remain manual review items.</p>
+        <p>Review recorded Edges and keep their creation source separate from later Advances. Human free Edge selection happens here; Hindrance-paid Edges are chosen on the Hindrances step.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>
@@ -882,40 +1055,12 @@ function renderSetupEdges() {
       ${setupDetail("Catalog Matches", `${catalogMatches}`)}
       ${setupDetail("Arcane Background Edges", `${arcaneEdges.length}`)}
       ${setupDetail("Advance-Looking Edges", `${advanceEdges.length}`)}
-      ${setupDetail("Human Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
-      ${setupDetail("Draft Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
+      ${setupDetail("Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
+      ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
     </div>
     ${renderSetupEdgeSelectionControls()}
     <p class="entry-advisory"><strong>Audit only:</strong> imported characters may not preserve whether an Edge came from Human ancestry, Hindrance benefits, Advances, or a GM exception. Source labels below are hints unless they were created in this tool.</p>
-    ${
-      edgeSelectionEditable && humanEdges < expectedHumanEdges
-        ? '<p class="entry-warning">Incomplete: Human characters should select their free starting Edge.</p>'
-        : ""
-    }
-    ${
-      edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
-        ? '<p class="entry-warning">Incomplete: one or more Hindrance benefit Edge slots have not been selected.</p>'
-        : ""
-    }
-    ${
-      edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
-        ? '<p class="entry-warning">Needs review: one or more drafted Hindrance benefit Edges still need Hindrance benefit spending or must be removed.</p>'
-        : ""
-    }
-    ${
-      edgeSelectionEditable && report.invalidEdges.length
-        ? `<p class="entry-warning">Needs review: ${esc(
-            report.invalidEdges
-              .map((item) => item.validation.messages.join(" "))
-              .join(" "),
-          )}</p>`
-        : ""
-    }
-    ${
-      arcaneEdges.length > 1
-        ? '<p class="entry-warning">Needs review: more than one Arcane Background Edge is recorded.</p>'
-        : ""
-    }
+    ${warnings.map((warning) => `<p class="entry-warning">${esc(warning)}</p>`).join("")}
     <div class="setup-edge-list">
       ${
         edges.length
@@ -1510,8 +1655,8 @@ function renderSetupReview() {
       ${setupDetail("Hindrance Benefit Cap", `${hindranceStats.benefitCap}`)}
       ${setupDetail("Hindrance Benefits Spent", `${hindranceSpending.spent} / ${hindranceSpending.available}`)}
       ${setupDetail("Edge Count", `${edgeCount}`)}
-      ${setupDetail("Human Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
-      ${setupDetail("Draft Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
+      ${setupDetail("Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
+      ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
       ${setupDetail("Arcane Background Edges", `${arcaneEdgeCount}`)}
       ${setupDetail("Known Powers", `${powersCount}`)}
       ${setupDetail("Power Points", powerPoints ? `${powerPoints.current} / ${powerPoints.max || "—"}` : "Not recorded")}
@@ -1530,8 +1675,10 @@ function renderSetupReview() {
         : ""
     }
     ${
-      !hindranceStats.count
-        ? '<p class="entry-warning">Hindrances incomplete: select at least one Hindrance.</p>'
+      edgeSelectionEditable &&
+      hindranceStats.count &&
+      hindranceSpending.remaining > 0
+        ? '<p class="entry-warning">Hindrances incomplete: spend remaining counted Hindrance points or remove enough Hindrances to leave no unspent counted points.</p>'
         : ""
     }
     ${
@@ -1551,12 +1698,12 @@ function renderSetupReview() {
     }
     ${
       edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
-        ? '<p class="entry-warning">Edges incomplete: select all paid Hindrance benefit Edge slots or adjust Hindrance spending.</p>'
+        ? '<p class="entry-warning">Hindrances incomplete: choose all paid Hindrance benefit Edges or adjust Hindrance benefit spending.</p>'
         : ""
     }
     ${
       edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
-        ? '<p class="entry-warning">Edges need review: one or more drafted Hindrance benefit Edges still need Hindrance benefit spending or must be removed.</p>'
+        ? '<p class="entry-warning">Edges need review: one or more Hindrance benefit Edges are not covered by Hindrance benefit spending and must be removed.</p>'
         : ""
     }
     ${

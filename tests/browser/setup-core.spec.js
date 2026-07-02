@@ -116,21 +116,27 @@ test("starts new characters directly in character setup @mobile", async ({
   );
   await expect
     .poll(() =>
-      page
-        .locator("#characterSetupStepper .setup-step")
-        .evaluateAll((steps) =>
-          steps.map((step) =>
-            step.querySelector("span")?.textContent.replace(/\s+/g, " ").trim(),
-          ),
-        ),
+      page.locator("#characterSetupStepper .setup-step").evaluateAll((steps) =>
+        steps.map((step) => {
+          const number = step
+            .querySelector(".setup-step-number")
+            ?.textContent.replace(/\s+/g, " ")
+            .trim();
+          const label = step
+            .querySelector(".setup-step-label span:last-child")
+            ?.textContent.replace(/\s+/g, " ")
+            .trim();
+          return `${number} ${label}`;
+        }),
+      ),
     )
     .toEqual([
       "1. Concept",
       "2. Attributes",
       "3. Skills",
-      "4. Edges",
-      "5. Powers",
-      "6. Hindrances",
+      "4. Free Edge",
+      "5. Hindrances",
+      "6. Powers",
       "7. Gear",
       "8. Review",
     ]);
@@ -507,9 +513,9 @@ test("finishes character setup and starts playing with a saved character", async
   await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupEdgesPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
-  await expect(page.locator("#setupPowersPanel")).toBeVisible();
-  await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupHindrancesPanel")).toBeVisible();
+  await page.locator("[data-setup-action='nextSetupStep']").click();
+  await expect(page.locator("#setupPowersPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupGearPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
@@ -518,7 +524,6 @@ test("finishes character setup and starts playing with a saved character", async
   await page.locator("[data-setup-action='finishSetup']").click();
   await expect(page.locator("#appDialog")).toBeVisible();
   await expect(page.locator("#appDialogTitle")).toHaveText("Finish setup?");
-  await expect(page.locator("#appDialogMessage")).toContainText("Hindrances");
   await expect(page.locator("#appDialogMessage")).toContainText("Attributes");
   await page.locator("#appDialogConfirmBtn").click();
 

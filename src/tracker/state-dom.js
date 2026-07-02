@@ -12,9 +12,9 @@ const CHARACTER_SETUP_STEPS = [
   { id: "concept", label: "Concept" },
   { id: "traits", label: "Attributes" },
   { id: "skills", label: "Skills" },
-  { id: "edges", label: "Edges" },
-  { id: "powers", label: "Powers" },
+  { id: "edges", label: "Free Edge" },
   { id: "hindrances", label: "Hindrances" },
+  { id: "powers", label: "Powers" },
   { id: "gear", label: "Gear" },
   { id: "review", label: "Review" },
 ];

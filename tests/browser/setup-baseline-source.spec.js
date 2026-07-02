@@ -530,10 +530,19 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   await expect(setupEdgesPanel).toContainText("Arcane Background Edges");
   await expect(setupEdgesPanel).toContainText("Arcane Background (Blessed)");
   await expect(setupEdgesPanel).toContainText("Healer");
-  await expect(setupEdgesPanel).toContainText("Catalog matched");
-  await expect(setupEdgesPanel).toContainText("Imported Advance Edge");
-  await expect(setupEdgesPanel).toContainText("Imported selected Edge");
-  await expect(setupEdgesPanel).toContainText("Spirit d6+, Faith d4+");
+  await expect(setupEdgesPanel).not.toContainText("Catalog matched");
+  await expect(setupEdgesPanel).not.toContainText("Imported Advance Edge");
+  await expect(setupEdgesPanel).not.toContainText("Imported selected Edge");
+  const blessedEdgeCard = setupEdgesPanel
+    .locator(".setup-edge-card")
+    .filter({ hasText: "Arcane Background (Blessed)" });
+  await expect(blessedEdgeCard).toContainText(
+    "Blessed uses Faith and starts with 15 Power Points.",
+  );
+  await expect(blessedEdgeCard.getByText("Details")).toHaveCount(0);
+  await expect(blessedEdgeCard).not.toContainText("Catalog matched");
+  await expect(blessedEdgeCard).not.toContainText("Category");
+  await expect(blessedEdgeCard).not.toContainText("Likely Source");
   await expect(setupEdgesPanel).not.toContainText(
     "more than one Arcane Background Edge",
   );

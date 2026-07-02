@@ -48,14 +48,64 @@ function applyConceptInputs() {
   save();
 }
 
-function moveSetupStep(offset) {
+function setupHasUnspentHindrancePoints() {
+  const stats = hindrancePointStats();
+  if (!stats.count) return false;
+  const spending = setupHindranceBenefitSpending(stats);
+  return spending.remaining > 0;
+}
+
+function setupHasNoHindrances() {
+  return !hindrancePointStats().count;
+}
+
+function acknowledgeNoSetupHindrances() {
+  if (!setupHasNoHindrances()) return;
+  character.creation = {
+    normalAttributePointsAvailable: 5,
+    normalSkillPointsAvailable: 12,
+    ...(character.creation || {}),
+    noHindrancesAcknowledged: true,
+  };
+}
+
+function clearNoSetupHindranceAcknowledgement() {
+  if (!setupHasNoHindrances()) return;
+  if (!character.creation?.noHindrancesAcknowledged) return;
+  character.creation = {
+    normalAttributePointsAvailable: 5,
+    normalSkillPointsAvailable: 12,
+    ...(character.creation || {}),
+    noHindrancesAcknowledged: false,
+  };
+}
+
+async function confirmProceedWithUnspentHindrancePoints() {
+  if (characterSetupStep !== "hindrances") return true;
+  if (!setupHasUnspentHindrancePoints()) return true;
+  return appConfirm(
+    "You have unspent Hindrance points. You can continue, but those starting bonuses will be unused unless your table allows changing them later.",
+    {
+      title: "Continue with unspent Hindrance points?",
+      confirmText: "Continue Anyway",
+      cancelText: "Go Back",
+    },
+  );
+}
+
+async function moveSetupStep(offset) {
   collectConceptInputs();
+  if (offset > 0 && !(await confirmProceedWithUnspentHindrancePoints())) return;
   const currentIndex = CHARACTER_SETUP_STEPS.findIndex(
     (step) => step.id === characterSetupStep,
   );
   const targetStep = CHARACTER_SETUP_STEPS[currentIndex + offset];
   if (!targetStep) return;
+  if (characterSetupStep === "hindrances" && offset > 0)
+    acknowledgeNoSetupHindrances();
   characterSetupStep = targetStep.id;
+  if (characterSetupStep === "hindrances")
+    clearNoSetupHindranceAcknowledgement();
   renderCharacterSetup();
   save();
   $("#characterSetupContent")?.scrollIntoView({
@@ -64,12 +114,12 @@ function moveSetupStep(offset) {
   });
 }
 
-function nextSetupStep() {
-  moveSetupStep(1);
+async function nextSetupStep() {
+  await moveSetupStep(1);
 }
 
 function previousSetupStep() {
-  moveSetupStep(-1);
+  void moveSetupStep(-1);
 }
 
 function setupHindranceSeverityForCatalog(catalogEntry, selectedSeverity = "") {
@@ -105,6 +155,12 @@ function addSetupHindrance() {
     catalogEntry,
     severityInput?.value || "",
   );
+  character.creation = {
+    normalAttributePointsAvailable: 5,
+    normalSkillPointsAvailable: 12,
+    ...(character.creation || {}),
+    noHindrancesAcknowledged: false,
+  };
   upsertHindrance(
     character,
     applySetupSourceFields(
@@ -131,6 +187,7 @@ function addSetupHindrance() {
 function removeSetupHindrance(id) {
   if (!id) return;
   removeHindrance(character, id);
+  if (setupHasNoHindrances()) clearNoSetupHindranceAcknowledgement();
   render();
   save();
   appToast("Hindrance removed.", "success");
@@ -1188,9 +1245,9 @@ function incompleteSetupSections() {
     ["concept", "Concept"],
     ["traits", "Attributes"],
     ["skills", "Skills"],
-    ["edges", "Edges"],
-    ["powers", "Powers"],
+    ["edges", "Free Edge"],
     ["hindrances", "Hindrances"],
+    ["powers", "Powers"],
     ["gear", "Gear"],
   ].filter(([stepId]) => characterSetupStatus(stepId) !== "Complete");
 }

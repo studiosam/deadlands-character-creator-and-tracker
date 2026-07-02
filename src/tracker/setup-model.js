@@ -21,9 +21,22 @@ function characterSetupStatus(stepId) {
   if (stepId === "hindrances") {
     const stats = hindrancePointStats();
     const spending = setupHindranceBenefitSpending(stats);
-    if (!stats.count) return "Incomplete";
-    if (stats.unknownCount || spending.spent > spending.available)
+    const edgeReport = setupStartingEdgeValidationReport();
+    const invalidHindranceBenefitEdges = edgeReport.invalidEdges.filter(
+      ({ edge }) => setupEdgeCreationSource(edge) === "hindrance-benefit",
+    );
+    if (stats.unknownCount) return "Needs review";
+    if (!setupTraitsEditable()) return "Complete";
+    if (!stats.count && !character.creation?.noHindrancesAcknowledged)
+      return "Incomplete";
+    if (spending.spent > spending.available) return "Needs review";
+    if (
+      edgeReport.tooManyHindranceBenefitEdges ||
+      invalidHindranceBenefitEdges.length
+    )
       return "Needs review";
+    if (stats.count && spending.remaining > 0) return "Incomplete";
+    if (edgeReport.missingHindranceBenefitEdges) return "Incomplete";
     return "Complete";
   }
   if (stepId === "traits") {
@@ -1027,7 +1040,6 @@ function setupEdgeSelectionStatus() {
   )
     return "Needs review";
   if (report.missingHumanFreeEdges) return "Incomplete";
-  if (report.missingHindranceBenefitEdges) return "Incomplete";
   return edges.length ? "Complete" : "Incomplete";
 }
 const SETUP_EDGE_RANKS = [

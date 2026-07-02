@@ -99,12 +99,14 @@ document.addEventListener("click", async (event) => {
   if (setupStep) {
     collectConceptInputs();
     characterSetupStep = setupStep.dataset.setupStep;
+    if (characterSetupStep === "hindrances")
+      clearNoSetupHindranceAcknowledgement();
     renderCharacterSetup();
     save();
   }
   const setupAction = event.target?.closest?.("[data-setup-action]");
   if (setupAction?.dataset.setupAction === "nextSetupStep") {
-    nextSetupStep();
+    await nextSetupStep();
   } else if (setupAction?.dataset.setupAction === "previousSetupStep") {
     previousSetupStep();
   } else if (setupAction?.dataset.setupAction === "saveDraftCharacter") {
