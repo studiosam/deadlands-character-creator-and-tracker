@@ -614,6 +614,7 @@ function renderSetupHindranceSelectionControls() {
       <label class="setup-hindrance-name">Hindrance<select id="setupHindranceCatalogSelect">${setupHindranceCatalogOptions("Choose Hindrance...")}</select></label>
       <label class="setup-hindrance-severity">Severity<select id="setupHindranceSeverityInput"><option value="Minor">Minor</option><option value="Major">Major</option></select></label>
       <label class="setup-hindrance-notes">Notes<input id="setupHindranceNotesInput" autocomplete="off" placeholder="Optional detail, obligation, enemy, vow, phobia, etc."></label>
+      <div id="setupHindrancePreview" class="setup-hindrance-preview-slot setup-wide">${setupHindranceSelectionPreviewMarkup("")}</div>
       <div class="creator-actions setup-wide">
         <button id="setupAddHindranceBtn" type="button" data-setup-action="addHindrance">Add Hindrance</button>
       </div>
@@ -629,6 +630,33 @@ function setupHindranceCatalogOptions(placeholder) {
         `<option value="${esc(item.id)}">${esc(item.name)}${item.severity ? ` • ${esc(item.severity)}` : ""}</option>`,
     ),
   ].join("");
+}
+
+function setupHindranceSelectionPreviewMarkup(
+  hindranceId,
+  emptyText = "Choose a Hindrance to preview what it does.",
+) {
+  const hindrance = chosen(HINDRANCE_CATALOG, hindranceId || "");
+  if (!hindrance) {
+    return `<div class="setup-hindrance-selection-preview empty">${esc(emptyText)}</div>`;
+  }
+  const severity = hindrance.severity
+    ? `<span>${esc(hindrance.severity)}</span>`
+    : "";
+  const summary =
+    hindrance.shortSummary || hindrance.summary || hindrance.notes || "";
+  return `<div class="setup-hindrance-selection-preview">
+    <strong>${esc(hindrance.name)}</strong>
+    ${severity}
+    ${summary ? `<p>${esc(summary)}</p>` : "<p>No short summary recorded yet.</p>"}
+  </div>`;
+}
+
+function updateSetupHindranceSelectionPreview() {
+  const select = document.getElementById("setupHindranceCatalogSelect");
+  const preview = document.getElementById("setupHindrancePreview");
+  if (!select || !preview) return;
+  preview.innerHTML = setupHindranceSelectionPreviewMarkup(select.value);
 }
 
 function renderSetupHindrances() {

@@ -205,8 +205,10 @@ document.addEventListener("change", (event) => {
   const conceptInput = event.target?.closest?.("[data-concept-field]");
   if (conceptInput) applyConceptField(conceptInput);
   if (event.target?.closest?.("[data-catalog-filter]")) renderCatalogBrowser();
-  if (event.target?.closest?.("#setupHindranceCatalogSelect"))
+  if (event.target?.closest?.("#setupHindranceCatalogSelect")) {
     syncSetupHindranceSeverity();
+    updateSetupHindranceSelectionPreview();
+  }
   if (event.target?.closest?.("#setupHumanFreeEdgeSelect"))
     updateSetupEdgeSelectionPreview(
       "setupHumanFreeEdgeSelect",

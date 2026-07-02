@@ -3048,11 +3048,17 @@ h3 {
   font: inherit;
 }
 
-.setup-edge-preview-slot {
+.setup-edge-preview-slot,
+.setup-hindrance-preview-slot {
   grid-column: 2 / 3;
 }
 
-.setup-edge-selection-preview {
+.setup-hindrance-preview-slot {
+  grid-column: 1 / -1;
+}
+
+.setup-edge-selection-preview,
+.setup-hindrance-selection-preview {
   display: grid;
   gap: 0.25rem;
   padding: 0.65rem 0.75rem;
@@ -3062,12 +3068,15 @@ h3 {
   color: var(--ink);
 }
 
-.setup-edge-selection-preview.empty {
+.setup-edge-selection-preview.empty,
+.setup-hindrance-selection-preview.empty {
   color: var(--muted);
 }
 
 .setup-edge-selection-preview p,
-.setup-edge-selection-preview span {
+.setup-edge-selection-preview span,
+.setup-hindrance-selection-preview p,
+.setup-hindrance-selection-preview span {
   margin: 0;
   font-size: 0.9rem;
 }
@@ -3376,7 +3385,8 @@ h3 {
     align-items: stretch;
   }
 
-  .setup-edge-preview-slot {
+  .setup-edge-preview-slot,
+  .setup-hindrance-preview-slot {
     grid-column: auto;
   }
 

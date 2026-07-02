@@ -84,9 +84,21 @@ test("selects hindrances in character setup and summarizes point expectations", 
   ).not.toContainText("Deadlands");
   await expect(entryCard.locator("#setupHindranceSeverityInput")).toBeVisible();
   await expect(entryCard.locator("#setupHindranceNotesInput")).toBeVisible();
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "Choose a Hindrance to preview what it does.",
+  );
   await entryCard
     .locator("#setupHindranceCatalogSelect")
     .selectOption("dl-hindrance-cursed");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "Cursed",
+  );
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "Marshal starts with one additional Benny",
+  );
+  await expect(entryCard.locator("#setupHindrancePreview")).not.toContainText(
+    "Deadlands",
+  );
   await expect(entryCard.locator("#setupHindranceSeverityInput")).toHaveValue(
     "Major",
   );
