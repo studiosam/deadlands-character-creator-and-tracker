@@ -85,7 +85,7 @@ Recent product work adds:
 - Characters panel profile editor.
 - Combat Declaration for GM-facing player intent and GM-adjudicated result
   bookkeeping without roll automation.
-- Character Setup scaffolding for Concept, Attributes, Skills, Human Free Edge,
+- Character Setup scaffolding for Concept, Attributes, Skills, Edges,
   optional Hindrances with benefits, Powers, Gear purchases, setup source
   tracking, creation baselines, and Review.
 - Active Power runtime records with duration reminders, maintenance state,

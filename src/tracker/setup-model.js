@@ -51,7 +51,8 @@ function characterSetupStatus(stepId) {
   if (stepId === "skills") {
     if (!setupTraitsEditable()) return "Complete";
     const skills = setupSkillPointStats();
-    if (skills.spent > skills.available) return "Needs review";
+    if (skills.spent > skills.available || skills.genericOverBudget)
+      return "Needs review";
     return skills.spent === skills.available ? "Complete" : "Incomplete";
   }
   if (stepId === "attributesSkills") {
@@ -718,6 +719,8 @@ const SETUP_HINDRANCE_BENEFITS = [
   },
 ];
 
+const SETUP_ELDERLY_SMARTS_SKILL_POINTS = 5;
+
 const SETUP_STARTING_SKILL_BASELINES = {
   Athletics: "d4",
   "Common Knowledge": "d4",
@@ -744,7 +747,13 @@ function setupStartingSkillBaselineEntries() {
   }));
 }
 
-function setupCreationRules() {
+function setupHasElderlyHindrance(hindrances = character.hindrances || []) {
+  return (hindrances || []).some(
+    (hindrance) => plainEntryName(hindrance?.name) === "elderly",
+  );
+}
+
+function setupCreationRules(hindrances = character.hindrances || []) {
   const creation = character.creation || {};
   return {
     normalAttributePoints: Math.max(
@@ -763,6 +772,9 @@ function setupCreationRules() {
       0,
       Number(creation.extraSkillPointsFromHindrances) || 0,
     ),
+    elderlySmartsSkillPoints: setupHasElderlyHindrance(hindrances)
+      ? SETUP_ELDERLY_SMARTS_SKILL_POINTS
+      : 0,
   };
 }
 function setupCreationBenefitValue(key) {
@@ -808,6 +820,11 @@ function setupSkillIsCoreName(name) {
   return Boolean(setupStartingSkillBaselineDie(name));
 }
 
+function setupSkillIsSmartsLinked(skill) {
+  const linkedAttribute = setupSkillAttributeKey(skillLinkedAttribute(skill));
+  return linkedAttribute === "smarts";
+}
+
 function setupSkillPointCost(skill) {
   const skillIndex = getDieStepIndex(skill?.die || skill?.value);
   if (skillIndex < 0) return 0;
@@ -823,15 +840,39 @@ function setupSkillPointCost(skill) {
     cost += index > attributeIndex ? 2 : 1;
   return Math.max(0, cost);
 }
-function setupSkillPointStats() {
-  const rules = setupCreationRules();
-  const spent = (character.skills || [])
+function setupSkillPointStats(hindrances = character.hindrances || []) {
+  const rules = setupCreationRules(hindrances);
+  const skillCosts = (character.skills || [])
     .filter(isUserFacingSkill)
-    .reduce((sum, skill) => sum + setupSkillPointCost(skill), 0);
-  const available = rules.normalSkillPoints + rules.extraSkillPoints;
+    .map((skill) => ({
+      skill,
+      cost: setupSkillPointCost(skill),
+    }));
+  const spent = skillCosts.reduce((sum, item) => sum + item.cost, 0);
+  const smartsSpent = skillCosts
+    .filter((item) => setupSkillIsSmartsLinked(item.skill))
+    .reduce((sum, item) => sum + item.cost, 0);
+  const nonSmartsSpent = Math.max(0, spent - smartsSpent);
+  const genericAvailable = rules.normalSkillPoints + rules.extraSkillPoints;
+  const available = genericAvailable + rules.elderlySmartsSkillPoints;
+  const elderlySmartsSkillPointsUsed = Math.min(
+    rules.elderlySmartsSkillPoints,
+    smartsSpent,
+  );
+  const genericSpent =
+    nonSmartsSpent + Math.max(0, smartsSpent - rules.elderlySmartsSkillPoints);
   return {
     ...rules,
+    genericAvailable,
+    genericSpent,
+    genericRemaining: genericAvailable - genericSpent,
     spent,
+    smartsSpent,
+    nonSmartsSpent,
+    elderlySmartsSkillPointsUsed,
+    elderlySmartsSkillPointsRemaining:
+      rules.elderlySmartsSkillPoints - elderlySmartsSkillPointsUsed,
+    genericOverBudget: genericSpent > genericAvailable,
     available,
     remaining: available - spent,
   };

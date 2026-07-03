@@ -31,10 +31,6 @@ function setupMeterSummary(label, value, max, helpText = "") {
   const percentage =
     safeMax > 0 ? Math.min(100, Math.max(0, (safeValue / safeMax) * 100)) : 0;
   const help = String(helpText || "").trim();
-  const fill =
-    percentage > 0
-      ? `<span class="setup-attribute-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>`
-      : "";
   return `<article class="setup-trait-editor-row setup-attribute-points-card setup-hindrance-meter-card">
     ${
       help
@@ -46,7 +42,7 @@ function setupMeterSummary(label, value, max, helpText = "") {
       <span>${safeValue} / ${safeMax}</span>
     </div>
     <div class="setup-attribute-meter" role="meter" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${safeMax}" aria-valuenow="${safeValue}">
-      ${fill}
+      <span class="setup-attribute-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>
     </div>
   </article>`;
 }
@@ -314,6 +310,19 @@ function renderSetupHindranceBenefitRows(stats) {
   const spending = setupHindranceBenefitSpending(stats);
   const canEdit = setupTraitsEditable();
   const overSpent = spending.spent > spending.available;
+  const benefitNavigation = (item) => {
+    if (!canEdit || !item.count) return "";
+    if (item.key === "extraAttributeRaisesFromHindrances") {
+      return `<div class="creator-actions setup-benefit-navigation"><button type="button" data-setup-step="traits">Go to Attributes</button></div>`;
+    }
+    if (item.key === "extraSkillPointsFromHindrances") {
+      return `<div class="creator-actions setup-benefit-navigation"><button type="button" data-setup-step="skills">Go to Skills</button></div>`;
+    }
+    if (item.key === "extraEdgesFromHindrances") {
+      return `<div class="creator-actions setup-benefit-navigation"><button type="button" data-setup-step="edges">Go to Edges</button></div>`;
+    }
+    return "";
+  };
   return `<section class="setup-trait-group setup-benefit-spending" aria-labelledby="setupHindranceBenefitsHeading">
     <h4 id="setupHindranceBenefitsHeading">Spend Hindrance Benefits</h4>
     <p class="creator-note">Benefit Points may buy Attribute raises, extra Edge slots, Skill points, or extra starting money.</p>
@@ -334,6 +343,7 @@ function renderSetupHindranceBenefitRows(stats) {
               <span>${esc(`${item.count} ${label}`)}</span>
               <button class="tag-action" type="button" data-setup-action="incHindranceBenefit" data-benefit-key="${esc(item.key)}"${canIncrease ? "" : " disabled"}>+</button>
             </div>
+            ${benefitNavigation(item)}
           </div>`;
         })
         .join("")}
@@ -343,9 +353,6 @@ function renderSetupHindranceBenefitRows(stats) {
         ? `<p class="entry-warning">Needs review: ${spending.spent} Hindrance benefit points are spent, but only ${spending.available} are available.</p>`
         : ""
     }
-    ${renderSetupHindranceBenefitAttributeSelection()}
-    ${renderSetupHindranceBenefitEdgeSelection()}
-    ${renderSetupHindranceBenefitSkillSelection()}
   </section>`;
 }
 
@@ -395,91 +402,15 @@ function renderSetupHindranceBenefitEdgeSelection() {
   </div>`;
 }
 
-function renderSetupHindranceBenefitAttributeSelection() {
+function setupHindranceCardActions(hindrance) {
   if (!setupTraitsEditable()) return "";
-  const purchasedRaises = setupCreationBenefitValue(
-    "extraAttributeRaisesFromHindrances",
-  );
-  if (!purchasedRaises) return "";
-
-  const attributeStats = setupAttributePointStats();
-  const openRaises = Math.max(
-    0,
-    attributeStats.available - attributeStats.spent,
-  );
-
-  return `<div class="setup-hindrance-benefit-selection">
-    <div class="setup-edge-pick-copy">
-      <strong>Hindrance Benefit Attribute Raises</strong>
-      <span>${attributeStats.spent} / ${attributeStats.available} total assigned</span>
-    </div>
-    <p class="creator-note">You spent Hindrance points on extra Attribute raises. Assign those raises here, or use the Attributes step.</p>
-    ${
-      openRaises
-        ? `<article class="setup-edge-pick-card">
-            <div class="setup-edge-pick-copy">
-              <strong>Paid Attribute Raise</strong>
-              <span>${openRaises} open</span>
-            </div>
-            <div class="setup-trait-editor-list setup-attribute-editor-list">
-              ${ATTRIBUTE_ORDER.map((key) => setupAttributeEditorRow(key, attributeStats)).join("")}
-            </div>
-          </article>`
-        : '<p class="creator-note">All paid Attribute raises are assigned. Lower an Attribute before choosing a different one.</p>'
-    }
-  </div>`;
-}
-
-function renderSetupHindranceBenefitSkillSelection() {
-  if (!setupTraitsEditable()) return "";
-  const purchasedPoints = setupCreationBenefitValue(
-    "extraSkillPointsFromHindrances",
-  );
-  if (!purchasedPoints) return "";
-
+  if (plainEntryName(hindrance?.name) !== "elderly") return "";
   const skillStats = setupSkillPointStats();
-  const openPoints = Math.max(0, skillStats.available - skillStats.spent);
-  const setupSkills = setupSkillCatalogEntries();
+  if (!skillStats.elderlySmartsSkillPoints) return "";
 
-  return `<div class="setup-hindrance-benefit-selection">
-    <div class="setup-edge-pick-copy">
-      <strong>Hindrance Benefit Skill Points</strong>
-      <span>${skillStats.spent} / ${skillStats.available} total assigned</span>
-    </div>
-    <p class="creator-note">You spent Hindrance points on extra Skill points. Assign those points here, or use the Skills step.</p>
-    ${
-      openPoints
-        ? `<article class="setup-edge-pick-card">
-            <div class="setup-edge-pick-copy">
-              <strong>Paid Skill Points</strong>
-              <span>${openPoints} open</span>
-            </div>
-            <div class="setup-skill-attribute-groups">
-              ${ATTRIBUTE_ORDER.map((attributeKey) => {
-                const attributeSkills = setupSkills.filter(
-                  (skill) =>
-                    setupSkillAttributeKey(skill.linkedAttribute) ===
-                    attributeKey,
-                );
-                return `<section class="setup-skill-attribute-group" aria-label="${esc(displayNameFromKey(attributeKey))} paid skill options">
-                  <div class="setup-skill-attribute-heading">
-                    <h5>${esc(displayNameFromKey(attributeKey))}</h5>
-                    <span>Attribute ${esc(character.attributes?.[attributeKey] || "—")}</span>
-                  </div>
-                  <div class="setup-trait-editor-list setup-skill-editor-list">
-                    ${
-                      attributeSkills.length
-                        ? attributeSkills.map(setupSkillEditorRow).join("")
-                        : emptyState("No linked skills in this profile.")
-                    }
-                  </div>
-                </section>`;
-              }).join("")}
-            </div>
-          </article>`
-        : '<p class="creator-note">All paid Skill points are assigned. Lower a Skill before choosing different Skill purchases.</p>'
-    }
-  </div>`;
+  return `<div class="creator-actions setup-hindrance-card-actions">
+      <button type="button" data-setup-step="skills">Go to Skills</button>
+    </div>`;
 }
 
 function renderCharacterSetup() {
@@ -642,6 +573,7 @@ function renderSetupHindranceRows() {
                 <span class="setup-hindrance-meta">${esc(hindrance.severity || "Unknown")} • ${esc(hindrancePointText(hindrance))}</span>
                 ${summary ? `<p class="setup-hindrance-summary">${esc(summary)}</p>` : ""}
                 ${hindrance.notes ? `<p class="setup-hindrance-notes">Note: ${esc(hindrance.notes)}</p>` : ""}
+                ${setupHindranceCardActions(hindrance)}
               </div>
               <button class="ghost tag-action danger-lite" type="button" data-setup-action="removeHindrance" data-hindrance-id="${esc(hindrance.id)}">Remove</button>
             </article>`;
@@ -871,12 +803,42 @@ function setupSkillPointCard(skillStats) {
     <div class="setup-skill-editor-heading">
       <strong>Skill Points</strong>
       <span>${spent} / ${available} assigned</span>
+      ${
+        skillStats.elderlySmartsSkillPoints
+          ? `<small>Includes ${skillStats.elderlySmartsSkillPoints} Elderly points for Smarts-linked skills only.</small>`
+          : ""
+      }
     </div>
     <div class="setup-skill-meter" role="meter" aria-label="Skill Points assigned" aria-valuemin="0" aria-valuemax="${available}" aria-valuenow="${spent}">
       <span class="setup-skill-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>
     </div>
     <div class="setup-skill-meter-actions">
       <button class="ghost small-action" type="button" data-setup-action="resetSkills" aria-label="Reset Skills to starting values" title="Reset Skills to starting values"${spent <= 0 ? " disabled" : ""}>Reset</button>
+    </div>
+  </article>`;
+}
+
+function setupElderlySkillPointCard(skillStats) {
+  if (!skillStats.elderlySmartsSkillPoints) return "";
+  const spent = Math.max(
+    0,
+    Number(skillStats.elderlySmartsSkillPointsUsed) || 0,
+  );
+  const available = Math.max(
+    0,
+    Number(skillStats.elderlySmartsSkillPoints) || 0,
+  );
+  const percentage =
+    available > 0 ? Math.min(100, Math.max(0, (spent / available) * 100)) : 0;
+
+  return `<article class="setup-trait-editor-row setup-skill-editor-row setup-skill-points-card">
+    <div class="setup-skill-editor-heading">
+      <strong>Elderly Smarts Skill Points</strong>
+      <span>${spent} / ${available} assigned</span>
+      <small>These points can only pay for skills linked to Smarts.</small>
+    </div>
+    <div class="setup-skill-meter" role="meter" aria-label="Elderly Smarts Skill Points assigned" aria-valuemin="0" aria-valuemax="${available}" aria-valuenow="${spent}">
+      <span class="setup-skill-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>
     </div>
   </article>`;
 }
@@ -1044,11 +1006,17 @@ function renderSetupSkills() {
         <h4 id="setupSkillsListHeading">Skills</h4>
         ${
           editable
-            ? `<p class="creator-note setup-skill-rules-note">Athletics, Common Knowledge, Notice, Persuasion, and Stealth start at d4; Language starts at d8. Other skills start Unskilled (d4-2).<br />Each purchased step costs 1 point up to the linked Attribute, or 2 points above it.</p>
+            ? `<p class="creator-note setup-skill-rules-note">Athletics, Common Knowledge, Notice, Persuasion, and Stealth start at d4; Language starts at d8. Other skills start Unskilled (d4-2).<br />Each purchased step costs 1 point up to the linked Attribute, or 2 points above it.${skillPointStats.elderlySmartsSkillPoints ? "<br />Elderly grants 5 extra Skill points that can only be spent on Smarts-linked skills." : ""}</p>
         <div class="setup-trait-editor-list setup-skill-editor-list setup-skill-overview-list">
           ${setupSkillPointCard(skillPointStats)}
+          ${setupElderlySkillPointCard(skillPointStats)}
         </div>`
             : '<p class="creator-note">This list includes every skill in the current Deadlands profile. Missing skills are shown at d4-2.</p>'
+        }
+        ${
+          skillPointStats.genericOverBudget
+            ? '<p class="entry-warning">Needs review: Elderly Skill points can only pay for Smarts-linked skills. Reduce non-Smarts Skill purchases or add regular Skill points.</p>'
+            : ""
         }
         ${renderSetupTraitSkillGroup(setupSkills)}
       </section>
@@ -1120,8 +1088,8 @@ function renderSetupEdgeSelectionControls() {
   }
 
   return `<section class="setup-trait-group setup-edge-selection" aria-labelledby="setupEdgeSelectionHeading">
-    <h4 id="setupEdgeSelectionHeading">Free Edge</h4>
-    <p class="creator-note setup-edge-rules-note">Choose the free Human starting Edge here. If Hindrance points buy extra Edges, choose those paid Edges on the Hindrances step.</p>
+    <h4 id="setupEdgeSelectionHeading">Edges</h4>
+    <p class="creator-note setup-edge-rules-note">Choose the free Human starting Edge here. If Hindrance points buy extra Edge slots, those paid choices appear below.</p>
     <div class="setup-edge-pick-list">
     ${
       expectedHumanEdges
@@ -1149,14 +1117,15 @@ function renderSetupEdges() {
   );
   const report = setupStartingEdgeValidationReport();
   const expectedHumanEdges = report.expectedHumanEdges;
-  const humanEdges = report.humanFreeEdges.length;
+  const humanFreeEdges = report.humanFreeEdges;
+  const humanEdges = humanFreeEdges.length;
   const hindranceEdgeSlots = report.hindranceEdgeSlots;
   const hindranceEdges = report.hindranceBenefitEdges.length;
   const edgeSelectionEditable = setupTraitsEditable();
   const status = characterSetupStatus("edges");
   const warnings = [
     edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
-      ? "Incomplete: choose paid Hindrance benefit Edges on the Hindrances step, or adjust Hindrance benefit spending."
+      ? "Incomplete: choose paid Hindrance benefit Edges below, or adjust Hindrance benefit spending."
       : "",
     edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
       ? "Needs review: one or more Hindrance benefit Edges are not covered by Hindrance benefit spending and must be removed."
@@ -1188,12 +1157,13 @@ function renderSetupEdges() {
           <h4 id="setupSelectedEdgesHeading">Selected Free Edge</h4>
           <div class="setup-edge-list">
             ${
-              edges.length
-                ? edges.map(setupEdgeAuditCard).join("")
+              humanFreeEdges.length
+                ? humanFreeEdges.map(setupEdgeAuditCard).join("")
                 : emptyState("No free Edge selected yet.")
             }
           </div>
         </section>
+        ${renderSetupHindranceBenefitEdgeSelection()}
       </div>
     </section>`;
   }
@@ -1202,7 +1172,7 @@ function renderSetupEdges() {
     <div class="section-title">
       <div>
         <h3 id="setupEdgesHeading">Edges</h3>
-        <p>Review recorded Edges and keep their creation source separate from later Advances. Human free Edge selection happens here; Hindrance-paid Edges are chosen on the Hindrances step.</p>
+        <p>Review recorded Edges and keep their creation source separate from later Advances. Human free Edge selection and Hindrance-paid Edge selection both happen here.</p>
       </div>
       ${setupStatusMarkup(status)}
     </div>

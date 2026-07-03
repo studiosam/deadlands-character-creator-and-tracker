@@ -134,7 +134,7 @@ test("starts new characters directly in character setup @mobile", async ({
       "1. Concept",
       "2. Attributes",
       "3. Skills",
-      "4. Free Edge",
+      "4. Edges",
       "5. Hindrances",
       "6. Powers",
       "7. Gear",

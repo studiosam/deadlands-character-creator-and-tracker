@@ -2334,15 +2334,17 @@ h3 {
   display: grid;
   grid-template-rows: auto 1fr;
   flex: 1 0 7.25rem;
-  justify-items: start;
+  align-content: space-between;
+  justify-items: center;
   gap: 0.35rem;
   min-height: 4.2rem;
+  padding: 0.75rem 0.6rem 0.68rem;
   border-color: var(--dossier-rule);
   border-radius: 8px;
   background: rgba(255, 250, 239, 0.56);
   color: var(--dossier-ink);
   box-shadow: none;
-  text-align: left;
+  text-align: center;
   white-space: normal;
 }
 
@@ -2353,9 +2355,12 @@ h3 {
 }
 
 .setup-step-label {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
   column-gap: 0.25rem;
+  width: 100%;
+  line-height: 1.2;
 }
 
 .setup-step-number {
@@ -3325,6 +3330,9 @@ h3 {
 
 .setup-hindrance-meter-card {
   position: relative;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 0.55rem;
 }
 
 .setup-hindrance-meter-card .setup-attribute-editor-heading {

@@ -95,7 +95,7 @@ For Hindrances:
 | Big Mouth       | Minor          | Cannot keep secrets and tends to reveal private information.                                | social, roleplay                              |
 | Blind           | Major          | Severe penalty to vision-based tasks; grants a free Edge to offset.                         | vision, free-edge                             |
 | Bloodthirsty    | Major          | Does not take prisoners and tends toward lethal solutions.                                  | roleplay, violence                            |
-| Can't Swim      | Minor          | Penalty to swimming rolls and extremely limited swimming Pace.                              | athletics, swimming, movement                 |
+| Can't Swim      | Minor          | -2 to all Athletics (Swimming) rolls. Each inch of movement in water costs an additional 3 inches. | athletics, swimming, movement                 |
 | Cautious        | Minor          | Overplans and avoids rash decisions.                                                        | roleplay, planning                            |
 | Clueless        | Major          | Penalty to Common Knowledge and Notice.                                                     | common-knowledge, notice, penalty             |
 | Clumsy          | Major          | Penalty to Athletics and Stealth.                                                           | athletics, stealth, penalty                   |
@@ -105,11 +105,11 @@ For Hindrances:
 | Delusional      | Minor or Major | Believes something false or strange that causes trouble.                                    | roleplay, severity                            |
 | Doubting Thomas | Minor          | Does not believe in the supernatural and takes unnecessary risks around it.                 | supernatural, roleplay                        |
 | Driven          | Minor or Major | Has a major goal or belief that drives choices.                                             | goal, roleplay, severity                      |
-| Elderly         | Major          | Physical penalties but extra skill points at creation.                                      | pace-penalty, attribute-penalty, skill-points |
+| Elderly         | Major          | Pace is reduced by 1, running rolls are reduced by 1, and Agility, Strength, and Vigor rolls take -1. Grants 5 extra skill points for Smarts-linked skills. | pace-penalty, trait-penalty, skill-points |
 | Enemy           | Minor or Major | Has a recurring nemesis or hostile group.                                                   | story, enemy, severity                        |
 | Greedy          | Minor or Major | Obsessed with wealth or possessions.                                                        | roleplay, wealth, severity                    |
 | Habit           | Minor or Major | Addiction or dependency; deprivation can cause Fatigue.                                     | fatigue, addiction, severity                  |
-| Hard of Hearing | Minor or Major | Penalty to Notice sounds, or automatic failure if deaf.                                     | hearing, notice, severity                     |
+| Hard of Hearing | Minor or Major | Minor: -4 to Notice rolls related to hearing. Major: completely deaf; hearing-based Notice rolls fail automatically. | hearing, notice, severity                     |
 | Heroic          | Major          | Always helps those in need, even at personal risk.                                          | roleplay, self-sacrifice                      |
 | Hesitant        | Minor          | Draws two Action Cards and takes the lowest, except Jokers.                                 | initiative, action-card                       |
 | Illiterate      | Minor          | Cannot read or write.                                                                       | literacy, roleplay                            |
@@ -151,7 +151,7 @@ Hindrances with `Minor or Major` severity need a severity selector. Character cr
 
 `Blind` grants a free Edge to offset the drawback. The app should warn or track that as a character creation note.
 
-`Elderly`, `Young`, and `Obese` modify derived or creation values and should eventually get automation. `Obese` affects Minimum Strength calculations and should be considered by weapon/armor warning helpers.
+`Young` and `Obese` modify derived or creation values and should eventually get automation. `Elderly` now applies a Pace modifier, surfaces running and physical Trait roll reminders, and adds 5 setup Skill points restricted to Smarts-linked skills. `Obese` affects Minimum Strength calculations and should be considered by weapon/armor warning helpers.
 
 `Bad Luck`, `Hesitant`, and `Yellow` are high-value automation targets because they affect Bennies, Action Cards, and Fear checks. `Slow` conflicts with `Fleet-Footed`.
 

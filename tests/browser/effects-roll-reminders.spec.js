@@ -250,7 +250,7 @@ test("Flexible Hindrance mechanical reminders respect selected severity", async 
   await expect(derived).toContainText("Vision-dependent Trait rolls -1");
   await expect(derived).toContainText("Hard of Hearing");
   await expect(derived).toContainText(
-    "Automatically fails hearing-based Notice rolls",
+    "Completely deaf: hearing-based Notice rolls fail automatically",
   );
   await expect(derived).toContainText("Suspicious");
   await expect(derived).toContainText("Support this character -2");
@@ -290,7 +290,8 @@ test("Flexible Hindrance mechanical reminders respect selected severity", async 
         sourceName: expect.stringContaining("Hard of Hearing"),
         target: "hearing-notice",
         type: "reminder",
-        displayLabel: "Automatically fails hearing-based Notice rolls",
+        displayLabel:
+          "Completely deaf: hearing-based Notice rolls fail automatically",
       }),
       expect.objectContaining({
         sourceName: expect.stringContaining("Suspicious"),

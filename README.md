@@ -72,7 +72,7 @@ want a local, private, session-focused tracker at the table.
   minimal landing page, read-only Sources & Rulesets, Character Setup review,
   confirmed Character Sheet mode, Characters panel profile editing, global
   undo/redo, Deadlands bookkeeping records, and automated browser/static checks.
-- Implemented setup scaffolding: concept, Attributes, Skills, Human Free Edge,
+- Implemented setup scaffolding: concept, Attributes, Skills, Edges,
   optional Hindrances with benefit spending, Powers setup, Gear purchases,
   setup source tracking, GM/table exception markers, setup review, and creation
   baseline snapshots for eligible created pre-advance characters.

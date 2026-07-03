@@ -246,6 +246,14 @@ async function removeSetupHindrance(id) {
   })();
   const nextSpending = setupHindranceBenefitSpending(nextStats);
   const shouldResetBenefits = nextSpending.spent > nextSpending.available;
+  const removingElderly =
+    plainEntryName(hindrance.name) === "elderly" && setupHasElderlyHindrance();
+  const nextHindrances = existing.filter((item) => item.id !== id);
+  const nextSkillStats = setupSkillPointStats(nextHindrances);
+  const shouldResetSkills =
+    removingElderly &&
+    (nextSkillStats.spent > nextSkillStats.available ||
+      nextSkillStats.genericOverBudget);
   if (
     shouldResetBenefits &&
     !(await confirmResetSetupHindranceBenefits(
@@ -254,9 +262,22 @@ async function removeSetupHindrance(id) {
     ))
   )
     return;
+  if (
+    shouldResetSkills &&
+    !(await appConfirm(
+      "Removing Elderly removes its 5 Smarts-linked Skill points. Reset Skills to starting values now, then spend Skill points again from the remaining budget.",
+      {
+        title: "Reset Skills?",
+        confirmText: "Reset Skills",
+        cancelText: "Go Back",
+      },
+    ))
+  )
+    return;
 
   removeHindrance(character, id);
   if (shouldResetBenefits) resetSetupHindranceBenefitSpending();
+  if (shouldResetSkills) resetSetupSkills();
   if (setupHasNoHindrances()) clearNoSetupHindranceAcknowledgement();
   render();
   save();
@@ -384,6 +405,27 @@ function setupSkillIncreaseCost(name, existing) {
     nextSkill.die = setupTraitDieFromIndex(currentIndex + 1);
   }
   return Math.max(0, setupSkillPointCost(nextSkill) - currentCost);
+}
+
+function setupCanIncreaseSkill(name, cost) {
+  const stats = setupSkillPointStats();
+  if (stats.remaining < cost) return false;
+  const definition = setupSkillDefinition(name);
+  if (definition.linkedAttribute === "smarts") return true;
+  return stats.genericRemaining >= cost;
+}
+
+function setupSkillIncreaseBlockedMessage(name) {
+  const stats = setupSkillPointStats();
+  const definition = setupSkillDefinition(name);
+  if (
+    definition.linkedAttribute !== "smarts" &&
+    stats.genericRemaining <= 0 &&
+    stats.elderlySmartsSkillPointsRemaining > 0
+  ) {
+    return "Only Elderly Smarts-linked Skill points remain.";
+  }
+  return "No setup Skill points remain.";
 }
 
 function addSetupEdgeFromCatalog(selectId, creationSource, sourceLabel) {
@@ -779,8 +821,8 @@ function changeSetupSkill(name, direction) {
 
   if (!existing && direction > 0) {
     const cost = setupSkillIncreaseCost(name, null);
-    if (setupSkillPointStats().remaining < cost) {
-      appToast("No setup Skill points remain.", "danger");
+    if (!setupCanIncreaseSkill(name, cost)) {
+      appToast(setupSkillIncreaseBlockedMessage(name), "danger");
       return;
     }
     const definition = setupSkillDefinition(name);
@@ -805,8 +847,8 @@ function changeSetupSkill(name, direction) {
     currentIndex < DIE_STEPS.length - 1
   ) {
     const cost = setupSkillIncreaseCost(name, existing);
-    if (setupSkillPointStats().remaining < cost) {
-      appToast("No setup Skill points remain.", "danger");
+    if (!setupCanIncreaseSkill(name, cost)) {
+      appToast(setupSkillIncreaseBlockedMessage(name), "danger");
       return;
     }
     existing.die = setupTraitDieFromIndex(currentIndex + 1);
@@ -1355,7 +1397,7 @@ function incompleteSetupSections() {
     ["concept", "Concept"],
     ["traits", "Attributes"],
     ["skills", "Skills"],
-    ["edges", "Free Edge"],
+    ["edges", "Edges"],
     ["hindrances", "Hindrances"],
     ["powers", "Powers"],
     ["gear", "Gear"],

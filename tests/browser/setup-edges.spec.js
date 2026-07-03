@@ -80,6 +80,16 @@ test("selects hindrances in character setup and summarizes point expectations", 
     "aria-valuemax",
     "0",
   );
+  const initialMeterLayout = await benefitPointsCard.evaluate((card) => {
+    const meter = card.querySelector("[role='meter']");
+    return {
+      cardWidth: card.getBoundingClientRect().width,
+      meterWidth: meter?.getBoundingClientRect().width || 0,
+    };
+  });
+  expect(initialMeterLayout.meterWidth).toBeGreaterThan(
+    initialMeterLayout.cardWidth * 0.75,
+  );
   await expect(hindranceSummary).not.toContainText("Selected");
   await expect(hindranceSummary).not.toContainText("Counted");
   await expect(hindranceSummary).not.toContainText("Remaining");
@@ -147,6 +157,15 @@ test("selects hindrances in character setup and summarizes point expectations", 
   );
   await page
     .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-clueless");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "-1 to Common Knowledge and Notice",
+  );
+  await expect(entryCard.locator("#setupHindrancePreview")).not.toContainText(
+    "Penalty to Common Knowledge and Notice",
+  );
+  await page
+    .locator("#setupHindranceCatalogSelect")
     .selectOption("swade-hindrance-bad-luck");
   await page
     .locator("#setupHindranceNotesInput")
@@ -159,7 +178,15 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(badLuckCard).toContainText("Major");
   await expect(badLuckCard).toContainText("Hard luck follows him.");
   await expect(benefitPointsCard).toContainText("2 / 4");
+  await expect(benefitPointsCard.locator("[role='meter']")).toHaveAttribute(
+    "aria-valuemax",
+    "4",
+  );
   await expect(benefitsSpentCard).toContainText("0 / 2");
+  await expect(benefitsSpentCard.locator("[role='meter']")).toHaveAttribute(
+    "aria-valuemax",
+    "2",
+  );
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Ready",
   );
@@ -264,6 +291,7 @@ test("Hindrance Benefit Point meters update for Minor Major and spending states"
     .selectOption("dl-hindrance-ailin");
   await page.locator("#setupHindranceSeverityInput").selectOption("Minor");
   await page.locator("#setupAddHindranceBtn").click();
+  await expect(hindranceSummary).toBeVisible();
   await expect(benefitPointsCard).toContainText("1 / 4");
   await expect(benefitsSpentCard).toContainText("0 / 1");
 
@@ -322,6 +350,138 @@ test("Hindrance Benefit Point meters update for Minor Major and spending states"
   ).toBeDisabled();
 });
 
+test("Elderly applies setup effects and grants Smarts-linked Skill points", async ({
+  page,
+}) => {
+  await startNewCharacterFromLanding(page);
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
+  await page.locator("[data-setup-step='hindrances']").click();
+
+  const hindrancePanel = page.locator("#setupHindrancesPanel");
+  await page
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-elderly");
+  await expect(page.locator("#setupHindranceSeverityInput")).toHaveValue(
+    "Major",
+  );
+  await expect(page.locator("#setupHindranceSeverityInput")).toBeDisabled();
+  await expect(page.locator("#setupHindrancePreview")).toContainText(
+    "Pace is reduced by 1",
+  );
+  await expect(page.locator("#setupHindrancePreview")).toContainText(
+    "5 extra skill points for Smarts-linked skills",
+  );
+  await page.locator("#setupAddHindranceBtn").click();
+
+  const elderlyCard = hindrancePanel.locator(".setup-hindrance-row").filter({
+    hasText: "Elderly",
+  });
+  await expect(elderlyCard).toContainText("Major");
+  await expect(elderlyCard).toContainText("Pace is reduced by 1");
+  await expect(
+    elderlyCard.getByRole("button", { name: "Go to Skills" }),
+  ).toBeVisible();
+  await expect(
+    hindrancePanel.locator(".setup-hindrance-skill-shortcut"),
+  ).toHaveCount(0);
+
+  const elderlyEffects = await page.evaluate(() => ({
+    pace: character.derived.pace,
+    paceModifier: character.derived.effectPaceModifier,
+    effectLabels: effectHookSummariesForSurface(character, "character").map(
+      (effect) => effect.displayLabel,
+    ),
+  }));
+  expect(elderlyEffects.pace).toBe(5);
+  expect(elderlyEffects.paceModifier).toBe(-1);
+  expect(elderlyEffects.effectLabels).toContain("Pace -1");
+  expect(elderlyEffects.effectLabels).toContain("Running rolls -1");
+  expect(elderlyEffects.effectLabels).toContain("Agility rolls -1");
+  expect(elderlyEffects.effectLabels).toContain("Strength rolls -1");
+  expect(elderlyEffects.effectLabels).toContain("Vigor rolls -1");
+
+  await elderlyCard.getByRole("button", { name: "Go to Skills" }).click();
+  const skillsPanel = page.locator("#setupSkillsPanel");
+  await expect(skillsPanel).toContainText(
+    "Elderly grants 5 extra Skill points",
+  );
+  const skillPointsCard = skillsPanel
+    .locator(".setup-skill-points-card")
+    .first();
+  const elderlySkillCard = skillsPanel
+    .locator(".setup-skill-points-card")
+    .filter({ hasText: "Elderly Smarts Skill Points" });
+  await expect(skillPointsCard).toContainText("0 / 17 assigned");
+  await expect(elderlySkillCard).toContainText("0 / 5 assigned");
+
+  const smartsGroup = skillsPanel
+    .locator(".setup-skill-attribute-group")
+    .filter({ hasText: "Smarts" });
+  await expect(smartsGroup).toContainText("Academics");
+  await expect(smartsGroup).toContainText("Research");
+  await expect(smartsGroup).not.toContainText("Psionics");
+
+  for (const skillName of [
+    "Academics",
+    "Battle",
+    "Gambling",
+    "Healing",
+    "Occult",
+  ]) {
+    await smartsGroup
+      .locator(".setup-trait-editor-row.skill-row")
+      .filter({ hasText: skillName })
+      .locator("[data-setup-action='incSkill']")
+      .click();
+  }
+
+  await expect(skillPointsCard).toContainText("5 / 17 assigned");
+  await expect(elderlySkillCard).toContainText("5 / 5 assigned");
+
+  for (const skillName of [
+    "Boating",
+    "Driving",
+    "Fighting",
+    "Piloting",
+    "Riding",
+    "Shooting",
+    "Thievery",
+    "Faith",
+    "Focus",
+    "Intimidation",
+    "Performance",
+    "Spellcasting",
+  ]) {
+    await skillsPanel
+      .locator(".setup-trait-editor-row.skill-row")
+      .filter({ hasText: skillName })
+      .locator("[data-setup-action='incSkill']")
+      .click();
+  }
+
+  await expect(skillPointsCard).toContainText("17 / 17 assigned");
+  await expect(elderlySkillCard).toContainText("5 / 5 assigned");
+  await expect(page.locator("[data-setup-step='skills']")).toContainText(
+    "Complete",
+  );
+
+  const stored = await page.evaluate(() => character);
+  expect(
+    stored.hindrances.some(
+      (hindrance) =>
+        hindrance.name === "Elderly" &&
+        hindrance.creationSource === "setup-starting-hindrance",
+    ),
+  ).toBe(true);
+  expect(stored.creationBaseline.skills).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ name: "Academics", die: "d4" }),
+      expect.objectContaining({ name: "Occult", die: "d4" }),
+      expect.objectContaining({ name: "Shooting", die: "d4" }),
+    ]),
+  );
+});
+
 test("removing Hindrances that lower the benefit budget resets spent benefits", async ({
   page,
 }) => {
@@ -348,13 +508,18 @@ test("removing Hindrances that lower the benefit budget resets spent benefits", 
     .locator(".setup-trait-editor-row")
     .filter({ hasText: "Edges" });
   await edgeBenefitRow.getByRole("button", { name: "+" }).click();
-  await hindrancePanel
+  await edgeBenefitRow.getByRole("button", { name: "Go to Edges" }).click();
+  const edgesPanel = page.locator("#setupEdgesPanel");
+  await expect(edgesPanel).toBeVisible();
+  await edgesPanel
     .locator("#setupHindranceBenefitEdgeSelect")
     .selectOption("swade-edge-berserk");
-  await hindrancePanel
+  await edgesPanel
     .getByRole("button", { name: "Add Hindrance Benefit Edge" })
     .click();
-  await expect(hindrancePanel).toContainText("Berserk");
+  await expect(edgesPanel).toContainText("Berserk");
+  await page.locator("[data-setup-step='hindrances']").click();
+  await expect(hindrancePanel).toBeVisible();
   await expect(benefitPointsCard).toContainText("2 / 4");
   await expect(benefitsSpentCard).toContainText("2 / 2");
 
@@ -374,7 +539,12 @@ test("removing Hindrances that lower the benefit budget resets spent benefits", 
   await expect(benefitPointsCard).toContainText("0 / 4");
   await expect(benefitsSpentCard).toContainText("0 / 0");
   await expect(hindrancePanel.locator(".setup-hindrance-row")).toHaveCount(0);
-  await expect(hindrancePanel).not.toContainText("Berserk");
+  await page.locator(".setup-step[data-setup-step='edges']").click();
+  await expect(
+    page.locator("#setupEdgesPanel .setup-edge-card").filter({
+      hasText: "Berserk",
+    }),
+  ).toHaveCount(0);
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Optional",
   );
@@ -446,6 +616,21 @@ test("flexible Hindrances expose Minor and Major descriptions without fake fixed
 
   await entryCard
     .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-hard-of-hearing");
+  await entryCard.locator("#setupHindranceSeverityInput").selectOption("Minor");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "-4 to all Notice rolls related to hearing",
+  );
+  await entryCard.locator("#setupHindranceSeverityInput").selectOption("Major");
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "Completely deaf",
+  );
+  await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
+    "hearing-based Notice rolls fail automatically",
+  );
+
+  await entryCard
+    .locator("#setupHindranceCatalogSelect")
     .selectOption("swade-hindrance-delusional");
   await expect(entryCard.locator("#setupHindrancePreview")).toContainText(
     "Believes something false or irrational",
@@ -486,10 +671,10 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
     "Review and save character",
   );
 
-  await page.locator("[data-setup-step='edges']").click();
+  await page.locator(".setup-step[data-setup-step='edges']").click();
   const edgesPanel = page.locator("#setupEdgesPanel");
   await expect(edgesPanel.locator("#setupEdgeSelectionHeading")).toHaveText(
-    "Free Edge",
+    "Edges",
   );
   await expect(edgesPanel).not.toContainText("Recorded Edges");
   await expect(edgesPanel).not.toContainText("Catalog Matches");
@@ -587,37 +772,53 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await expect(hindrancePanel).toContainText("4 / 4");
   await expect(attributeBenefitRow).toContainText("1 Attribute Raise");
   await expect(edgeBenefitRow).toContainText("1 Edge");
-  await expect(hindrancePanel).toContainText(
-    "Hindrance Benefit Attribute Raises",
-  );
-  await expect(hindrancePanel).toContainText("Paid Attribute Raise");
+  await expect(
+    attributeBenefitRow.getByRole("button", { name: "Go to Attributes" }),
+  ).toBeVisible();
+  await expect(
+    edgeBenefitRow.getByRole("button", { name: "Go to Edges" }),
+  ).toBeVisible();
+  await expect(
+    hindrancePanel.locator(".setup-hindrance-attribute-shortcut"),
+  ).toHaveCount(0);
+  await expect(
+    hindrancePanel.locator("#setupHindranceBenefitEdgeSelect"),
+  ).toHaveCount(0);
+  await expect(hindrancePanel).not.toContainText("Paid Attribute Raise");
+  await attributeBenefitRow
+    .getByRole("button", { name: "Go to Attributes" })
+    .click();
+  await expect(page.locator("#setupTraitsPanel")).toBeVisible();
+  await page.locator("[data-setup-step='hindrances']").click();
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Incomplete",
   );
-  await expect(hindrancePanel).toContainText("Hindrance Benefit Edges");
-  await expect(hindrancePanel).toContainText("0 / 1 selected");
+  await edgeBenefitRow.getByRole("button", { name: "Go to Edges" }).click();
+  await expect(edgesPanel).toContainText("Hindrance Benefit Edges");
+  await expect(edgesPanel).toContainText("0 / 1 selected");
   await expect(
-    hindrancePanel.locator("#setupHindranceBenefitEdgeSelect"),
+    edgesPanel.locator("#setupHindranceBenefitEdgeSelect"),
   ).toBeVisible();
-  await hindrancePanel
+  await edgesPanel
     .locator("#setupHindranceBenefitEdgeSelect")
     .selectOption("swade-edge-berserk");
   await expect(
-    hindrancePanel.locator("#setupHindranceBenefitEdgePreview"),
+    edgesPanel.locator("#setupHindranceBenefitEdgePreview"),
   ).toContainText("Berserk");
-  await hindrancePanel
+  await edgesPanel
     .getByRole("button", { name: "Add Hindrance Benefit Edge" })
     .click();
-  await expect(hindrancePanel).toContainText("Berserk");
-  await expect(hindrancePanel).toContainText("Hindrance benefit Edge");
+  await expect(edgesPanel).toContainText("Berserk");
+  await expect(edgesPanel).toContainText("Hindrance benefit Edge");
+  await page.locator("[data-setup-step='hindrances']").click();
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Ready",
   );
 
-  await page.locator("[data-setup-step='edges']").click();
-  await expect(page.locator("[data-setup-step='edges']")).toContainText(
-    "Complete",
-  );
+  await page.locator(".setup-step[data-setup-step='edges']").click();
+  await expect(
+    page.locator(".setup-step[data-setup-step='edges']"),
+  ).toContainText("Complete");
 
   await expect
     .poll(() =>
@@ -649,7 +850,7 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
 
   await reloadIntoTracker(page);
   await openCharacterSetupReview(page);
-  await page.locator("[data-setup-step='edges']").click();
+  await page.locator(".setup-step[data-setup-step='edges']").click();
   await expect(page.locator("#setupEdgesPanel")).toContainText("Alertness");
   await expect(page.locator("#setupEdgesPanel")).toContainText("Berserk");
   await expect(page.locator("#setupEdgesPanel")).not.toContainText(
@@ -687,8 +888,13 @@ test("hindrance skill and money benefits expose skill spending and update gear f
   await skillBenefitRow.getByRole("button", { name: "+" }).click();
   await moneyBenefitRow.getByRole("button", { name: "+" }).click();
 
-  await expect(hindrancePanel).toContainText("Hindrance Benefit Skill Points");
-  await expect(hindrancePanel).toContainText("Paid Skill Points");
+  await expect(
+    skillBenefitRow.getByRole("button", { name: "Go to Skills" }),
+  ).toBeVisible();
+  await expect(
+    hindrancePanel.locator(".setup-hindrance-skill-shortcut"),
+  ).toHaveCount(0);
+  await expect(hindrancePanel).not.toContainText("Paid Skill Points");
   await expect(hindrancePanel).not.toContainText("Hindrance Benefit Money");
 
   await page.locator("[data-setup-step='gear']").click();
@@ -718,7 +924,7 @@ test("filters starting Edge choices by Rank Trait and prerequisite Edge requirem
   await startNewCharacterFromLanding(page);
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
 
-  await page.locator("[data-setup-step='edges']").click();
+  await page.locator(".setup-step[data-setup-step='edges']").click();
   const humanEdgeSelect = page.locator("#setupHumanFreeEdgeSelect");
   await expect(humanEdgeSelect).toBeVisible();
 
@@ -769,7 +975,7 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
   await startNewCharacterFromLanding(page);
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
   await page.locator("#setupNameInput").fill("Stale Human Edge");
-  await page.locator("[data-setup-step='edges']").click();
+  await page.locator(".setup-step[data-setup-step='edges']").click();
 
   const edgesPanel = page.locator("#setupEdgesPanel");
   await page
@@ -777,9 +983,9 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
     .selectOption("swade-edge-alertness");
   await edgesPanel.getByRole("button", { name: "Add Free Edge" }).click();
   await expect(edgesPanel).toContainText("Alertness");
-  await expect(page.locator("[data-setup-step='edges']")).toContainText(
-    "Complete",
-  );
+  await expect(
+    page.locator(".setup-step[data-setup-step='edges']"),
+  ).toContainText("Complete");
 
   await page.evaluate(() => {
     const brave = EDGE_CATALOG.find((edge) => edge.id === "swade-edge-brave");
@@ -797,9 +1003,9 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
     render();
   });
 
-  await expect(page.locator("[data-setup-step='edges']")).toContainText(
-    "Needs review",
-  );
+  await expect(
+    page.locator(".setup-step[data-setup-step='edges']"),
+  ).toContainText("Needs review");
   await expect(edgesPanel).toContainText(
     "Human free Edge no longer satisfies starting Edge eligibility",
   );
@@ -819,9 +1025,9 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
     "Resolve invalid source-tracked starting Edges",
   );
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
-  await expect(page.locator("[data-setup-step='edges']")).toContainText(
-    "Needs review",
-  );
+  await expect(
+    page.locator(".setup-step[data-setup-step='edges']"),
+  ).toContainText("Needs review");
 
   await edgesPanel
     .locator(".setup-edge-card")
@@ -836,9 +1042,9 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
     .selectOption("swade-edge-alertness");
   await edgesPanel.getByRole("button", { name: "Add Free Edge" }).click();
   await expect(edgesPanel).toContainText("Alertness");
-  await expect(page.locator("[data-setup-step='edges']")).toContainText(
-    "Complete",
-  );
+  await expect(
+    page.locator(".setup-step[data-setup-step='edges']"),
+  ).toContainText("Complete");
 });
 
 test("starting Edge validation flags stale invalid Hindrance benefit Edge choices", async ({
@@ -864,12 +1070,18 @@ test("starting Edge validation flags stale invalid Hindrance benefit Edge choice
     .getByRole("button", { name: "+" })
     .click();
   await hindrancePanel
+    .locator(".setup-trait-editor-row")
+    .filter({ hasText: "Edges" })
+    .getByRole("button", { name: "Go to Edges" })
+    .click();
+  const edgesPanel = page.locator("#setupEdgesPanel");
+  await edgesPanel
     .locator("#setupHindranceBenefitEdgeSelect")
     .selectOption("swade-edge-berserk");
-  await hindrancePanel
+  await edgesPanel
     .getByRole("button", { name: "Add Hindrance Benefit Edge" })
     .click();
-  await expect(hindrancePanel).toContainText("Berserk");
+  await expect(edgesPanel).toContainText("Berserk");
 
   const source = await page.evaluate(
     () =>
@@ -894,11 +1106,10 @@ test("starting Edge validation flags stale invalid Hindrance benefit Edge choice
     render();
   });
 
-  await page.locator("[data-setup-step='edges']").click();
-  const edgesPanel = page.locator("#setupEdgesPanel");
-  await expect(page.locator("[data-setup-step='edges']")).toContainText(
-    "Needs review",
-  );
+  await page.locator(".setup-step[data-setup-step='edges']").click();
+  await expect(
+    page.locator(".setup-step[data-setup-step='edges']"),
+  ).toContainText("Needs review");
   await expect(edgesPanel).toContainText(
     "Hindrance benefit Edge no longer satisfies starting Edge eligibility",
   );

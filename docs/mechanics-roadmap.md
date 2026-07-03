@@ -22,7 +22,7 @@ the rules.
   load, combat load, carried load, and off-person storage.
 - Catalogs: substantial Deadlands and SWADE Edges, Hindrances, Powers, Gear,
   Armor, Weapons, and Vehicles.
-- Character Setup shell: Concept, Attributes, Skills, Human Free Edge, optional
+- Character Setup shell: Concept, Attributes, Skills, Edges, optional
   Hindrances with benefit spending, Powers setup, Gear purchases, setup source
   audit, GM/table exception markers, creation baseline snapshots, and Review.
 - Advancement: canonical ledger entries for current supported advancement
@@ -38,7 +38,7 @@ the rules.
 ### Character Creation
 
 - Character Setup is feature-complete for the current MVP scaffolding: created
-  pre-advance characters can draft Concept, Attributes, Skills, Human Free Edge,
+  pre-advance characters can draft Concept, Attributes, Skills, Edges,
   optional Hindrances and benefits, Powers, Gear purchases, setup source fields,
   and Review.
 - New SWADE / Deadlands setup characters use the current baseline skill model:

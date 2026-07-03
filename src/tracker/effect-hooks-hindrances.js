@@ -92,6 +92,46 @@ const HINDRANCE_EFFECT_HOOKS = [
     ],
   },
   {
+    registryOrder: 48.5,
+    id: "hindrance-elderly",
+    sourceType: "hindrance",
+    matchName: "Elderly",
+    label: "Elderly",
+    summary:
+      "Pace -1, running rolls -1, Agility/Strength/Vigor rolls -1, and 5 extra Smarts-linked Skill points at creation.",
+    effects: [
+      {
+        type: "numeric-modifier",
+        target: "pace",
+        value: -1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Pace -1",
+      },
+      rollModifierEffect(
+        "running",
+        "Running",
+        "running rolls",
+        -1,
+        "Running rolls -1",
+      ),
+      rollModifierEffect(
+        "agility",
+        "Agility",
+        "Agility rolls",
+        -1,
+        "Agility rolls -1",
+      ),
+      rollModifierEffect(
+        "strength",
+        "Strength",
+        "Strength rolls",
+        -1,
+        "Strength rolls -1",
+      ),
+      rollModifierEffect("vigor", "Vigor", "Vigor rolls", -1, "Vigor rolls -1"),
+    ],
+  },
+  {
     registryOrder: 49,
     id: "hindrance-hesitant",
     sourceType: "hindrance",
@@ -334,14 +374,14 @@ const HINDRANCE_EFFECT_HOOKS = [
     matchName: "Hard of Hearing",
     severity: "minor",
     label: "Hard of Hearing (Minor)",
-    summary: "-4 to hearing-based Notice rolls.",
+    summary: "-4 to all Notice rolls related to hearing.",
     effects: [
       rollModifierEffect(
         "hearing-notice",
         "Notice",
-        "hearing-based Notice rolls",
+        "Notice rolls related to hearing",
         -4,
-        "Hearing-based Notice -4",
+        "Notice rolls related to hearing -4",
       ),
     ],
   },
@@ -352,11 +392,12 @@ const HINDRANCE_EFFECT_HOOKS = [
     matchName: "Hard of Hearing",
     severity: "major",
     label: "Hard of Hearing (Major)",
-    summary: "Automatically fails hearing-based Notice rolls.",
+    summary:
+      "Completely deaf; all hearing-based Notice rolls fail automatically.",
     effects: [
       reminderEffect(
         "hearing-notice",
-        "Automatically fails hearing-based Notice rolls",
+        "Completely deaf: hearing-based Notice rolls fail automatically",
       ),
     ],
   },
