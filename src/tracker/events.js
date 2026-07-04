@@ -223,6 +223,8 @@ document.addEventListener("change", (event) => {
       "setupHindranceBenefitEdgeSelect",
       "setupHindranceBenefitEdgePreview",
     );
+  if (event.target?.closest?.("#setupStartingPowerSelect"))
+    updateSetupPowerSelectionPreview();
 });
 
 els.armorSelect.onchange = () => {

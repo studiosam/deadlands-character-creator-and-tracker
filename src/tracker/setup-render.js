@@ -416,6 +416,10 @@ function setupHindranceCardActions(hindrance) {
 function renderCharacterSetup() {
   if (!els.characterSetupStepper || !els.characterSetupContent) return;
   characterSetupStep = validSetupStepId(characterSetupStep);
+  if (typeof ensureSetupStartingPowerPointsGranted === "function")
+    ensureSetupStartingPowerPointsGranted();
+  if (typeof ensureSetupRequiredStartingPowersGranted === "function")
+    ensureSetupRequiredStartingPowersGranted();
 
   els.characterSetupStepper.innerHTML = CHARACTER_SETUP_STEPS.map(
     (step, index) => {
@@ -445,7 +449,7 @@ function renderCharacterSetup() {
     hindrances: renderSetupHindrances,
     attributesSkills: renderSetupTraits,
     edges: renderSetupEdges,
-    powers: renderSetupPowers,
+    powers: renderSetupPowersClean,
     gear: renderSetupGear,
     review: renderSetupReview,
   };
@@ -506,12 +510,15 @@ function renderSetupStepNavigation() {
   const nextStep = CHARACTER_SETUP_STEPS[currentIndex + 1];
   if (!previousStep && !nextStep) return "";
   const nextLabel = setupNextStepButtonLabel(nextStep);
+  const nextDisabled = setupNextStepDisabled();
+  const footerWarning = setupStepFooterWarningMarkup();
   return `<div class="setup-step-navigation">
     <div class="setup-step-navigation-previous">
       ${previousStep ? `<button class="ghost" type="button" data-setup-action="previousSetupStep">Previous: ${esc(previousStep.label)}</button>` : ""}
     </div>
+    ${footerWarning}
     <div class="setup-step-navigation-next">
-      ${nextStep ? `<button type="button" data-setup-action="nextSetupStep">${esc(nextLabel)}</button>` : ""}
+      ${nextStep ? `<button type="button" data-setup-action="nextSetupStep"${nextDisabled ? " disabled" : ""}>${esc(nextLabel)}</button>` : ""}
     </div>
   </div>`;
 }
@@ -524,6 +531,19 @@ function setupNextStepButtonLabel(nextStep) {
   const spending = setupHindranceBenefitSpending(stats);
   if (spending.remaining > 0) return "Continue with Unspent Hindrance Points";
   return `Next: ${nextStep.label}`;
+}
+
+function setupNextStepDisabled() {
+  if (characterSetupStep !== "powers") return false;
+  return characterSetupStatus("powers") === "Incomplete";
+}
+
+function setupStepFooterWarningMarkup() {
+  if (characterSetupStep !== "powers") return "";
+  const report = setupPowerAuditReport();
+  if (characterSetupStatus("powers") !== "Incomplete") return "";
+  if (!report.incompleteItems.length) return "";
+  return `<div class="setup-step-navigation-warning entry-warning"><strong>Powers incomplete:</strong>${setupPowerMessageList(report.incompleteItems)}</div>`;
 }
 
 function renderSetupConcept() {
@@ -1204,23 +1224,49 @@ function setupPowerCostLabel(power) {
   return value === undefined ? "" : `${value} PP`;
 }
 
-function setupFixedStartingPowerText(config, powers) {
-  if (!config?.fixedStartingPowers?.length) return "None";
-  const knownNames = new Set(powers.map((power) => plainEntryName(power.name)));
-  return config.fixedStartingPowers
-    .map((name) => {
-      const label = displayNameFromKey(name);
-      return knownNames.has(plainEntryName(name))
-        ? `${label} recorded`
-        : `${label} missing`;
-    })
-    .join(", ");
+function setupPowerSummary(power, catalog = null) {
+  return power?.shortSummary || catalog?.shortSummary || power?.notes || "";
+}
+
+function setupPowerSelectionPreviewMarkup(
+  powerId,
+  emptyText = "Choose a Power to preview what it does.",
+) {
+  const power =
+    typeof findPowerCatalogEntryById === "function"
+      ? findPowerCatalogEntryById(powerId || "")
+      : null;
+  if (!power) {
+    return `<div class="setup-power-selection-preview empty">${esc(emptyText)}</div>`;
+  }
+  const details = [
+    power.rank,
+    setupPowerCostLabel(power),
+    power.range ? `Range ${power.range}` : "",
+    power.duration ? `Duration ${power.duration}` : "",
+  ]
+    .filter(Boolean)
+    .join(" • ");
+  const summary = setupPowerSummary(power);
+  return `<div class="setup-power-selection-preview">
+    <strong>${esc(power.name)}</strong>
+    ${details ? `<span>${esc(details)}</span>` : ""}
+    ${summary ? `<p>${esc(summary)}</p>` : "<p>No short summary recorded yet.</p>"}
+  </div>`;
+}
+
+function updateSetupPowerSelectionPreview() {
+  const select = document.getElementById("setupStartingPowerSelect");
+  const preview = document.getElementById("setupStartingPowerPreview");
+  if (!select || !preview) return;
+  preview.innerHTML = setupPowerSelectionPreviewMarkup(select.value);
 }
 
 function setupPowerAuditCard(power, audit = null) {
   const removable =
     setupTraitsEditable() &&
-    setupPowerCreationSource(power) === "setup-starting-power";
+    setupPowerCreationSource(power) === "setup-starting-power" &&
+    !audit?.required;
   const meta = [
     audit?.catalog ? "Catalog matched" : "Unknown/custom",
     audit?.allowed ? "Allowed" : "",
@@ -1254,6 +1300,76 @@ function setupPowerAuditCard(power, audit = null) {
     ${
       removable
         ? `<div class="creator-actions"><button type="button" data-setup-action="removeSetupStartingPower" data-power-id="${esc(power.id)}">Remove</button></div>`
+        : ""
+    }
+  </article>`;
+}
+
+function setupPowerAuditCardCompact(power, audit = null) {
+  const removable =
+    setupTraitsEditable() &&
+    setupPowerCreationSource(power) === "setup-starting-power" &&
+    !audit?.required;
+  const creationSource = setupPowerCreationSource(power);
+  const visibleBadges = [
+    audit?.required ? setupEdgeBadge("Required") : "",
+    creationSource === "setup-starting-power"
+      ? setupEdgeBadge("Setup starting Power")
+      : "",
+    audit?.messages?.length ? setupEdgeBadge("Needs review", "warning") : "",
+    !audit?.catalog ? setupEdgeBadge("Manual review", "warning") : "",
+  ]
+    .filter(Boolean)
+    .join("");
+  const facts = [
+    setupPowerCostLabel(power),
+    power.range ? `Range ${power.range}` : "",
+    power.duration ? `Duration ${power.duration}` : "",
+  ].filter(Boolean);
+  const details = [
+    setupDetail("Rank", power.rank || "—"),
+    setupDetail("Catalog", audit?.catalog ? "Matched" : "Unknown/custom"),
+    setupDetail("Allowed", audit?.allowed ? "Yes" : "Manual review"),
+    power.source ? setupDetail("Source", power.source) : "",
+    power.trapping ? setupDetail("Trapping", power.trapping) : "",
+  ].filter(Boolean);
+  const summary = setupPowerSummary(power, audit?.catalog);
+  const trapping = power.trapping ? `Trapping: ${power.trapping}` : "";
+
+  return `<article class="setup-power-card">
+    <div class="setup-power-card-head">
+      <div>
+        <h4>${esc(power.name || "Unnamed Power")}</h4>
+        ${summary ? `<p class="setup-power-effect"><strong>Effect:</strong> ${esc(summary)}</p>` : ""}
+        ${
+          facts.length
+            ? `<div class="setup-power-facts">${facts
+                .map((item) => `<span>${esc(item)}</span>`)
+                .join("")}</div>`
+            : ""
+        }
+      </div>
+      <div class="setup-edge-badges">
+        ${visibleBadges}
+        ${
+          removable
+            ? `<button class="ghost tag-action danger-lite" type="button" data-setup-action="removeSetupStartingPower" data-power-id="${esc(power.id)}">Remove</button>`
+            : ""
+        }
+      </div>
+    </div>
+    ${
+      audit?.messages?.length
+        ? `<div class="setup-edge-advisories">${audit.messages
+            .map((item) => `<p>${esc(item)}</p>`)
+            .join("")}</div>`
+        : ""
+    }
+    ${
+      details.length
+        ? `<details class="setup-power-details"><summary>Details</summary><div class="setup-edge-details">${details.join("")}</div>${
+            trapping ? `<p>${esc(trapping)}</p>` : ""
+          }</details>`
         : ""
     }
   </article>`;
@@ -1293,13 +1409,16 @@ function renderSetupPowerSelectionControls(report) {
     !report.startingPowerSlotOpen || !report.startingPowerOptions.length;
   return `<section class="setup-trait-group" aria-labelledby="setupPowerSelectionHeading">
     <h4 id="setupPowerSelectionHeading">Select Starting Powers</h4>
-    <p class="creator-note">Choose legal starting Powers from the matched Arcane Background profile. Setup-selected Powers are source-tagged separately from later Advancement Powers.</p>
-    <div class="setup-form-grid">
-      <label class="setup-wide">Starting Power<select id="setupStartingPowerSelect"${disabled ? " disabled" : ""}>${setupStartingPowerSelectOptions(report)}</select></label>
-      <div class="creator-actions setup-wide">
-        <button type="button" data-setup-action="addSetupStartingPower"${disabled ? " disabled" : ""}>Add Starting Power</button>
+    <p class="creator-note setup-edge-rules-note">Choose legal starting Powers from the matched Arcane Background profile.</p>
+    <article class="setup-edge-pick-card setup-power-pick-card">
+      <div class="setup-edge-pick-copy">
+        <strong>Starting Power</strong>
+        <span>${report.powers.length} / ${report.startingPowerCount} selected</span>
       </div>
-    </div>
+      <label>Power<select id="setupStartingPowerSelect"${disabled ? " disabled" : ""}>${setupStartingPowerSelectOptions(report)}</select></label>
+      <div id="setupStartingPowerPreview" class="setup-power-preview-slot">${setupPowerSelectionPreviewMarkup("")}</div>
+      <button type="button" data-setup-action="addSetupStartingPower"${disabled ? " disabled" : ""}>Add Starting Power</button>
+    </article>
     ${
       !report.startingPowerSlotOpen
         ? '<p class="creator-note">All expected starting Power slots are filled.</p>'
@@ -1314,20 +1433,23 @@ function renderSetupPowerPointControls(report) {
   if (!report.editable || !report.profile) return "";
   const audit = report.powerPointsAudit;
   const hasExpectedPowerPoints = Boolean(audit?.complete);
-  const buttonLabel = audit?.powerPoints
-    ? "Update Starting Power Points"
-    : "Add Starting Power Points";
+  const canUpdatePowerPoints =
+    Boolean(audit?.powerPoints) && !hasExpectedPowerPoints;
 
   return `<section class="setup-trait-group" aria-labelledby="setupPowerPointsSelectionHeading">
-    <h4 id="setupPowerPointsSelectionHeading">Setup Power Points</h4>
-    <p class="creator-note">Set starting Power Points from the matched Arcane Background profile. Existing Power Points are preserved until you choose to update them.</p>
-    <div class="setup-review-grid">
-      ${setupDetail("Expected", `${report.expectedPowerPoints} Power Points`)}
-      ${setupDetail("Recorded", audit?.statusText || "Not recorded")}
-    </div>
-    <div class="creator-actions">
-      <button type="button" data-setup-action="setSetupStartingPowerPoints"${hasExpectedPowerPoints ? " disabled" : ""}>${hasExpectedPowerPoints ? "Starting Power Points Set" : buttonLabel}</button>
-    </div>
+    <h4 id="setupPowerPointsSelectionHeading">Power Points</h4>
+    <p class="creator-note">Starting Power Points are granted automatically from the matched Arcane Background. Existing Power Points are preserved unless you choose to update a mismatch.</p>
+    <article class="setup-trait-editor-row setup-power-point-card">
+      <div>
+        <strong>${esc(audit?.statusText || "Not recorded")}</strong>
+        <span>${esc(`${report.expectedPowerPoints} expected from ${report.profile.name}`)}</span>
+      </div>
+    </article>
+    ${
+      canUpdatePowerPoints
+        ? '<div class="creator-actions"><button type="button" data-setup-action="setSetupStartingPowerPoints">Update Starting Power Points</button></div>'
+        : ""
+    }
   </section>`;
 }
 
@@ -1377,11 +1499,6 @@ function renderSetupPowers() {
         : '<p class="entry-advisory"><strong>Power audit:</strong> imported powers may be current known powers rather than the exact creation-time power list. Created pre-advance characters can source-tag setup-selected starting Powers here.</p>'
     }
     ${
-      report.incompleteItems.length
-        ? `<div class="entry-warning"><strong>Powers incomplete:</strong>${setupPowerMessageList(report.incompleteItems)}</div>`
-        : ""
-    }
-    ${
       report.warnings.length
         ? `<div class="entry-warning"><strong>Needs review:</strong>${setupPowerMessageList(report.warnings)}</div>`
         : ""
@@ -1421,6 +1538,144 @@ function renderSetupPowers() {
           : emptyState("No powers recorded.")
       }
     </div>
+  </section>`;
+}
+
+function setupPowerPointMeterValue(powerPointsAudit) {
+  const powerPoints = powerPointsAudit?.powerPoints;
+  return Math.max(0, Number(powerPoints?.current ?? 0) || 0);
+}
+
+function setupPowerPointMeterMax(report) {
+  const recordedMax = Number(report.powerPointsAudit?.powerPoints?.max);
+  return Math.max(
+    report.expectedPowerPoints,
+    Number.isFinite(recordedMax) ? recordedMax : 0,
+  );
+}
+
+function renderSetupPowerOverview(report) {
+  if (!report.profile) {
+    return `<section class="setup-trait-group setup-power-overview" aria-labelledby="setupPowersHeading">
+      <h4 id="setupPowersHeading">Powers</h4>
+      <p class="creator-note">Powers are only needed for characters with an Arcane Background. If this character should use Powers, choose the Arcane Background on the Edges step first.</p>
+      ${
+        report.editable
+          ? '<div class="creator-actions setup-benefit-navigation"><button type="button" data-setup-step="edges">Go to Edges</button></div>'
+          : ""
+      }
+    </section>`;
+  }
+
+  const skillLabel = `${report.expectedArcaneSkill} d4+${
+    report.expectedLinkedAttribute
+      ? ` linked to ${report.expectedLinkedAttribute}`
+      : ""
+  }`;
+  return `<section class="setup-trait-group setup-power-overview" aria-labelledby="setupPowersHeading">
+    <h4 id="setupPowersHeading">Powers</h4>
+    <p class="creator-note">${esc(report.profile.name)} uses ${esc(skillLabel)} and starts with ${report.expectedPowerPoints} Power Points. Required starting Powers are added automatically; choose any remaining starting Power slots here.</p>
+    <div class="setup-review-grid setup-power-summary-grid">
+      ${setupDetail("Arcane Background", report.backgroundName || report.profile.name)}
+      ${setupMeterSummary("Power Points", setupPowerPointMeterValue(report.powerPointsAudit), setupPowerPointMeterMax(report), "Current Power Points. The Arcane Background grants a required starting amount, and other choices may raise the maximum.")}
+      ${setupMeterSummary("Starting Powers", report.powers.length, report.startingPowerCount, "Known starting Powers selected out of the profile's expected starting Power count.")}
+    </div>
+  </section>`;
+}
+
+function renderSetupPowerAuditDetails(report) {
+  if (report.status === "Not applicable") return "";
+  const { profile, powers, skillAudit, powerPointsAudit } = report;
+  const arcaneSkillLabel = profile
+    ? `${report.expectedArcaneSkill} d4+${
+        report.expectedLinkedAttribute
+          ? ` linked to ${report.expectedLinkedAttribute}`
+          : ""
+      }`
+    : character.arcaneBackground?.arcaneSkill || "—";
+  const expectedPowerPointsLabel = profile
+    ? `${report.expectedPowerPoints} Power Points`
+    : "—";
+  const recordedPowerPointsLabel =
+    powerPointsAudit?.statusText || "Not recorded";
+  const knownPowerLabel = profile
+    ? `${powers.length} / ${report.startingPowerCount} expected`
+    : `${powers.length}`;
+
+  return `<details class="setup-power-audit-details">
+    <summary>Audit Details</summary>
+    <div class="setup-review-grid">
+      ${setupDetail("Arcane Background Detected", report.backgroundName || "None recorded")}
+      ${setupDetail("Expected Arcane Skill", arcaneSkillLabel)}
+      ${setupDetail("Recorded Arcane Skill Status", skillAudit?.statusText || "Not recorded")}
+      ${setupDetail("Expected Power Points", expectedPowerPointsLabel)}
+      ${setupDetail("Recorded Power Points Status", recordedPowerPointsLabel)}
+      ${setupDetail("Expected Starting Powers", profile ? `${report.startingPowerCount}` : "—")}
+      ${setupDetail("Recorded Known Powers", knownPowerLabel)}
+      ${setupDetail("Required Starting Powers", setupRequiredPowerChecklist(report))}
+    </div>
+  </details>`;
+}
+
+function renderSetupRequiredPowerCards(report) {
+  if (!report.requiredPowerAudits.length) return "";
+  return `<section class="setup-audit-group setup-required-powers" aria-label="Required Starting Powers">
+    <h4>Required Starting Powers</h4>
+    <div class="setup-power-list">
+      ${report.requiredPowerAudits
+        .map((item) => {
+          const requiredAudit = report.powerAudits.find(
+            (audit) => audit.catalog?.id === item.id,
+          );
+          if (requiredAudit) {
+            return setupPowerAuditCardCompact(
+              requiredAudit.power,
+              requiredAudit,
+            );
+          }
+          return `<article class="dossier-note warning"><strong>${esc(item.label)}: missing</strong><p>${esc(
+            `Required for ${report.profile?.name || "this Arcane Background"}.`,
+          )}</p></article>`;
+        })
+        .join("")}
+    </div>
+  </section>`;
+}
+
+function setupOptionalPowerAudits(report) {
+  return report.powerAudits.filter((audit) => !audit.required);
+}
+
+function renderSetupPowersClean() {
+  const report = setupPowerAuditReport();
+  const optionalPowerAudits = setupOptionalPowerAudits(report);
+
+  return `<section id="setupPowersPanel" class="setup-step-panel" aria-labelledby="setupPowersHeading">
+    <div class="setup-trait-groups">
+      ${renderSetupPowerOverview(report)}
+      ${renderSetupPowerPointControls(report)}
+      ${renderSetupPowerSelectionControls(report)}
+    </div>
+    ${
+      report.warnings.length
+        ? `<div class="entry-warning"><strong>Needs review:</strong>${setupPowerMessageList(report.warnings)}</div>`
+        : ""
+    }
+    ${renderSetupPowerAuditDetails(report)}
+    ${renderSetupRequiredPowerCards(report)}
+    <section class="setup-audit-group setup-selected-powers" aria-label="Selected Powers">
+      <h4>Selected Powers</h4>
+      <div class="setup-power-list">
+        ${
+          optionalPowerAudits.length
+            ? optionalPowerAudits
+                .sort((left, right) => comparePowers(left.power, right.power))
+                .map((audit) => setupPowerAuditCardCompact(audit.power, audit))
+                .join("")
+            : emptyState("No optional starting powers recorded.")
+        }
+      </div>
+    </section>
   </section>`;
 }
 

@@ -543,49 +543,36 @@ function setupPowerAlreadyKnown(catalogPower) {
   );
 }
 
-function addSetupStartingPower(powerId = "") {
-  if (!ensureSetupTraitsEditable()) return;
-  const report = setupPowerAuditReport();
-  const selectedId = powerId || $("#setupStartingPowerSelect")?.value || "";
-  const catalogPower = setupStartingPowerById(selectedId);
-
+function setupStartingPowerBlockedMessage(report, catalogPower) {
   if (!report.profile) {
-    appToast(
-      "Choose an Arcane Background before adding starting Powers.",
-      "danger",
-    );
-    return;
+    return "Choose an Arcane Background before adding starting Powers.";
   }
-  if (!catalogPower) {
-    appToast("Choose a starting Power before adding it.", "danger");
-    return;
-  }
+  if (!catalogPower) return "Choose a starting Power before adding it.";
   if (!report.profile.allowedPowerIds?.includes(catalogPower.id)) {
-    appToast(
-      `${catalogPower.name} is not allowed for ${report.profile.name}.`,
-      "danger",
-    );
-    return;
+    return `${catalogPower.name} is not allowed for ${report.profile.name}.`;
   }
   if (
     typeof rankAllowsPower === "function" &&
     !rankAllowsPower(character.rank, catalogPower.rank)
   ) {
-    appToast(
-      `${catalogPower.name} requires ${catalogPower.rank} rank.`,
-      "danger",
-    );
-    return;
+    return `${catalogPower.name} requires ${catalogPower.rank} rank.`;
   }
   if (setupPowerAlreadyKnown(catalogPower)) {
-    appToast("That Power is already recorded.", "danger");
-    return;
+    return "That Power is already recorded.";
   }
-  if (!report.startingPowerSlotOpen) {
-    appToast("All starting Power slots are already filled.", "danger");
-    return;
+  if (
+    !setupStartingPowerSlotOpen(
+      report.profile,
+      report.arcaneConfig,
+      character.powers || [],
+    )
+  ) {
+    return "All starting Power slots are already filled.";
   }
+  return "";
+}
 
+function addSetupStartingPowerRecord(report, catalogPower) {
   if (!Array.isArray(character.powers)) character.powers = [];
   character.powers.push(
     applySetupSourceFields(
@@ -604,9 +591,43 @@ function addSetupStartingPower(powerId = "") {
       },
     ),
   );
+}
+
+function addSetupStartingPower(powerId = "") {
+  if (!ensureSetupTraitsEditable()) return;
+  const report = setupPowerAuditReport();
+  const selectedId = powerId || $("#setupStartingPowerSelect")?.value || "";
+  const catalogPower = setupStartingPowerById(selectedId);
+  const blockedMessage = setupStartingPowerBlockedMessage(report, catalogPower);
+
+  if (blockedMessage) {
+    appToast(blockedMessage, "danger");
+    return;
+  }
+
+  addSetupStartingPowerRecord(report, catalogPower);
   render();
   save();
   appToast(`${catalogPower.name} added as a starting Power.`, "success");
+}
+
+function ensureSetupRequiredStartingPowersGranted() {
+  if (!setupTraitsEditable()) return false;
+  let report = setupPowerAuditReport();
+  if (!report.profile?.requiredStartingPowers?.length) return false;
+
+  let changed = false;
+  for (const powerId of report.profile.requiredStartingPowers) {
+    report = setupPowerAuditReport();
+    const catalogPower = setupStartingPowerById(powerId);
+    if (!catalogPower || setupPowerAlreadyKnown(catalogPower)) continue;
+    if (setupStartingPowerBlockedMessage(report, catalogPower)) continue;
+    addSetupStartingPowerRecord(report, catalogPower);
+    changed = true;
+  }
+
+  if (changed) save();
+  return changed;
 }
 
 function removeSetupStartingPower(powerId) {
@@ -618,6 +639,13 @@ function removeSetupStartingPower(powerId) {
       "Only setup-selected starting Powers can be removed here.",
       "danger",
     );
+    return;
+  }
+  const report = setupPowerAuditReport();
+  const catalog = setupKnownPowerCatalogEntry(power);
+  if (catalog && report.profile?.requiredStartingPowers?.includes(catalog.id)) {
+    appToast("Required starting Powers are granted automatically.", "danger");
+    render();
     return;
   }
   character.powers = character.powers.filter((item) => item.id !== powerId);
@@ -636,19 +664,10 @@ function setupPowerPointConfig(report) {
   };
 }
 
-function setSetupStartingPowerPoints() {
-  if (!ensureSetupTraitsEditable()) return;
-  const report = setupPowerAuditReport();
+function setupStartingPowerPointResource(report) {
   const config = setupPowerPointConfig(report);
-  if (!config || !report.expectedPowerPoints) {
-    appToast(
-      "Choose an Arcane Background before setting Power Points.",
-      "danger",
-    );
-    return;
-  }
-
-  const resource = applySetupSourceFields(
+  if (!config || !report?.expectedPowerPoints) return null;
+  return applySetupSourceFields(
     makePowerPointResource(config, {
       current: report.expectedPowerPoints,
       max: report.expectedPowerPoints,
@@ -662,6 +681,11 @@ function setSetupStartingPowerPoints() {
       startingPowerPoints: report.expectedPowerPoints,
     },
   );
+}
+
+function upsertSetupStartingPowerPointResource(report) {
+  const resource = setupStartingPowerPointResource(report);
+  if (!resource) return false;
   const existingIndex = (character.resources || []).findIndex(
     (item) => item.id === "power-points",
   );
@@ -669,6 +693,31 @@ function setSetupStartingPowerPoints() {
   if (!Array.isArray(character.resources)) character.resources = [];
   if (existingIndex >= 0) character.resources[existingIndex] = resource;
   else character.resources.push(resource);
+  return true;
+}
+
+function ensureSetupStartingPowerPointsGranted() {
+  if (!setupTraitsEditable()) return false;
+  const report = setupPowerAuditReport();
+  if (!report.profile || !report.expectedPowerPoints) return false;
+  if (report.powerPointsAudit?.powerPoints) return false;
+  if (!upsertSetupStartingPowerPointResource(report)) return false;
+  save();
+  return true;
+}
+
+function setSetupStartingPowerPoints() {
+  if (!ensureSetupTraitsEditable()) return;
+  const report = setupPowerAuditReport();
+  if (!setupPowerPointConfig(report) || !report.expectedPowerPoints) {
+    appToast(
+      "Choose an Arcane Background before setting Power Points.",
+      "danger",
+    );
+    return;
+  }
+
+  upsertSetupStartingPowerPointResource(report);
 
   render();
   save();

@@ -51,34 +51,53 @@ test("Powers setup audit reports missing requirements for an Arcane Background",
   });
 
   const setupPowersPanel = page.locator("#setupPowersPanel");
+  const setupNavigation = page.locator(".setup-step-navigation");
   await expect(page.locator("[data-setup-step='powers']")).toContainText(
     "Incomplete",
   );
+  await expect(setupPowersPanel).not.toContainText("Powers incomplete:");
+  await expect(setupNavigation).toContainText("Powers incomplete:");
+  await expect(
+    setupNavigation.getByRole("button", { name: "Next: Gear" }),
+  ).toBeDisabled();
   await expect(setupPowersPanel).toContainText("Blessed");
   await expect(setupPowersPanel).toContainText("Expected Arcane Skill");
   await expect(setupPowersPanel).toContainText("Faith d4+ linked to Spirit");
-  await expect(setupPowersPanel).toContainText("Missing Faith d4+ for Blessed");
+  await expect(setupNavigation).toContainText("Missing Faith d4+ for Blessed");
   await expect(setupPowersPanel).toContainText("Expected Power Points");
   await expect(setupPowersPanel).toContainText("15 Power Points");
-  await expect(setupPowersPanel).toContainText(
+  await expect(setupPowersPanel).toContainText("15 / 15");
+  await expect(setupNavigation).not.toContainText(
     "Expected 15 Power Points; none recorded.",
   );
   await expect(setupPowersPanel).toContainText("Expected Starting Powers");
-  await expect(setupPowersPanel).toContainText(
-    "Expected 3 starting powers; 0 recorded.",
+  await expect(setupNavigation).toContainText(
+    "Expected 3 starting powers; 1 recorded.",
   );
-  await expect(setupPowersPanel).toContainText(
+  await expect(setupNavigation).not.toContainText(
     "Holy Symbol is required for Blessed and is missing.",
   );
+  await expect(
+    setupPowersPanel.locator(".setup-required-powers"),
+  ).toContainText("Holy Symbol");
+  await expect(
+    setupPowersPanel.locator(".setup-selected-powers"),
+  ).not.toContainText("Holy Symbol");
 
   const mutationSnapshot = await page.evaluate(() => ({
     powers: character.powers.length,
-    powerPoints: Boolean(powerPointResource()),
+    powerCatalogIds: character.powers.map((power) => power.catalogId),
+    powerPoints: powerPointResource(),
   }));
-  expect(mutationSnapshot).toEqual({
-    powers: 0,
-    powerPoints: false,
-  });
+  expect(mutationSnapshot.powers).toBe(1);
+  expect(mutationSnapshot.powerCatalogIds).toEqual(["power-holy-symbol"]);
+  expect(mutationSnapshot.powerPoints).toEqual(
+    expect.objectContaining({
+      current: 15,
+      max: 15,
+      creationSource: "setup-arcane-background",
+    }),
+  );
 });
 
 test("Powers setup audit recognizes a complete starting arcane package", async ({
@@ -92,9 +111,9 @@ test("Powers setup audit recognizes a complete starting arcane package", async (
       {
         id: "power-points",
         name: "Power Points",
-        current: 15,
-        max: 15,
-        source: "Arcane Background (Blessed)",
+        current: 20,
+        max: 20,
+        source: "Arcane Background (Blessed) plus extra Power Points",
       },
     ],
     powerIds: ["power-holy-symbol", "power-barrier", "power-protection"],
@@ -104,19 +123,33 @@ test("Powers setup audit recognizes a complete starting arcane package", async (
   await expect(page.locator("[data-setup-step='powers']")).toContainText(
     "Complete",
   );
+  await expect(
+    page
+      .locator(".setup-step-navigation")
+      .getByRole("button", { name: "Next: Gear" }),
+  ).toBeEnabled();
   await expect(setupPowersPanel).toContainText("Blessed");
   await expect(setupPowersPanel).toContainText("Faith d4 linked to Spirit");
-  await expect(setupPowersPanel).toContainText("15 / 15");
+  await expect(setupPowersPanel).toContainText("20 / 20");
   await expect(setupPowersPanel).toContainText("3 / 3 expected");
-  await expect(setupPowersPanel).toContainText("Holy Symbol: recorded");
-  await expect(setupPowersPanel).toContainText("Barrier");
-  await expect(setupPowersPanel).toContainText("Protection");
+  await expect(
+    setupPowersPanel.locator(".setup-required-powers"),
+  ).toContainText("Holy Symbol");
+  await expect(
+    setupPowersPanel.locator(".setup-selected-powers"),
+  ).toContainText("Barrier");
+  await expect(
+    setupPowersPanel.locator(".setup-selected-powers"),
+  ).toContainText("Protection");
+  await expect(
+    setupPowersPanel.locator(".setup-selected-powers"),
+  ).not.toContainText("Holy Symbol");
   await expect(
     setupPowersPanel.getByRole("button", { name: "Add Starting Power" }),
   ).toBeDisabled();
 });
 
-test("Powers setup creates and persists setup starting Power Points", async ({
+test("Powers setup auto-creates and persists setup starting Power Points", async ({
   page,
 }) => {
   await seedPowersSetupCharacter(page, {
@@ -127,19 +160,19 @@ test("Powers setup creates and persists setup starting Power Points", async ({
   });
 
   const setupPowersPanel = page.locator("#setupPowersPanel");
-  await expect(page.locator("[data-setup-step='powers']")).toContainText(
-    "Incomplete",
-  );
-  await expect(setupPowersPanel).toContainText(
-    "Expected 15 Power Points; none recorded.",
-  );
-
-  await setupPowersPanel
-    .getByRole("button", { name: "Add Starting Power Points" })
-    .click();
+  const setupNavigation = page.locator(".setup-step-navigation");
   await expect(page.locator("[data-setup-step='powers']")).toContainText(
     "Complete",
   );
+  await expect(setupPowersPanel).not.toContainText(
+    "Expected 15 Power Points; none recorded.",
+  );
+  await expect(
+    setupNavigation.getByRole("button", { name: "Next: Gear" }),
+  ).toBeEnabled();
+  await expect(
+    setupPowersPanel.getByRole("button", { name: "Add Starting Power Points" }),
+  ).toHaveCount(0);
 
   const snapshot = await page.evaluate(() => {
     const powerPoints = powerPointResource();
@@ -193,10 +226,10 @@ test("Powers setup warns for mismatched Power Points and can reset them", async 
     "Needs review",
   );
   await expect(setupPowersPanel).toContainText(
-    "Expected 15 Power Points; recorded max is 12.",
+    "Expected at least 15 Power Points; recorded max is 12.",
   );
   await expect(setupPowersPanel).toContainText(
-    "Expected 15 current Power Points; recorded current is 10.",
+    "Expected at least 15 current Power Points; recorded current is 10.",
   );
 
   await setupPowersPanel
@@ -237,10 +270,28 @@ test("Powers setup selection adds removes and persists setup starting powers", a
   });
 
   let setupPowersPanel = page.locator("#setupPowersPanel");
-  await setupPowersPanel
-    .getByRole("button", { name: "Add Holy Symbol" })
-    .click();
+  await expect(
+    setupPowersPanel.locator(".setup-required-powers"),
+  ).toContainText("Holy Symbol");
+  await expect(
+    setupPowersPanel.locator(".setup-selected-powers"),
+  ).not.toContainText("Holy Symbol");
+  await expect(
+    setupPowersPanel.getByRole("button", { name: "Add Holy Symbol" }),
+  ).toHaveCount(0);
+  await expect(
+    setupPowersPanel
+      .locator(".setup-power-card")
+      .filter({ hasText: "Holy Symbol" })
+      .getByRole("button", { name: "Remove" }),
+  ).toHaveCount(0);
   await page.locator("#setupStartingPowerSelect").selectOption("power-barrier");
+  await expect(page.locator("#setupStartingPowerPreview")).toContainText(
+    "Barrier",
+  );
+  await expect(page.locator("#setupStartingPowerPreview")).toContainText(
+    "Creates a short Hardness 10 wall or barrier.",
+  );
   await setupPowersPanel
     .getByRole("button", { name: "Add Starting Power" })
     .click();

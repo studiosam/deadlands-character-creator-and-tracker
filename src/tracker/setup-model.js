@@ -192,9 +192,9 @@ function setupPowerPointsAudit(profile, powerPoints) {
   } else {
     if (!Number.isFinite(max) || max <= 0) {
       messages.push("Power Points max is missing or invalid.");
-    } else if (max !== expected) {
+    } else if (max < expected) {
       messages.push(
-        `Expected ${expected} Power Points; recorded max is ${max}.`,
+        `Expected at least ${expected} Power Points; recorded max is ${max}.`,
       );
     }
 
@@ -204,9 +204,9 @@ function setupPowerPointsAudit(profile, powerPoints) {
       messages.push(
         `Current Power Points (${current}) exceeds recorded max (${max}).`,
       );
-    } else if (current !== expected) {
+    } else if (current < expected) {
       messages.push(
-        `Expected ${expected} current Power Points; recorded current is ${current}.`,
+        `Expected at least ${expected} current Power Points; recorded current is ${current}.`,
       );
     }
   }
@@ -217,9 +217,10 @@ function setupPowerPointsAudit(profile, powerPoints) {
     complete: Boolean(
       powerPoints &&
       Number.isFinite(max) &&
-      max === expected &&
+      max >= expected &&
       Number.isFinite(current) &&
-      current === expected,
+      current >= expected &&
+      current <= max,
     ),
     messages,
     incomplete,
