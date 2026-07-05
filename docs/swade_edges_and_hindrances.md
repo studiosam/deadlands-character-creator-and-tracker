@@ -74,7 +74,8 @@ For Hindrances:
   type: "hindrance",
   source: "Savage Worlds Adventure Edition",
   severityOptions: ["Minor"],
-  shortSummary: "-2 to use mechanical or electrical devices.",
+  shortSummary:
+    "-2 when using mechanical or electrical devices. On a Critical Failure with such a device, it breaks or malfunctions unless the item already has its own failure rule.",
   mechanicalTags: ["mechanical", "electrical", "repair-penalty"],
   settingAvailability: {
     swadeCore: true,
@@ -87,7 +88,7 @@ For Hindrances:
 
 | Hindrance       | Severity       | Short summary                                                                               | Tags / hooks                                  |
 | --------------- | -------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| All Thumbs      | Minor          | -2 to use mechanical or electrical devices.                                                 | mechanical, electrical, repair-penalty        |
+| All Thumbs      | Minor          | -2 when using mechanical or electrical devices. On a Critical Failure with such a device, it breaks or malfunctions unless the item already has its own failure rule. | mechanical, electrical, repair-penalty        |
 | Anemic          | Minor          | -2 Vigor when resisting Fatigue.                                                            | fatigue, vigor-penalty                        |
 | Arrogant        | Major          | Tries to dominate rivals and challenge the strongest foe.                                   | roleplay, combat-complication                 |
 | Bad Eyes        | Minor or Major | Penalty to Trait rolls dependent on vision; eyewear can negate but may break.               | vision, trait-penalty, severity               |
@@ -171,7 +172,7 @@ Hindrances with `Minor or Major` severity need a severity selector. Character cr
 | Aristocrat                 | Novice                          | +2 to Common Knowledge and networking with the upper class.                                                            | common-knowledge, networking, social                     |
 | Attractive                 | Novice, Vigor d6+               | +1 to Performance and Persuasion when appearance matters.                                                              | performance, persuasion, social-bonus                    |
 | Very Attractive            | Novice, Attractive              | +2 to Performance and Persuasion when appearance matters.                                                              | performance, persuasion, improved-edge                   |
-| Berserk                    | Novice                          | After being Shaken or Wounded, enters a rage with stronger melee offense and toughness but risks uncontrolled attacks. | rage, melee, toughness, fatigue-risk                     |
+| Berserk                    | Novice                          | After being Shaken or Wounded by physical damage, the character may go berserk. While berserk: +2 to Fighting rolls, +2 to Strength rolls, +2 Toughness, -2 Parry, and ignore Wound penalties. A Fighting die result of 1 may hit a random adjacent target. Show as a combat-state reminder, not full automation. | rage, melee, toughness, fatigue-risk                     |
 | Brave                      | Novice, Spirit d6+              | +2 to Fear checks and -2 on Fear Table rolls.                                                                          | fear, resistance                                         |
 | Brawny                     | Novice, Strength d6+, Vigor d6+ | Size and Toughness +1; Strength counts one die higher for Encumbrance and Minimum Strength.                            | size, toughness, encumbrance, min-strength               |
 | Brute                      | Novice, Strength d6+, Vigor d6+ | Athletics links to Strength instead of Agility and thrown ranges improve.                                              | athletics, strength, thrown-weapons                      |
@@ -196,7 +197,7 @@ Hindrances with `Minor or Major` severity need a severity selector. Character cr
 | Improved Block            | Veteran, Block                               | +2 Parry and ignore 2 points of Gang Up bonus.                                                          | parry, gang-up, improved-edge          |
 | Brawler                   | Novice, Strength d8+, Vigor d8+              | +1 Toughness and improved unarmed damage.                                                               | unarmed, toughness                     |
 | Bruiser                   | Seasoned, Brawler                            | Further improves unarmed damage and Toughness.                                                          | unarmed, toughness, improved-edge      |
-| Calculating               | Novice, Smarts d8+                           | Ignore up to 2 points of penalties on one action with low Action Card.                                  | initiative, penalty-reduction          |
+| Calculating               | Novice, Smarts d8+                           | When the character's Action Card is 5 or lower, they may ignore up to 2 points of penalties on one action.                                  | initiative, penalty-reduction          |
 | Combat Reflexes           | Seasoned                                     | +2 Spirit to recover from being Shaken or Stunned.                                                      | shaken, stunned, recovery              |
 | Counterattack             | Seasoned, Fighting d8+                       | Free attack against one foe per turn who failed a Fighting roll.                                        | reaction, fighting                     |
 | Improved Counterattack    | Veteran, Counterattack                       | Counterattack works against up to three foes per turn.                                                  | reaction, fighting, improved-edge      |
@@ -209,7 +210,7 @@ Hindrances with `Minor or Major` severity need a severity selector. Character cr
 | Feint                     | Novice, Fighting d8+                         | May make a Fighting Test resisted by Smarts instead of Agility.                                         | test, fighting                         |
 | First Strike              | Novice, Agility d8+                          | Free Fighting attack once per round when a foe moves into Reach.                                        | reaction, fighting                     |
 | Improved First Strike     | Heroic, First Strike                         | Free Fighting attack against up to three foes moving into Reach.                                        | reaction, fighting, improved-edge      |
-| Free Runner               | Novice, Agility d8+                          | Ignore Difficult Ground and gain bonuses in foot chases and climbing.                                   | movement, athletics, chase             |
+| Free Runner               | Novice, Agility d8+                          | Ignores Difficult Ground while on foot. Gains +2 to Athletics rolls for climbing and foot chases.                                   | movement, athletics, chase             |
 | Frenzy                    | Seasoned, Fighting d8+                       | Roll a second Fighting die for one melee attack as a limited action.                                    | melee, extra-die                       |
 | Improved Frenzy           | Veteran, Frenzy                              | Roll a third Fighting die for one melee attack.                                                         | melee, extra-die, improved-edge        |
 | Giant Killer              | Veteran                                      | +1d6 damage against creatures three Sizes larger.                                                       | damage-bonus, size                     |
@@ -230,7 +231,7 @@ Hindrances with `Minor or Major` severity need a severity selector. Character cr
 | No Mercy                  | Seasoned                                     | +2 damage when spending a Benny to reroll damage.                                                       | benny, damage-reroll                   |
 | Rapid Fire                | Seasoned, Shooting d6+                       | Increase RoF by 1 for one Shooting attack per turn.                                                     | shooting, rate-of-fire                 |
 | Rock and Roll!            | Seasoned, Shooting d8+                       | Ignore Recoil penalty when firing weapons with RoF 2 or more.                                           | shooting, recoil                       |
-| Steady Hands              | Novice, Agility d8+                          | Ignore Unstable Platform penalty and reduce running penalty.                                            | shooting, unstable-platform, running   |
+| Steady Hands              | Novice, Agility d8+                          | Ignores Unstable Platform penalties. Reduces the Running penalty from -2 to -1.                                            | shooting, unstable-platform, running   |
 | Sweep                     | Novice, Strength d8+, Fighting d8+           | Fighting roll at -2 to hit all targets in weapon Reach once per turn.                                   | melee, area-attack                     |
 | Improved Sweep            | Veteran, Sweep                               | Sweep without the -2 penalty.                                                                           | melee, area-attack, improved-edge      |
 | Trademark Weapon          | Novice, relevant weapon skill d8             | +1 attack and Parry with a specific weapon.                                                             | chosen-weapon, attack-bonus, parry     |
@@ -258,9 +259,9 @@ Hindrances with `Minor or Major` severity need a severity selector. Character cr
 | Artificer               | Seasoned, Arcane Background                                    | Allows creation of Arcane Devices.                                     | arcane, crafting                                  |
 | Channeling              | Seasoned, Arcane Background                                    | Reduce Power Point cost by 1 with a raise on activation.               | arcane, power-points, cost-reduction              |
 | Concentration           | Seasoned, Arcane Background                                    | Shaken results do not cause Disruption; Stun or Wounds still can.      | arcane, concentration, disruption                 |
-| Extra Effort            | Seasoned, Arcane Background (Gifted), Focus d6+                | Spend Power Points to temporarily increase Focus.                      | gifted, focus, power-points                       |
+| Extra Effort            | Seasoned, Arcane Background (Gifted), Focus d6+                | Spend 1 Power Point for +1 Focus, or 3 Power Points for +2 Focus.                      | gifted, focus, power-points                       |
 | Gadgeteer               | Seasoned, Arcane Background (Weird Science), Weird Science d6+ | Spend 3 Power Points to create a device that replicates another power. | weird-science, gadget, power-points               |
-| Holy/Unholy Warrior     | Seasoned, Arcane Background (Miracles), Faith d6+              | Spend Power Points for a Soak bonus.                                   | miracles, faith, soak, power-points               |
+| Holy/Unholy Warrior     | Seasoned, Arcane Background (Miracles), Faith d6+              | Spend 1 to 4 Power Points to add +1 to +4 to a Soak roll, one bonus point per Power Point spent.                                   | miracles, faith, soak, power-points               |
 | Mentalist               | Seasoned, Arcane Background (Psionics), Psionics d6+           | +2 to opposed Psionics rolls.                                          | psionics, opposed-roll                            |
 | New Powers              | Novice, Arcane Background                                      | Learn two new powers.                                                  | arcane, powers-known                              |
 | Power Points            | Novice, Arcane Background                                      | Gain 5 additional Power Points, no more than once per Rank.            | arcane, power-points                              |

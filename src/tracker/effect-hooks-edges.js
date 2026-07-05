@@ -204,7 +204,7 @@ const EDGE_EFFECT_HOOKS = [
     matchName: "Berserk",
     label: "Berserk",
     summary:
-      "Berserk changes require active rage state and table adjudication before automation is safe.",
+      "While berserk: +2 Fighting, +2 Strength, +2 Toughness, -2 Parry, ignore Wound penalties, and check adjacent target risk manually on a Fighting die 1.",
     effects: [
       automationStatusEffect(
         "table-dependent",
@@ -476,7 +476,7 @@ const EDGE_EFFECT_HOOKS = [
     sourceType: "edge",
     matchName: "Grit",
     label: "Grit",
-    summary: "Fear check reminder.",
+    summary: "Reduces Fear check penalties by 2. Stacks with Brave.",
     effects: [
       reminderEffect(
         "fear-check-edge-chain",
@@ -900,7 +900,7 @@ const EDGE_EFFECT_HOOKS = [
     matchName: "Reputation",
     label: "Reputation",
     summary:
-      "Good or bad reputation subchoice determines social automation behavior.",
+      "Good reputation grants a Persuasion free reroll; bad reputation grants +2 Intimidation when the target knows the character's reputation.",
     effects: [
       automationStatusEffect(
         "subchoice-required",

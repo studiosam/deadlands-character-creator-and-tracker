@@ -8,7 +8,8 @@ const HINDRANCE_EFFECT_HOOKS = [
     sourceType: "hindrance",
     matchName: "All Thumbs",
     label: "All Thumbs",
-    summary: "-2 to use mechanical or electrical devices.",
+    summary:
+      "-2 when using mechanical or electrical devices. Critical Failure can break or malfunction the device.",
     effects: [
       {
         type: "roll-modifier",
@@ -19,6 +20,10 @@ const HINDRANCE_EFFECT_HOOKS = [
         appliesTo: ["character", "combat"],
         displayLabel: "Mechanical or electrical device rolls -2",
       },
+      reminderEffect(
+        "mechanical-electrical-device-critical-failure",
+        "Critical Failure: device may break or malfunction unless it has its own failure rule",
+      ),
     ],
   },
   {

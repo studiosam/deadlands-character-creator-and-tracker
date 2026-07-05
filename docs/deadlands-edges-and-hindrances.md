@@ -71,7 +71,7 @@ A character should generally only take one Arcane Background Edge.
   ],
   conflicts: [],
   subchoices: [],
-  shortSummary: "Fire up to six shots from a fully loaded single-action revolver as one action; each shot has a Shooting penalty.",
+  shortSummary: "Fully loaded single-action revolver only. Fire up to six shots as one action; each shot is a separate Shooting die at -4.",
   mechanicalTags: ["single-action-revolver", "multi-shot", "shooting-penalty", "ammo-consumption"],
   effects: [
     {
@@ -136,9 +136,9 @@ Do not hard-block all invalid choices. Show warnings and allow a Marshal overrid
 |---|---|---|---|---|
 | Don’t Get ’im Riled! | Novice | None beyond Rank | Adds current Wound levels to melee damage rolls. | `melee-damage-bonus`, `wound-based`, `combat` |
 | Duelist | Novice | Shooting d6+ | Grants two extra Hole Cards at the start of a formal duel. | `duel`, `hole-cards`, `shooting` |
-| Fan the Hammer | Seasoned | Agility d8+, Shooting d8+ | With a fully loaded single-action revolver, fire up to six shots as one action. Each shot suffers a Shooting penalty. | `single-action-revolver`, `multi-shot`, `shooting-penalty`, `ammo-consumption` |
-| Improved Fan the Hammer | Heroic | Agility d10+, Fan the Hammer, Shooting d10+ | Same as Fan the Hammer, but with a smaller Shooting penalty. | `single-action-revolver`, `multi-shot`, `improved-edge`, `shooting-penalty` |
-| Quick Draw | Novice | Agility d8+ | When spending a Benny for an extra Action Card, draw two and choose from available options. Also improves Athletics rolls to interrupt or resist interruption. | `initiative`, `action-card`, `benny`, `interrupt`, `athletics-bonus` |
+| Fan the Hammer | Seasoned | Agility d8+, Shooting d8+ | Fully loaded single-action revolver only. Fire up to six shots as one action; each shot is a separate Shooting die at -4. Wild Cards roll one Wild Die. Shooting die results of 1 or 2 may threaten Innocent Bystanders. | `single-action-revolver`, `multi-shot`, `shooting-penalty`, `ammo-consumption` |
+| Improved Fan the Hammer | Heroic | Agility d10+, Fan the Hammer, Shooting d10+ | As Fan the Hammer, but each shot is at -2 Shooting instead of -4. | `single-action-revolver`, `multi-shot`, `improved-edge`, `shooting-penalty` |
+| Quick Draw | Novice | Agility d8+ | When spending a Benny for an extra Action Card at the start of a round, draw two cards and choose from all available Action Card options. Also gain +2 to Athletics rolls to interrupt or resist interruption. | `initiative`, `action-card`, `benny`, `interrupt`, `athletics-bonus` |
 
 ### Suggested combat effect hooks
 
@@ -178,25 +178,25 @@ Do not hard-block all invalid choices. Show warnings and allow a Marshal overrid
 | Edge | Rank | Requirements summary | Short mechanical summary | App tags / effect hooks |
 |---|---|---|---|---|
 | Agent | Novice | Smarts d8+, Fighting d6+, Occult d6+, Research d6+, Shooting d6+ | Makes the character a U.S. Agent. Grants organization status, starting gear, pay, badge benefits, and access to Agent favors/rank advancement. | `organization`, `agent`, `starting-gear`, `monthly-pay`, `favors`, `badge` |
-| Born in the Saddle | Novice | Agility d8+, Riding d6+ | Free reroll on Riding rolls. Also improves the character’s horse movement. | `riding-reroll`, `mount`, `pace-bonus`, `running-die-bonus` |
+| Born in the Saddle | Novice | Agility d8+, Riding d6+ | Free reroll on Riding rolls. The character's horse gains +2 Pace and increases its running die by one step in emergencies. | `riding-reroll`, `mount`, `pace-bonus`, `running-die-bonus` |
 | Card Sharp | Novice | Gambling d6+ | Free reroll on Gambling rolls, including Huckster Deal with the Devil Gambling rolls. | `gambling-reroll`, `huckster-synergy`, `deal-with-the-devil` |
 | Guts | Novice | Spirit d6+ | Free reroll on Fear checks. | `fear`, `fear-reroll` |
-| Scout | Seasoned | Woodsman | Improves wilderness travel awareness, tracking, and route knowledge. Can detect travel encounters before they hit the posse. | `travel`, `notice`, `survival`, `tracking`, `common-knowledge`, `encounter-detection` |
+| Scout | Seasoned | Woodsman | When a face card creates a travel encounter, make Notice at -2 to detect the hazard, creature, or event first. Always counts as alert against Stealth. Ignores up to 2 points of Survival tracking penalties, and a raise gives better tracking information. Gains +2 to Common Knowledge about routes previously traveled. | `travel`, `notice`, `survival`, `tracking`, `common-knowledge`, `encounter-detection` |
 | Soldier | Novice | Strength d6+, Vigor d6+ | Military-service Edge. Gives rank/pay/Obligation context if still serving. Higher starting rank is possible but increases Obligation and has extra expectations. | `organization`, `soldier`, `monthly-pay`, `obligation`, `rank` |
-| Tale-Teller | Novice | Performance or Persuasion d8+ | Helps lower local Fear Levels. On a strong success, the tale-teller and supporters can earn Conviction. | `fear-level`, `performance`, `persuasion`, `conviction`, `support` |
+| Tale-Teller | Novice | Performance or Persuasion d8+ | Gain +2 to Persuasion or Performance rolls made to lower a local Fear Level. If the Fear Level is lowered with a raise, the Tale-Teller and supporters gain Conviction. | `fear-level`, `performance`, `persuasion`, `conviction`, `support` |
 | Territorial Ranger | Novice | Vigor d6+, Fighting d6+, Intimidation d6+, Riding d6+, Shooting d6+, Survival d4+ | Makes the character a Territorial Ranger. Grants organization status, starting gear, badge benefits, pay/favor context, and access to Ranger advancement. | `organization`, `ranger`, `starting-gear`, `monthly-pay`, `favors`, `badge` |
 
 ## Social Edges
 
 | Edge | Rank | Requirements summary | Short mechanical summary | App tags / effect hooks |
 |---|---|---|---|---|
-| Reputation | Veteran | None beyond Rank | Choose good or bad reputation. Good reputation gives a Persuasion reroll with people who know the character; bad reputation gives an Intimidation bonus with people who know the character. | `social`, `subchoice`, `persuasion-reroll`, `intimidation-bonus`, `reputation` |
+| Reputation | Veteran | None beyond Rank | Choose good or bad reputation. Good reputation grants a free reroll on Persuasion rolls with people who know the character's stories. Bad reputation grants +2 to Intimidation rolls against people who know the character's reputation. | `social`, `subchoice`, `persuasion-reroll`, `intimidation-bonus`, `reputation` |
 
 ## Weird Edges
 
 | Edge | Rank | Requirements summary | Short mechanical summary | App tags / effect hooks |
 |---|---|---|---|---|
-| Grit | Veteran | Spirit d8+, Guts | Reduces Fear check penalties and stacks with Brave. | `fear`, `fear-penalty-reduction`, `requires-guts` |
+| Grit | Veteran | Spirit d8+, Guts | Reduces Fear check penalties by 2. Stacks with Brave. | `fear`, `fear-penalty-reduction`, `requires-guts` |
 | Harrowed | Novice | Wild Card, Spirit d6+ | Character begins play as undead Harrowed. Grants Harrowed rules package and access to Harrowed Edges. Character-creation-only unless the Marshal says otherwise. | `wild-card-only`, `undead`, `harrowed`, `character-creation-only`, `edge-unlock` |
 | Knack | Novice | None beyond Rank | Character chooses one folklore-based birth omen that grants a specific supernatural trick. Needs a subchoice. | `subchoice`, `supernatural`, `birth-omen`, `character-creation-preferred` |
 
@@ -233,7 +233,7 @@ These Edges appear in later setting/No Man’s Land sections and should still be
 | Edge | Rank | Requirements summary | Short mechanical summary | App tags / effect hooks |
 |---|---|---|---|---|
 | Grade 2 | Seasoned | Agent | Character is already an Agent Grade 2. Grants mnemomizer, possible Gatling upgrade, three Favors, and broader supernatural knowledge. | `agent`, `rank-up`, `favors-3`, `mnemomizer`, `starting-upgrade` |
-| Man of a Thousand Faces | Seasoned | Agent, Performance d8+ | Improves Performance rolls to impersonate a general type; more specific impersonations still carry penalties. Disguise kit helps offset penalties. | `agent`, `performance-bonus`, `disguise`, `impersonation` |
+| Man of a Thousand Faces | Seasoned | Agent, Performance d8+ | Gain +2 to Performance rolls when impersonating a general type of person with appropriate clothing. Impersonating a known person applies penalties: -2 if the target has heard of them, -4 if the target has seen them, or -6 for a specific/familiar individual. A disguise kit removes 2 points of those penalties. | `agent`, `performance-bonus`, `disguise`, `impersonation` |
 
 ## Blessed Edges
 
@@ -274,8 +274,8 @@ These Edges appear in later setting/No Man’s Land sections and should still be
 | Hellfire | Heroic | Harrowed | Once per turn, use an action to attack with Athletics in a Cone Template for fire damage; targets may Evade. | `harrowed`, `athletics-attack`, `cone-template`, `damage-3d6`, `evade` |
 | Implacable | Heroic | Harrowed | Can take one extra Wound before Incapacitation. Stacks with Tough as Nails style Edges. | `harrowed`, `extra-wound`, `incapacitation-threshold` |
 | Infest | Novice | Harrowed | Spend a Benny and an action to control an existing nearby insect swarm for about five minutes. | `harrowed`, `benny-spend`, `action`, `swarm-control`, `duration-5-minutes` |
-| Soul Eater | Veteran | Harrowed | After causing a Wound with a barehanded/claw Fighting attack, make a Spirit roll at a penalty to heal one Wound or one Fatigue. | `harrowed`, `self-healing`, `spirit-roll`, `barehanded`, `claws` |
-| Spook | Novice | Harrowed | As an action, force one visible/nearby target to make a penalized Fear check. Can take Fatigue to affect all targets within 12 inches. | `harrowed`, `fear`, `action`, `fatigue-option`, `area-option` |
+| Soul Eater | Veteran | Harrowed | After causing at least one Wound with a barehanded Fighting attack, including Claws, make Spirit at -2 as a free action. On success, heal one Wound or one Fatigue level. Extra Wounds do not increase the effect. | `harrowed`, `self-healing`, `spirit-roll`, `barehanded`, `claws` |
+| Spook | Novice | Harrowed | As an action, force one nearby target who can see the Harrowed to make a Fear check at -2. A target cannot be affected more than once in the same general encounter. The Harrowed may take one Fatigue level to affect all valid targets within 12 inches instead. | `harrowed`, `fear`, `action`, `fatigue-option`, `area-option` |
 | Stitchin’ | Novice | Harrowed | Natural healing rolls happen daily instead of every five days if the Harrowed consumes meat for each attempt. | `harrowed`, `natural-healing`, `daily-healing`, `meat-requirement` |
 | Improved Stitchin’ | Veteran | Harrowed, Stitchin’ | Natural healing rolls happen hourly instead of daily. | `harrowed`, `natural-healing`, `hourly-healing`, `improved-edge` |
 | Supernatural Attribute | Novice | Harrowed | Raises one chosen attribute by two die types and increases that Trait’s limit, including linked skills. Can be taken once per attribute. | `harrowed`, `attribute-boost`, `subchoice`, `repeatable-limited` |
@@ -289,7 +289,7 @@ These Edges appear in later setting/No Man’s Land sections and should still be
 | High Roller | Seasoned | Spirit d8+, Arcane Background (Huckster), Spellcasting d6+ | Draw one extra card when Dealing with the Devil. | `huckster`, `deal-with-the-devil`, `extra-card` |
 | Improved High Roller | Veteran | High Roller | Draw two extra cards total when Dealing with the Devil. | `huckster`, `deal-with-the-devil`, `extra-cards-2`, `improved-edge` |
 | Old Hand | Heroic | Arcane Background (Huckster), Spellcasting d10+ | After forming a five-card poker hand for Deal with the Devil, discard up to three cards and redraw. | `huckster`, `deal-with-the-devil`, `redraw`, `poker-hand` |
-| Whateley Blood | Novice | Arcane Background (Huckster) | Has an unsettling bloodline: social penalty to Persuasion. Can suffer Fatigue for 5 Power Points or a Wound for 10 Power Points as a free action. | `huckster`, `power-point-generation`, `fatigue-cost`, `wound-cost`, `persuasion-penalty` |
+| Whateley Blood | Novice | Arcane Background (Huckster) | -1 to Persuasion because the character's tainted presence unsettles others. As a free action, the character may suffer one Fatigue level for 5 Power Points or one Wound for 10 Power Points. | `huckster`, `power-point-generation`, `fatigue-cost`, `wound-cost`, `persuasion-penalty` |
 
 ## Mad Scientist Edges
 
@@ -312,7 +312,7 @@ These Edges appear in later setting/No Man’s Land sections and should still be
 | Edge | Rank | Requirements summary | Short mechanical summary | App tags / effect hooks |
 |---|---|---|---|---|
 | Lieutenant | Seasoned | Territorial Ranger | Character is already a Ranger Lieutenant with Chapter 13 knowledge and three Favors. | `ranger`, `rank-up`, `favors-3`, `occult-knowledge` |
-| Like an Oak | Veteran | Grit, Territorial Ranger | Allies near the Ranger reduce Fear penalties if the Ranger holds steady. Ranger checks first when the group checks together. | `ranger`, `fear-support`, `aura-12`, `ally-benefit`, `requires-grit` |
+| Like an Oak | Veteran | Grit, Territorial Ranger | Allies within 12 inches of the Ranger ignore up to 2 points of Fear penalties when making Fear checks. The benefit does not apply if the Ranger fails the Fear check, is Shaken, or is Stunned. If the group checks at the same time, the Ranger resolves first. | `ranger`, `fear-support`, `aura-12`, `ally-benefit`, `requires-grit` |
 
 ---
 

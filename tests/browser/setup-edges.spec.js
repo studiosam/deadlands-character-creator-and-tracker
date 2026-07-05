@@ -896,6 +896,145 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   );
 });
 
+test("selected setup Edge and Hindrance cards surface precise catalog mechanics", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await page.evaluate(() => {
+    const selectedEdgeIds = [
+      "dl-edge-fan-the-hammer",
+      "dl-edge-improved-fan-the-hammer",
+      "dl-edge-quick-draw",
+      "dl-edge-born-in-the-saddle",
+      "dl-edge-scout",
+      "dl-edge-tale-teller",
+      "dl-edge-reputation",
+      "dl-edge-grit",
+      "dl-edge-man-of-a-thousand-faces",
+      "dl-edge-soul-eater",
+      "dl-edge-spook",
+      "dl-edge-whateley-blood",
+      "dl-edge-like-an-oak",
+      "swade-edge-berserk",
+      "swade-edge-calculating",
+      "swade-edge-free-runner",
+      "swade-edge-steady-hands",
+      "swade-edge-extra-effort",
+      "swade-edge-holy-unholy-warrior",
+    ];
+    const edges = selectedEdgeIds.map((id) => {
+      const catalogEdge = EDGE_CATALOG.find((edge) => edge.id === id);
+      return {
+        ...catalogEdge,
+        id: `record-${id}`,
+        catalogId: catalogEdge.id,
+        source: "Imported setup summary test",
+        isCustom: false,
+      };
+    });
+    const allThumbs = HINDRANCE_CATALOG.find(
+      (hindrance) => hindrance.id === "swade-hindrance-all-thumbs",
+    );
+    const characterData = normalize({
+      source: "imported",
+      setupStatus: "needsReview",
+      name: "Catalog Summary Tester",
+      rank: "Legendary",
+      ancestry: "Human",
+      archetype: "Reference",
+      attributes: {
+        agility: "d12",
+        smarts: "d12",
+        spirit: "d12",
+        strength: "d12",
+        vigor: "d12",
+      },
+      skills: [],
+      edges,
+      hindrances: [
+        {
+          ...allThumbs,
+          id: "record-swade-hindrance-all-thumbs",
+          catalogId: allThumbs.id,
+          source: "Imported setup summary test",
+          isCustom: false,
+        },
+      ],
+      advances: [],
+      inventory: [],
+      weapons: [],
+      armorInventory: [],
+      ammo: {},
+      consumables: [],
+      vehicles: [],
+      powers: [],
+      resources: [],
+    });
+    const entry = addCharacterSlot(characterData, {
+      source: "test",
+      preferredId: "catalog-summary-tester",
+    });
+    character = normalize(entry.character);
+    characterSetupReviewOpen = true;
+    characterDraftMode = false;
+    render();
+  });
+
+  await openCharacterSetupReview(page);
+  await page.locator("[data-setup-step='edges']").click();
+  const edgesPanel = page.locator("#setupEdgesPanel");
+  const edgeCard = (name) =>
+    edgesPanel.locator(".setup-edge-card").filter({
+      has: page.getByRole("heading", { name, exact: true }),
+    });
+
+  await expect(edgeCard("Fan the Hammer")).toContainText("Shooting die at -4");
+  await expect(edgeCard("Improved Fan the Hammer")).toContainText(
+    "-2 Shooting instead of -4",
+  );
+  await expect(edgeCard("Quick Draw")).toContainText(
+    "+2 to Athletics rolls to interrupt or resist interruption",
+  );
+  await expect(edgeCard("Reputation")).toContainText("+2 to Intimidation");
+  await expect(edgeCard("Grit")).toContainText("Fear check penalties by 2");
+  await expect(edgeCard("Soul Eater")).toContainText("Spirit at -2");
+  await expect(edgeCard("Spook")).toContainText("Fear check at -2");
+  await expect(edgeCard("Whateley Blood")).toContainText("-1 to Persuasion");
+  await expect(edgeCard("Whateley Blood")).toContainText(
+    "Fatigue level for 5 Power Points",
+  );
+  await expect(edgeCard("Calculating")).toContainText(
+    "Action Card is 5 or lower",
+  );
+  await expect(edgeCard("Calculating")).toContainText(
+    "ignore up to 2 points of penalties",
+  );
+  await expect(edgeCard("Holy/Unholy Warrior")).toContainText(
+    "1 to 4 Power Points",
+  );
+  await expect(edgeCard("Holy/Unholy Warrior")).toContainText(
+    "+1 to +4 to a Soak roll",
+  );
+
+  await page.locator("[data-setup-step='hindrances']").click();
+  const hindrancePanel = page.locator("#setupHindrancesPanel");
+  const allThumbsCard = hindrancePanel
+    .locator(".setup-hindrance-row")
+    .filter({ hasText: "All Thumbs" });
+  await expect(allThumbsCard).toContainText(
+    "-2 when using mechanical or electrical devices",
+  );
+  await expect(allThumbsCard).toContainText("Critical Failure");
+  await expect(allThumbsCard).toContainText("breaks or malfunctions");
+
+  await hindrancePanel
+    .locator("#setupHindranceCatalogSelect")
+    .selectOption("swade-hindrance-all-thumbs");
+  await expect(hindrancePanel.locator("#setupHindrancePreview")).toContainText(
+    "Critical Failure",
+  );
+});
+
 test("hindrance skill and money benefits expose skill spending and update gear funds", async ({
   page,
 }) => {

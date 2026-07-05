@@ -556,7 +556,8 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   await expect(setupPowersPanel).toContainText("Blessed");
   await expect(setupPowersPanel).toContainText("Power Points");
   await expect(setupPowersPanel).toContainText("15 / 15");
-  await expect(setupPowersPanel).toContainText("Expected Starting Powers");
+  await expect(setupPowersPanel).toContainText("Starting Powers");
+  await expect(setupPowersPanel).toContainText("3 / 3");
   await expect(setupPowersPanel).toContainText("Holy Symbol");
   await expect(setupPowersPanel).toContainText("Barrier");
   await expect(setupPowersPanel).toContainText("Protection");
@@ -566,12 +567,12 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   );
   await page.locator("[data-setup-step='gear']").click();
   const setupGearPanel = page.locator("#setupGearPanel");
-  await expect(setupGearPanel).toContainText("Money");
+  await expect(setupGearPanel).toContainText("Funds Remaining");
   await expect(setupGearPanel).toContainText("Weapons");
   await expect(setupGearPanel).toContainText("Armor");
   await expect(setupGearPanel).toContainText("Current Load");
   await expect(setupGearPanel).toContainText("Combat Load");
-  await expect(setupGearPanel).toContainText("Carrying Capacity");
+  await expect(setupGearPanel).toContainText("Current Inventory");
   await expect(setupGearPanel).toContainText("Colt Army");
   await expect(setupGearPanel).toContainText("Winchester");
   await expect(setupGearPanel).toContainText("Native Armor");
