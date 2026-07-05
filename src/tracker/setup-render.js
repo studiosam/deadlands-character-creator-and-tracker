@@ -47,6 +47,16 @@ function setupMeterSummary(label, value, max, helpText = "") {
   </article>`;
 }
 
+function setupMeterBar(label, value, max) {
+  const safeValue = Math.max(0, Number(value) || 0);
+  const safeMax = Math.max(0, Number(max) || 0);
+  const percentage =
+    safeMax > 0 ? Math.min(100, Math.max(0, (safeValue / safeMax) * 100)) : 0;
+  return `<div class="setup-attribute-meter setup-inline-meter" role="meter" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${safeMax}" aria-valuenow="${safeValue}">
+    <span class="setup-attribute-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>
+  </div>`;
+}
+
 function attributeHelpMarkup(label, helpText = "") {
   const help = String(helpText || "").trim();
   return help
@@ -316,9 +326,12 @@ function renderSetupHindranceBenefitRows(stats) {
       return `<div class="creator-actions setup-benefit-navigation"><button type="button" data-setup-step="traits">Go to Attributes</button></div>`;
     }
     if (item.key === "extraSkillPointsFromHindrances") {
+      if (setupSkillPointStats().genericRemaining <= 0) return "";
       return `<div class="creator-actions setup-benefit-navigation"><button type="button" data-setup-step="skills">Go to Skills</button></div>`;
     }
     if (item.key === "extraEdgesFromHindrances") {
+      if (!setupStartingEdgeValidationReport().missingHindranceBenefitEdges)
+        return "";
       return `<div class="creator-actions setup-benefit-navigation"><button type="button" data-setup-step="edges">Go to Edges</button></div>`;
     }
     return "";
@@ -384,13 +397,21 @@ function renderSetupHindranceBenefitEdgeSelection() {
         ? `<article class="setup-edge-pick-card">
             <div class="setup-edge-pick-copy">
               <strong>Paid Edge Slot</strong>
-              <span>${openSlots} open</span>
+              <span>${selectedEdges.length} / ${edgeSlots} selected</span>
+              ${setupMeterBar("Hindrance Edges", selectedEdges.length, edgeSlots)}
             </div>
             <label>Edge<select id="setupHindranceBenefitEdgeSelect">${setupEdgeCatalogOptions("Choose Hindrance Benefit Edge...")}</select></label>
             <div id="setupHindranceBenefitEdgePreview" class="setup-edge-preview-slot">${setupEdgeSelectionPreviewMarkup("")}</div>
             <button type="button" data-setup-action="addHindranceBenefitEdge">Add Hindrance Benefit Edge</button>
           </article>`
-        : '<p class="creator-note">All paid Edge slots are filled. Remove a selected Hindrance benefit Edge before choosing a different one.</p>'
+        : `<article class="setup-edge-pick-card">
+            <div class="setup-edge-pick-copy">
+              <strong>Paid Edge Slots</strong>
+              <span>${selectedEdges.length} / ${edgeSlots} selected</span>
+              ${setupMeterBar("Hindrance Edges", selectedEdges.length, edgeSlots)}
+            </div>
+            <p class="creator-note">All paid Edge slots are filled. Remove a selected Hindrance benefit Edge before choosing a different one.</p>
+          </article>`
     }
     <div class="setup-edge-list">
       ${
@@ -406,7 +427,7 @@ function setupHindranceCardActions(hindrance) {
   if (!setupTraitsEditable()) return "";
   if (plainEntryName(hindrance?.name) !== "elderly") return "";
   const skillStats = setupSkillPointStats();
-  if (!skillStats.elderlySmartsSkillPoints) return "";
+  if (!skillStats.elderlySmartsSkillPointsRemaining) return "";
 
   return `<div class="creator-actions setup-hindrance-card-actions">
       <button type="button" data-setup-step="skills">Go to Skills</button>
@@ -538,12 +559,29 @@ function setupNextStepDisabled() {
   return characterSetupStatus("powers") === "Incomplete";
 }
 
+function setupEdgeIncompleteItems(
+  report = setupStartingEdgeValidationReport(),
+) {
+  if (!setupTraitsEditable()) return [];
+  return [
+    report.missingHumanFreeEdges ? "Select the Human free starting Edge." : "",
+    report.missingHindranceBenefitEdges ? "You have unspent Edge points." : "",
+  ].filter(Boolean);
+}
+
 function setupStepFooterWarningMarkup() {
-  if (characterSetupStep !== "powers") return "";
-  const report = setupPowerAuditReport();
-  if (characterSetupStatus("powers") !== "Incomplete") return "";
-  if (!report.incompleteItems.length) return "";
-  return `<div class="setup-step-navigation-warning entry-warning"><strong>Powers incomplete:</strong>${setupPowerMessageList(report.incompleteItems)}</div>`;
+  if (characterSetupStep === "powers") {
+    const report = setupPowerAuditReport();
+    if (characterSetupStatus("powers") !== "Incomplete") return "";
+    if (!report.incompleteItems.length) return "";
+    return `<div class="setup-step-navigation-warning entry-warning"><strong>Powers incomplete:</strong>${setupPowerMessageList(report.incompleteItems)}</div>`;
+  }
+  if (characterSetupStep === "edges") {
+    const incompleteItems = setupEdgeIncompleteItems();
+    if (!incompleteItems.length) return "";
+    return `<div class="setup-step-navigation-warning entry-warning"><strong>Edges incomplete:</strong>${setupPowerMessageList(incompleteItems)}</div>`;
+  }
+  return "";
 }
 
 function renderSetupConcept() {
@@ -1117,6 +1155,7 @@ function renderSetupEdgeSelectionControls() {
           <div class="setup-edge-pick-copy">
             <strong>Free Edge</strong>
             <span>${humanEdges} / ${expectedHumanEdges} selected</span>
+            ${setupMeterBar("Free Edge", humanEdges, expectedHumanEdges)}
           </div>
           <label>Edge<select id="setupHumanFreeEdgeSelect"${humanEdges >= expectedHumanEdges ? " disabled" : ""}>${setupEdgeCatalogOptions("Choose Free Edge...")}</select></label>
           <div id="setupHumanFreeEdgePreview" class="setup-edge-preview-slot">${setupEdgeSelectionPreviewMarkup("")}</div>
@@ -1144,9 +1183,6 @@ function renderSetupEdges() {
   const edgeSelectionEditable = setupTraitsEditable();
   const status = characterSetupStatus("edges");
   const warnings = [
-    edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
-      ? "Incomplete: choose paid Hindrance benefit Edges below, or adjust Hindrance benefit spending."
-      : "",
     edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
       ? "Needs review: one or more Hindrance benefit Edges are not covered by Hindrance benefit spending and must be removed."
       : "",
@@ -1271,9 +1307,6 @@ function setupPowerAuditCard(power, audit = null) {
     audit?.catalog ? "Catalog matched" : "Unknown/custom",
     audit?.allowed ? "Allowed" : "",
     audit?.required ? "Required" : "",
-    setupPowerCreationSource(power) === "setup-starting-power"
-      ? "Setup starting Power"
-      : "",
     power.rank ? `Rank ${power.rank}` : "",
     setupPowerCostLabel(power),
     power.range ? `Range ${power.range}` : "",
@@ -1310,12 +1343,8 @@ function setupPowerAuditCardCompact(power, audit = null) {
     setupTraitsEditable() &&
     setupPowerCreationSource(power) === "setup-starting-power" &&
     !audit?.required;
-  const creationSource = setupPowerCreationSource(power);
   const visibleBadges = [
     audit?.required ? setupEdgeBadge("Required") : "",
-    creationSource === "setup-starting-power"
-      ? setupEdgeBadge("Setup starting Power")
-      : "",
     audit?.messages?.length ? setupEdgeBadge("Needs review", "warning") : "",
     !audit?.catalog ? setupEdgeBadge("Manual review", "warning") : "",
   ]
@@ -1326,15 +1355,7 @@ function setupPowerAuditCardCompact(power, audit = null) {
     power.range ? `Range ${power.range}` : "",
     power.duration ? `Duration ${power.duration}` : "",
   ].filter(Boolean);
-  const details = [
-    setupDetail("Rank", power.rank || "—"),
-    setupDetail("Catalog", audit?.catalog ? "Matched" : "Unknown/custom"),
-    setupDetail("Allowed", audit?.allowed ? "Yes" : "Manual review"),
-    power.source ? setupDetail("Source", power.source) : "",
-    power.trapping ? setupDetail("Trapping", power.trapping) : "",
-  ].filter(Boolean);
   const summary = setupPowerSummary(power, audit?.catalog);
-  const trapping = power.trapping ? `Trapping: ${power.trapping}` : "";
 
   return `<article class="setup-power-card">
     <div class="setup-power-card-head">
@@ -1363,13 +1384,6 @@ function setupPowerAuditCardCompact(power, audit = null) {
         ? `<div class="setup-edge-advisories">${audit.messages
             .map((item) => `<p>${esc(item)}</p>`)
             .join("")}</div>`
-        : ""
-    }
-    ${
-      details.length
-        ? `<details class="setup-power-details"><summary>Details</summary><div class="setup-edge-details">${details.join("")}</div>${
-            trapping ? `<p>${esc(trapping)}</p>` : ""
-          }</details>`
         : ""
     }
   </article>`;

@@ -145,6 +145,9 @@ test("Powers setup audit recognizes a complete starting arcane package", async (
     setupPowersPanel.locator(".setup-selected-powers"),
   ).not.toContainText("Holy Symbol");
   await expect(
+    setupPowersPanel.locator(".setup-power-card details"),
+  ).toHaveCount(0);
+  await expect(
     setupPowersPanel.getByRole("button", { name: "Add Starting Power" }),
   ).toBeDisabled();
 });
@@ -331,7 +334,7 @@ test("Powers setup selection adds removes and persists setup starting powers", a
   await page.locator("[data-setup-step='powers']").click();
 
   setupPowersPanel = page.locator("#setupPowersPanel");
-  await expect(setupPowersPanel).toContainText("Setup starting Power");
+  await expect(setupPowersPanel).not.toContainText("Setup starting Power");
   const persistedSources = await page.evaluate(() =>
     character.powers.map((power) => power.creationSource),
   );
