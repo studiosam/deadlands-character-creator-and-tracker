@@ -2165,6 +2165,115 @@ function setupQuantityInput(id) {
   return `<input id="${esc(id)}" class="creator-small" type="number" min="1" value="1" />`;
 }
 
+function setupWeaponPickerGroup(item) {
+  const category = String(item?.category || "");
+  const text = `${category} ${item?.name || ""} ${item?.ammoType || ""}`;
+  if (/gatling/i.test(text)) return "Gatling";
+  if (/shotgun/i.test(text)) return "Shotguns";
+  if (/revolver|pistol|derringer|pepperbox/i.test(text)) return "Pistols";
+  if (/rifle|carbine|musket|winchester|sharps|spencer/i.test(text))
+    return "Rifles";
+  if (/melee/i.test(category)) return "Melee";
+  if (/thrown|bow|lance|spear|tomahawk|bola|explosive|dynamite/i.test(text))
+    return "Thrown & Other";
+  if (/infernal/i.test(text)) return "Infernal";
+  return category || "Other";
+}
+
+function setupWeaponPickerGroupOptions(items) {
+  const groups = [
+    "All",
+    ...new Set(items.map(setupWeaponPickerGroup).filter(Boolean)),
+  ];
+  return groups
+    .map((group) => `<option value="${esc(group)}">${esc(group)}</option>`)
+    .join("");
+}
+
+function setupWeaponPickerDetails(item) {
+  return [
+    item.damage ? `Damage ${item.damage}` : "",
+    item.range ? `Range ${item.range}` : "",
+    item.shotsText || item.shotsMax
+      ? `Shots ${item.shotsText || item.shotsMax}`
+      : "",
+    item.minStr ? `Min Str ${item.minStr}` : "",
+    requiredAmmoLabelForWeapon(item, item)
+      ? `Ammo ${requiredAmmoLabelForWeapon(item, item)}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+function setupWeaponPickerRow(item) {
+  const group = setupWeaponPickerGroup(item);
+  const searchText = [
+    item.name,
+    item.category,
+    group,
+    setupWeaponPickerDetails(item),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return `<div class="setup-catalog-picker-row" data-setup-weapon-row data-weapon-group="${esc(group)}" data-weapon-search="${esc(searchText)}">
+    <div class="setup-catalog-picker-main">
+      <strong>${esc(item.name)}</strong>
+      <span>${esc(group)}${item.category && item.category !== group ? ` · ${esc(item.category)}` : ""}</span>
+      <p>${esc(setupWeaponPickerDetails(item) || item.notes || "")}</p>
+    </div>
+    <div class="setup-catalog-picker-price">${esc(money(item.costCents || 0))}</div>
+    <button type="button" data-setup-action="addSetupWeaponPurchase" data-setup-weapon-id="${esc(item.id)}">Add</button>
+  </div>`;
+}
+
+function setupWeaponPicker(items) {
+  return `<article class="setup-purchase-card setup-catalog-picker" id="setupWeaponPicker">
+    <h5>Weapons</h5>
+    <div class="setup-form-grid setup-purchase-form setup-catalog-picker-controls">
+      <label class="setup-wide">Search weapons<input id="setupWeaponSearchInput" type="search" placeholder="Weapon name" autocomplete="off" /></label>
+      <label>Type<select id="setupWeaponCategoryFilter" aria-label="Filter weapons by type">${setupWeaponPickerGroupOptions(items)}</select></label>
+      <label>Qty ${setupQuantityInput("setupWeaponPurchaseQty")}</label>
+    </div>
+    <div class="setup-catalog-picker-header" aria-hidden="true">
+      <strong>Weapon</strong>
+      <strong>Price</strong>
+      <span></span>
+    </div>
+    <div class="setup-catalog-picker-list">
+      ${items.map(setupWeaponPickerRow).join("")}
+      <p class="empty-state setup-catalog-picker-empty hidden">No weapons match that search.</p>
+    </div>
+  </article>`;
+}
+
+function filterSetupWeaponPicker() {
+  const picker = document.getElementById("setupWeaponPicker");
+  if (!picker) return;
+  const search = String(
+    document.getElementById("setupWeaponSearchInput")?.value || "",
+  )
+    .trim()
+    .toLowerCase();
+  const category =
+    document.getElementById("setupWeaponCategoryFilter")?.value || "All";
+  const rows = [...picker.querySelectorAll("[data-setup-weapon-row]")];
+  let visibleCount = 0;
+  rows.forEach((row) => {
+    const matchesSearch =
+      !search || String(row.dataset.weaponSearch || "").includes(search);
+    const matchesCategory =
+      category === "All" || row.dataset.weaponGroup === category;
+    const visible = matchesSearch && matchesCategory;
+    row.classList.toggle("hidden", !visible);
+    if (visible) visibleCount += 1;
+  });
+  picker
+    .querySelector(".setup-catalog-picker-empty")
+    ?.classList.toggle("hidden", visibleCount > 0);
+}
+
 function setupPurchaseForm(label, selectId, qtyId, action, items) {
   return `<div class="setup-form-grid setup-purchase-form">
     <label class="setup-wide"><span class="sr-only">Choose ${esc(label.toLowerCase())}</span><select id="${esc(selectId)}" aria-label="Choose ${esc(label.toLowerCase())}">${setupPurchaseOptions(items, `Choose ${label.toLowerCase()}...`)}</select></label>
@@ -2242,7 +2351,7 @@ function renderSetupGearPurchaseControls(report) {
     <h4 id="setupGearPurchaseHeading">Buy Starting Gear</h4>
     <p class="creator-note">Choose catalog items, set quantity when needed, and spend starting funds.</p>
     <div class="setup-purchase-card-list">
-      ${setupPurchaseControl("Weapons", "Weapon", "setupWeaponPurchaseSelect", "setupWeaponPurchaseQty", "addSetupWeaponPurchase", WEAPON_CATALOG)}
+      ${setupWeaponPicker(WEAPON_CATALOG)}
       <article class="setup-purchase-card">
         <h5>Ammunition</h5>
         <div class="setup-form-grid setup-purchase-form">

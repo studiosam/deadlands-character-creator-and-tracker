@@ -160,7 +160,7 @@ document.addEventListener("click", async (event) => {
   } else if (setupAction?.dataset.setupAction === "addSetupArmorPurchase") {
     addSetupArmorPurchase();
   } else if (setupAction?.dataset.setupAction === "addSetupWeaponPurchase") {
-    addSetupWeaponPurchase();
+    addSetupWeaponPurchase(setupAction.dataset.setupWeaponId || "");
   } else if (setupAction?.dataset.setupAction === "addSetupVehiclePurchase") {
     addSetupVehiclePurchase();
   } else if (setupAction?.dataset.setupAction === "sellBackSetupGear") {
@@ -208,12 +208,16 @@ document.addEventListener("input", (event) => {
   const conceptInput = event.target?.closest?.("[data-concept-field]");
   if (conceptInput) applyConceptField(conceptInput);
   if (event.target?.closest?.("#catalogSearchInput")) renderCatalogBrowser();
+  if (event.target?.closest?.("#setupWeaponSearchInput"))
+    filterSetupWeaponPicker();
 });
 
 document.addEventListener("change", (event) => {
   const conceptInput = event.target?.closest?.("[data-concept-field]");
   if (conceptInput) applyConceptField(conceptInput);
   if (event.target?.closest?.("[data-catalog-filter]")) renderCatalogBrowser();
+  if (event.target?.closest?.("#setupWeaponCategoryFilter"))
+    filterSetupWeaponPicker();
   if (event.target?.closest?.("#setupHindranceCatalogSelect")) {
     syncSetupHindranceSeverity();
     updateSetupHindranceSelectionPreview();

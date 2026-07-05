@@ -1321,11 +1321,11 @@ function addSetupArmorPurchase() {
   appToast(`${catalogItem.name} purchased.`, "success");
 }
 
-function addSetupWeaponPurchase() {
+function addSetupWeaponPurchase(weaponId = "") {
   if (!ensureSetupTraitsEditable()) return;
   const catalogItem = chosen(
     WEAPON_CATALOG,
-    $("#setupWeaponPurchaseSelect")?.value || "",
+    weaponId || $("#setupWeaponPurchaseSelect")?.value || "",
   );
   const quantity = setupPurchaseQuantity("#setupWeaponPurchaseQty");
   if (!catalogItem) {

@@ -42,6 +42,16 @@ const {
 
 useAppTestHooks();
 
+async function addSetupWeaponFromPicker(page, weaponName) {
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await page.locator("#setupWeaponSearchInput").fill(weaponName);
+  const row = setupGearPanel
+    .locator("[data-setup-weapon-row]")
+    .filter({ hasText: weaponName });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Add" }).click();
+}
+
 test("Gear setup audit separates money carried gear stored gear and load", async ({
   page,
 }) => {
@@ -222,6 +232,11 @@ test("Gear setup audit separates money carried gear stored gear and load", async
     "Gear",
     "Vehicles",
   ]);
+  await expect(
+    setupGearPanel.locator("#setupWeaponPurchaseSelect"),
+  ).toHaveCount(0);
+  await expect(page.locator("#setupWeaponSearchInput")).toBeVisible();
+  await expect(page.locator("#setupWeaponCategoryFilter")).toBeVisible();
 
   const before = await page.evaluate(() =>
     JSON.stringify({
@@ -260,10 +275,18 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   const setupGearPanel = page.locator("#setupGearPanel");
   await page.locator("#setupGearPurchaseSelect").selectOption("backpack");
   await setupGearPanel.getByRole("button", { name: "Buy Gear" }).click();
-  await page
-    .locator("#setupWeaponPurchaseSelect")
-    .selectOption("ww-colt-peacemaker-45");
-  await setupGearPanel.getByRole("button", { name: "Buy Weapon" }).click();
+  await page.locator("#setupWeaponCategoryFilter").selectOption("Pistols");
+  await page.locator("#setupWeaponSearchInput").fill("Peacemaker");
+  const peacemakerRow = setupGearPanel
+    .locator("[data-setup-weapon-row]")
+    .filter({ hasText: "Colt Peacemaker (.45)" });
+  await expect(peacemakerRow).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-weapon-row]")
+      .filter({ hasText: "Single-Barrel Shotgun" }),
+  ).toBeHidden();
+  await peacemakerRow.getByRole("button", { name: "Add" }).click();
   const ammoOptionTexts = await page
     .locator("#setupAmmoPurchaseSelect option")
     .evaluateAll((options) =>
@@ -435,10 +458,7 @@ test("Gear setup reset confirms before clearing starting purchases", async ({
 
   await page.locator("#setupGearPurchaseSelect").selectOption("backpack");
   await setupGearPanel.getByRole("button", { name: "Buy Gear" }).click();
-  await page
-    .locator("#setupWeaponPurchaseSelect")
-    .selectOption("ww-colt-peacemaker-45");
-  await setupGearPanel.getByRole("button", { name: "Buy Weapon" }).click();
+  await addSetupWeaponFromPicker(page, "Colt Peacemaker (.45)");
   await expect(resetButton).toBeEnabled();
   await expect(setupGearPanel).toContainText("$233.00");
 
@@ -522,13 +542,7 @@ test("Gear setup blocks purchases that exceed remaining starting funds", async (
     moneyCents: 100,
   });
 
-  await page
-    .locator("#setupWeaponPurchaseSelect")
-    .selectOption("ww-colt-peacemaker-45");
-  await page
-    .locator("#setupGearPanel")
-    .getByRole("button", { name: "Buy Weapon" })
-    .click();
+  await addSetupWeaponFromPicker(page, "Colt Peacemaker (.45)");
   await expect(page.locator("#toastRegion")).toContainText(
     "Not enough starting funds",
   );
