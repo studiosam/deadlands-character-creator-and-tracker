@@ -910,6 +910,7 @@ test("selected setup Edge and Hindrance cards surface precise catalog mechanics"
       "dl-edge-tale-teller",
       "dl-edge-reputation",
       "dl-edge-grit",
+      "dl-edge-fast-as-lightning",
       "dl-edge-man-of-a-thousand-faces",
       "dl-edge-soul-eater",
       "dl-edge-spook",
@@ -918,6 +919,7 @@ test("selected setup Edge and Hindrance cards surface precise catalog mechanics"
       "swade-edge-ambidextrous",
       "swade-edge-berserk",
       "swade-edge-brawler",
+      "swade-edge-brute",
       "swade-edge-calculating",
       "swade-edge-fame",
       "swade-edge-famous",
@@ -1008,6 +1010,9 @@ test("selected setup Edge and Hindrance cards surface precise catalog mechanics"
   );
   await expect(edgeCard("Reputation")).toContainText("+2 to Intimidation");
   await expect(edgeCard("Grit")).toContainText("Fear check penalties by 2");
+  await expect(edgeCard("Fast as Lightning")).toContainText(
+    "Maximum Multi-Action Penalty becomes -6",
+  );
   await expect(edgeCard("Soul Eater")).toContainText("Spirit at -2");
   await expect(edgeCard("Spook")).toContainText("Fear check at -2");
   await expect(edgeCard("Whateley Blood")).toContainText("-1 to Persuasion");
@@ -1028,6 +1033,9 @@ test("selected setup Edge and Hindrance cards surface precise catalog mechanics"
   );
   await expect(edgeCard("Ambidextrous")).toContainText("-2 off-hand penalty");
   await expect(edgeCard("Brawler")).toContainText("Str+d4 damage");
+  await expect(edgeCard("Brute")).toContainText("+1 at Short");
+  await expect(edgeCard("Brute")).toContainText("+2 at Medium");
+  await expect(edgeCard("Brute")).toContainText("+4 at Long");
   await expect(edgeCard("Fame")).toContainText("+1 Persuasion");
   await expect(edgeCard("Fame")).toContainText("Performance pay is doubled");
   await expect(edgeCard("Famous")).toContainText("+2 Persuasion");

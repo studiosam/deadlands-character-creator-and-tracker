@@ -218,7 +218,7 @@ Do not hard-block all invalid choices. Show warnings and allow a Marshal overrid
 |---|---|---|---|---|
 | Behold a Pale Horse… | Legendary | None beyond Rank | Grants a special war horse that is Fearless, has Danger Sense, is a Wild Card, and starts each session with its own Bennies. | `mount`, `wild-card-ally`, `session-bennies`, `danger-sense`, `fearless` |
 | Damned | Legendary | Wild Card, Spirit d6+, Reputation | If killed, the character automatically returns as Harrowed. After returning, this Edge can become an additional Harrowed Edge. | `wild-card-only`, `harrowed`, `death-trigger`, `edge-conversion` |
-| Fast as Lightning | Legendary | Agility d10+, Quick | Character can take a fourth action. Maximum Multi-Action Penalty increases accordingly. | `extra-action`, `multi-action`, `legendary`, `quick` |
+| Fast as Lightning | Legendary | Agility d10+, Quick | The character can take a fourth action. Maximum Multi-Action Penalty becomes -6 before any Edge or ability reductions. | `extra-action`, `multi-action`, `legendary`, `quick` |
 | Right Hand of the Devil | Legendary | Trademark Weapon, Shooting/Fighting/Athletics d10+ | Chosen favored weapon becomes a relic and deals one extra damage die. The benefit is tied to the weapon. | `relic-weapon`, `damage-die-bonus`, `trademark-weapon`, `weapon-bound` |
 | True Grit | Legendary | Spirit d10+, Grit | Ignores Fear check penalties and may reroll on the Fear Effects Table after failing. | `fear`, `ignore-fear-penalties`, `fear-effects-reroll`, `requires-grit` |
 
