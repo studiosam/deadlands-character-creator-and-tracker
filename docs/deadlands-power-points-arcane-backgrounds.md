@@ -12,17 +12,43 @@ Characters without an Arcane Background should not show Power Points by default.
 
 ## Arcane Background Defaults
 
-| Arcane Background | Requirements | Arcane Skill | Linked Attribute | Starting Powers | Starting Power Points | Special Notes |
-|---|---|---|---|---:|---:|---|
-| Blessed | Novice, Spirit d6+, Faith d4+ | Faith | Spirit | 3 | 15 | Starts with holy symbol plus 2 chosen powers |
-| Chi Master | Novice, Agility d6+, Spirit d6+, Martial Artist, Focus d4+ | Focus | Spirit | 3 | 15 | Starts with deflection plus 2 chosen powers |
-| Huckster | Novice, Gambling d6+, Spellcasting d4+ | Spellcasting | Smarts | 3 | 10 | Uses Dealing with the Devil rules |
-| Mad Scientist | Novice, Smarts d8+, Science d6+, Weird Science d4+ | Weird Science | Smarts | 2 | 15 | Critical Failure triggers Malfunction |
-| Shaman | Novice, Spirit d8+, Faith d4+ | Faith | Spirit | 2 | 15 | Often interacts with Old Ways and ritual flavor |
+| Arcane Background | Requirements                                               | Arcane Skill  | Linked Attribute | Starting Powers | Starting Power Points | Special Notes                                   |
+| ----------------- | ---------------------------------------------------------- | ------------- | ---------------- | --------------: | --------------------: | ----------------------------------------------- |
+| Blessed           | Novice, Spirit d6+, Faith d4+                              | Faith         | Spirit           |               3 |                    15 | Starts with holy symbol plus 2 chosen powers    |
+| Chi Master        | Novice, Agility d6+, Spirit d6+, Martial Artist, Focus d4+ | Focus         | Spirit           |               3 |                    15 | Starts with deflection plus 2 chosen powers     |
+| Huckster          | Novice, Gambling d6+, Spellcasting d4+                     | Spellcasting  | Smarts           |               3 |                    10 | Uses Dealing with the Devil rules               |
+| Mad Scientist     | Novice, Smarts d8+, Science d6+, Weird Science d4+         | Weird Science | Smarts           |               2 |                    15 | Critical Failure triggers Malfunction           |
+| Shaman            | Novice, Spirit d8+, Faith d4+                              | Faith         | Spirit           |               2 |                    15 | Often interacts with Old Ways and ritual flavor |
 
 The most important implementation detail is that Huckster starts with 10 Power Points, not 15. The app is wrong if it blindly gives every Arcane Background 15 Power Points.
 
 Blessed and Chi Master each have one fixed starting power. Blessed starts with holy symbol, and Chi Master starts with deflection. The remaining starting powers should be empty player-choice slots.
+
+## Current Implementation Status
+
+The app now implements the main player-facing parts of this contract:
+
+- Character Setup detects the selected Deadlands Arcane Background Edge and
+  audits the expected Arcane Skill, starting Power Points, required starting
+  powers, and allowed starting power list.
+- Eligible created pre-advance characters automatically receive source-tagged
+  starting Power Points from the matched Arcane Background profile.
+- Required starting powers are automatically recorded for eligible setup
+  characters and shown once as selected required power cards.
+- Remaining starting power slots can be filled from the matched Arcane
+  Background's allowed power list.
+- Known Powers, Power Points, active powers, variable Power Point spend,
+  maintenance, duration reminders, target/raise/mode fields, status
+  transitions, recast choices, and export/import persistence are implemented.
+- Huckster Deal with the Devil helper state exists as player bookkeeping, but a
+  full poker-hand resolution engine is intentionally not implemented.
+- Mad Scientist device records exist as player-owned bookkeeping, but full
+  malfunction table automation is intentionally not implemented.
+
+The remaining scope is mostly table-dependent validation and reminders, not a
+new Power Points data model. Full power-effect automation, full Arcane
+Background consequence automation, and Marshal-facing outcomes remain out of
+scope unless table use proves they are needed.
 
 ## Power Points Tracker Behavior
 
@@ -40,7 +66,7 @@ const ARCANE_BACKGROUNDS = {
     requirements: {
       rank: "Novice",
       attributes: { spirit: "d6" },
-      skills: { faith: "d4" }
+      skills: { faith: "d4" },
     },
     arcaneSkill: "Faith",
     linkedAttribute: "Spirit",
@@ -51,12 +77,12 @@ const ARCANE_BACKGROUNDS = {
     edgeFamily: "Miracles",
     criticalFailure: {
       type: "backlash",
-      effect: "Gain 1 Fatigue and terminate currently active powers."
+      effect: "Gain 1 Fatigue and terminate currently active powers.",
     },
     notes: [
       "Track sins or belief violations as reminder notes, not as automatic rules enforcement.",
-      "Do not infer this background from religious profession text alone."
-    ]
+      "Do not infer this background from religious profession text alone.",
+    ],
   },
 
   chiMaster: {
@@ -66,7 +92,7 @@ const ARCANE_BACKGROUNDS = {
       rank: "Novice",
       attributes: { agility: "d6", spirit: "d6" },
       edges: ["Martial Artist"],
-      skills: { focus: "d4" }
+      skills: { focus: "d4" },
     },
     arcaneSkill: "Focus",
     linkedAttribute: "Spirit",
@@ -77,12 +103,12 @@ const ARCANE_BACKGROUNDS = {
     edgeFamily: "Gifted",
     criticalFailure: {
       type: "backlash",
-      effect: "Gain 1 Fatigue and terminate currently active powers."
+      effect: "Gain 1 Fatigue and terminate currently active powers.",
     },
     notes: [
       "Beneficial powers are self-focused by default.",
-      "Detrimental powers generally need touch-range handling."
-    ]
+      "Detrimental powers generally need touch-range handling.",
+    ],
   },
 
   huckster: {
@@ -90,7 +116,7 @@ const ARCANE_BACKGROUNDS = {
     displayName: "Huckster",
     requirements: {
       rank: "Novice",
-      skills: { gambling: "d6", spellcasting: "d4" }
+      skills: { gambling: "d6", spellcasting: "d4" },
     },
     arcaneSkill: "Spellcasting",
     linkedAttribute: "Smarts",
@@ -101,12 +127,12 @@ const ARCANE_BACKGROUNDS = {
     edgeFamily: "Magic",
     criticalFailure: {
       type: "backlash",
-      effect: "Gain 1 Fatigue and terminate currently active powers."
+      effect: "Gain 1 Fatigue and terminate currently active powers.",
     },
     notes: [
       "Hucksters cannot use Shorting or spend Bennies for Power Points in the normal way.",
-      "Add a Dealing with the Devil helper as a separate subsystem."
-    ]
+      "Add a Dealing with the Devil helper as a separate subsystem.",
+    ],
   },
 
   madScientist: {
@@ -115,7 +141,7 @@ const ARCANE_BACKGROUNDS = {
     requirements: {
       rank: "Novice",
       attributes: { smarts: "d8" },
-      skills: { science: "d6", weirdScience: "d4" }
+      skills: { science: "d6", weirdScience: "d4" },
     },
     arcaneSkill: "Weird Science",
     linkedAttribute: "Smarts",
@@ -126,12 +152,12 @@ const ARCANE_BACKGROUNDS = {
     edgeFamily: "Weird Science",
     criticalFailure: {
       type: "malfunction",
-      effect: "Marshal rolls on the Malfunction Table."
+      effect: "Marshal rolls on the Malfunction Table.",
     },
     notes: [
       "Powers should be named as devices, gizmos, elixirs, or inventions.",
-      "Do not apply normal Fatigue backlash unless a specific rule says to."
-    ]
+      "Do not apply normal Fatigue backlash unless a specific rule says to.",
+    ],
   },
 
   shaman: {
@@ -140,7 +166,7 @@ const ARCANE_BACKGROUNDS = {
     requirements: {
       rank: "Novice",
       attributes: { spirit: "d8" },
-      skills: { faith: "d4" }
+      skills: { faith: "d4" },
     },
     arcaneSkill: "Faith",
     linkedAttribute: "Spirit",
@@ -151,21 +177,21 @@ const ARCANE_BACKGROUNDS = {
     edgeFamily: "Miracles",
     criticalFailure: {
       type: "backlash",
-      effect: "Gain 1 Fatigue and terminate currently active powers."
+      effect: "Gain 1 Fatigue and terminate currently active powers.",
     },
     notes: [
       "Track Old Ways separately as an oath or reminder.",
-      "If silenced, the app should remind the user that Faith rolls may be penalized."
-    ]
-  }
+      "If silenced, the app should remind the user that Faith rolls may be penalized.",
+    ],
+  },
 };
 ```
 
 ## Character Creation Behavior
 
-When the user selects an Arcane Background, the app should check whether another Arcane Background is already selected. If another one exists, the app should block the selection or ask whether the existing Arcane Background should be replaced.
+When the user selects an Arcane Background, the app should check whether another Arcane Background is already selected. If another one exists, the app should block it or flag it for review unless a later table-approved replacement workflow is added.
 
-After selection, the app should add the Arcane Background Edge, enable Power Points, set the arcane skill recommendation, create starting power slots, and set current and maximum Power Points from the config. Huckster should receive 10 current and 10 maximum Power Points, while Blessed, Chi Master, Mad Scientist, and Shaman should receive 15.
+In the current setup flow, the Arcane Background Edge is selected on the Edges step. The Powers step then uses that selected Edge to enable Power Points, check the arcane skill expectation, automatically add required starting powers, expose remaining legal starting power slots, and set current and maximum Power Points from the config. Huckster should receive 10 current and 10 maximum Power Points, while Blessed, Chi Master, Mad Scientist, and Shaman should receive 15.
 
 ```js
 function applyArcaneBackground(character, backgroundKey) {
@@ -178,12 +204,12 @@ function applyArcaneBackground(character, backgroundKey) {
     edgeName: config.edgeName,
     arcaneSkill: config.arcaneSkill,
     linkedAttribute: config.linkedAttribute,
-    edgeFamily: config.edgeFamily
+    edgeFamily: config.edgeFamily,
   };
 
   character.resources = character.resources || [];
   character.resources = character.resources.filter(
-    (resource) => resource.id !== "power-points"
+    (resource) => resource.id !== "power-points",
   );
 
   character.resources.push({
@@ -192,7 +218,7 @@ function applyArcaneBackground(character, backgroundKey) {
     current: config.startingPowerPoints,
     max: config.startingPowerPoints,
     source: config.edgeName,
-    note: `${config.displayName} uses ${config.arcaneSkill}.`
+    note: `${config.displayName} uses ${config.arcaneSkill}.`,
   });
 
   character.powers = [
@@ -202,7 +228,7 @@ function applyArcaneBackground(character, backgroundKey) {
       cost: "",
       duration: "",
       active: false,
-      notes: ""
+      notes: "",
     })),
     ...Array.from({ length: config.playerChoicePowers }, (_, index) => ({
       name: "",
@@ -210,15 +236,15 @@ function applyArcaneBackground(character, backgroundKey) {
       cost: "",
       duration: "",
       active: false,
-      notes: ""
-    }))
+      notes: "",
+    })),
   ];
 
   character.reminders = character.reminders || [];
   character.reminders.push({
     type: "Arcane Background",
     name: config.displayName,
-    text: config.criticalFailure.effect
+    text: config.criticalFailure.effect,
   });
 
   return character;
@@ -255,7 +281,11 @@ function shouldEnablePowerPointsFromImport(data) {
   const hasArcaneBackgroundObject =
     Array.isArray(data.abs) && data.abs.length > 0;
 
-  return hasArcaneBackgroundEdge || hasExplicitPowerPoints || hasArcaneBackgroundObject;
+  return (
+    hasArcaneBackgroundEdge ||
+    hasExplicitPowerPoints ||
+    hasArcaneBackgroundObject
+  );
 }
 ```
 
@@ -282,11 +312,11 @@ const power = {
   source: "Arcane Background: Blessed",
   trapping: "",
   notes: "",
-  modifiers: []
+  modifiers: [],
 };
 ```
 
-Power controls should include add power, remove power, mark active, mark inactive, spend base cost, refund cost, and notes. The app should preserve powers through localStorage and JSON export.
+Power controls should include add power, remove power, activate a known power, dismiss/expire/disrupt active records, spend structured Power Point costs where known, and preserve notes. The app preserves powers and active-power records through localStorage and JSON export/import.
 
 ## Huckster-Specific Behavior
 
@@ -308,11 +338,11 @@ const hucksterDeal = {
   leftoverPowerPoints: 0,
   usedJoker: false,
   backfireTriggered: false,
-  notes: ""
+  notes: "",
 };
 ```
 
-The Huckster helper should include fields for ante Benny spent, selected power, required Power Points, Gambling result, cards drawn, poker hand, temporary Power Points generated, shortage penalty, leftover Power Points, used Joker, Backfire triggered, and notes.
+The Huckster helper should include fields for ante Benny spent, selected power, required Power Points, Gambling result, cards drawn, poker hand, temporary Power Points generated, shortage penalty, leftover Power Points, used Joker, Backfire triggered, and notes. The current app stores Huckster helper state as player bookkeeping; it does not replace table adjudication of poker-hand results.
 
 ## Mad Scientist-Specific Behavior
 
@@ -349,7 +379,7 @@ const powerPointResource = {
   current: 15,
   max: 15,
   source: "Arcane Background: Blessed",
-  note: "Blessed uses Faith."
+  note: "Blessed uses Faith.",
 };
 ```
 

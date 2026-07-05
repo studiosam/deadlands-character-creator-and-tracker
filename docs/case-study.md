@@ -114,8 +114,10 @@ Recent product work adds:
 ## Next Steps
 
 - Add final screenshots/GIFs to the README.
-- Prioritize UX readiness, table-use polish, stale-copy cleanup, and focused
-  regression coverage without broadening MVP mechanics scope.
+- Finish the current Character Setup UX polish pass, then refactor the largest
+  setup render/action modules before adding any new mechanics.
+- Keep stale-copy cleanup and focused regression coverage part of every polish
+  slice without broadening MVP mechanics scope.
 - Keep future mechanics table-driven: add reminders or bookkeeping only when a
   real session shows direct controls are not enough.
 - Gather user feedback from real sessions before investing in paid-product

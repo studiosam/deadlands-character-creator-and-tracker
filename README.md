@@ -74,8 +74,9 @@ want a local, private, session-focused tracker at the table.
   undo/redo, Deadlands bookkeeping records, and automated browser/static checks.
 - Implemented setup scaffolding: concept, Attributes, Skills, Edges,
   optional Hindrances with benefit spending, Powers setup, Gear purchases,
-  setup source tracking, GM/table exception markers, setup review, and creation
-  baseline snapshots for eligible created pre-advance characters.
+  setup sell-back, useful-ammo prioritization, setup source tracking, GM/table
+  exception markers, setup review, and creation baseline snapshots for eligible
+  created pre-advance characters.
 - Implemented Advancement baseline: canonical app-owned Advancement entries,
   supported application for existing advancement types, persistence,
   import-history handling, and safe undo checks where reliable before/after
@@ -300,6 +301,8 @@ pushes and pull requests targeting `main`.
 - Keep Character Setup, Character Sheet reference, Characters profile editing,
   Inventory, Arcane, Combat, and the existing Advancement workflow clearly
   separated.
+- Finish Character Setup UX polish before adding new mechanics.
+- Refactor the largest setup modules after the current Gear workflow stabilizes.
 - Harden schema migrations as real breaking data changes appear.
 - Improve onboarding copy and empty states from actual table feedback.
 - If monetization becomes serious, split a generic tracker core from

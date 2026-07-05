@@ -65,7 +65,8 @@ automate.
 - [ ] The confirmed Character Sheet hides setup stepper/forms, manual
       Edge/Hindrance add forms, Advancement add forms, and manual Power Points
       setup by default.
-- [ ] Manage Character opens the Characters panel profile editor.
+- [ ] The global Manage menu opens character-management controls and the
+      Characters panel profile editor without showing setup controls inline.
 - [ ] Characters panel profile edits update the header and Character Sheet while
       preserving `setupStatus`.
 - [ ] Human free Edge and Hindrance benefit Edge selectors hide Edges blocked by
@@ -74,19 +75,29 @@ automate.
       eligibility mark Edges as Needs Review and block setup confirmation.
 - [ ] Stale source-tracked Hindrance benefit Edges use the same Needs Review
       warning and removal path.
-- [ ] Powers setup audit reports the matched Arcane Background profile, expected
+- [ ] Powers setup reports the matched Arcane Background profile, expected
       Arcane Skill, Power Points, starting power count, required starting
-      powers, and known powers without adding or removing powers.
+      powers, and known powers.
+- [ ] Eligible created pre-advance arcane characters automatically receive
+      source-tagged starting Power Points and required starting powers.
+- [ ] Required starting powers appear once as selected required power cards, not
+      as duplicate checklist and selected-power cards.
 - [ ] Powers setup audit flags missing required starting powers and powers
       outside the matched Arcane Background list while keeping imported or
       advanced characters audit-only.
-- [ ] Gear setup audit reports money, Current Load, Combat Load, Carrying
-      Capacity, carried/on-body gear, equipped/worn gear, stored/off-person
-      gear, and container contents without exposing inventory mutation controls.
+- [ ] Gear setup reports funds spent/remaining, Current Load, Combat Load,
+      carried/on-body gear, equipped/worn gear, stored/off-person gear, and
+      container contents.
 - [ ] Gear setup audit flags missing names, unknown locations, suspicious
       counts, unknown weights, and other obvious data issues as review items.
 - [ ] Starting gear purchase validation and gear-source tracking allow eligible
       created pre-advance characters to buy catalog gear from setup funds.
+- [ ] Starting gear sell-back removes eligible setup-created purchases and
+      refunds their recorded setup cost.
+- [ ] Ammo purchase options prioritize ammo matching purchased weapons and
+      label ammo with no matching purchased weapon.
+- [ ] Gear setup keeps the current inventory visible beside purchase controls
+      on wider screens.
 - [ ] Gear free/source-granted items and richer setup exception notes remain
       deferred.
 
@@ -107,8 +118,8 @@ selection, and variable Power Point spending workflow.
 ### Blessed
 
 - [ ] Select or load a Blessed character.
-- [ ] App shows that Holy Symbol is required.
-- [ ] App allows Holy Symbol to be added.
+- [ ] App automatically records Holy Symbol as the required starting power.
+- [ ] Holy Symbol appears once as a selected required power card.
 - [ ] App shows that Blessed needs two additional starting powers.
 - [ ] Detect/Conceal Arcana shows Detect-only restriction.
 - [ ] Light/Darkness shows Light-only restriction.
@@ -116,8 +127,8 @@ selection, and variable Power Point spending workflow.
 ### Chi Master
 
 - [ ] Select or load a Chi Master character.
-- [ ] App shows that Deflection is required.
-- [ ] App allows Deflection to be added.
+- [ ] App automatically records Deflection as the required starting power.
+- [ ] Deflection appears once as a selected required power card.
 - [ ] App shows that Chi Master needs two additional starting powers.
 - [ ] Detect/Conceal Arcana shows Detect-only restriction.
 - [ ] Chi Master range restriction notes are visible.
@@ -154,7 +165,8 @@ selection, and variable Power Point spending workflow.
 
 ## Read-only Catalog page
 
-- [ ] Catalog opens from the main menu or Manage > App, not from the active-play primary tabs.
+- [ ] Catalog opens from the global menu or setup reference links, not from the
+      active-play primary tabs.
 - [ ] Edges, Hindrances, and Powers can be browsed without Add, Save, or Apply buttons.
 - [ ] Search and filters update the result list and detail panel.
 - [ ] Browsing the Catalog does not change the active character or local save data.

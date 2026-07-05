@@ -51,7 +51,9 @@ the rules.
   set source-tagged starting Power Points.
 - Starting Gear purchases use screenshot-aligned catalog data. Eligible created
   pre-advance characters can buy source-tagged catalog gear, ammunition, armor,
-  weapons, and vehicles from setup funds.
+  weapons, and vehicles from setup funds, sell back eligible setup purchases,
+  keep current inventory visible while buying, and prioritize ammo that matches
+  purchased weapons.
 - Creation baselines snapshot finalized eligible created characters across
   Attributes, Skills, Hindrances, starting Edges, Powers, Gear, money, and setup
   source fields. Basic GM/table exception marking stores metadata on the
@@ -146,7 +148,8 @@ Completed scope:
 2. Arcane Background profile checks for required starting powers, starting
    power counts, and starting Power Points.
 3. Starting Gear purchase validation and source tracking for catalog gear,
-   ammunition, armor, weapons, and vehicles.
+   ammunition, armor, weapons, and vehicles, including setup sell-back and
+   useful-ammo prioritization.
 4. Creation baselines for finalized eligible created characters across
    Attributes, Skills, Hindrances, starting Edges, Powers, Gear, money, and
    setup source fields.
@@ -561,6 +564,23 @@ user can tell which source profile produced each available choice.
 The mechanics roadmap is at feature-complete MVP scope for a player-owned live
 tracker. The next work should be UX readiness, table-use polish, documentation,
 bug fixes, and focused tests rather than another speculative mechanics phase.
+
+Current top-to-bottom audit findings:
+
+1. Feature progression should pause on new mechanics. Phases 1-5 are complete
+   at the current player-owned tracker scope, and Phase 6 should wait for manual
+   source/profile investigation.
+2. The highest product value now is Character Setup UX polish, especially Gear
+   and final Review clarity, because that is where new users still spend the
+   most decision-heavy time.
+3. The highest maintainability value is a mechanical refactor of the largest
+   setup files after the current Gear UX stabilizes. `src/tracker/setup-render.js`
+   and `src/tracker/setup-actions.js` are the next obvious split candidates.
+4. Reference/catalog docs remain useful as implementation inputs, but the live
+   product docs should stay focused on actual supported workflows and explicit
+   non-goals.
+5. Final portfolio readiness still needs screenshots/GIFs, a table-use pass on
+   mobile spacing, and one final full `npm test` gate before release/push.
 
 Future mechanics slices should be accepted only when they:
 

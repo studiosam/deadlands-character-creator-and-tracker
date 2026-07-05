@@ -86,11 +86,12 @@ Keep the load order grouped by dependency:
    `src/tracker/combat-declaration-model.js`,
    `src/tracker/encumbrance.js`, `src/tracker/render-helpers.js`,
    `src/tracker/advancement-core.js`, `src/tracker/entries.js`,
-   `src/tracker/setup-source.js`.
+   `src/tracker/setup-source.js`, `src/tracker/deadlands-bookkeeping.js`.
 5. Persistence and cross-cutting services:
    `src/tracker/storage.js`, `src/tracker/undo-history.js`.
 6. Domain render/action modules:
    `src/tracker/catalog-ui.js`, setup modules, `src/tracker/render.js`,
+   `src/tracker/deadlands-bookkeeping-ui.js`,
    `src/tracker/combat-declaration-ui.js`,
    `src/tracker/active-power-cards.js`, `src/tracker/combat.js`, notes,
    equipment, Arcane, inventory, power editing, advancement, import/export, and
@@ -133,6 +134,32 @@ Browser specs are split by player-facing domain:
 Shared Playwright helpers live in `tests/browser/helpers.js`. Each spec must
 call `useAppTestHooks()` so local storage cleanup and browser runtime-error
 collection are registered per file.
+
+## Current Maintainability Audit
+
+The app is still reasonable as a static single-page project, but several files
+are large enough that future work should avoid adding unrelated behavior to
+them:
+
+- `src/catalogs.js` and `src/power-catalog.js` are large by design because they
+  are catalog data. Keep validating them statically rather than splitting them
+  during feature work.
+- `src/tracker/setup-render.js` and `src/tracker/setup-actions.js` are now the
+  main maintainability risk. The next refactor should extract Gear setup
+  rendering/actions first, then continue with Powers or Hindrances only if the
+  slice stays mechanical.
+- `src/creator.js` is legacy fallback code for older creation-draft paths and
+  should not receive new normal-flow Character Setup behavior.
+- The browser specs are split by domain, but `setup-edges.spec.js`,
+  `arcane-active-powers.spec.js`, `effects-roll-reminders.spec.js`, and
+  `setup-baseline-source.spec.js` are the next test-maintenance candidates if
+  they become hard to navigate.
+- `index.html` can remain a single static document for now. The important
+  boundary is keeping feature behavior in modules and preserving script load
+  order, not introducing routing or a build framework prematurely.
+
+Do not start another broad mechanics phase before this cleanup unless a real
+table-use problem proves the need.
 
 ## Documentation Workflow
 
