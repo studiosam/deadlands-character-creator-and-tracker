@@ -29,6 +29,21 @@ function ammoLabel(kind, caliber) {
   return `${label} ammo (${normalizeCaliber(caliber)})`;
 }
 
+function titleCaseAmmoType(value) {
+  return String(value || "")
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function displayAmmoCaliber(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/ga/i.test(text)) return text;
+  return normalizeCaliber(text) || text;
+}
+
 function ammoKindFromWeapon(weapon) {
   const category = String(weapon?.category || "").toLowerCase();
   if (/revolver|pistol/.test(category)) return "pistol";
@@ -59,6 +74,24 @@ function exactAmmoTypeForWeapon(weapon) {
     legacy?.caliber ||
     "";
   return ammoKey(kind, caliber) || type;
+}
+
+function requiredAmmoLabelForWeapon(weapon, catalogItem = null) {
+  const ammoType =
+    exactAmmoTypeForWeapon(weapon) || catalogItem?.ammoType || "";
+  if (!ammoType) return "";
+
+  const caliber =
+    displayAmmoCaliber(weapon?.caliber || catalogItem?.caliber) ||
+    caliberFromText(
+      `${weapon?.name || ""} ${weapon?.notes || ""} ${catalogItem?.name || ""} ${catalogItem?.notes || ""}`,
+    );
+  const keyed = String(ammoType).match(/^(pistol|rifle)-(\d{2})-ammo$/);
+  if (keyed) return ammoLabel(keyed[1], `.${keyed[2]}`);
+
+  const catalogAmmo = GEAR_CATALOG.find((item) => item.id === ammoType);
+  const label = catalogAmmo?.name || titleCaseAmmoType(ammoType);
+  return caliber && !label.includes(caliber) ? `${label} (${caliber})` : label;
 }
 
 function exactAmmoTypeForCatalogAmmo(item, selectedCaliber = "") {

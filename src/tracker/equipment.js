@@ -86,8 +86,23 @@ function renderWeapons() {
       label: weapon.name,
       item: weapon,
     };
-    query(".weapon-details").textContent =
-      `Damage ${weapon.damage || "—"} • Range ${weapon.range || "—"} • AP ${weapon.ap ?? "—"} • ROF ${weapon.rof ?? "—"} • ${physicalItemLocationLabel(weaponEntry)} • Weight ${formatWeightPounds(physicalItemWeight(weaponEntry))} • Min Str ${weapon.minStr || "—"} • Cost ${weapon.costCents !== undefined ? money(weapon.costCents) : "—"}`;
+    const requiredAmmo = requiredAmmoLabelForWeapon(
+      weapon,
+      catalogWeaponForRecord(weapon),
+    );
+    query(".weapon-details").textContent = [
+      `Damage ${weapon.damage || "—"}`,
+      `Range ${weapon.range || "—"}`,
+      `AP ${weapon.ap ?? "—"}`,
+      `ROF ${weapon.rof ?? "—"}`,
+      requiredAmmo ? `Ammo ${requiredAmmo}` : "",
+      physicalItemLocationLabel(weaponEntry),
+      `Weight ${formatWeightPounds(physicalItemWeight(weaponEntry))}`,
+      `Min Str ${weapon.minStr || "—"}`,
+      `Cost ${weapon.costCents !== undefined ? money(weapon.costCents) : "—"}`,
+    ]
+      .filter(Boolean)
+      .join(" • ");
 
     const fire = query(".fire-btn");
     const load = query(".load-btn");

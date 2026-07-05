@@ -1904,6 +1904,10 @@ function setupVehicleLine(vehicle) {
 
 function setupGearPlayerEntryLine(entry) {
   const item = entry.item || {};
+  const requiredAmmo =
+    entry.type === "weapon"
+      ? requiredAmmoLabelForWeapon(item, entry.catalog)
+      : "";
   const loaded =
     entry.type === "weapon" && isTrackedWeapon(item)
       ? `${item.shotsLoaded ?? 0} / ${item.shotsMax ?? "—"} loaded`
@@ -1915,6 +1919,7 @@ function setupGearPlayerEntryLine(entry) {
     entry.type === "weapon" && item.ap !== undefined ? `AP ${item.ap}` : "",
     entry.type === "weapon" && item.rof !== undefined ? `ROF ${item.rof}` : "",
     entry.type === "weapon" && item.minStr ? `Min Str ${item.minStr}` : "",
+    requiredAmmo ? `Ammo ${requiredAmmo}` : "",
     entry.type === "armor" && item.armor ? `Armor +${item.armor}` : "",
     entry.type === "armor" ? armorLabel(item.location) : "",
     entry.type === "armor" && item.minStr ? `Min Str ${item.minStr}` : "",
@@ -1993,6 +1998,14 @@ function setupGearSummaryMarkup(report) {
     ${setupLabeledMeterSummary("Current Load", `${formatWeightPounds(carriedLoad)} / ${formatWeightPounds(carryingCapacity)}`, carriedLoad, carryingCapacity, "Normal carried load compared to carrying capacity.")}
     ${setupLabeledMeterSummary("Combat Load", `${formatWeightPounds(combatLoad)} / ${formatWeightPounds(carryingCapacity)}`, combatLoad, carryingCapacity, "Combat load after automatic backpack-drop handling.")}
   </div>`;
+}
+
+function setupGearResetButton(report) {
+  if (!report.editable) return "";
+  const hasSetupPurchases = report.entries.some(
+    (entry) => setupGearCreationSource(entry.item) === "setup-starting-gear",
+  );
+  return `<button class="ghost danger-lite" type="button" data-setup-action="resetSetupGear"${hasSetupPurchases ? "" : " disabled"}>Reset Gear</button>`;
 }
 
 function renderSetupGearGroups(report) {
@@ -2264,14 +2277,21 @@ function renderSetupGear() {
         <h3 id="setupGearHeading">Gear</h3>
         <p>Buy starting equipment for created characters. Use Inventory later for loot, repairs, trades, and GM adjustments.</p>
       </div>
-      ${setupStatusMarkup(characterSetupStatus("gear"))}
+      <div class="creator-actions">
+        ${setupGearResetButton(report)}
+        ${setupStatusMarkup(characterSetupStatus("gear"))}
+      </div>
     </div>
     ${setupGearSummaryMarkup(report)}
     <div class="setup-gear-workbench">
       ${renderSetupGearPurchaseControls(report)}
       <section class="setup-trait-group setup-recorded-gear" aria-labelledby="setupRecordedGearHeading">
-        <h4 id="setupRecordedGearHeading">Current Inventory</h4>
-        <p class="creator-note">Visible while buying so you can compare purchases without scrolling.</p>
+        <div class="section-title">
+          <div>
+            <h4 id="setupRecordedGearHeading">Current Inventory</h4>
+            <p class="creator-note">Visible while buying so you can compare purchases without scrolling.</p>
+          </div>
+        </div>
         <div class="setup-gear-groups">
           ${renderSetupGearGroups(report)}
         </div>

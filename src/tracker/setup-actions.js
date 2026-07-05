@@ -1065,6 +1065,106 @@ function sellBackSetupGearPurchase(type, id) {
   appToast(`${setupSellBackLabel(item)} sold back.`, "success");
 }
 
+function resetSetupInventoryGear(items, removedContainerIds) {
+  return (items || []).flatMap((item) => {
+    const keptContents = resetSetupInventoryGear(
+      item.contents || [],
+      removedContainerIds,
+    );
+    if (setupGearCreationSource(item) === "setup-starting-gear") {
+      if (item.id) removedContainerIds.add(item.id);
+      return keptContents.map((content) => ({
+        ...content,
+        location: "carried",
+        storageId: "",
+      }));
+    }
+    item.contents = keptContents;
+    return [item];
+  });
+}
+
+function setupGearRecordIsResettable(item) {
+  return setupGearCreationSource(item) === "setup-starting-gear";
+}
+
+function movePhysicalItemsOutOfResetContainers(removedContainerIds) {
+  if (!removedContainerIds.size) return;
+  [
+    ...(character.weapons || []),
+    ...(character.armorInventory || []),
+    ...(character.consumables || []),
+    ...Object.values(character.ammo || {}),
+  ].forEach((item) => {
+    if (
+      item?.itemLocation === "container" &&
+      removedContainerIds.has(item.containerId)
+    ) {
+      setPhysicalItemLocation(item, "carried");
+    }
+  });
+}
+
+async function resetSetupGear() {
+  if (!ensureSetupTraitsEditable()) return;
+  const setupPurchaseEntries = setupGearStartingPurchaseEntries();
+  if (!setupPurchaseEntries.length) return;
+
+  const confirmed = await appConfirm(
+    "This removes all setup starting gear purchases and refunds their starting funds. Imported gear, GM/table exceptions, and later inventory changes are not removed.",
+    {
+      title: "Reset setup gear?",
+      confirmText: "Reset Gear",
+      cancelText: "Keep Gear",
+      danger: true,
+    },
+  );
+  if (!confirmed) return;
+
+  const refundCents = setupGearStartingPurchaseSpent();
+  const setupWeaponAmmoKeys = new Set(
+    (character.weapons || [])
+      .filter(setupGearRecordIsResettable)
+      .map((weapon) => exactAmmoTypeForWeapon(weapon))
+      .filter(Boolean),
+  );
+  const removedContainerIds = new Set();
+
+  character.inventory = resetSetupInventoryGear(
+    character.inventory || [],
+    removedContainerIds,
+  );
+  character.weapons = (character.weapons || []).filter(
+    (weapon) => !setupGearRecordIsResettable(weapon),
+  );
+  character.armorInventory = (character.armorInventory || []).filter(
+    (armor) => !setupGearRecordIsResettable(armor),
+  );
+  character.consumables = (character.consumables || []).filter(
+    (item) => !setupGearRecordIsResettable(item),
+  );
+  Object.entries(character.ammo || {}).forEach(([key, ammo]) => {
+    const emptySetupWeaponReserve =
+      setupWeaponAmmoKeys.has(key) &&
+      !setupGearCreationSource(ammo) &&
+      Math.max(0, Number(ammo?.count) || 0) === 0;
+    if (setupGearRecordIsResettable(ammo) || emptySetupWeaponReserve)
+      delete character.ammo[key];
+  });
+  character.vehicles = (character.vehicles || []).filter(
+    (vehicle) => !setupGearRecordIsResettable(vehicle),
+  );
+  movePhysicalItemsOutOfResetContainers(removedContainerIds);
+  character.moneyCents = Math.max(
+    0,
+    (Number(character.moneyCents) || 0) + refundCents,
+  );
+
+  render();
+  save();
+  appToast("Setup gear purchases reset.", "success");
+}
+
 function addSetupGearPurchase() {
   if (!ensureSetupTraitsEditable()) return;
   const catalogItem = chosen(

@@ -168,6 +168,8 @@ document.addEventListener("click", async (event) => {
       setupAction.dataset.setupGearType || "",
       setupAction.dataset.setupGearId || "",
     );
+  } else if (setupAction?.dataset.setupAction === "resetSetupGear") {
+    await resetSetupGear();
   } else if (setupAction?.dataset.setupAction === "markSetupException") {
     markSetupRecordAsException(
       setupAction.dataset.setupCollection || "",

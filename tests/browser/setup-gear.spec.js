@@ -98,6 +98,21 @@ test("Gear setup audit separates money carried gear stored gear and load", async
         costCents: 400,
         itemLocation: "carried",
       },
+      {
+        id: "single-barrel-shotgun",
+        catalogId: "ww-single-barrel-shotgun",
+        name: "Single-Barrel Shotgun",
+        damage: "1-3d6",
+        range: "12/24/48",
+        ap: "",
+        rof: 1,
+        shotsMax: 1,
+        shotsLoaded: 1,
+        ammoType: "shotgun-shells",
+        weight: 6,
+        costCents: 2500,
+        itemLocation: "carried",
+      },
     ],
     armorInventory: [
       {
@@ -191,6 +206,13 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   await expect(bowieKnifeCard.locator(".setup-gear-detail-list")).toContainText(
     "Damage Str+d4",
   );
+  const shotgunCard = setupGearPanel
+    .locator(".setup-gear-line")
+    .filter({ hasText: "Single-Barrel Shotgun" });
+  await shotgunCard.locator("summary").click();
+  await expect(shotgunCard.locator(".setup-gear-detail-list")).toContainText(
+    "Ammo Shotgun shells (12-ga)",
+  );
   await expect(
     setupGearPanel.locator(".setup-gear-workbench > .setup-recorded-gear"),
   ).toHaveCount(1);
@@ -275,6 +297,12 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   await expect(setupGearPanel).toContainText("$180.64");
   await expect(setupGearPanel).not.toContainText("Starting Gear Purchase");
   await expect(setupGearPanel).toContainText("Bateaux");
+  await expect(
+    setupGearPanel
+      .locator(".setup-gear-line")
+      .filter({ hasText: "Colt Peacemaker (.45)" })
+      .locator(".setup-gear-detail-list"),
+  ).toContainText("Ammo Pistol ammo (.45)");
 
   const snapshot = await page.evaluate(() => ({
     moneyCents: character.moneyCents,
@@ -387,6 +415,74 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
     weapons: 0,
     armor: 0,
     vehicles: 0,
+  });
+});
+
+test("Gear setup reset confirms before clearing starting purchases", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Reset Gear Purchaser",
+    preferredId: "reset-gear-purchaser",
+    moneyCents: 25000,
+  });
+
+  const setupGearPanel = page.locator("#setupGearPanel");
+  const resetButton = setupGearPanel.getByRole("button", {
+    name: "Reset Gear",
+  });
+  await expect(resetButton).toBeDisabled();
+
+  await page.locator("#setupGearPurchaseSelect").selectOption("backpack");
+  await setupGearPanel.getByRole("button", { name: "Buy Gear" }).click();
+  await page
+    .locator("#setupWeaponPurchaseSelect")
+    .selectOption("ww-colt-peacemaker-45");
+  await setupGearPanel.getByRole("button", { name: "Buy Weapon" }).click();
+  await expect(resetButton).toBeEnabled();
+  await expect(setupGearPanel).toContainText("$233.00");
+
+  await resetButton.click();
+  const dialog = page.locator("#appDialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Reset setup gear?");
+  await dialog.getByRole("button", { name: "Keep Gear" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    setupGearPanel.locator(".setup-gear-line").filter({ hasText: "Backpack" }),
+  ).toHaveCount(1);
+  await expect(
+    setupGearPanel
+      .locator(".setup-gear-line")
+      .filter({ hasText: "Colt Peacemaker (.45)" }),
+  ).toHaveCount(1);
+  await expect(setupGearPanel).toContainText("$233.00");
+
+  await resetButton.click();
+  await dialog.getByRole("button", { name: "Reset Gear" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    setupGearPanel.locator(".setup-gear-line").filter({ hasText: "Backpack" }),
+  ).toHaveCount(0);
+  await expect(
+    setupGearPanel
+      .locator(".setup-gear-line")
+      .filter({ hasText: "Colt Peacemaker (.45)" }),
+  ).toHaveCount(0);
+  await expect(setupGearPanel).toContainText("$250.00");
+  await expect(resetButton).toBeDisabled();
+
+  const snapshot = await page.evaluate(() => ({
+    moneyCents: character.moneyCents,
+    inventory: character.inventory,
+    weapons: character.weapons,
+    ammo: character.ammo,
+  }));
+  expect(snapshot).toEqual({
+    moneyCents: 25000,
+    inventory: [],
+    weapons: [],
+    ammo: {},
   });
 });
 

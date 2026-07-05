@@ -274,9 +274,24 @@ function renderCombatWeapons() {
       const reserveLocation = reserveEntry
         ? ` • ${physicalItemLocationLabel(reserveEntry)}`
         : "";
+      const requiredAmmo = requiredAmmoLabelForWeapon(
+        weapon,
+        catalogWeaponForRecord(weapon),
+      );
+      const weaponMeta = [
+        `Damage ${weapon.damage || "—"}`,
+        `Range ${weapon.range || "—"}`,
+        `AP ${weapon.ap ?? "—"}`,
+        `ROF ${weapon.rof ?? "—"}`,
+        `Min Str ${weapon.minStr || "—"}`,
+        requiredAmmo ? `Ammo ${requiredAmmo}` : "",
+        availability,
+      ]
+        .filter(Boolean)
+        .join(" • ");
       const article = document.createElement("article");
       article.className = "weapon-card";
-      article.innerHTML = `<div class="topline"><div><h3>${esc(weapon.name)}</h3><p class="meta">Damage ${esc(weapon.damage || "—")} • Range ${esc(weapon.range || "—")} • AP ${esc(weapon.ap ?? "—")} • ROF ${esc(weapon.rof ?? "—")} • Min Str ${esc(weapon.minStr || "—")} • ${esc(availability)}</p></div><span class="loaded">${tracked ? `${weapon.shotsLoaded} / ${weapon.shotsMax}` : "No ammo"}</span></div>${tracked ? `<p class="muted">${esc(reserve?.label || "Ammo")} reserve: ${reserve?.count || 0}${esc(reserveLocation)}</p>` : '<p class="muted">Melee / no ammo tracking.</p>'}${strengthWarning}${weapon.notes ? `<p class="muted">${esc(weapon.notes)}</p>` : ""}${tracked ? '<div class="weapon-actions"><button class="fire-btn" type="button">Fire</button><button class="load-btn" type="button">Load +1</button><button class="reload-btn" type="button">Fill</button><button class="unload-btn" type="button">Unload</button></div>' : ""}`;
+      article.innerHTML = `<div class="topline"><div><h3>${esc(weapon.name)}</h3><p class="meta">${esc(weaponMeta)}</p></div><span class="loaded">${tracked ? `${weapon.shotsLoaded} / ${weapon.shotsMax}` : "No ammo"}</span></div>${tracked ? `<p class="muted">${esc(reserve?.label || "Ammo")} reserve: ${reserve?.count || 0}${esc(reserveLocation)}</p>` : '<p class="muted">Melee / no ammo tracking.</p>'}${strengthWarning}${weapon.notes ? `<p class="muted">${esc(weapon.notes)}</p>` : ""}${tracked ? '<div class="weapon-actions"><button class="fire-btn" type="button">Fire</button><button class="load-btn" type="button">Load +1</button><button class="reload-btn" type="button">Fill</button><button class="unload-btn" type="button">Unload</button></div>' : ""}`;
 
       if (tracked) {
         const [fire, load, reload, unload] = article.querySelectorAll("button");
