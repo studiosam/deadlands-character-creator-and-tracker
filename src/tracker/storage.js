@@ -168,11 +168,19 @@ function normalize(data, options = {}) {
     const item = { ...weapon };
     const catalogItem = catalogWeaponForRecord(item);
     item.id ||= `${slugify(item.name || "weapon")}-${index}`;
-    item.name ||= "Unnamed weapon";
-    item.damage ||= "—";
-    item.range ||= "—";
-    item.ap = item.ap === "" || item.ap === undefined ? "—" : item.ap;
-    item.rof = item.rof === "" || item.rof === undefined ? "—" : item.rof;
+    item.name = repairCommonMojibake(item.name) || "Unnamed weapon";
+    item.damage = repairCommonMojibake(item.damage) || "—";
+    item.range = repairCommonMojibake(item.range) || "—";
+    item.ap =
+      item.ap === "" || item.ap === undefined
+        ? "—"
+        : repairCommonMojibake(item.ap);
+    item.rof =
+      item.rof === "" || item.rof === undefined
+        ? "—"
+        : repairCommonMojibake(item.rof);
+    item.minStr = repairCommonMojibake(item.minStr);
+    item.notes = repairCommonMojibake(item.notes);
     if ((!item.shotsMax || Number(item.shotsMax) <= 0) && catalogItem?.shotsMax)
       item.shotsMax = catalogItem.shotsMax;
     if (!item.ammoType && catalogItem?.ammoType)

@@ -47,6 +47,34 @@ function setupMeterSummary(label, value, max, helpText = "") {
   </article>`;
 }
 
+function setupLabeledMeterSummary(
+  label,
+  displayValue,
+  value,
+  max,
+  helpText = "",
+) {
+  const safeValue = Math.max(0, Number(value) || 0);
+  const safeMax = Math.max(0, Number(max) || 0);
+  const percentage =
+    safeMax > 0 ? Math.min(100, Math.max(0, (safeValue / safeMax) * 100)) : 0;
+  const help = String(helpText || "").trim();
+  return `<article class="setup-trait-editor-row setup-attribute-points-card setup-hindrance-meter-card">
+    ${
+      help
+        ? `<span class="setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
+        : ""
+    }
+    <div class="setup-attribute-editor-heading">
+      <strong>${esc(label)}</strong>
+      <span>${esc(displayValue || `${safeValue} / ${safeMax}`)}</span>
+    </div>
+    <div class="setup-attribute-meter" role="meter" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${safeMax}" aria-valuenow="${safeValue}">
+      <span class="setup-attribute-meter-fill" style="width: ${percentage.toFixed(2)}%"></span>
+    </div>
+  </article>`;
+}
+
 function setupMeterBar(label, value, max) {
   const safeValue = Math.max(0, Number(value) || 0);
   const safeMax = Math.max(0, Number(max) || 0);
@@ -580,6 +608,15 @@ function setupStepFooterWarningMarkup() {
     const incompleteItems = setupEdgeIncompleteItems();
     if (!incompleteItems.length) return "";
     return `<div class="setup-step-navigation-warning entry-warning"><strong>Edges incomplete:</strong>${setupPowerMessageList(incompleteItems)}</div>`;
+  }
+  if (characterSetupStep === "gear") {
+    const report = setupGearAuditReport();
+    const messages = [...report.incompleteItems, ...report.warnings];
+    if (!messages.length) return "";
+    const label = report.warnings.length
+      ? "Gear needs review:"
+      : "Gear incomplete:";
+    return `<div class="setup-step-navigation-warning entry-warning"><strong>${label}</strong>${setupPowerMessageList(messages)}</div>`;
   }
   return "";
 }
@@ -1694,19 +1731,69 @@ function setupQuantityText(item, unit = "") {
   return `Qty ${count || 0}${unit ? ` ${unit}` : ""}`;
 }
 
-function setupGearLine(name, details, note = "") {
+function setupGearLine(name, details, note = "", actions = "") {
   return `<div class="setup-gear-line">
     <div>
       <strong>${esc(name || "Gear")}</strong>
       ${details.filter(Boolean).length ? `<span>${esc(details.filter(Boolean).join(" • "))}</span>` : ""}
       ${note ? `<p>${esc(note)}</p>` : ""}
     </div>
+    ${actions}
+  </div>`;
+}
+
+function setupGearEntryPriceLabel(entry) {
+  const item = entry?.item || {};
+  const count =
+    entry?.type === "weapon"
+      ? 1
+      : Math.max(1, Math.floor(Number(entry?.count ?? item.count ?? 1) || 1));
+  const unitCost = Number(item.sourceDetail?.costCents ?? item.costCents);
+  return Number.isFinite(unitCost) ? money(unitCost * count) : "—";
+}
+
+function setupGearCard(name, price, weight, details, note = "", actions = "") {
+  const detailItems = details.filter(Boolean);
+  const hasDetails = detailItems.length || note;
+  const summaryMarkup = `<span class="setup-gear-card-summary">
+      <span class="setup-gear-card-arrow${hasDetails ? "" : " setup-gear-card-arrow-empty"}" aria-hidden="true"></span>
+      <strong>${esc(name || "Gear")}</strong>
+      <span class="setup-gear-card-cell"><span class="sr-only">Price</span><strong>${esc(price || "—")}</strong></span>
+      <span class="setup-gear-card-cell"><span class="sr-only">Weight</span><strong>${esc(weight || "—")}</strong></span>
+    </span>`;
+  const contentMarkup = hasDetails
+    ? `<details class="setup-gear-line-details">
+          <summary class="setup-gear-card-disclosure">${summaryMarkup}</summary>
+          <div class="setup-gear-detail-list">
+            ${detailItems.map((item) => `<span>${esc(item)}</span>`).join("")}
+            ${note ? `<p>${esc(note)}</p>` : ""}
+          </div>
+        </details>`
+    : `<div class="setup-gear-card-static">${summaryMarkup}</div>`;
+  return `<div class="setup-gear-line setup-gear-card">
+    ${contentMarkup}
+    ${actions}
   </div>`;
 }
 
 function setupAuditGroup(title, items, emptyText, renderer) {
   return `<section class="setup-audit-group" aria-label="${esc(title)}">
     <h4>${esc(title)}</h4>
+    <div class="setup-audit-list">
+      ${items.length ? items.map(renderer).join("") : emptyState(emptyText)}
+    </div>
+  </section>`;
+}
+
+function setupGearAuditGroup(title, items, emptyText, renderer) {
+  return `<section class="setup-audit-group setup-gear-audit-group" aria-label="${esc(title)}">
+    <h4>${esc(title)}</h4>
+    <div class="setup-gear-column-header" aria-hidden="true">
+      <span></span>
+      <strong>Item</strong>
+      <strong>Price</strong>
+      <strong>Weight</strong>
+    </div>
     <div class="setup-audit-list">
       ${items.length ? items.map(renderer).join("") : emptyState(emptyText)}
     </div>
@@ -1815,21 +1902,40 @@ function setupVehicleLine(vehicle) {
   );
 }
 
-function setupGearAuditEntryLine(entry) {
+function setupGearPlayerEntryLine(entry) {
   const item = entry.item || {};
+  const loaded =
+    entry.type === "weapon" && isTrackedWeapon(item)
+      ? `${item.shotsLoaded ?? 0} / ${item.shotsMax ?? "—"} loaded`
+      : "";
   const details = [
-    entry.type,
+    entry.count > 1 ? `Qty ${entry.count}` : "",
+    entry.type === "weapon" && item.damage ? `Damage ${item.damage}` : "",
+    entry.type === "weapon" && item.range ? `Range ${item.range}` : "",
+    entry.type === "weapon" && item.ap !== undefined ? `AP ${item.ap}` : "",
+    entry.type === "weapon" && item.rof !== undefined ? `ROF ${item.rof}` : "",
+    entry.type === "weapon" && item.minStr ? `Min Str ${item.minStr}` : "",
+    entry.type === "armor" && item.armor ? `Armor +${item.armor}` : "",
+    entry.type === "armor" ? armorLabel(item.location) : "",
+    entry.type === "armor" && item.minStr ? `Min Str ${item.minStr}` : "",
+    entry.type === "ammo"
+      ? `Reserve ${Math.max(0, Number(item.count) || 0)}`
+      : "",
+    entry.type === "vehicle" && item.category ? item.category : "",
+    entry.type === "vehicle" && item.topSpeed !== undefined
+      ? `Top Speed ${item.topSpeed} MPH`
+      : "",
+    entry.type === "vehicle" && item.toughness
+      ? `Toughness ${item.toughness}`
+      : "",
+    entry.type === "vehicle" && item.crew ? `Crew ${item.crew}` : "",
+    loaded,
     setupGearEntryLocationLabel(entry),
-    entry.type === "vehicle"
-      ? ""
-      : `Weight ${formatWeightPounds(entry.weight)}`,
-    entry.catalog ? "Catalog matched" : "Manual review",
-    item.source || "",
-    item.costCents !== undefined ? `Cost ${money(item.costCents)}` : "",
-    item.book || "",
   ];
-  return setupGearLine(
+  return setupGearCard(
     entry.label,
+    setupGearEntryPriceLabel(entry),
+    entry.type === "vehicle" ? "—" : formatWeightPounds(entry.weight),
     details,
     [
       item.note || item.notes || "",
@@ -1837,13 +1943,24 @@ function setupGearAuditEntryLine(entry) {
     ]
       .filter(Boolean)
       .join(" "),
+    setupGearSellBackAction(entry),
   );
+}
+
+function setupGearSellBackAction(entry) {
+  if (!setupTraitsEditable()) return "";
+  if (setupGearCreationSource(entry.item) !== "setup-starting-gear") return "";
+  return `<div class="creator-actions setup-gear-actions">
+    <button class="ghost tag-action danger-lite" type="button" data-setup-action="sellBackSetupGear" data-setup-gear-type="${esc(entry.type)}" data-setup-gear-id="${esc(entry.id)}">Sell Back</button>
+  </div>`;
 }
 
 function setupContainerAuditLine(container) {
   const contentNames = container.contents.map((entry) => entry.label);
-  return setupGearLine(
+  return setupGearCard(
     container.label,
+    setupGearEntryPriceLabel(container),
+    formatWeightPounds(container.totalWeight),
     [
       setupGearEntryLocationLabel(container),
       `Empty ${formatWeightPounds(container.ownWeight)}`,
@@ -1853,15 +1970,84 @@ function setupContainerAuditLine(container) {
     contentNames.length
       ? `Contains: ${contentNames.join(", ")}`
       : "No contents recorded.",
+    setupGearSellBackAction(container),
   );
 }
 
-function setupGearWarningMarkup(report) {
-  const messages = [...report.incompleteItems, ...report.warnings];
-  if (!messages.length) return "";
-  return `<div class="entry-warning"><strong>Gear audit:</strong><ul>${messages
-    .map((message) => `<li>${esc(message)}</li>`)
-    .join("")}</ul></div>`;
+function setupGearSummaryMarkup(report) {
+  const availableFunds = Math.max(
+    0,
+    Number(report.startingFundsAvailable) || 0,
+  );
+  const fundsSpent = Math.max(0, Number(report.startingPurchaseSpent) || 0);
+  const fundsRemaining = Math.max(0, Number(report.moneyCents) || 0);
+  const carryingCapacity = Math.max(
+    0,
+    Number(report.normal.carryingCapacity) || 0,
+  );
+  const carriedLoad = Math.max(0, Number(report.normal.normalLoad) || 0);
+  const combatLoad = Math.max(0, Number(report.combat.combatLoad) || 0);
+  return `<div class="setup-review-grid setup-gear-summary-grid">
+    ${setupLabeledMeterSummary("Funds Spent", `${money(fundsSpent)} / ${money(availableFunds)}`, fundsSpent, availableFunds, "Starting funds already spent during setup.")}
+    ${setupLabeledMeterSummary("Funds Remaining", money(fundsRemaining), fundsRemaining, availableFunds, "Starting funds still available for setup purchases.")}
+    ${setupLabeledMeterSummary("Current Load", `${formatWeightPounds(carriedLoad)} / ${formatWeightPounds(carryingCapacity)}`, carriedLoad, carryingCapacity, "Normal carried load compared to carrying capacity.")}
+    ${setupLabeledMeterSummary("Combat Load", `${formatWeightPounds(combatLoad)} / ${formatWeightPounds(carryingCapacity)}`, combatLoad, carryingCapacity, "Combat load after automatic backpack-drop handling.")}
+  </div>`;
+}
+
+function renderSetupGearGroups(report) {
+  const byType = (type) =>
+    report.entries.filter((entry) => entry.type === type);
+  const looseGear = report.entries.filter(
+    (entry) =>
+      ["gear", "consumable"].includes(entry.type) &&
+      !entry.item?.isContainer &&
+      !entry.parent,
+  );
+  const insideContainers = report.entries.filter(
+    (entry) => entry.parent || entry.location === "container",
+  );
+  const groups = [
+    [
+      "Weapons",
+      byType("weapon"),
+      "No weapons recorded.",
+      setupGearPlayerEntryLine,
+    ],
+    ["Armor", byType("armor"), "No armor recorded.", setupGearPlayerEntryLine],
+    ["Gear", looseGear, "No general gear recorded.", setupGearPlayerEntryLine],
+    [
+      "Containers",
+      report.containers,
+      "No containers recorded.",
+      setupContainerAuditLine,
+    ],
+    [
+      "Inside Containers",
+      insideContainers,
+      "No container contents recorded.",
+      setupGearPlayerEntryLine,
+    ],
+    [
+      "Ammunition",
+      byType("ammo"),
+      "No ammunition reserves recorded.",
+      setupGearPlayerEntryLine,
+    ],
+    [
+      "Vehicles",
+      byType("vehicle"),
+      "No vehicles recorded.",
+      setupGearPlayerEntryLine,
+    ],
+  ].filter(([, items]) => items.length);
+
+  if (!groups.length) return emptyState("No gear recorded yet.");
+  return groups
+    .map(([title, items, emptyText, renderer]) =>
+      setupGearAuditGroup(title, items, emptyText, renderer),
+    )
+    .join("");
 }
 
 function setupPurchaseOptions(items, placeholder) {
@@ -1874,18 +2060,120 @@ function setupPurchaseOptions(items, placeholder) {
   ].join("");
 }
 
+function setupCatalogAmmoIdsForWeaponAmmoType(ammoType, weapon = {}) {
+  const type = String(ammoType || "");
+  if (!type) return [];
+  const exactCatalogIds = new Set(
+    GEAR_CATALOG.filter(isAmmo).map((item) => item.id),
+  );
+  if (exactCatalogIds.has(type)) return [type];
+  if (/^shotgun-/i.test(type)) return ["shotgun-shells"];
+  if (type === "gatling-pistol-drum") return ["gatling-pistol-ammo-drum"];
+  if (type === "gatling-shotgun-drum") return ["gatling-shotgun-ammo-drum"];
+  if (type === "gatling-rifle-carbine-drum") {
+    return /carbine/i.test(weapon.name || "")
+      ? ["gatling-carbine-ammo-drum"]
+      : ["gatling-rifle-ammo-drum"];
+  }
+  return [];
+}
+
+function setupOwnedAmmoNeeds() {
+  const needsByKey = new Map();
+  (character.weapons || []).forEach((weapon) => {
+    const ammoType = exactAmmoTypeForWeapon(weapon);
+    if (!ammoType) return;
+    const match = String(ammoType).match(/^(pistol|rifle)-(\d{2})-ammo$/);
+    const key = match ? `${match[1]}-${match[2]}` : ammoType;
+    const existing = needsByKey.get(key) || {
+      ammoType,
+      kind: match?.[1] || "",
+      caliber: match ? `.${match[2]}` : "",
+      catalogIds: setupCatalogAmmoIdsForWeaponAmmoType(ammoType, weapon),
+      weaponNames: [],
+    };
+    if (weapon.name && !existing.weaponNames.includes(weapon.name)) {
+      existing.weaponNames.push(weapon.name);
+    }
+    needsByKey.set(key, existing);
+  });
+  return [...needsByKey.values()].filter(
+    (need) => need.kind || need.catalogIds.length,
+  );
+}
+
+function setupAmmoItemMatchesNeed(item, need) {
+  if (!item || !need) return false;
+  if (need.catalogIds.includes(item.id)) return true;
+  const kind = AMMO_KIND_BY_CATALOG_ID[item.id];
+  return Boolean(
+    kind &&
+    kind === need.kind &&
+    AMMO_CALIBERS_BY_CATALOG_ID[item.id]?.includes(need.caliber),
+  );
+}
+
+function setupAmmoNeedLabel(weaponNames) {
+  const names = [...new Set(weaponNames.filter(Boolean))];
+  if (!names.length) return "purchased weapon";
+  if (names.length <= 2) return names.join(", ");
+  return `${names.slice(0, 2).join(", ")} +${names.length - 2} more`;
+}
+
+function setupAmmoPurchaseOption(item, needs) {
+  const matchingNeeds = needs.filter((need) =>
+    setupAmmoItemMatchesNeed(item, need),
+  );
+  const matchLabel = matchingNeeds.length
+    ? `for ${setupAmmoNeedLabel(matchingNeeds.flatMap((need) => need.weaponNames))}`
+    : "no matching weapon";
+  return `<option value="${esc(item.id)}">${esc(item.name)} - ${esc(matchLabel)} - ${esc(money(item.costCents || 0))}</option>`;
+}
+
+function setupAmmoPurchaseOptions(items, placeholder) {
+  const needs = setupOwnedAmmoNeeds();
+  const usefulItems = items.filter((item) =>
+    needs.some((need) => setupAmmoItemMatchesNeed(item, need)),
+  );
+  const otherItems = items.filter((item) => !usefulItems.includes(item));
+  if (!needs.length) return setupPurchaseOptions(items, placeholder);
+  return [
+    `<option value="">${esc(placeholder)}</option>`,
+    usefulItems.length
+      ? `<optgroup label="Ammo for purchased weapons">${usefulItems.map((item) => setupAmmoPurchaseOption(item, needs)).join("")}</optgroup>`
+      : "",
+    otherItems.length
+      ? `<optgroup label="No matching purchased weapon">${otherItems.map((item) => setupAmmoPurchaseOption(item, needs)).join("")}</optgroup>`
+      : "",
+  ].join("");
+}
+
 function setupQuantityInput(id) {
   return `<input id="${esc(id)}" class="creator-small" type="number" min="1" value="1" />`;
 }
 
-function setupPurchaseControl(title, selectId, qtyId, action, items) {
-  return `<div class="setup-form-grid">
-    <label class="setup-wide">${esc(title)}<select id="${esc(selectId)}">${setupPurchaseOptions(items, `Choose ${title.toLowerCase()}...`)}</select></label>
+function setupPurchaseForm(label, selectId, qtyId, action, items) {
+  return `<div class="setup-form-grid setup-purchase-form">
+    <label class="setup-wide"><span class="sr-only">Choose ${esc(label.toLowerCase())}</span><select id="${esc(selectId)}" aria-label="Choose ${esc(label.toLowerCase())}">${setupPurchaseOptions(items, `Choose ${label.toLowerCase()}...`)}</select></label>
     <label>Qty ${setupQuantityInput(qtyId)}</label>
     <div class="creator-actions">
-      <button type="button" data-setup-action="${esc(action)}">Buy ${esc(title)}</button>
+      <button type="button" data-setup-action="${esc(action)}">Buy ${esc(label)}</button>
     </div>
   </div>`;
+}
+
+function setupPurchaseControl(
+  cardTitle,
+  label,
+  selectId,
+  qtyId,
+  action,
+  items,
+) {
+  return `<article class="setup-purchase-card">
+    <h5>${esc(cardTitle)}</h5>
+    ${setupPurchaseForm(label, selectId, qtyId, action, items)}
+  </article>`;
 }
 
 function setupAmmoCaliberOptions() {
@@ -1894,6 +2182,36 @@ function setupAmmoCaliberOptions() {
       Object.values(AMMO_CALIBERS_BY_CATALOG_ID).flat().filter(Boolean),
     ),
   ];
+  const needByCaliber = new Map();
+  setupOwnedAmmoNeeds()
+    .filter((need) => need.caliber)
+    .forEach((need) => {
+      const names = needByCaliber.get(need.caliber) || [];
+      names.push(...need.weaponNames);
+      needByCaliber.set(need.caliber, names);
+    });
+  const usefulCalibers = calibers.filter((caliber) =>
+    needByCaliber.has(caliber),
+  );
+  const otherCalibers = calibers.filter(
+    (caliber) => !needByCaliber.has(caliber),
+  );
+  if (usefulCalibers.length) {
+    return [
+      `<optgroup label="For purchased weapons">${usefulCalibers
+        .map(
+          (caliber, index) =>
+            `<option value="${esc(caliber)}"${index === 0 ? " selected" : ""}>${esc(`${caliber} - for ${setupAmmoNeedLabel(needByCaliber.get(caliber) || [])}`)}</option>`,
+        )
+        .join("")}</optgroup>`,
+      `<optgroup label="No matching purchased weapon">${otherCalibers
+        .map(
+          (caliber) =>
+            `<option value="${esc(caliber)}">${esc(`${caliber} - no matching weapon`)}</option>`,
+        )
+        .join("")}</optgroup>`,
+    ].join("");
+  }
   return [
     '<option value="">Default caliber</option>',
     ...calibers.map(
@@ -1904,83 +2222,60 @@ function setupAmmoCaliberOptions() {
 
 function renderSetupGearPurchaseControls(report) {
   if (!report.editable) {
-    return `<p class="entry-advisory"><strong>Audit only:</strong> imported or advanced characters keep their recorded gear here. Use Inventory for current possessions and future correction workflows for uncertain starting gear.</p>`;
+    return `<p class="entry-advisory"><strong>Audit only:</strong> imported or advanced characters keep their recorded gear here. Use Inventory for current possessions.</p>`;
   }
 
   return `<section class="setup-trait-group" aria-labelledby="setupGearPurchaseHeading">
     <h4 id="setupGearPurchaseHeading">Buy Starting Gear</h4>
-    <p class="creator-note">Purchases use current setup funds, reduce remaining money, and source-tag records as setup starting gear.</p>
-    <div class="setup-review-grid">
-      ${setupDetail("Starting Funds Accounted", money(report.startingFundsAvailable))}
-      ${setupDetail("Spent On Setup Gear", money(report.startingPurchaseSpent))}
-      ${setupDetail("Remaining", money(report.moneyCents))}
+    <p class="creator-note">Choose catalog items, set quantity when needed, and spend starting funds.</p>
+    <div class="setup-purchase-card-list">
+      ${setupPurchaseControl("Weapons", "Weapon", "setupWeaponPurchaseSelect", "setupWeaponPurchaseQty", "addSetupWeaponPurchase", WEAPON_CATALOG)}
+      <article class="setup-purchase-card">
+        <h5>Ammunition</h5>
+        <div class="setup-form-grid setup-purchase-form">
+          <label class="setup-wide"><span class="sr-only">Choose ammunition</span><select id="setupAmmoPurchaseSelect" aria-label="Choose ammunition">${setupAmmoPurchaseOptions(GEAR_CATALOG.filter(isAmmo), "Choose ammunition...")}</select></label>
+          <label>Caliber<select id="setupAmmoPurchaseCaliber">${setupAmmoCaliberOptions()}</select></label>
+          <label>Qty ${setupQuantityInput("setupAmmoPurchaseQty")}</label>
+          <div class="creator-actions"><button type="button" data-setup-action="addSetupAmmoPurchase">Buy Ammunition</button></div>
+        </div>
+      </article>
+      <article class="setup-purchase-card">
+        <h5>Gear</h5>
+        ${setupPurchaseForm(
+          "Gear",
+          "setupGearPurchaseSelect",
+          "setupGearPurchaseQty",
+          "addSetupGearPurchase",
+          GEAR_CATALOG.filter((item) => !isAmmo(item)),
+        )}
+        ${setupPurchaseForm("Armor", "setupArmorPurchaseSelect", "setupArmorPurchaseQty", "addSetupArmorPurchase", ARMOR_CATALOG)}
+      </article>
+      ${setupPurchaseControl("Vehicles", "Vehicle", "setupVehiclePurchaseSelect", "setupVehiclePurchaseQty", "addSetupVehiclePurchase", VEHICLE_CATALOG)}
     </div>
-    ${setupPurchaseControl(
-      "Gear",
-      "setupGearPurchaseSelect",
-      "setupGearPurchaseQty",
-      "addSetupGearPurchase",
-      GEAR_CATALOG.filter((item) => !isAmmo(item)),
-    )}
-    <div class="setup-form-grid">
-      <label class="setup-wide">Ammunition<select id="setupAmmoPurchaseSelect">${setupPurchaseOptions(GEAR_CATALOG.filter(isAmmo), "Choose ammunition...")}</select></label>
-      <label>Caliber<select id="setupAmmoPurchaseCaliber">${setupAmmoCaliberOptions()}</select></label>
-      <label>Qty ${setupQuantityInput("setupAmmoPurchaseQty")}</label>
-      <div class="creator-actions"><button type="button" data-setup-action="addSetupAmmoPurchase">Buy Ammunition</button></div>
-    </div>
-    ${setupPurchaseControl("Armor", "setupArmorPurchaseSelect", "setupArmorPurchaseQty", "addSetupArmorPurchase", ARMOR_CATALOG)}
-    ${setupPurchaseControl("Weapon", "setupWeaponPurchaseSelect", "setupWeaponPurchaseQty", "addSetupWeaponPurchase", WEAPON_CATALOG)}
-    ${setupPurchaseControl("Vehicle", "setupVehiclePurchaseSelect", "setupVehiclePurchaseQty", "addSetupVehiclePurchase", VEHICLE_CATALOG)}
   </section>`;
 }
 
 function renderSetupGear() {
   const report = setupGearAuditReport();
-  const { counts, normal, combat, locationGroups } = report;
-  const byType = (type) =>
-    report.entries.filter((entry) => entry.type === type);
 
   return `<section id="setupGearPanel" class="setup-step-panel" aria-labelledby="setupGearHeading">
     <div class="section-title">
       <div>
         <h3 id="setupGearHeading">Gear</h3>
-        <p>Buy starting gear for eligible created characters and audit recorded equipment, money, and load for all characters.</p>
+        <p>Buy starting equipment for created characters. Use Inventory later for loot, repairs, trades, and GM adjustments.</p>
       </div>
       ${setupStatusMarkup(characterSetupStatus("gear"))}
     </div>
-    <div class="setup-review-grid">
-      ${setupDetail("Gear Status", report.status)}
-      ${setupDetail("Recorded Money", money(counts.moneyCents))}
-      ${setupDetail("Weapons", `${counts.weapons}`)}
-      ${setupDetail("Armor", `${counts.armor}`)}
-      ${setupDetail("Gear Items", `${counts.inventory}`)}
-      ${setupDetail("Consumables", `${counts.consumables}`)}
-      ${setupDetail("Ammo Pools", `${counts.ammo}`)}
-      ${setupDetail("Vehicles", `${counts.vehicles}`)}
-      ${setupDetail("Current Load", formatWeightPounds(normal.normalLoad))}
-      ${setupDetail("Combat Load", formatWeightPounds(combat.combatLoad))}
-      ${setupDetail("Carrying Capacity", formatWeightPounds(normal.carryingCapacity))}
-      ${setupDetail("Normal Status", normal.encumbered ? "Encumbered" : "No encumbrance")}
-      ${setupDetail("Combat Status", combat.encumbered ? "Encumbered" : "No encumbrance")}
-      ${setupDetail("Setup Gear Spent", money(report.startingPurchaseSpent))}
-      ${setupDetail("Audit Warnings", `${report.warnings.length}`)}
-    </div>
-    ${renderSetupGearPurchaseControls(report)}
-    <p class="entry-advisory"><strong>Gear audit:</strong> imported/current inventory may include post-creation purchases, loot, or table adjustments. Setup purchases created here are source-tagged as starting gear.</p>
-    ${setupGearWarningMarkup(report)}
-    <div class="setup-gear-groups">
-      ${setupAuditGroup("Equipped / Worn", locationGroups.equipped, "No equipped or worn items recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("On Body / Carried", locationGroups.carried, "No carried gear recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("Inside Containers", locationGroups.containers, "No container contents recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("Dropped", locationGroups.dropped, "No dropped items recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("Stored / Off-person", locationGroups.stored, "No stored or off-person items recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("Containers", report.containers, "No containers recorded.", setupContainerAuditLine)}
-      ${setupAuditGroup("Weapons", byType("weapon"), "No weapons recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("Armor", byType("armor"), "No armor recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("General Gear", byType("gear"), "No general gear recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("Consumables", byType("consumable"), "No consumables recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("Ammunition", byType("ammo"), "No ammunition reserves recorded.", setupGearAuditEntryLine)}
-      ${setupAuditGroup("Vehicles", locationGroups.vehicles, "No vehicles recorded.", setupGearAuditEntryLine)}
+    ${setupGearSummaryMarkup(report)}
+    <div class="setup-gear-workbench">
+      ${renderSetupGearPurchaseControls(report)}
+      <section class="setup-trait-group setup-recorded-gear" aria-labelledby="setupRecordedGearHeading">
+        <h4 id="setupRecordedGearHeading">Current Inventory</h4>
+        <p class="creator-note">Visible while buying so you can compare purchases without scrolling.</p>
+        <div class="setup-gear-groups">
+          ${renderSetupGearGroups(report)}
+        </div>
+      </section>
     </div>
   </section>`;
 }

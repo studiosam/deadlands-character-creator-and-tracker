@@ -972,8 +972,97 @@ function spendSetupStartingFunds(catalogItem, quantity) {
   );
 }
 
+function refundSetupStartingFunds(item, quantity = 1) {
+  const unitCost = Math.max(
+    0,
+    Number(item?.sourceDetail?.costCents ?? item?.costCents) || 0,
+  );
+  character.moneyCents = Math.max(
+    0,
+    Math.round((Number(character.moneyCents) || 0) + unitCost * quantity),
+  );
+}
+
 function setupStartingGearNote(catalogItem, fallback = "") {
   return catalogItem?.notes || fallback || "";
+}
+
+function setupSellBackQuantity(item, fallback = 1) {
+  return Math.max(
+    1,
+    Math.floor(Number(item?.count ?? item?.quantity ?? fallback) || fallback),
+  );
+}
+
+function setupSellBackLabel(item, fallback = "Starting gear") {
+  return item?.name || item?.label || fallback;
+}
+
+function sellBackSetupGearPurchase(type, id) {
+  if (!ensureSetupTraitsEditable()) return;
+  if (!type || !id) return;
+
+  let item = null;
+  let quantity = 1;
+  let removed = false;
+
+  if (type === "gear" || type === "consumable") {
+    const entry = findInventoryEntry(id);
+    item = entry?.item || null;
+    if (
+      item?.isContainer &&
+      ((item.contents || []).length || physicalItemsInContainer(item.id).length)
+    ) {
+      appToast("Empty the container before selling it back.", "danger");
+      return;
+    }
+    if (item && setupGearCreationSource(item) === "setup-starting-gear") {
+      quantity = setupSellBackQuantity(item);
+      removed = Boolean(removeInventoryItem(id));
+    }
+  } else if (type === "ammo") {
+    item = character.ammo?.[id] || null;
+    if (item && setupGearCreationSource(item) === "setup-starting-gear") {
+      quantity = setupSellBackQuantity(item);
+      delete character.ammo[id];
+      removed = true;
+    }
+  } else if (type === "weapon") {
+    item = (character.weapons || []).find((entry) => entry.id === id) || null;
+    if (item && setupGearCreationSource(item) === "setup-starting-gear") {
+      character.weapons = character.weapons.filter((entry) => entry.id !== id);
+      removed = true;
+    }
+  } else if (type === "armor") {
+    item =
+      (character.armorInventory || []).find((entry) => entry.id === id) || null;
+    if (item && setupGearCreationSource(item) === "setup-starting-gear") {
+      quantity = setupSellBackQuantity(item);
+      character.armorInventory = character.armorInventory.filter(
+        (entry) => entry.id !== id,
+      );
+      removed = true;
+    }
+  } else if (type === "vehicle") {
+    item = (character.vehicles || []).find((entry) => entry.id === id) || null;
+    if (item && setupGearCreationSource(item) === "setup-starting-gear") {
+      quantity = setupSellBackQuantity(item);
+      character.vehicles = character.vehicles.filter(
+        (entry) => entry.id !== id,
+      );
+      removed = true;
+    }
+  }
+
+  if (!removed || !item) {
+    appToast("Only setup starting purchases can be sold back here.", "danger");
+    return;
+  }
+
+  refundSetupStartingFunds(item, quantity);
+  render();
+  save();
+  appToast(`${setupSellBackLabel(item)} sold back.`, "success");
 }
 
 function addSetupGearPurchase() {
@@ -1153,10 +1242,10 @@ function addSetupWeaponPurchase() {
           id: `${catalogItem.id}-${Date.now()}-${index}`,
           catalogId: catalogItem.id,
           name: catalogItem.name,
-          damage: catalogItem.damage || "â€”",
-          range: catalogItem.range || "â€”",
-          ap: catalogItem.ap || "â€”",
-          rof: catalogItem.rof || "â€”",
+          damage: catalogItem.damage || "—",
+          range: catalogItem.range || "—",
+          ap: catalogItem.ap || "—",
+          rof: catalogItem.rof || "—",
           shotsMax: catalogItem.shotsMax || null,
           shotsLoaded: catalogItem.shotsMax || null,
           ammoType: ammoType || null,

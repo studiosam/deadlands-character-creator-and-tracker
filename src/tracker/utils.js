@@ -71,6 +71,17 @@ function wt(weight) {
   return parsed.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+function repairCommonMojibake(value) {
+  if (typeof value !== "string") return value;
+  return value
+    .replace(/\u00e2\u20ac\u201d/g, "—")
+    .replace(/\u00e2\u20ac\u201c/g, "–")
+    .replace(/\u00e2\u20ac\u2122/g, "’")
+    .replace(/\u00e2\u20ac\u0153/g, "“")
+    .replace(/\u00e2\u20ac\u009d/g, "”")
+    .replace(/\u00e2\u20ac\u00a2/g, "•");
+}
+
 function esc(value) {
   return String(value ?? "").replace(
     /[&<>"]/g,

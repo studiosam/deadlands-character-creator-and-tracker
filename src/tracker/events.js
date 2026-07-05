@@ -163,6 +163,11 @@ document.addEventListener("click", async (event) => {
     addSetupWeaponPurchase();
   } else if (setupAction?.dataset.setupAction === "addSetupVehiclePurchase") {
     addSetupVehiclePurchase();
+  } else if (setupAction?.dataset.setupAction === "sellBackSetupGear") {
+    sellBackSetupGearPurchase(
+      setupAction.dataset.setupGearType || "",
+      setupAction.dataset.setupGearId || "",
+    );
   } else if (setupAction?.dataset.setupAction === "markSetupException") {
     markSetupRecordAsException(
       setupAction.dataset.setupCollection || "",

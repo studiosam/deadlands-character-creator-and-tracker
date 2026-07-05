@@ -118,14 +118,15 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   await expect(page.locator("[data-setup-step='gear']")).toContainText(
     "Complete",
   );
-  await expect(setupGearPanel).toContainText("Recorded Money");
+  await expect(setupGearPanel).toContainText("Funds Remaining");
   await expect(setupGearPanel).toContainText("$250.00");
   await expect(setupGearPanel).toContainText("Current Load");
   await expect(setupGearPanel).toContainText("Combat Load");
-  await expect(setupGearPanel).toContainText("Carrying Capacity");
-  await expect(setupGearPanel).toContainText("On Body / Carried");
-  await expect(setupGearPanel).toContainText("Equipped / Worn");
-  await expect(setupGearPanel).toContainText("Stored / Off-person");
+  await expect(setupGearPanel).not.toContainText("Gear Status");
+  await expect(setupGearPanel).not.toContainText("Catalog matched");
+  await expect(setupGearPanel).not.toContainText("Manual review");
+  await expect(setupGearPanel).not.toContainText("On Body / Carried");
+  await expect(setupGearPanel).not.toContainText("Stored / Off-person");
   await expect(setupGearPanel).toContainText("Containers");
   await expect(setupGearPanel).toContainText("Backpack");
   await expect(setupGearPanel).toContainText("Empty 3 lb");
@@ -137,6 +138,68 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   await expect(setupGearPanel).not.toContainText("Save Item");
   await expect(setupGearPanel).not.toContainText("Apply");
   await expect(setupGearPanel).toContainText("Buy Starting Gear");
+  await expect(setupGearPanel).toContainText("Current Inventory");
+  await expect(
+    setupGearPanel.locator(".setup-gear-column-header").first(),
+  ).toContainText("Item");
+  await expect(
+    setupGearPanel.locator(".setup-gear-column-header").first(),
+  ).toContainText("Price");
+  await expect(
+    setupGearPanel.locator(".setup-gear-column-header").first(),
+  ).toContainText("Weight");
+  const bowieKnifeCard = setupGearPanel
+    .locator(".setup-gear-line")
+    .filter({ hasText: "Bowie Knife" });
+  await expect(
+    bowieKnifeCard.locator(".setup-gear-card-summary"),
+  ).toContainText("Bowie Knife");
+  await expect(
+    bowieKnifeCard.locator(".setup-gear-card-summary"),
+  ).toContainText("$4.00");
+  await expect(
+    bowieKnifeCard.locator(".setup-gear-card-summary"),
+  ).toContainText("1 lb");
+  await expect(bowieKnifeCard.locator("details")).toHaveCount(1);
+  await expect(bowieKnifeCard).not.toContainText("Details");
+  await expect(bowieKnifeCard.locator(".setup-gear-card-arrow")).toHaveCount(1);
+  await expect(
+    bowieKnifeCard.locator(".setup-gear-card-cell .sr-only").first(),
+  ).toHaveCSS("position", "absolute");
+  const gearSummary = bowieKnifeCard.locator(".setup-gear-card-summary");
+  await expect(gearSummary).toHaveCSS("display", "grid");
+  const arrowBox = await gearSummary
+    .locator(".setup-gear-card-arrow")
+    .boundingBox();
+  const nameBox = await gearSummary.locator(":scope > strong").boundingBox();
+  const priceBox = await gearSummary
+    .locator(".setup-gear-card-cell")
+    .first()
+    .boundingBox();
+  const weightBox = await gearSummary
+    .locator(".setup-gear-card-cell")
+    .nth(1)
+    .boundingBox();
+  if (!arrowBox || !nameBox || !priceBox || !weightBox) {
+    throw new Error("Expected compact gear card row to render all columns");
+  }
+  const rowCenters = [arrowBox, nameBox, priceBox, weightBox].map(
+    (box) => box.y + box.height / 2,
+  );
+  expect(Math.max(...rowCenters) - Math.min(...rowCenters)).toBeLessThan(8);
+  await bowieKnifeCard.locator("summary").click();
+  await expect(bowieKnifeCard.locator(".setup-gear-detail-list")).toContainText(
+    "Damage Str+d4",
+  );
+  await expect(
+    setupGearPanel.locator(".setup-gear-workbench > .setup-recorded-gear"),
+  ).toHaveCount(1);
+  await expect(setupGearPanel.locator(".setup-purchase-card h5")).toHaveText([
+    "Weapons",
+    "Ammunition",
+    "Gear",
+    "Vehicles",
+  ]);
 
   const before = await page.evaluate(() =>
     JSON.stringify({
@@ -176,26 +239,41 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   await page.locator("#setupGearPurchaseSelect").selectOption("backpack");
   await setupGearPanel.getByRole("button", { name: "Buy Gear" }).click();
   await page
+    .locator("#setupWeaponPurchaseSelect")
+    .selectOption("ww-colt-peacemaker-45");
+  await setupGearPanel.getByRole("button", { name: "Buy Weapon" }).click();
+  const ammoOptionTexts = await page
+    .locator("#setupAmmoPurchaseSelect option")
+    .evaluateAll((options) =>
+      options.map((option) => option.textContent?.trim() || ""),
+    );
+  const purchasableAmmoOptions = ammoOptionTexts.filter(
+    (text) => text && !text.startsWith("Choose"),
+  );
+  expect(purchasableAmmoOptions[0]).toContain(
+    "Pistol Ammunition (Large, .40-.50 caliber)",
+  );
+  expect(purchasableAmmoOptions[0]).toContain("for Colt Peacemaker (.45)");
+  expect(
+    purchasableAmmoOptions.some((text) => text.includes("no matching weapon")),
+  ).toBe(true);
+  await expect(page.locator("#setupAmmoPurchaseCaliber")).toHaveValue(".45");
+  await page
     .locator("#setupAmmoPurchaseSelect")
     .selectOption("pistol-ammunition-large-40-50-caliber");
-  await page.locator("#setupAmmoPurchaseCaliber").selectOption(".45");
   await page.locator("#setupAmmoPurchaseQty").fill("6");
   await setupGearPanel.getByRole("button", { name: "Buy Ammunition" }).click();
   await page.locator("#setupArmorPurchaseSelect").selectOption("native-armor");
   await setupGearPanel.getByRole("button", { name: "Buy Armor" }).click();
-  await page
-    .locator("#setupWeaponPurchaseSelect")
-    .selectOption("ww-colt-peacemaker-45");
-  await setupGearPanel.getByRole("button", { name: "Buy Weapon" }).click();
   await page.locator("#setupVehiclePurchaseSelect").selectOption("bateaux");
   await setupGearPanel.getByRole("button", { name: "Buy Vehicle" }).click();
 
   await expect(page.locator("[data-setup-step='gear']")).toContainText(
     "Complete",
   );
-  await expect(setupGearPanel).toContainText("Remaining");
+  await expect(setupGearPanel).toContainText("Funds Remaining");
   await expect(setupGearPanel).toContainText("$180.64");
-  await expect(setupGearPanel).toContainText("Starting Gear Purchase");
+  await expect(setupGearPanel).not.toContainText("Starting Gear Purchase");
   await expect(setupGearPanel).toContainText("Bateaux");
 
   const snapshot = await page.evaluate(() => ({
@@ -274,6 +352,69 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
     armorSource: "setup-starting-gear",
     vehicleSource: "setup-starting-gear",
   });
+
+  const sellBack = async (label) => {
+    const gearCard = page
+      .locator(".setup-gear-line")
+      .filter({ hasText: label });
+    await expect(gearCard).toHaveCount(1);
+    await gearCard.getByRole("button", { name: "Sell Back" }).click();
+    await expect(
+      page.locator(".setup-gear-line").filter({ hasText: label }),
+    ).toHaveCount(0);
+  };
+
+  await sellBack("Bateaux");
+  await sellBack("Colt Peacemaker (.45)");
+  await sellBack("Native Armor");
+  await sellBack("Pistol ammo (.45)");
+  await sellBack("Backpack");
+
+  await expect(setupGearPanel).toContainText("Funds Remaining");
+  await expect(setupGearPanel).toContainText("$250.00");
+  const afterSellBack = await page.evaluate(() => ({
+    moneyCents: character.moneyCents,
+    inventory: character.inventory.length,
+    ammo: Object.keys(character.ammo || {}).length,
+    weapons: character.weapons.length,
+    armor: character.armorInventory.length,
+    vehicles: character.vehicles.length,
+  }));
+  expect(afterSellBack).toEqual({
+    moneyCents: 25000,
+    inventory: 0,
+    ammo: 0,
+    weapons: 0,
+    armor: 0,
+    vehicles: 0,
+  });
+});
+
+test("Gear setup repairs mojibake weapon fallback values", async ({ page }) => {
+  await seedGearSetupCharacter(page, {
+    name: "Mojibake Gear Audit",
+    preferredId: "mojibake-gear-audit",
+    weapons: [
+      {
+        id: "brass-knuckles",
+        name: "Brass Knuckles",
+        damage: "Str+d4",
+        range: "\u00e2\u20ac\u201d",
+        ap: "\u00e2\u20ac\u201d",
+        rof: "\u00e2\u20ac\u201d",
+        weight: 1,
+        costCents: 100,
+        itemLocation: "carried",
+        creationSource: "setup-starting-gear",
+      },
+    ],
+  });
+
+  const brassKnucklesCard = page
+    .locator(".setup-gear-line")
+    .filter({ hasText: "Brass Knuckles" });
+  await expect(brassKnucklesCard).toContainText("Range —");
+  await expect(brassKnucklesCard).not.toContainText("\u00e2");
 });
 
 test("Gear setup blocks purchases that exceed remaining starting funds", async ({
@@ -368,10 +509,21 @@ test("Gear setup audit flags missing or unknown gear data", async ({
   await expect(page.locator("[data-setup-step='gear']")).toContainText(
     "Needs review",
   );
-  await expect(setupGearPanel).toContainText("Missing item name");
-  await expect(setupGearPanel).toContainText("Unknown or missing location");
-  await expect(setupGearPanel).toContainText("Suspicious count value");
-  await expect(setupGearPanel).toContainText("Weight is unknown");
+  await expect(page.locator(".setup-step-navigation")).toContainText(
+    "Gear needs review:",
+  );
+  await expect(page.locator(".setup-step-navigation")).toContainText(
+    "Missing item name",
+  );
+  await expect(page.locator(".setup-step-navigation")).toContainText(
+    "Unknown or missing location",
+  );
+  await expect(page.locator(".setup-step-navigation")).toContainText(
+    "Suspicious count value",
+  );
+  await expect(page.locator(".setup-step-navigation")).toContainText(
+    "Weight is unknown",
+  );
 
   const invalidItem = await page.evaluate(() => character.inventory[0]);
   expect(invalidItem).toEqual(
