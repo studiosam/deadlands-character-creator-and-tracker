@@ -930,6 +930,7 @@ test("selected setup Edge and Hindrance cards surface precise catalog mechanics"
       "swade-edge-holy-unholy-warrior",
       "swade-edge-improvisational-fighter",
       "swade-edge-linguist",
+      "swade-edge-liquid-courage",
       "swade-edge-martial-artist",
       "swade-edge-martial-warrior",
       "swade-edge-rock-and-roll",
@@ -1041,6 +1042,18 @@ test("selected setup Edge and Hindrance cards surface precise catalog mechanics"
   await expect(edgeCard("Famous")).toContainText("+2 Persuasion");
   await expect(edgeCard("Famous")).toContainText("five times normal");
   await expect(edgeCard("Linguist")).toContainText("half the Smarts die type");
+  await expect(edgeCard("Liquid Courage")).toContainText(
+    "Vigor increases one die type",
+  );
+  await expect(edgeCard("Liquid Courage")).toContainText(
+    "ignores one level of Wound penalties",
+  );
+  await expect(edgeCard("Liquid Courage")).toContainText(
+    "Agility, Smarts, and skills linked to them suffer -1",
+  );
+  await expect(edgeCard("Liquid Courage")).toContainText(
+    "one level of Fatigue for 4 hours",
+  );
   await expect(edgeCard("Harder to Kill")).toContainText("even result");
   await expect(edgeCard("Improvisational Fighter")).toContainText(
     "-2 improvised weapon attack penalty",

@@ -894,6 +894,37 @@ const EDGE_EFFECT_HOOKS = [
     ],
   },
   {
+    registryOrder: 44,
+    id: "edge-liquid-courage",
+    sourceType: "edge",
+    matchName: "Liquid Courage",
+    label: "Liquid Courage",
+    summary:
+      "After a stiff drink: Vigor increases one die type, Toughness increases accordingly, one Wound penalty level is ignored, Agility/Smarts-linked rolls suffer -1, then Fatigue follows after 1 hour.",
+    effects: [
+      reminderEffect(
+        "liquid-courage-vigor",
+        "After a stiff drink: Vigor increases one die type",
+      ),
+      reminderEffect(
+        "liquid-courage-toughness",
+        "After a stiff drink: Toughness increases accordingly",
+      ),
+      reminderEffect(
+        "liquid-courage-wound-penalty",
+        "After a stiff drink: ignore 1 Wound penalty level",
+      ),
+      reminderEffect(
+        "liquid-courage-agility-smarts",
+        "While affected: Agility, Smarts, and linked skills suffer -1",
+      ),
+      reminderEffect(
+        "liquid-courage-fatigue",
+        "After 1 hour: suffer one Fatigue level for 4 hours",
+      ),
+    ],
+  },
+  {
     registryOrder: 58,
     id: "edge-reputation",
     sourceType: "edge",

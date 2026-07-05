@@ -317,7 +317,7 @@ Hindrances with `Minor or Major` severity need a severity selector. Character cr
 | Chi            | Veteran, Martial Warrior         | Once per combat, use a Chi Point to reroll an attack, force an enemy attack reroll, or add damage to an unarmed attack. | chi, martial-arts, once-per-combat      |
 | Danger Sense   | Novice                           | Notice roll at +2 to sense ambushes or similar danger.                                                                  | notice, ambush                          |
 | Healer         | Novice, Spirit d8+               | +2 to Healing rolls, magical or mundane.                                                                                | healing                                 |
-| Liquid Courage | Novice, Vigor d8+                | Alcohol boosts Vigor and ignores one Wound penalty level, but penalizes Agility, Smarts, and linked skills.             | alcohol, vigor, wound-penalty, drawback |
+| Liquid Courage | Novice, Vigor d8+                | After consuming a stiff drink, Vigor increases one die type, Toughness increases accordingly, and the character ignores one level of Wound penalties. While affected, Agility, Smarts, and skills linked to them suffer -1. The effect lasts 1 hour, then the character suffers one level of Fatigue for 4 hours. | alcohol, vigor, wound-penalty, drawback |
 | Scavenger      | Novice, Luck                     | Once per encounter, find or remember a needed item or resource.                                                         | item-finding, encounter                 |
 
 ## Legendary Edges

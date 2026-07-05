@@ -484,7 +484,7 @@ const SWADE_CORE_EDGE_CATALOG = [
   ["swade-edge-chi","Chi","Weird","Veteran","Veteran, Martial Warrior","Once per combat, use a Chi Point to reroll an attack, force an enemy attack reroll, or add damage to an unarmed attack.","",true],
   ["swade-edge-danger-sense","Danger Sense","Weird","Novice","Novice","Notice roll at +2 to sense ambushes or similar danger.","",true],
   ["swade-edge-healer","Healer","Weird","Novice","Novice, Spirit d8+","+2 to Healing rolls, magical or mundane.","",true],
-  ["swade-edge-liquid-courage","Liquid Courage","Weird","Novice","Novice, Vigor d8+","Alcohol boosts Vigor and ignores one Wound penalty level, but penalizes Agility, Smarts, and linked skills.","",true],
+  ["swade-edge-liquid-courage","Liquid Courage","Weird","Novice","Novice, Vigor d8+","After consuming a stiff drink, Vigor increases one die type, Toughness increases accordingly, and the character ignores one level of Wound penalties. While affected, Agility, Smarts, and skills linked to them suffer -1. The effect lasts 1 hour, then the character suffers one level of Fatigue for 4 hours.","",true],
   ["swade-edge-scavenger","Scavenger","Weird","Novice","Novice, Luck","Once per encounter, find or remember a needed item or resource.","",true],
   ["swade-edge-followers","Followers","Legendary","Legendary","Wild Card, Legendary","Gain five loyal followers.","",true],
   ["swade-edge-professional","Professional","Legendary","Legendary","Legendary, d12 in Trait","Chosen Trait and its limit increase one step.","",true],
