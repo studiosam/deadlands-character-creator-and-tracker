@@ -915,12 +915,23 @@ test("selected setup Edge and Hindrance cards surface precise catalog mechanics"
       "dl-edge-spook",
       "dl-edge-whateley-blood",
       "dl-edge-like-an-oak",
+      "swade-edge-ambidextrous",
       "swade-edge-berserk",
+      "swade-edge-brawler",
       "swade-edge-calculating",
+      "swade-edge-fame",
+      "swade-edge-famous",
       "swade-edge-free-runner",
+      "swade-edge-harder-to-kill",
       "swade-edge-steady-hands",
       "swade-edge-extra-effort",
       "swade-edge-holy-unholy-warrior",
+      "swade-edge-improvisational-fighter",
+      "swade-edge-linguist",
+      "swade-edge-martial-artist",
+      "swade-edge-martial-warrior",
+      "swade-edge-rock-and-roll",
+      "swade-edge-improved-trademark-weapon",
     ];
     const edges = selectedEdgeIds.map((id) => {
       const catalogEdge = EDGE_CATALOG.find((edge) => edge.id === id);
@@ -1014,6 +1025,23 @@ test("selected setup Edge and Hindrance cards surface precise catalog mechanics"
   );
   await expect(edgeCard("Holy/Unholy Warrior")).toContainText(
     "+1 to +4 to a Soak roll",
+  );
+  await expect(edgeCard("Ambidextrous")).toContainText("-2 off-hand penalty");
+  await expect(edgeCard("Brawler")).toContainText("Str+d4 damage");
+  await expect(edgeCard("Fame")).toContainText("+1 Persuasion");
+  await expect(edgeCard("Fame")).toContainText("Performance pay is doubled");
+  await expect(edgeCard("Famous")).toContainText("+2 Persuasion");
+  await expect(edgeCard("Famous")).toContainText("five times normal");
+  await expect(edgeCard("Linguist")).toContainText("half the Smarts die type");
+  await expect(edgeCard("Harder to Kill")).toContainText("even result");
+  await expect(edgeCard("Improvisational Fighter")).toContainText(
+    "-2 improvised weapon attack penalty",
+  );
+  await expect(edgeCard("Martial Artist")).toContainText("Str+d4");
+  await expect(edgeCard("Martial Warrior")).toContainText("Str+d6");
+  await expect(edgeCard("Rock and Roll!")).toContainText("-2 Recoil penalty");
+  await expect(edgeCard("Improved Trademark Weapon")).toContainText(
+    "+2 attack and Parry",
   );
 
   await page.locator("[data-setup-step='hindrances']").click();

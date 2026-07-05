@@ -246,7 +246,7 @@ const EDGE_EFFECT_HOOKS = [
     sourceType: "edge",
     matchName: "Brawler",
     label: "Brawler",
-    summary: "+1 Toughness and improved unarmed damage.",
+    summary: "Gain +1 Toughness. Fists and feet deal Str+d4 damage.",
     effects: [
       {
         type: "numeric-modifier",
@@ -260,7 +260,7 @@ const EDGE_EFFECT_HOOKS = [
         type: "reminder",
         target: "unarmed-damage",
         appliesTo: ["character", "combat"],
-        displayLabel: "Improved unarmed damage",
+        displayLabel: "Unarmed damage Str+d4",
       },
     ],
   },

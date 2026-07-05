@@ -492,14 +492,12 @@ test("Brawler passive math increases Toughness from a trusted baseline", async (
   await expect(derived).toContainText("Base 5 + Effects +1 + Armor 0");
   await expect(derived).toContainText("Brawler");
   await expect(derived).toContainText("Toughness +1");
-  await expect(derived).toContainText("Improved unarmed damage");
+  await expect(derived).toContainText("Unarmed damage Str+d4");
 
   await openCombat(page);
   const combatBreakdown = page.locator("#combatPenaltyBreakdown");
   await expect(combatBreakdown).toContainText("Brawler: Toughness +1");
-  await expect(combatBreakdown).toContainText(
-    "Brawler: Improved unarmed damage",
-  );
+  await expect(combatBreakdown).toContainText("Brawler: Unarmed damage Str+d4");
 
   const computed = await page.evaluate(() => ({
     toughness: character.derived.toughness,
@@ -515,7 +513,7 @@ test("Brawler passive math increases Toughness from a trusted baseline", async (
     toughness: 6,
     toughnessModifier: 1,
     pendingToughnessModifier: 0,
-    summaries: ["Brawler: Toughness +1", "Brawler: Improved unarmed damage"],
+    summaries: ["Brawler: Toughness +1", "Brawler: Unarmed damage Str+d4"],
   });
 });
 
