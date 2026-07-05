@@ -49,7 +49,17 @@ async function addSetupWeaponFromPicker(page, weaponName) {
     .locator("[data-setup-weapon-row]")
     .filter({ hasText: weaponName });
   await expect(row).toBeVisible();
-  await row.getByRole("button", { name: "Add" }).click();
+  await row.getByRole("button", { name: "Buy" }).click();
+}
+
+function visibleWeaponRows(page) {
+  return page.locator("#setupWeaponPicker [data-setup-weapon-row]:visible");
+}
+
+async function visibleWeaponNames(page) {
+  return visibleWeaponRows(page)
+    .locator(".setup-catalog-picker-name strong")
+    .allTextContents();
 }
 
 test("Gear setup audit separates money carried gear stored gear and load", async ({
@@ -164,15 +174,9 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   await expect(setupGearPanel).not.toContainText("Apply");
   await expect(setupGearPanel).toContainText("Buy Starting Gear");
   await expect(setupGearPanel).toContainText("Current Inventory");
-  await expect(
-    setupGearPanel.locator(".setup-gear-column-header").first(),
-  ).toContainText("Item");
-  await expect(
-    setupGearPanel.locator(".setup-gear-column-header").first(),
-  ).toContainText("Price");
-  await expect(
-    setupGearPanel.locator(".setup-gear-column-header").first(),
-  ).toContainText("Weight");
+  await expect(setupGearPanel.locator(".setup-gear-column-header")).toHaveCount(
+    0,
+  );
   const bowieKnifeCard = setupGearPanel
     .locator(".setup-gear-line")
     .filter({ hasText: "Bowie Knife" });
@@ -181,38 +185,31 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   ).toContainText("Bowie Knife");
   await expect(
     bowieKnifeCard.locator(".setup-gear-card-summary"),
-  ).toContainText("$4.00");
+  ).not.toContainText("$4.00");
   await expect(
     bowieKnifeCard.locator(".setup-gear-card-summary"),
-  ).toContainText("1 lb");
+  ).not.toContainText("1 lb");
   await expect(bowieKnifeCard.locator("details")).toHaveCount(1);
   await expect(bowieKnifeCard).not.toContainText("Details");
   await expect(bowieKnifeCard.locator(".setup-gear-card-arrow")).toHaveCount(1);
-  await expect(
-    bowieKnifeCard.locator(".setup-gear-card-cell .sr-only").first(),
-  ).toHaveCSS("position", "absolute");
   const gearSummary = bowieKnifeCard.locator(".setup-gear-card-summary");
   await expect(gearSummary).toHaveCSS("display", "grid");
   const arrowBox = await gearSummary
     .locator(".setup-gear-card-arrow")
     .boundingBox();
   const nameBox = await gearSummary.locator(":scope > strong").boundingBox();
-  const priceBox = await gearSummary
-    .locator(".setup-gear-card-cell")
-    .first()
-    .boundingBox();
-  const weightBox = await gearSummary
-    .locator(".setup-gear-card-cell")
-    .nth(1)
-    .boundingBox();
-  if (!arrowBox || !nameBox || !priceBox || !weightBox) {
-    throw new Error("Expected compact gear card row to render all columns");
+  if (!arrowBox || !nameBox) {
+    throw new Error("Expected compact gear card row to render item columns");
   }
-  const rowCenters = [arrowBox, nameBox, priceBox, weightBox].map(
-    (box) => box.y + box.height / 2,
-  );
+  const rowCenters = [arrowBox, nameBox].map((box) => box.y + box.height / 2);
   expect(Math.max(...rowCenters) - Math.min(...rowCenters)).toBeLessThan(8);
   await bowieKnifeCard.locator("summary").click();
+  await expect(bowieKnifeCard.locator(".setup-gear-detail-list")).toContainText(
+    "Price $4.00",
+  );
+  await expect(bowieKnifeCard.locator(".setup-gear-detail-list")).toContainText(
+    "Weight 1 lb",
+  );
   await expect(bowieKnifeCard.locator(".setup-gear-detail-list")).toContainText(
     "Damage Str+d4",
   );
@@ -237,6 +234,30 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   ).toHaveCount(0);
   await expect(page.locator("#setupWeaponSearchInput")).toBeVisible();
   await expect(page.locator("#setupWeaponCategoryFilter")).toBeVisible();
+  await expect(
+    setupGearPanel.locator(".setup-catalog-picker-header"),
+  ).toContainText("Name");
+  await expect(
+    setupGearPanel.locator(".setup-catalog-picker-header"),
+  ).toContainText("Type");
+  await expect(
+    setupGearPanel.locator(".setup-catalog-picker-header"),
+  ).toContainText("Damage");
+  await expect(
+    setupGearPanel.locator(".setup-catalog-picker-header"),
+  ).toContainText("Range");
+  await expect(
+    setupGearPanel.locator(".setup-catalog-picker-header"),
+  ).toContainText("RoF / Shots");
+  await expect(
+    setupGearPanel.locator(".setup-catalog-picker-header"),
+  ).toContainText("Price");
+  await expect(
+    setupGearPanel.locator(".setup-catalog-picker-header"),
+  ).toContainText("Load");
+  await expect(
+    setupGearPanel.locator(".setup-catalog-picker-header"),
+  ).not.toContainText("Notes");
 
   const before = await page.evaluate(() =>
     JSON.stringify({
@@ -263,6 +284,102 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   await expect(page.locator("#setupGearPanel")).toContainText("Backpack");
 });
 
+test("Gear setup weapon picker searches filters and sorts catalog rows", async ({
+  page,
+}, testInfo) => {
+  await seedGearSetupCharacter(page, {
+    name: "Weapon Picker Sorter",
+    preferredId: "weapon-picker-sorter",
+    moneyCents: 25000,
+  });
+
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await page.locator("#setupWeaponSearchInput").fill("Peacemaker");
+  await expect(
+    visibleWeaponRows(page).filter({ hasText: "Colt Peacemaker (.45)" }),
+  ).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-weapon-row]")
+      .filter({ hasText: "Single-Barrel Shotgun" }),
+  ).toBeHidden();
+
+  await page.locator("#setupWeaponSearchInput").fill("");
+  await page.locator("#setupWeaponCategoryFilter").selectOption("Shotguns");
+  await expect(
+    visibleWeaponRows(page).filter({ hasText: "Single-Barrel Shotgun" }),
+  ).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-weapon-row]")
+      .filter({ hasText: "Colt Peacemaker (.45)" }),
+  ).toBeHidden();
+
+  if (testInfo.project.name === "mobile") return;
+
+  await setupGearPanel.getByRole("button", { name: "Name" }).click();
+  expect((await visibleWeaponNames(page))[0]).toBe("Colt Revolving Shotgun");
+
+  await setupGearPanel.getByRole("button", { name: "Price" }).click();
+  await expect(
+    visibleWeaponRows(page).first().locator(".setup-catalog-picker-price"),
+  ).toContainText("$25.00");
+
+  await setupGearPanel.getByRole("button", { name: "Load" }).click();
+  await expect(
+    visibleWeaponRows(page).first().locator(".setup-catalog-picker-load"),
+  ).toContainText("4 lb");
+
+  await setupGearPanel.getByRole("button", { name: "Range" }).click();
+  await expect(
+    visibleWeaponRows(page).first().locator(".setup-catalog-picker-range"),
+  ).toContainText("5/10/20");
+
+  await page.locator("#setupWeaponCategoryFilter").selectOption("Rifles");
+  await setupGearPanel.getByRole("button", { name: "Damage" }).click();
+  await expect(
+    visibleWeaponRows(page).first().locator(".setup-catalog-picker-damage"),
+  ).toContainText("2d8-1");
+});
+
+test("Gear setup weapon picker stacks into usable mobile cards", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await seedGearSetupCharacter(page, {
+    name: "Mobile Weapon Picker",
+    preferredId: "mobile-weapon-picker",
+    moneyCents: 25000,
+  });
+
+  const picker = page.locator("#setupWeaponPicker");
+  await page.locator("#setupWeaponSearchInput").fill("Single-Barrel");
+  const row = picker
+    .locator("[data-setup-weapon-row]")
+    .filter({ hasText: "Single-Barrel Shotgun" });
+  await expect(picker.locator(".setup-catalog-picker-header")).toBeHidden();
+  await expect(row).toBeVisible();
+  await expect(row.locator(".setup-catalog-picker-type")).toContainText(
+    "Shotguns",
+  );
+  await expect(row.locator(".setup-catalog-picker-damage")).toContainText(
+    "1-3d6",
+  );
+  await expect(row.locator(".setup-catalog-picker-range")).toContainText(
+    "12/24/48",
+  );
+  await expect(row.locator(".setup-catalog-picker-price")).toContainText(
+    "$25.00",
+  );
+  await expect(row.locator(".setup-catalog-picker-load")).toContainText("6 lb");
+  await expect(row.getByRole("button", { name: "Buy" })).toBeVisible();
+  const mobileColumnCount = await row.evaluate(
+    (element) =>
+      getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length,
+  );
+  expect(mobileColumnCount).toBe(1);
+});
+
 test("Gear setup purchases source-track starting gear and reduce funds", async ({
   page,
 }) => {
@@ -286,7 +403,10 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
       .locator("[data-setup-weapon-row]")
       .filter({ hasText: "Single-Barrel Shotgun" }),
   ).toBeHidden();
-  await peacemakerRow.getByRole("button", { name: "Add" }).click();
+  await peacemakerRow.getByRole("button", { name: "Buy" }).click();
+  await expect(
+    setupGearPanel.locator(".setup-audit-group[aria-label='Ammunition']"),
+  ).toHaveCount(0);
   const ammoOptionTexts = await page
     .locator("#setupAmmoPurchaseSelect option")
     .evaluateAll((options) =>
@@ -307,7 +427,14 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
     .locator("#setupAmmoPurchaseSelect")
     .selectOption("pistol-ammunition-large-40-50-caliber");
   await page.locator("#setupAmmoPurchaseQty").fill("6");
-  await setupGearPanel.getByRole("button", { name: "Buy Ammunition" }).click();
+  await setupGearPanel.getByRole("button", { name: "Buy Ammo" }).click();
+  const ammunitionGroup = setupGearPanel.locator(
+    ".setup-audit-group[aria-label='Ammunition']",
+  );
+  await expect(ammunitionGroup).toBeVisible();
+  await expect(
+    ammunitionGroup.locator(".setup-gear-card-summary > strong"),
+  ).toHaveText(["Pistol ammo (.45)"]);
   await page.locator("#setupArmorPurchaseSelect").selectOption("native-armor");
   await setupGearPanel.getByRole("button", { name: "Buy Armor" }).click();
   await page.locator("#setupVehiclePurchaseSelect").selectOption("bateaux");

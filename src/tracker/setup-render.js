@@ -1753,13 +1753,15 @@ function setupGearEntryPriceLabel(entry) {
 }
 
 function setupGearCard(name, price, weight, details, note = "", actions = "") {
-  const detailItems = details.filter(Boolean);
+  const detailItems = [
+    `Price ${price || "—"}`,
+    `Weight ${weight || "—"}`,
+    ...details.filter(Boolean),
+  ];
   const hasDetails = detailItems.length || note;
   const summaryMarkup = `<span class="setup-gear-card-summary">
       <span class="setup-gear-card-arrow${hasDetails ? "" : " setup-gear-card-arrow-empty"}" aria-hidden="true"></span>
       <strong>${esc(name || "Gear")}</strong>
-      <span class="setup-gear-card-cell"><span class="sr-only">Price</span><strong>${esc(price || "—")}</strong></span>
-      <span class="setup-gear-card-cell"><span class="sr-only">Weight</span><strong>${esc(weight || "—")}</strong></span>
     </span>`;
   const contentMarkup = hasDetails
     ? `<details class="setup-gear-line-details">
@@ -1788,12 +1790,6 @@ function setupAuditGroup(title, items, emptyText, renderer) {
 function setupGearAuditGroup(title, items, emptyText, renderer) {
   return `<section class="setup-audit-group setup-gear-audit-group" aria-label="${esc(title)}">
     <h4>${esc(title)}</h4>
-    <div class="setup-gear-column-header" aria-hidden="true">
-      <span></span>
-      <strong>Item</strong>
-      <strong>Price</strong>
-      <strong>Weight</strong>
-    </div>
     <div class="setup-audit-list">
       ${items.length ? items.map(renderer).join("") : emptyState(emptyText)}
     </div>
@@ -2190,41 +2186,127 @@ function setupWeaponPickerGroupOptions(items) {
     .join("");
 }
 
-function setupWeaponPickerDetails(item) {
-  return [
-    item.damage ? `Damage ${item.damage}` : "",
-    item.range ? `Range ${item.range}` : "",
+function setupWeaponPickerDisplay(value) {
+  const text = String(value ?? "").trim();
+  return text || "—";
+}
+
+function setupWeaponPickerShortRange(item) {
+  const match = String(item?.range || "").match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : "";
+}
+
+function setupWeaponPickerDamageAverage(item) {
+  const text = String(item?.damage || "")
+    .replace(/[–—]/g, "-")
+    .replace(/\bStr\b\s*\+?/gi, "")
+    .trim();
+  if (!text) return "";
+
+  const diceRange = text.match(/^([+-]?\d+(?:\.\d+)?)\s*-\s*(\d+)d(\d+)/i);
+  if (diceRange) {
+    const low = Number(diceRange[1]);
+    const high = Number(diceRange[2]);
+    const die = Number(diceRange[3]);
+    if ([low, high, die].every(Number.isFinite))
+      return ((low + high) / 2) * ((die + 1) / 2);
+  }
+
+  let total = 0;
+  let hasValue = false;
+  const dicePattern = /([+-]?\s*\d*)d(\d+)/gi;
+  const withoutDice = text.replace(dicePattern, (match, countText, dieText) => {
+    const normalizedCount = String(countText || "")
+      .replace(/\s+/g, "")
+      .trim();
+    const sign = normalizedCount.startsWith("-") ? -1 : 1;
+    const countValue = Math.abs(Number(normalizedCount || 1)) || 1;
+    const die = Number(dieText);
+    if (Number.isFinite(die)) {
+      total += sign * countValue * ((die + 1) / 2);
+      hasValue = true;
+    }
+    return "";
+  });
+  const flatMatches = withoutDice.match(/[+-]?\s*\d+(?:\.\d+)?/g) || [];
+  flatMatches.forEach((value) => {
+    const number = Number(String(value).replace(/\s+/g, ""));
+    if (Number.isFinite(number)) {
+      total += number;
+      hasValue = true;
+    }
+  });
+
+  return hasValue ? total : "";
+}
+
+function setupWeaponPickerRofShots(item) {
+  const parts = [
+    item.rof !== undefined && item.rof !== "" ? `RoF ${item.rof}` : "",
     item.shotsText || item.shotsMax
       ? `Shots ${item.shotsText || item.shotsMax}`
       : "",
-    item.minStr ? `Min Str ${item.minStr}` : "",
-    requiredAmmoLabelForWeapon(item, item)
-      ? `Ammo ${requiredAmmoLabelForWeapon(item, item)}`
-      : "",
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  ].filter(Boolean);
+  return parts.join(" / ");
 }
 
-function setupWeaponPickerRow(item) {
-  const group = setupWeaponPickerGroup(item);
-  const searchText = [
+function setupWeaponPickerWeight(item) {
+  const value = Number(item?.weight);
+  return Number.isFinite(value) ? value : "";
+}
+
+function setupWeaponPickerNotes(item) {
+  return String(item?.notes || "").trim();
+}
+
+function setupWeaponPickerSearchText(item, group, ammoLabel) {
+  return [
     item.name,
     item.category,
     group,
-    setupWeaponPickerDetails(item),
+    item.damage,
+    item.range,
+    setupWeaponPickerRofShots(item),
+    item.costText || money(item.costCents || 0),
+    setupWeaponPickerWeight(item) !== ""
+      ? formatWeightPounds(setupWeaponPickerWeight(item))
+      : "",
+    ammoLabel,
+    setupWeaponPickerNotes(item),
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
-  return `<div class="setup-catalog-picker-row" data-setup-weapon-row data-weapon-group="${esc(group)}" data-weapon-search="${esc(searchText)}">
-    <div class="setup-catalog-picker-main">
-      <strong>${esc(item.name)}</strong>
-      <span>${esc(group)}${item.category && item.category !== group ? ` · ${esc(item.category)}` : ""}</span>
-      <p>${esc(setupWeaponPickerDetails(item) || item.notes || "")}</p>
+}
+
+function setupWeaponPickerHeaderCell(label, sortKey = "") {
+  if (!sortKey)
+    return `<strong class="setup-catalog-picker-heading">${esc(label)}</strong>`;
+  return `<button class="setup-catalog-sort-button" type="button" data-setup-weapon-sort="${esc(sortKey)}">${esc(label)}</button>`;
+}
+
+function setupWeaponPickerCell(label, value, className = "") {
+  return `<span class="setup-catalog-picker-cell ${esc(className)}" data-label="${esc(label)}">${esc(value)}</span>`;
+}
+
+function setupWeaponPickerRow(item) {
+  const group = setupWeaponPickerGroup(item);
+  const ammoLabel = requiredAmmoLabelForWeapon(item, item);
+  const weight = setupWeaponPickerWeight(item);
+  const rangeSort = setupWeaponPickerShortRange(item);
+  const damageSort = setupWeaponPickerDamageAverage(item);
+  const searchText = setupWeaponPickerSearchText(item, group, ammoLabel);
+  return `<div class="setup-catalog-picker-row" data-setup-weapon-row data-weapon-group="${esc(group)}" data-weapon-search="${esc(searchText)}" data-weapon-sort-name="${esc(String(item.name || "").toLowerCase())}" data-weapon-sort-type="${esc(group.toLowerCase())}" data-weapon-sort-price="${esc(Number(item.costCents) || 0)}" data-weapon-sort-weight="${esc(weight)}" data-weapon-sort-range="${esc(rangeSort)}" data-weapon-sort-damage="${esc(damageSort)}">
+    <div class="setup-catalog-picker-cell setup-catalog-picker-name" data-label="Name">
+      <strong>${esc(item.name || "Unnamed weapon")}</strong>
     </div>
-    <div class="setup-catalog-picker-price">${esc(money(item.costCents || 0))}</div>
-    <button type="button" data-setup-action="addSetupWeaponPurchase" data-setup-weapon-id="${esc(item.id)}">Add</button>
+    ${setupWeaponPickerCell("Type", group, "setup-catalog-picker-type")}
+    ${setupWeaponPickerCell("Damage", setupWeaponPickerDisplay(item.damage), "setup-catalog-picker-damage")}
+    ${setupWeaponPickerCell("Range", setupWeaponPickerDisplay(item.range), "setup-catalog-picker-range")}
+    ${setupWeaponPickerCell("RoF / Shots", setupWeaponPickerDisplay(setupWeaponPickerRofShots(item)), "setup-catalog-picker-rof")}
+    ${setupWeaponPickerCell("Price", money(item.costCents || 0), "setup-catalog-picker-price")}
+    ${setupWeaponPickerCell("Load", weight !== "" ? formatWeightPounds(weight) : "—", "setup-catalog-picker-load")}
+    <span class="setup-catalog-picker-cell setup-catalog-picker-add" data-label="Buy"><button type="button" data-setup-action="addSetupWeaponPurchase" data-setup-weapon-id="${esc(item.id)}">Buy</button></span>
   </div>`;
 }
 
@@ -2232,20 +2314,81 @@ function setupWeaponPicker(items) {
   return `<article class="setup-purchase-card setup-catalog-picker" id="setupWeaponPicker">
     <h5>Weapons</h5>
     <div class="setup-form-grid setup-purchase-form setup-catalog-picker-controls">
-      <label class="setup-wide">Search weapons<input id="setupWeaponSearchInput" type="search" placeholder="Weapon name" autocomplete="off" /></label>
+      <label class="setup-wide">Search weapons<input id="setupWeaponSearchInput" type="search" placeholder="Search weapons..." autocomplete="off" /></label>
       <label>Type<select id="setupWeaponCategoryFilter" aria-label="Filter weapons by type">${setupWeaponPickerGroupOptions(items)}</select></label>
       <label>Qty ${setupQuantityInput("setupWeaponPurchaseQty")}</label>
     </div>
-    <div class="setup-catalog-picker-header" aria-hidden="true">
-      <strong>Weapon</strong>
-      <strong>Price</strong>
-      <span></span>
+    <div class="setup-catalog-picker-header" aria-label="Weapon catalog columns">
+      ${setupWeaponPickerHeaderCell("Name", "name")}
+      ${setupWeaponPickerHeaderCell("Type", "type")}
+      ${setupWeaponPickerHeaderCell("Damage", "damage")}
+      ${setupWeaponPickerHeaderCell("Range", "range")}
+      ${setupWeaponPickerHeaderCell("RoF / Shots")}
+      ${setupWeaponPickerHeaderCell("Price", "price")}
+      ${setupWeaponPickerHeaderCell("Load", "weight")}
+      <span aria-hidden="true"></span>
     </div>
     <div class="setup-catalog-picker-list">
       ${items.map(setupWeaponPickerRow).join("")}
       <p class="empty-state setup-catalog-picker-empty hidden">No weapons match that search.</p>
     </div>
   </article>`;
+}
+
+function setupWeaponSortValue(row, key) {
+  if (["price", "weight", "range", "damage"].includes(key)) {
+    const value =
+      row.dataset[`weaponSort${key[0].toUpperCase()}${key.slice(1)}`];
+    return value === "" ? null : Number(value);
+  }
+  return String(
+    row.dataset[`weaponSort${key[0].toUpperCase()}${key.slice(1)}`] || "",
+  );
+}
+
+function compareSetupWeaponRows(left, right, key, direction) {
+  const leftValue = setupWeaponSortValue(left, key);
+  const rightValue = setupWeaponSortValue(right, key);
+  const leftMissing = leftValue === null || leftValue === "";
+  const rightMissing = rightValue === null || rightValue === "";
+  if (leftMissing && rightMissing) return 0;
+  if (leftMissing) return 1;
+  if (rightMissing) return -1;
+  const result =
+    typeof leftValue === "number" && typeof rightValue === "number"
+      ? leftValue - rightValue
+      : String(leftValue).localeCompare(String(rightValue));
+  return direction === "desc" ? -result : result;
+}
+
+function updateSetupWeaponSortButtons(picker) {
+  const key = picker.dataset.sortKey || "";
+  const direction = picker.dataset.sortDirection || "asc";
+  picker.querySelectorAll("[data-setup-weapon-sort]").forEach((button) => {
+    const active = button.dataset.setupWeaponSort === key;
+    button.classList.toggle("active", active);
+    button.setAttribute(
+      "aria-sort",
+      active ? (direction === "desc" ? "descending" : "ascending") : "none",
+    );
+  });
+}
+
+function sortSetupWeaponPicker(key) {
+  const picker = document.getElementById("setupWeaponPicker");
+  if (!picker || !key) return;
+  const currentKey = picker.dataset.sortKey || "";
+  const currentDirection = picker.dataset.sortDirection || "asc";
+  const direction =
+    currentKey === key && currentDirection === "asc" ? "desc" : "asc";
+  picker.dataset.sortKey = key;
+  picker.dataset.sortDirection = direction;
+  const list = picker.querySelector(".setup-catalog-picker-list");
+  const emptyState = picker.querySelector(".setup-catalog-picker-empty");
+  [...picker.querySelectorAll("[data-setup-weapon-row]")]
+    .sort((left, right) => compareSetupWeaponRows(left, right, key, direction))
+    .forEach((row) => list?.insertBefore(row, emptyState || null));
+  updateSetupWeaponSortButtons(picker);
 }
 
 function filterSetupWeaponPicker() {
@@ -2272,6 +2415,7 @@ function filterSetupWeaponPicker() {
   picker
     .querySelector(".setup-catalog-picker-empty")
     ?.classList.toggle("hidden", visibleCount > 0);
+  updateSetupWeaponSortButtons(picker);
 }
 
 function setupPurchaseForm(label, selectId, qtyId, action, items) {
@@ -2358,7 +2502,7 @@ function renderSetupGearPurchaseControls(report) {
           <label class="setup-wide"><span class="sr-only">Choose ammunition</span><select id="setupAmmoPurchaseSelect" aria-label="Choose ammunition">${setupAmmoPurchaseOptions(GEAR_CATALOG.filter(isAmmo), "Choose ammunition...")}</select></label>
           <label>Caliber<select id="setupAmmoPurchaseCaliber">${setupAmmoCaliberOptions()}</select></label>
           <label>Qty ${setupQuantityInput("setupAmmoPurchaseQty")}</label>
-          <div class="creator-actions"><button type="button" data-setup-action="addSetupAmmoPurchase">Buy Ammunition</button></div>
+          <div class="creator-actions"><button type="button" data-setup-action="addSetupAmmoPurchase">Buy Ammo</button></div>
         </div>
       </article>
       <article class="setup-purchase-card">

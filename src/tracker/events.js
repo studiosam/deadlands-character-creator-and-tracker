@@ -95,6 +95,10 @@ document.addEventListener("click", async (event) => {
   if (catalogResult) {
     catalogSelectResult(catalogResult.dataset.catalogResultId || "");
   }
+  const setupWeaponSort = event.target?.closest?.("[data-setup-weapon-sort]");
+  if (setupWeaponSort) {
+    sortSetupWeaponPicker(setupWeaponSort.dataset.setupWeaponSort || "");
+  }
   const setupStep = event.target?.closest?.("[data-setup-step]");
   if (setupStep) {
     collectConceptInputs();

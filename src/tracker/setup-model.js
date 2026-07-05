@@ -510,14 +510,19 @@ function setupInventoryAuditEntries() {
   }));
 }
 function setupPhysicalAuditEntries() {
-  return physicalItems().map((entry) => ({
-    ...entry,
-    location: entry.item.itemLocation || "",
-    storageId: entry.item.storageId || "",
-    containerId: entry.item.containerId || "",
-    weight: physicalItemWeight(entry),
-    count: Number(entry.item.count ?? entry.item.quantity ?? 1),
-  }));
+  return physicalItems()
+    .filter(
+      (entry) =>
+        entry.type !== "ammo" || Math.max(0, Number(entry.item?.count) || 0),
+    )
+    .map((entry) => ({
+      ...entry,
+      location: entry.item.itemLocation || "",
+      storageId: entry.item.storageId || "",
+      containerId: entry.item.containerId || "",
+      weight: physicalItemWeight(entry),
+      count: Number(entry.item.count ?? entry.item.quantity ?? 1),
+    }));
 }
 function setupVehicleAuditEntries() {
   return (character.vehicles || [])
