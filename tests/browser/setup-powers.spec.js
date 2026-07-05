@@ -61,16 +61,16 @@ test("Powers setup audit reports missing requirements for an Arcane Background",
     setupNavigation.getByRole("button", { name: "Next: Gear" }),
   ).toBeDisabled();
   await expect(setupPowersPanel).toContainText("Blessed");
-  await expect(setupPowersPanel).toContainText("Expected Arcane Skill");
   await expect(setupPowersPanel).toContainText("Faith d4+ linked to Spirit");
   await expect(setupNavigation).toContainText("Missing Faith d4+ for Blessed");
-  await expect(setupPowersPanel).toContainText("Expected Power Points");
+  await expect(setupPowersPanel).not.toContainText("Audit Details");
   await expect(setupPowersPanel).toContainText("15 Power Points");
   await expect(setupPowersPanel).toContainText("15 / 15");
+  await expect(setupPowersPanel).not.toContainText("Power Points mismatch");
   await expect(setupNavigation).not.toContainText(
     "Expected 15 Power Points; none recorded.",
   );
-  await expect(setupPowersPanel).toContainText("Expected Starting Powers");
+  await expect(setupPowersPanel).toContainText("Starting Powers");
   await expect(setupNavigation).toContainText(
     "Expected 3 starting powers; 1 recorded.",
   );
@@ -129,9 +129,9 @@ test("Powers setup audit recognizes a complete starting arcane package", async (
       .getByRole("button", { name: "Next: Gear" }),
   ).toBeEnabled();
   await expect(setupPowersPanel).toContainText("Blessed");
-  await expect(setupPowersPanel).toContainText("Faith d4 linked to Spirit");
+  await expect(setupPowersPanel).toContainText("Faith d4+ linked to Spirit");
   await expect(setupPowersPanel).toContainText("20 / 20");
-  await expect(setupPowersPanel).toContainText("3 / 3 expected");
+  await expect(setupPowersPanel).toContainText("3 / 3");
   await expect(
     setupPowersPanel.locator(".setup-required-powers"),
   ).toContainText("Holy Symbol");
@@ -305,7 +305,7 @@ test("Powers setup selection adds removes and persists setup starting powers", a
   await expect(page.locator("[data-setup-step='powers']")).toContainText(
     "Complete",
   );
-  await expect(setupPowersPanel).toContainText("3 / 3 expected");
+  await expect(setupPowersPanel).toContainText("3 / 3");
 
   const snapshot = await page.evaluate(() => ({
     catalogIds: character.powers.map((power) => power.catalogId).sort(),

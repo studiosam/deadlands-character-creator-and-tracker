@@ -1435,21 +1435,18 @@ function renderSetupPowerPointControls(report) {
   const hasExpectedPowerPoints = Boolean(audit?.complete);
   const canUpdatePowerPoints =
     Boolean(audit?.powerPoints) && !hasExpectedPowerPoints;
+  if (!canUpdatePowerPoints) return "";
 
   return `<section class="setup-trait-group" aria-labelledby="setupPowerPointsSelectionHeading">
-    <h4 id="setupPowerPointsSelectionHeading">Power Points</h4>
-    <p class="creator-note">Starting Power Points are granted automatically from the matched Arcane Background. Existing Power Points are preserved unless you choose to update a mismatch.</p>
+    <h4 id="setupPowerPointsSelectionHeading">Power Points mismatch</h4>
+    <p class="creator-note">Starting Power Points are granted automatically from the matched Arcane Background. Existing mismatched Power Points are preserved unless you choose to update them.</p>
     <article class="setup-trait-editor-row setup-power-point-card">
       <div>
         <strong>${esc(audit?.statusText || "Not recorded")}</strong>
         <span>${esc(`${report.expectedPowerPoints} expected from ${report.profile.name}`)}</span>
       </div>
     </article>
-    ${
-      canUpdatePowerPoints
-        ? '<div class="creator-actions"><button type="button" data-setup-action="setSetupStartingPowerPoints">Update Starting Power Points</button></div>'
-        : ""
-    }
+    <div class="creator-actions"><button type="button" data-setup-action="setSetupStartingPowerPoints">Update Starting Power Points</button></div>
   </section>`;
 }
 
@@ -1661,7 +1658,6 @@ function renderSetupPowersClean() {
         ? `<div class="entry-warning"><strong>Needs review:</strong>${setupPowerMessageList(report.warnings)}</div>`
         : ""
     }
-    ${renderSetupPowerAuditDetails(report)}
     ${renderSetupRequiredPowerCards(report)}
     <section class="setup-audit-group setup-selected-powers" aria-label="Selected Powers">
       <h4>Selected Powers</h4>
