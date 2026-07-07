@@ -3613,6 +3613,147 @@ body:has(#setupGearPanel) .toast-region {
   gap: 0.55rem;
 }
 
+.setup-review-status-banner,
+.setup-review-validation-section,
+.setup-review-preview-card,
+.setup-review-finalize {
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--dossier-rule);
+  border-radius: 10px;
+  background: rgba(255, 250, 239, 0.52);
+}
+
+.setup-review-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-left: 5px solid rgba(121, 73, 24, 0.72);
+}
+
+.setup-review-status-banner.ready-to-play {
+  border-left-color: rgba(74, 118, 80, 0.82);
+}
+
+.setup-review-status-banner.warnings-present {
+  border-left-color: rgba(157, 101, 35, 0.84);
+}
+
+.setup-review-status-banner.needs-fix {
+  border-left-color: rgba(139, 42, 36, 0.85);
+}
+
+.setup-review-status-banner h4,
+.setup-review-finalize h4,
+.setup-review-preview h4,
+.setup-review-validation-section h4 {
+  margin: 0;
+  color: var(--dossier-ink);
+  font-family: var(--font-display);
+}
+
+.setup-review-status-banner p,
+.setup-review-finalize p {
+  margin: 0.25rem 0 0;
+  color: var(--dossier-muted);
+}
+
+.setup-review-validation {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.setup-review-validation-section {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.setup-review-validation-section.blocker {
+  border-left: 4px solid rgba(139, 42, 36, 0.75);
+}
+
+.setup-review-validation-section.warning {
+  border-left: 4px solid rgba(157, 101, 35, 0.75);
+}
+
+.setup-review-validation-section.optional {
+  border-left: 4px solid rgba(72, 48, 26, 0.25);
+}
+
+.setup-review-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  border: 1px solid var(--dossier-rule);
+  border-radius: 999px;
+  background: rgba(255, 250, 239, 0.75);
+  color: var(--dossier-ink);
+  font-weight: 900;
+}
+
+.setup-review-issue {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.setup-review-issue.blocker {
+  border-color: rgba(139, 42, 36, 0.45);
+  background: rgba(139, 42, 36, 0.08);
+}
+
+.setup-review-issue.optional {
+  opacity: 0.88;
+}
+
+.setup-review-preview {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.setup-review-preview-card {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.setup-review-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.setup-review-two-column h5,
+.setup-review-gear-group h5 {
+  margin: 0 0 0.45rem;
+  color: var(--dossier-ink);
+  font-family: var(--font-display);
+}
+
+.setup-review-card-list,
+.setup-review-gear-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.setup-review-readonly-card .tag-actions {
+  display: none;
+}
+
+.setup-review-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.setup-review-finalize {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-left: 5px solid rgba(74, 118, 80, 0.72);
+}
+
 .setup-review-hero,
 .setup-review-summary,
 .setup-review-checklist,
@@ -5087,6 +5228,16 @@ body:has(#setupGearPanel) .toast-region {
 
   .setup-persistence-panel .creator-actions {
     justify-content: flex-start;
+  }
+
+  .setup-review-status-banner,
+  .setup-review-finalize {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .setup-review-two-column {
+    grid-template-columns: 1fr;
   }
 
   .setup-step-navigation {

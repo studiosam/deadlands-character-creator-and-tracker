@@ -111,6 +111,16 @@ document.addEventListener("click", async (event) => {
   if (setupVehicleSort) {
     sortSetupVehiclePicker(setupVehicleSort.dataset.setupVehicleSort || "");
   }
+  const setupJumpStep = event.target?.closest?.("[data-setup-jump-step]");
+  if (setupJumpStep) {
+    collectConceptInputs();
+    characterSetupStep = setupJumpStep.dataset.setupJumpStep;
+    if (characterSetupStep === "hindrances")
+      clearNoSetupHindranceAcknowledgement();
+    renderCharacterSetup();
+    save();
+    return;
+  }
   const setupStep = event.target?.closest?.("[data-setup-step]");
   if (setupStep) {
     collectConceptInputs();

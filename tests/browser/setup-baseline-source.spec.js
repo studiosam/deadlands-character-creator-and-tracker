@@ -206,9 +206,19 @@ test("finalizing setup snapshots source-tracked creation baseline and round-trip
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Playable with Warnings",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "No blocking setup issues.",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Character Sheet Preview",
+  );
+  await expect(
+    page.locator("#setupReviewPanel [data-setup-action='finishSetup']"),
+  ).toBeEnabled();
   await page.locator("[data-setup-action='finishSetup']").click();
-  await expect(page.locator("#appDialog")).toBeVisible();
-  await page.locator("#appDialogConfirmBtn").click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
 
   const finalized = await page.evaluate(
@@ -378,6 +388,11 @@ test("marks setup source audit records as GM table exceptions", async ({
   const relicAuditRow = page.locator("#setupReviewPanel .dossier-note").filter({
     hasText: "Mysterious Relic",
   });
+  await page
+    .locator("#setupReviewPanel details")
+    .filter({ hasText: "Setup Source Audit" })
+    .locator("summary")
+    .click();
   await expect(relicAuditRow).toContainText("Needs a GM/table exception note");
   await relicAuditRow.getByRole("button", { name: "Mark Exception" }).click();
 
@@ -579,12 +594,14 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   await expect(setupGearPanel).toContainText("Ammunition");
 
   await page.locator("[data-setup-step='review']").click();
-  await expect(page.locator("#setupReviewPanel")).toContainText("Edge Count");
   await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Arcane Background Edges",
+    "Character Sheet Preview",
   );
-  await expect(page.locator("#setupReviewPanel")).toContainText("Known Powers");
-  await expect(page.locator("#setupReviewPanel")).toContainText("Gear Items");
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Edges & Hindrances",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText("Arcane");
+  await expect(page.locator("#setupReviewPanel")).toContainText("Gear");
 });
 
 test("edits setup traits for created characters and stores the creation baseline", async ({

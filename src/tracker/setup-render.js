@@ -513,9 +513,6 @@ function renderSetupPersistencePanel() {
   const reviewStep = characterSetupStep === "review";
   if (!reviewStep) return "";
 
-  const finishLabel = character.creation?.finalized
-    ? "Start Playing"
-    : "Finish Setup & Start Playing";
   if (isUnsavedCharacterDraft()) {
     return `<div class="setup-persistence-panel unsaved">
       <div>
@@ -524,8 +521,6 @@ function renderSetupPersistencePanel() {
       </div>
       <div class="creator-actions">
         <button type="button" data-setup-action="saveDraftCharacter">Save Character</button>
-        <button type="button" data-setup-action="confirmSetup">Confirm Setup</button>
-        <button type="button" data-setup-action="finishSetup">${finishLabel}</button>
         <button class="ghost danger-lite" type="button" data-setup-action="discardDraftCharacter">Discard Draft</button>
       </div>
     </div>`;
@@ -544,8 +539,6 @@ function renderSetupPersistencePanel() {
     </div>
     <div class="creator-actions">
       <button class="ghost" type="button" data-setup-action="saveCharacterNow">Save Character</button>
-      <button type="button" data-setup-action="confirmSetup">Confirm Setup</button>
-      <button type="button" data-setup-action="finishSetup">${finishLabel}</button>
       <button class="ghost danger-lite" type="button" data-setup-action="deleteCharacterSlot">Delete Character</button>
     </div>
   </div>`;
@@ -3006,116 +2999,391 @@ function renderSetupPlaceholder(title, body, details = []) {
   </section>`;
 }
 
-function setupReviewStepStatusCards() {
-  const steps = [
-    ["Concept", characterSetupStatus("concept")],
-    ["Attributes", characterSetupStatus("traits")],
-    ["Skills", characterSetupStatus("skills")],
-    ["Edges", characterSetupStatus("edges")],
-    ["Hindrances", characterSetupStatus("hindrances")],
-    ["Powers", characterSetupStatus("powers")],
-    ["Gear", characterSetupStatus("gear")],
-  ];
-  return `<section class="setup-trait-group setup-review-checklist" aria-labelledby="setupReviewChecklistHeading">
-    <h4 id="setupReviewChecklistHeading">Final Checklist</h4>
-    <div class="setup-review-status-grid">
-      ${steps
+function setupReviewStatusTitle(report) {
+  if (report.blockers.length) return "Needs Fix";
+  if (report.warnings.length) return "Playable with Warnings";
+  return "Ready to Play";
+}
+
+function setupReviewStatusMessage(report) {
+  if (report.blockers.length)
+    return "Resolve the blocking setup issues below before finalizing this character.";
+  if (report.warnings.length)
+    return "No blocking setup issues were found, but some choices may need Marshal review.";
+  return "No blocking setup issues were found. Review the character sheet below, then finalize setup to begin tracking this character in play.";
+}
+
+function setupReviewStatusBanner(report) {
+  const title = setupReviewStatusTitle(report);
+  const className = report.blockers.length
+    ? "needs-fix"
+    : report.warnings.length
+      ? "warnings-present"
+      : "ready-to-play";
+  return `<section class="setup-review-status-banner ${className}" aria-labelledby="setupReviewStatusHeading">
+    <div>
+      <p class="eyebrow">Setup Status</p>
+      <h4 id="setupReviewStatusHeading">${esc(title)}</h4>
+      <p>${esc(setupReviewStatusMessage(report))}</p>
+    </div>
+    ${setupStatusMarkup(report.status, title)}
+  </section>`;
+}
+
+function setupReviewIssueCard(issue) {
+  const action = issue.step
+    ? `<button class="ghost small-action" type="button" data-setup-jump-step="${esc(issue.step)}">${esc(issue.action || "Review Step")}</button>`
+    : "";
+  return `<article class="dossier-note setup-review-issue ${esc(issue.severity)}">
+    <strong>${esc(issue.title)}</strong>
+    <p>${esc(issue.message)}</p>
+    ${action}
+  </article>`;
+}
+
+function setupReviewIssueSection(title, issues, emptyText, severity) {
+  return `<section class="setup-review-validation-section ${esc(severity)}" aria-labelledby="setupReview${slugify(title)}Heading">
+    <div class="section-title compact">
+      <div>
+        <h4 id="setupReview${slugify(title)}Heading">${esc(title)}</h4>
+      </div>
+      <span class="setup-review-count">${issues.length}</span>
+    </div>
+    <div class="setup-review-list">
+      ${issues.length ? issues.map(setupReviewIssueCard).join("") : emptyState(emptyText)}
+    </div>
+  </section>`;
+}
+
+function setupReviewValidationSections(report) {
+  return `<section class="setup-review-validation" aria-label="Setup validation summary">
+    ${setupReviewIssueSection("Blocking Issues", report.blockers, "No blocking setup issues.", "blocker")}
+    ${setupReviewIssueSection("Warnings", report.warnings, "No warnings requiring Marshal review.", "warning")}
+    ${setupReviewIssueSection("Optional Notes", report.optional, "No optional notes.", "optional")}
+  </section>`;
+}
+
+function setupReviewReadonlyTagCard(item, kind = "") {
+  return `<article class="dossier-tag ${esc(kind)} setup-review-readonly-card">
+    <div class="dossier-tag-head">
+      <div>
+        <strong>${esc(item.name || "Unnamed")}</strong>
+        ${item.meta ? `<span>${esc(item.meta)}</span>` : ""}
+      </div>
+    </div>
+    ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
+    ${item.note ? `<p class="tag-note">${esc(item.note)}</p>` : ""}
+    ${item.sourceMeta ? `<small>${esc(item.sourceMeta)}</small>` : ""}
+  </article>`;
+}
+
+function setupReviewDerivedCards() {
+  const derived = character.derived || {};
+  return [
+    ["Pace", derived.pace, derived.basePace ? `Base ${derived.basePace}` : ""],
+    [
+      "Parry",
+      derived.parry,
+      derived.baseParry !== undefined ? `Base ${derived.baseParry}` : "",
+    ],
+    [
+      "Toughness",
+      derived.toughness,
+      [
+        derived.baseToughness !== undefined
+          ? `Base ${derived.baseToughness}`
+          : "",
+        `Armor ${compactText(derived.armor, "0")}`,
+      ]
+        .filter(Boolean)
+        .join(" + "),
+    ],
+    ["Size", derived.size ?? character.size, ""],
+    ["Armor", `+${compactText(derived.armor, "0")}`, "Best equipped"],
+  ]
+    .filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    )
+    .map(
+      ([label, value, note]) =>
+        `<div class="derived-scan-card"><span>${esc(label)}</span><strong>${esc(value ?? "—")}</strong>${note ? `<small>${esc(note)}</small>` : ""}</div>`,
+    )
+    .join("");
+}
+
+function setupReviewIdentityPreview() {
+  const subtitle = [
+    character.rank || "Novice",
+    character.ancestry || "Human",
+    character.archetype || "",
+  ]
+    .filter(Boolean)
+    .join(" • ");
+  return `<section class="setup-review-preview-card setup-review-identity-preview" aria-labelledby="setupReviewIdentityHeading">
+    <h4 id="setupReviewIdentityHeading">Character</h4>
+    <article class="setup-review-character-card">
+      <div>
+        <strong>${esc(character.name || "Unnamed Character")}</strong>
+        <span>${esc(subtitle || "Novice • Human")}</span>
+        <p>${esc([character.gender, character.age, character.player ? `Player: ${character.player}` : ""].filter(Boolean).join(" • ") || "Concept details incomplete.")}</p>
+      </div>
+    </article>
+    <div class="setup-review-grid setup-review-concept-grid">
+      ${setupDetail("Name", character.name)}
+      ${setupDetail("Gender", character.gender)}
+      ${setupDetail("Age", character.age)}
+      ${setupDetail("Profession or Title", character.archetype)}
+      ${setupDetail("Race / Ancestry", character.ancestry)}
+      ${setupDetail("Player Name", character.player)}
+      ${setupDetail("Recorded Rank", character.rank)}
+    </div>
+  </section>`;
+}
+
+function setupReviewTraitsPreview() {
+  const attributes = sortedAttributeEntries();
+  const skills = sortedSkills();
+  return `<section class="setup-review-preview-card" aria-labelledby="setupReviewTraitsHeading">
+    <h4 id="setupReviewTraitsHeading">Traits</h4>
+    <div class="attribute-dice-grid">
+      ${attributes.length ? attributes.map(([name, die]) => attributeCardMarkup(name, die)).join("") : emptyState("No attributes recorded.")}
+    </div>
+    <div class="skill-list setup-review-skill-list">
+      ${skills.length ? skills.map(skillChipMarkup).join("") : emptyState("No skills recorded.")}
+    </div>
+  </section>`;
+}
+
+function setupReviewEdgesPreview() {
+  const edges = (character.edges || []).filter((edge) => edge.name);
+  const hindrances = (character.hindrances || []).filter(
+    (hindrance) => hindrance.name,
+  );
+  return `<section class="setup-review-preview-card" aria-labelledby="setupReviewEdgesHeading">
+    <h4 id="setupReviewEdgesHeading">Edges & Hindrances</h4>
+    <div class="setup-review-two-column">
+      <div>
+        <h5>Edges</h5>
+        <div class="setup-review-card-list">
+          ${
+            edges.length
+              ? edges
+                  .map((edge) =>
+                    setupReviewReadonlyTagCard(
+                      {
+                        name: edge.name,
+                        meta: edgeDisplayMeta(edge),
+                        summary: edge.shortSummary || edge.summary || "",
+                        note: edge.notes || edge.text || "",
+                        sourceMeta: sourceMeta(edge),
+                      },
+                      "edge",
+                    ),
+                  )
+                  .join("")
+              : emptyState("No Edges recorded.")
+          }
+        </div>
+      </div>
+      <div>
+        <h5>Hindrances</h5>
+        <div class="setup-review-card-list">
+          ${
+            hindrances.length
+              ? hindrances
+                  .map((hindrance) =>
+                    setupReviewReadonlyTagCard(
+                      {
+                        name: hindrance.name,
+                        meta: hindranceDisplayMeta(hindrance),
+                        summary:
+                          hindrance.shortSummary || hindrance.summary || "",
+                        note: hindrance.notes || hindrance.text || "",
+                        sourceMeta: sourceMeta(hindrance),
+                      },
+                      "hindrance",
+                    ),
+                  )
+                  .join("")
+              : emptyState("No Hindrances selected.")
+          }
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function setupReviewDerivedPreview() {
+  return `<section class="setup-review-preview-card" aria-labelledby="setupReviewDerivedHeading">
+    <h4 id="setupReviewDerivedHeading">Derived Stats</h4>
+    <div class="character-derived-grid">
+      ${setupReviewDerivedCards()}
+      ${passiveEffectDerivedCards("character")}
+    </div>
+  </section>`;
+}
+
+function setupReviewArcanePreview(report) {
+  const powerPoints = powerPointResource();
+  const background = character.arcaneBackground;
+  const powers = (character.powers || []).filter((power) => power.name);
+  const summaryRows = background
+    ? [
+        ["Background", background.name || background.edgeName],
+        ["Arcane Skill", background.arcaneSkill || ""],
+        [
+          "Power Points",
+          powerPoints ? `${powerPoints.current} / ${powerPoints.max}` : "—",
+        ],
+        ["Known Powers", powers.length],
+      ]
+    : powerPoints
+      ? [
+          ["Background", "Manual Power Points"],
+          ["Power Points", `${powerPoints.current} / ${powerPoints.max}`],
+          ["Known Powers", powers.length],
+        ]
+      : [];
+  return `<section class="setup-review-preview-card" aria-labelledby="setupReviewArcaneHeading">
+    <h4 id="setupReviewArcaneHeading">Arcane</h4>
+    ${
+      summaryRows.length
+        ? `<div class="arcane-snapshot-grid">${summaryRows
+            .map(
+              ([label, value]) =>
+                `<div><span>${esc(label)}</span><strong>${esc(compactText(value))}</strong></div>`,
+            )
+            .join("")}</div>`
+        : emptyState("No Arcane Background or Power Points configured.")
+    }
+    <div class="setup-review-card-list">
+      ${
+        powers.length
+          ? powers
+              .map((power) => {
+                const audit = report.powerReport.powerAudits.find(
+                  (item) => item.power === power,
+                );
+                return setupReviewReadonlyTagCard(
+                  {
+                    name: power.name,
+                    meta: [
+                      audit?.catalog?.rank,
+                      audit?.catalog?.basePowerPoints !== undefined
+                        ? `${audit.catalog.basePowerPoints} PP`
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" • "),
+                    summary:
+                      power.shortSummary ||
+                      power.summary ||
+                      audit?.catalog?.shortSummary ||
+                      "",
+                    note: power.notes || power.text || "",
+                    sourceMeta: sourceMeta(power),
+                  },
+                  "power",
+                );
+              })
+              .join("")
+          : ""
+      }
+    </div>
+  </section>`;
+}
+
+function setupReviewGearEntryMarkup(entry) {
+  const item = entry.item || {};
+  const details = [
+    entry.type === "weapon" && item.damage ? `Damage ${item.damage}` : "",
+    entry.type === "weapon" && item.range ? `Range ${item.range}` : "",
+    entry.type === "armor" && item.armor ? `Armor +${item.armor}` : "",
+    entry.type === "ammo"
+      ? `Reserve ${Math.max(0, Number(item.count) || 0)}`
+      : "",
+    entry.locationLabel,
+    entry.type !== "vehicle" ? formatWeightPounds(entry.weight) : "",
+  ].filter(Boolean);
+  return `<div class="equipment-line">
+    <strong>${esc(entry.label)}</strong>
+    <span>${esc(details.join(" • ") || setupGearEntryLocationLabel(entry))}</span>
+  </div>`;
+}
+
+function setupReviewGearPreview(report) {
+  const groups = [
+    ["Weapons", report.entries.filter((entry) => entry.type === "weapon")],
+    ["Armor", report.entries.filter((entry) => entry.type === "armor")],
+    ["Gear", report.entries.filter((entry) => entry.type === "gear")],
+    ["Ammunition", report.entries.filter((entry) => entry.type === "ammo")],
+    ["Vehicles", report.entries.filter((entry) => entry.type === "vehicle")],
+  ].filter(([, entries]) => entries.length);
+  return `<section class="setup-review-preview-card" aria-labelledby="setupReviewGearHeading">
+    <h4 id="setupReviewGearHeading">Gear</h4>
+    <div class="setup-review-grid setup-review-core-grid">
+      ${setupDetail("Money", money(character.moneyCents))}
+      ${setupDetail("Current Load", compactLoadText(report.normal))}
+      ${setupDetail("Combat Load", formatWeightPounds(report.normal.combatLoad))}
+      ${setupDetail("Carrying Capacity", formatWeightPounds(report.normal.carryingCapacity))}
+    </div>
+    ${
+      groups.length
+        ? groups
+            .map(
+              ([title, entries]) => `<div class="setup-review-gear-group">
+                <h5>${esc(title)}</h5>
+                <div class="setup-review-card-list">${entries
+                  .map(setupReviewGearEntryMarkup)
+                  .join("")}</div>
+              </div>`,
+            )
+            .join("")
+        : emptyState("No gear recorded.")
+    }
+  </section>`;
+}
+
+function setupReviewNotesPreview() {
+  const notes = [
+    ["Description", character.description],
+    ["Background", character.background],
+    ["Worst Nightmare", character.worstNightmare],
+  ].filter(([, value]) => String(value || "").trim());
+  if (!notes.length) return "";
+  return `<section class="setup-review-preview-card" aria-labelledby="setupReviewNotesHeading">
+    <h4 id="setupReviewNotesHeading">Notes</h4>
+    <div class="setup-review-list">
+      ${notes
         .map(
-          ([label, status]) => `<article class="setup-review-status-card">
-            <strong>${esc(label)}</strong>
-            ${setupStatusMarkup(status)}
-          </article>`,
+          ([label, value]) =>
+            `<article class="dossier-note"><strong>${esc(label)}</strong><p>${esc(value)}</p></article>`,
         )
         .join("")}
     </div>
   </section>`;
 }
 
-function setupReviewWarningMessages({
-  ancestryNeedsReview,
-  arcaneEdgeCount,
-  edgeReport,
-  edgeSelectionEditable,
-  expectedHumanEdges,
-  hindranceEdgeSlots,
-  hindranceEdges,
-  hindranceSpending,
-  hindranceStats,
-  humanEdges,
-}) {
-  return [
-    ancestryNeedsReview
-      ? "Needs review: this profile currently supports Human only."
-      : "",
-    edgeSelectionEditable &&
-    hindranceStats.count &&
-    hindranceSpending.remaining > 0
-      ? "Hindrances incomplete: spend remaining Benefit Points or remove enough Hindrances to leave no unspent Benefit Points."
-      : "",
-    hindranceStats.overCap
-      ? `Above the standard Hindrance benefit cap: ${hindranceStats.total} points selected, ${hindranceStats.benefitPoints} Benefit Points under default rules. Record any extra reward as a table or GM exception.`
-      : "",
-    hindranceSpending.spent > hindranceSpending.available
-      ? "Needs review: Hindrance benefit spending exceeds earned Benefit Points."
-      : "",
-    edgeSelectionEditable && humanEdges < expectedHumanEdges
-      ? "Edges incomplete: select the Human free starting Edge."
-      : "",
-    edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
-      ? "You have unspent Edge points."
-      : "",
-    edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
-      ? "Edges need review: one or more Hindrance benefit Edges are not covered by Hindrance benefit spending and must be removed."
-      : "",
-    edgeSelectionEditable && edgeReport.invalidEdges.length
-      ? `Edges need review: ${edgeReport.invalidEdges
-          .map((item) => item.validation.messages.join(" "))
-          .join(" ")}`
-      : "",
-    arcaneEdgeCount > 1
-      ? "Needs review: more than one Arcane Background Edge is recorded."
-      : "",
-  ].filter(Boolean);
-}
-
-function setupReviewWarningsSection(messages, importWarnings) {
-  const warnings = [
-    ...messages.map((message) => ["Setup", message]),
-    ...importWarnings.map((warning) => [warning.name, warning.text]),
-  ];
-  return `<section class="setup-review-warnings" aria-labelledby="setupReviewWarningsHeading">
-    <h4 id="setupReviewWarningsHeading">Needs Attention</h4>
-    ${
-      warnings.length
-        ? warnings
-            .map(
-              ([title, text]) =>
-                `<article class="dossier-note warning"><strong>${esc(title)}</strong><p>${esc(text)}</p></article>`,
-            )
-            .join("")
-        : emptyState("No blocking setup warnings currently recorded.")
-    }
-  </section>`;
-}
-
-function setupReviewHindranceCards(hindrances) {
-  return `<section class="setup-review-list setup-review-compact-list" aria-labelledby="setupReviewHindrancesHeading">
-    <h4 id="setupReviewHindrancesHeading">Selected Hindrances</h4>
-    ${
-      hindrances.length
-        ? hindrances
-            .map(
-              (hindrance) =>
-                `<article class="dossier-note"><strong>${esc(hindrance.name || "Unnamed Hindrance")}</strong><p>${esc(hindrance.severity || "Unknown")} ? ${esc(hindrancePointText(hindrance))}</p></article>`,
-            )
-            .join("")
-        : emptyState("No Hindrances selected.")
-    }
+function setupReviewCharacterSheetPreview(report) {
+  return `<section class="setup-review-preview" aria-labelledby="setupReviewPreviewHeading">
+    <div class="section-title">
+      <div>
+        <h4 id="setupReviewPreviewHeading">Character Sheet Preview</h4>
+        <p class="creator-note">Read-only preview of the character that will enter play.</p>
+      </div>
+    </div>
+    ${setupReviewIdentityPreview()}
+    ${setupReviewTraitsPreview()}
+    ${setupReviewDerivedPreview()}
+    ${setupReviewEdgesPreview()}
+    ${setupReviewArcanePreview(report)}
+    ${setupReviewGearPreview(report.gearReport)}
+    ${setupReviewNotesPreview()}
   </section>`;
 }
 
 function setupReviewSourceAuditSection(sourceAudit, sourceExceptionEditable) {
-  return `<details class="setup-review-details" open>
+  return `<details class="setup-review-details">
     <summary>Setup Source Audit</summary>
     <div class="setup-review-grid setup-review-audit-grid">
       ${setupDetail("Setup Source Records", `${sourceAudit.explained.length} explained`)}
@@ -3145,116 +3413,35 @@ function setupReviewSourceAuditSection(sourceAudit, sourceExceptionEditable) {
 }
 
 function renderSetupReview() {
-  const importWarnings = character.reminders.filter(
-    (reminder) => reminder.type === "Import Warning",
-  );
-  const ancestryNeedsReview = !isHumanAncestry(character.ancestry);
-  const hindranceStats = hindrancePointStats();
-  const hindranceSpending = setupHindranceBenefitSpending(hindranceStats);
-  const edgeCount = (character.edges || []).length;
-  const arcaneEdgeCount = (character.edges || []).filter((edge) =>
-    isArcaneBackgroundEdge(edge.name),
-  ).length;
-  const edgeReport = setupStartingEdgeValidationReport();
-  const expectedHumanEdges = edgeReport.expectedHumanEdges;
-  const humanEdges = edgeReport.humanFreeEdges.length;
-  const hindranceEdgeSlots = edgeReport.hindranceEdgeSlots;
-  const hindranceEdges = edgeReport.hindranceBenefitEdges.length;
-  const edgeSelectionEditable = setupTraitsEditable();
-  const powersCount = (character.powers || []).filter(
-    (power) => power.name,
-  ).length;
-  const powerPoints = powerPointResource();
-  const gearReport = setupGearAuditReport();
-  const gearCounts = gearReport.counts;
-  const sourceAudit = setupSourceAuditReport();
+  const report = setupReviewValidationReport();
   const sourceExceptionEditable = setupTraitsEditable();
-  const reviewWarnings = setupReviewWarningMessages({
-    ancestryNeedsReview,
-    arcaneEdgeCount,
-    edgeReport,
-    edgeSelectionEditable,
-    expectedHumanEdges,
-    hindranceEdgeSlots,
-    hindranceEdges,
-    hindranceSpending,
-    hindranceStats,
-    humanEdges,
-  });
-  const rankLabel = [character.rank, character.ancestry, character.archetype]
-    .filter(Boolean)
-    .join(" ? ");
-  const powerPointLabel = powerPoints
-    ? `${powerPoints.current} / ${powerPoints.max || "?"}`
-    : "Not recorded";
+  const finalizeDisabled = report.blockers.length > 0;
+  const finishLabel = character.creation?.finalized
+    ? "Start Playing"
+    : "Confirm Setup & Start Playing";
 
   return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
     <div class="section-title">
       <div>
-        <h3 id="setupReviewHeading">Review</h3>
-        <p>Final check before saving or starting play. Fix anything marked incomplete, or leave clear notes for table-approved exceptions.</p>
+        <h3 id="setupReviewHeading">Review & Finalize</h3>
+        <p>Confirm the build, resolve blockers, and preview the character sheet before play.</p>
       </div>
-      ${setupStatusMarkup(character.creation?.finalized ? "Complete" : "Needs review")}
+      ${setupStatusMarkup(report.status, setupReviewStatusTitle(report))}
     </div>
-    <section class="setup-trait-group setup-review-hero" aria-labelledby="setupReviewCharacterHeading">
-      <h4 id="setupReviewCharacterHeading">Character Summary</h4>
-      <article class="setup-review-character-card">
-        <div>
-          <strong>${esc(character.name || "Unnamed Character")}</strong>
-          <span>${esc(rankLabel || "Novice ? Human")}</span>
-          <p>${esc([character.gender, character.age, character.player ? `Player: ${character.player}` : ""].filter(Boolean).join(" ? ") || "Concept details incomplete.")}</p>
-        </div>
-      </article>
-      <div class="setup-review-grid setup-review-concept-grid">
-        ${setupDetail("Name", character.name)}
-        ${setupDetail("Gender", character.gender)}
-        ${setupDetail("Age", character.age)}
-        ${setupDetail("Profession or Title", character.archetype)}
-        ${setupDetail("Race / Ancestry", character.ancestry)}
-        ${setupDetail("Player Name", character.player)}
-        ${setupDetail("Recorded Rank", character.rank)}
+    ${setupReviewStatusBanner(report)}
+    ${setupReviewValidationSections(report)}
+    ${setupReviewCharacterSheetPreview(report)}
+    <section class="setup-review-finalize" aria-labelledby="setupReviewFinalizeHeading">
+      <div>
+        <h4 id="setupReviewFinalizeHeading">Finalize</h4>
+        <p>${
+          finalizeDisabled
+            ? "Resolve blocking issues before finalizing this character."
+            : "Finalize setup to save the starting baseline and enter normal play mode."
+        }</p>
       </div>
+      <button type="button" data-setup-action="finishSetup"${finalizeDisabled ? " disabled" : ""}>${esc(finishLabel)}</button>
     </section>
-    ${setupReviewStepStatusCards()}
-    ${setupReviewWarningsSection(reviewWarnings, importWarnings)}
-    <section class="setup-trait-group setup-review-summary" aria-labelledby="setupReviewBuildHeading">
-      <h4 id="setupReviewBuildHeading">Build Summary</h4>
-      <div class="setup-review-grid setup-review-meter-grid">
-        ${setupMeterSummary("Benefit Points", hindranceStats.benefitPoints, hindranceStats.benefitCap, "Earned Hindrance Benefit Points toward the standard starting cap.")}
-        ${setupMeterSummary("Benefits Spent", hindranceSpending.spent, hindranceSpending.available, "Benefit Points spent on starting bonuses.")}
-        ${setupMeterSummary("Free Edge", humanEdges, expectedHumanEdges, "Human free starting Edge slots filled.")}
-        ${setupMeterSummary("Hindrance Benefit Edges", hindranceEdges, hindranceEdgeSlots, "Extra Edge slots bought with Hindrance benefits.")}
-      </div>
-      <div class="setup-review-grid setup-review-core-grid">
-        ${setupDetail("Edge Count", `${edgeCount}`)}
-        ${setupDetail("Arcane Background Edges", `${arcaneEdgeCount}`)}
-        ${setupDetail("Known Powers", `${powersCount}`)}
-        ${setupDetail("Power Points", powerPointLabel)}
-        ${setupDetail("Gear Items", `${gearCounts.totalItems}`)}
-        ${setupDetail("Money", money(gearCounts.moneyCents))}
-        ${setupDetail("Gear Status", gearReport.status)}
-        ${setupDetail("Gear Warnings", `${gearReport.warnings.length}`)}
-      </div>
-    </section>
-    ${setupReviewHindranceCards(character.hindrances || [])}
-    <details class="setup-review-details" open>
-      <summary>Concept Notes</summary>
-      <div class="setup-review-grid setup-review-notes-grid">
-        ${setupDetail("Description", character.description)}
-        ${setupDetail("Background", character.background)}
-      </div>
-    </details>
-    <details class="setup-review-details">
-      <summary>Audit Details</summary>
-      <div class="setup-review-grid setup-review-audit-grid">
-        ${setupDetail("Hindrance Count", `${hindranceStats.count}`)}
-        ${setupDetail("Total Hindrance Points", `${hindranceStats.total}`)}
-        ${setupDetail("Hindrance Benefit Cap", `${hindranceStats.benefitCap}`)}
-        ${setupDetail("Hindrance Benefits Spent", `${hindranceSpending.spent} / ${hindranceSpending.available}`)}
-        ${setupDetail("Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
-        ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
-      </div>
-    </details>
-    ${setupReviewSourceAuditSection(sourceAudit, sourceExceptionEditable)}
+    ${setupReviewSourceAuditSection(report.sourceAudit, sourceExceptionEditable)}
   </section>`;
 }

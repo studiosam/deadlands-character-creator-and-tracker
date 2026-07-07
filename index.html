@@ -124,6 +124,108 @@
             Main Menu
           </button>
         </div>
+        <div id="characterHeaderTools" class="header-tools">
+          <details id="headerToolsMenu" class="header-menu">
+            <summary>Manage</summary>
+            <div class="header-actions" aria-label="Session and file actions">
+              <section class="menu-group">
+                <h2>Session</h2>
+                <button
+                  id="newSessionBtn"
+                  type="button"
+                  title="Reset bennies, conviction, resources, Action Cards, combat declarations, and temporary conditions for a new play session."
+                >
+                  Start Session
+                </button>
+                <button
+                  class="ghost"
+                  id="undoBtn"
+                  type="button"
+                  title="Undo the last saved tracker change for this character."
+                >
+                  Undo
+                </button>
+                <button
+                  class="ghost"
+                  id="redoBtn"
+                  type="button"
+                  title="Redo the last undone tracker change for this character."
+                >
+                  Redo
+                </button>
+                <button
+                  class="ghost"
+                  id="characterLibraryMenuBtn"
+                  type="button"
+                  data-app-tab="library"
+                >
+                  Characters
+                </button>
+                <button class="ghost" id="loadSampleBtn" type="button">
+                  Load Sample
+                </button>
+                <button class="ghost" id="creatorModeBtn" type="button">
+                  New Character
+                </button>
+              </section>
+
+              <section class="menu-group">
+                <h2>Data</h2>
+                <button class="ghost" id="exportBtn" type="button">
+                  Export Character
+                </button>
+                <label class="ghost file-label" for="importFile"
+                  >Import File</label
+                >
+                <button class="ghost" id="pasteImportBtn" type="button">
+                  Paste JSON
+                </button>
+              </section>
+
+              <section class="menu-group">
+                <h2>App</h2>
+                <button class="ghost" id="mainMenuBtn" type="button">
+                  Main Menu
+                </button>
+                <button
+                  class="ghost"
+                  id="localDataMenuBtn"
+                  type="button"
+                  data-app-tab="localData"
+                >
+                  Local Data
+                </button>
+                <button
+                  class="ghost"
+                  id="privacyLegalMenuBtn"
+                  type="button"
+                  data-app-tab="privacyLegal"
+                >
+                  Privacy & Legal
+                </button>
+                <button
+                  class="ghost"
+                  id="catalogMenuBtn"
+                  type="button"
+                  data-app-tab="catalog"
+                >
+                  Catalog
+                </button>
+                <button
+                  class="ghost"
+                  id="sourcesRulesetsMenuBtn"
+                  type="button"
+                  data-app-tab="sourcesRulesets"
+                >
+                  Sources & Rulesets
+                </button>
+                <button class="danger" id="resetBtn" type="button">
+                  Reset Tracker
+                </button>
+              </section>
+            </div>
+          </details>
+        </div>
       </header>
 
       <section
@@ -522,111 +624,6 @@
                 <button id="setupMainMenuBtn" class="ghost" type="button">
                   Main Menu
                 </button>
-                <div id="characterHeaderTools" class="header-tools">
-                  <details id="headerToolsMenu" class="header-menu">
-                    <summary>Manage</summary>
-                    <div
-                      class="header-actions"
-                      aria-label="Session and file actions"
-                    >
-                      <section class="menu-group">
-                        <h2>Session</h2>
-                        <button
-                          id="newSessionBtn"
-                          type="button"
-                          title="Reset bennies, conviction, resources, Action Cards, combat declarations, and temporary conditions for a new play session."
-                        >
-                          Start Session
-                        </button>
-                        <button
-                          class="ghost"
-                          id="undoBtn"
-                          type="button"
-                          title="Undo the last saved tracker change for this character."
-                        >
-                          Undo
-                        </button>
-                        <button
-                          class="ghost"
-                          id="redoBtn"
-                          type="button"
-                          title="Redo the last undone tracker change for this character."
-                        >
-                          Redo
-                        </button>
-                        <button
-                          class="ghost"
-                          id="characterLibraryMenuBtn"
-                          type="button"
-                          data-app-tab="library"
-                        >
-                          Characters
-                        </button>
-                        <button class="ghost" id="loadSampleBtn" type="button">
-                          Load Sample
-                        </button>
-                        <button class="ghost" id="creatorModeBtn" type="button">
-                          New Character
-                        </button>
-                      </section>
-
-                      <section class="menu-group">
-                        <h2>Data</h2>
-                        <button class="ghost" id="exportBtn" type="button">
-                          Export Character
-                        </button>
-                        <label class="ghost file-label" for="importFile"
-                          >Import File</label
-                        >
-                        <button class="ghost" id="pasteImportBtn" type="button">
-                          Paste JSON
-                        </button>
-                      </section>
-
-                      <section class="menu-group">
-                        <h2>App</h2>
-                        <button class="ghost" id="mainMenuBtn" type="button">
-                          Main Menu
-                        </button>
-                        <button
-                          class="ghost"
-                          id="localDataMenuBtn"
-                          type="button"
-                          data-app-tab="localData"
-                        >
-                          Local Data
-                        </button>
-                        <button
-                          class="ghost"
-                          id="privacyLegalMenuBtn"
-                          type="button"
-                          data-app-tab="privacyLegal"
-                        >
-                          Privacy & Legal
-                        </button>
-                        <button
-                          class="ghost"
-                          id="catalogMenuBtn"
-                          type="button"
-                          data-app-tab="catalog"
-                        >
-                          Catalog
-                        </button>
-                        <button
-                          class="ghost"
-                          id="sourcesRulesetsMenuBtn"
-                          type="button"
-                          data-app-tab="sourcesRulesets"
-                        >
-                          Sources & Rulesets
-                        </button>
-                        <button class="danger" id="resetBtn" type="button">
-                          Reset Tracker
-                        </button>
-                      </section>
-                    </div>
-                  </details>
-                </div>
                 <span id="characterSourceBadge" class="pill"></span>
                 <button id="reviewSetupBtn" class="ghost" type="button">
                   Review Setup

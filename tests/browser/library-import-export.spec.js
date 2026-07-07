@@ -595,7 +595,17 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await page.locator("[data-setup-step='review']").click();
   await expect(page.locator("#setupReviewPanel")).toContainText("Lehi Larson");
   await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Needs Attention",
+    "Playable with Warnings",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Blocking Issues",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "No blocking setup issues.",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText("Warnings");
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Character Sheet Preview",
   );
   await expect(page.locator("#setupReviewPanel")).toContainText(
     "Setup Source Audit",

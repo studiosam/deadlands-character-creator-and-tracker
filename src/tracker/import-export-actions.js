@@ -13,6 +13,7 @@ function exportJson(name, data) {
 function importJsonText(text) {
   const data = JSON.parse(text);
   const payload = unwrapImportPayload(data);
+  let importType = payload.type;
   characterDraftMode = false;
   characterSetupReviewOpen = false;
   clearSetupResumeState();
@@ -33,6 +34,7 @@ function importJsonText(text) {
       storageAdapter.remove(CREATION_KEY);
     }
     storageAdapter.writeFlag(DEMO_MODE_KEY, false);
+    if (character?.setupStatus === "needsReview") importType = "setup-review";
   } else if (payload.type === "creation-draft") {
     creationDraft = normalizeDraft(payload.creationDraft);
     saveCreationDraft();
@@ -50,12 +52,13 @@ function importJsonText(text) {
     });
     character = normalize(entry.character);
     characterSetupStep = "review";
+    if (character?.setupStatus === "needsReview") importType = "setup-review";
     storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   }
   render();
   renderDemoExperience();
   appToast("Import complete.", "success");
-  return payload.type;
+  return importType;
 }
 
 function alertInvalidImport() {
@@ -194,7 +197,23 @@ function resetLandingImportPanelBounds() {
 
 function closeLandingAfterImport(importType) {
   if (!landingPageIsVisible() || typeof closeLandingPage !== "function") return;
-  closeLandingPage(importType === "creation-draft" ? "creation" : "play");
+  const targetTab =
+    importType === "creation-draft"
+      ? "creation"
+      : importType === "setup-review"
+        ? "character"
+        : "play";
+  closeLandingPage(targetTab);
+}
+
+function showImportedTargetTab(importType) {
+  if (importType === "creation-draft") return;
+  if (typeof setAppTab !== "function") return;
+  if (importType === "setup-review") {
+    setAppTab("character");
+  } else if (!landingPageIsVisible()) {
+    setAppTab("play");
+  }
 }
 
 function completeImport(importType) {
@@ -202,5 +221,6 @@ function completeImport(importType) {
   els.importFile.value = "";
   els.pasteImportPanel.classList.add("hidden");
   resetLandingImportPanelBounds();
-  closeLandingAfterImport(importType);
+  if (landingPageIsVisible()) closeLandingAfterImport(importType);
+  else showImportedTargetTab(importType);
 }

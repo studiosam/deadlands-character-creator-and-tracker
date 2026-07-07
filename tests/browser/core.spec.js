@@ -400,7 +400,7 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
 
   await page.evaluate(() => window.history.back());
-  await expect(page.locator("#characterPanel")).toHaveClass(/active/);
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
   await expect(panel).toBeHidden();
 
   await openHeaderMenu(page);
@@ -486,6 +486,7 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   for (const tab of ["Character", "Inventory", "Arcane", "Notes"]) {
     await page.getByRole("button", { name: tab, exact: true }).click();
     await expect(page.locator(".tab-panel.active")).toBeVisible();
+    await expect(page.locator("#headerToolsMenu summary")).toBeVisible();
   }
 
   await openHeaderMenu(page);

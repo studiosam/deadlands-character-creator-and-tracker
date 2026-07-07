@@ -1644,6 +1644,7 @@ async function deleteActiveCharacterSlotFromSetup() {
 
 async function confirmSetupReview() {
   applyConceptInputs();
+  if (!ensureSetupReviewCanFinalize()) return false;
   if (!(await ensureSetupCharacterHasName())) return false;
   if (!ensureSetupStartingEdgesValidForCompletion()) return false;
 
@@ -1666,6 +1667,16 @@ async function confirmSetupReview() {
   renderDemoExperience();
   appToast("Character setup marked complete.", "success");
   return true;
+}
+
+function ensureSetupReviewCanFinalize() {
+  const report = setupReviewValidationReport();
+  if (!report.blockers.length) return true;
+  characterSetupStep = "review";
+  saveSetupProgressState(characterSetupStep);
+  render();
+  appToast("Resolve blocking setup issues before finalizing.", "danger");
+  return false;
 }
 
 function reopenSetupReview() {
@@ -1718,26 +1729,11 @@ async function ensureSetupCharacterHasName() {
 
 async function finishSetupAndStartPlaying() {
   applyConceptInputs();
+  if (!ensureSetupReviewCanFinalize()) return false;
   if (!(await ensureSetupCharacterHasName())) return false;
   if (!ensureSetupStartingEdgesValidForCompletion()) return false;
 
   const wasFinalized = Boolean(character.creation?.finalized);
-  const incompleteSections = incompleteSetupSections();
-  if (
-    !wasFinalized &&
-    incompleteSections.length &&
-    !(await appConfirm(
-      `Some setup sections still need attention: ${incompleteSections
-        .map(([, label]) => label)
-        .join(", ")}. You can keep editing later. Start playing anyway?`,
-      {
-        title: "Finish setup?",
-        confirmText: "Start Playing",
-      },
-    ))
-  ) {
-    return false;
-  }
 
   character.creation = {
     normalAttributePointsAvailable: 5,

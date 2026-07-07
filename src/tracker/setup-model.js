@@ -76,6 +76,362 @@ function characterSetupStatus(stepId) {
   if (stepId === "review") return "Needs review";
   return "Planned";
 }
+
+function setupReviewIssue(severity, title, message, step = "", action = "") {
+  return {
+    severity,
+    title,
+    message,
+    step,
+    action: action || (step ? `Go to ${displayNameFromKey(step)}` : ""),
+  };
+}
+
+function setupReviewStepLabel(stepId) {
+  return (
+    CHARACTER_SETUP_STEPS.find((step) => step.id === stepId)?.label ||
+    displayNameFromKey(stepId)
+  );
+}
+
+function setupReviewStepIssue(stepId, status) {
+  const label = setupReviewStepLabel(stepId);
+  if (status === "Complete" || status === "Ready" || status === "Optional")
+    return null;
+  if (status === "Not applicable") return null;
+  return setupReviewIssue(
+    "blocker",
+    `${label} needs attention`,
+    `${label} is currently marked ${status}. Resolve this before finalizing setup.`,
+    stepId,
+    `Go to ${label}`,
+  );
+}
+
+function setupReviewValidationReport() {
+  const editable = setupTraitsEditable();
+  const finalized = Boolean(character.creation?.finalized);
+  const importWarnings = (character.reminders || []).filter(
+    (reminder) => reminder.type === "Import Warning",
+  );
+  const hindranceStats = hindrancePointStats();
+  const hindranceSpending = setupHindranceBenefitSpending(hindranceStats);
+  const edgeReport = setupStartingEdgeValidationReport();
+  const powerReport = setupPowerAuditReport();
+  const gearReport = setupGearAuditReport();
+  const sourceAudit = setupSourceAuditReport();
+  const attributeStats = setupAttributePointStats();
+  const skillStats = setupSkillPointStats();
+  const arcaneEdgeCount = (character.edges || []).filter((edge) =>
+    isArcaneBackgroundEdge(edge.name),
+  ).length;
+  const blockers = [];
+  const warnings = [];
+  const optional = [];
+  const addBlockerOrWarning = (issue) => {
+    if (editable && !finalized) {
+      blockers.push(issue);
+      return;
+    }
+    warnings.push({
+      ...issue,
+      severity: "warning",
+    });
+  };
+
+  const stepStatuses = [
+    ["concept", characterSetupStatus("concept")],
+    ["traits", characterSetupStatus("traits")],
+    ["skills", characterSetupStatus("skills")],
+    ["edges", characterSetupStatus("edges")],
+    ["hindrances", characterSetupStatus("hindrances")],
+    ["powers", characterSetupStatus("powers")],
+    ["gear", characterSetupStatus("gear")],
+  ];
+
+  stepStatuses.forEach(([stepId, status]) => {
+    if (
+      stepId === "traits" ||
+      stepId === "skills" ||
+      stepId === "powers" ||
+      stepId === "gear"
+    )
+      return;
+    if (
+      stepId === "hindrances" &&
+      status === "Incomplete" &&
+      hindranceStats.count &&
+      hindranceSpending.remaining > 0 &&
+      !edgeReport.missingHindranceBenefitEdges
+    )
+      return;
+    const issue = setupReviewStepIssue(stepId, status);
+    if (!issue) return;
+    if (editable && !finalized) blockers.push(issue);
+    else {
+      warnings.push({
+        ...issue,
+        severity: "warning",
+        title: `${setupReviewStepLabel(stepId)} needs table review`,
+        message: issue.message.replace(
+          "Resolve this before finalizing setup.",
+          "Review this before finalizing setup.",
+        ),
+      });
+    }
+  });
+
+  if (!isHumanAncestry(character.ancestry)) {
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Ancestry needs review",
+        "This profile currently supports Human characters.",
+        "concept",
+        "Go to Concept",
+      ),
+    );
+  }
+
+  if (!ATTRIBUTE_ORDER.every((key) => character.attributes?.[key])) {
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Attributes missing",
+        "All five Attributes need a recorded die value.",
+        "traits",
+        "Go to Attributes",
+      ),
+    );
+  }
+  if (attributeStats.spent > attributeStats.available) {
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Attribute points overspent",
+        `${attributeStats.spent} Attribute points are assigned, but only ${attributeStats.available} are available.`,
+        "traits",
+        "Go to Attributes",
+      ),
+    );
+  } else if (editable && attributeStats.spent < attributeStats.available) {
+    warnings.push(
+      setupReviewIssue(
+        "warning",
+        "Unspent Attribute points",
+        `${attributeStats.available - attributeStats.spent} Attribute points are still unspent.`,
+        "traits",
+        "Review Attributes",
+      ),
+    );
+  }
+
+  if (skillStats.spent > skillStats.available || skillStats.genericOverBudget) {
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Skill points overspent",
+        "Skill spending exceeds the available starting Skill point budget.",
+        "skills",
+        "Go to Skills",
+      ),
+    );
+  } else if (editable && skillStats.remaining > 0) {
+    warnings.push(
+      setupReviewIssue(
+        "warning",
+        "Unspent Skill points",
+        `${skillStats.remaining} Skill points are still unspent.`,
+        "skills",
+        "Review Skills",
+      ),
+    );
+  }
+
+  if (hindranceStats.unknownCount) {
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Hindrance severity required",
+        "One or more Hindrances still need Minor or Major severity.",
+        "hindrances",
+        "Go to Hindrances",
+      ),
+    );
+  }
+  if (hindranceSpending.spent > hindranceSpending.available) {
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Hindrance benefits overspent",
+        "Benefit spending exceeds earned Hindrance Benefit Points.",
+        "hindrances",
+        "Go to Hindrances",
+      ),
+    );
+  }
+  if (hindranceStats.count && hindranceSpending.remaining > 0) {
+    warnings.push(
+      setupReviewIssue(
+        "warning",
+        "Unspent Hindrance Benefit Points",
+        "Some earned Benefit Points are unspent. This is playable if the table is fine with leaving them unused.",
+        "hindrances",
+        "Review Hindrances",
+      ),
+    );
+  }
+  if (!hindranceStats.count && !hindranceSpending.spent) {
+    optional.push(
+      setupReviewIssue(
+        "optional",
+        "No Hindrances selected",
+        "Hindrances are optional. This does not block finalization.",
+        "hindrances",
+        "Review Hindrances",
+      ),
+    );
+  }
+
+  if (edgeReport.invalidEdges.length) {
+    edgeReport.invalidEdges.forEach((item) =>
+      addBlockerOrWarning(
+        setupReviewIssue(
+          "blocker",
+          "Starting Edge needs fix",
+          item.validation.messages.join(" "),
+          "edges",
+          "Go to Edges",
+        ),
+      ),
+    );
+  }
+  if (arcaneEdgeCount > 1) {
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Multiple Arcane Background Edges",
+        "Only one Arcane Background Edge should be recorded during setup.",
+        "edges",
+        "Go to Edges",
+      ),
+    );
+  }
+
+  powerReport.incompleteItems.forEach((message) =>
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Powers setup incomplete",
+        message,
+        "powers",
+        "Go to Powers",
+      ),
+    ),
+  );
+  powerReport.warnings.forEach((message) =>
+    warnings.push(
+      setupReviewIssue(
+        "warning",
+        "Powers need review",
+        message,
+        "powers",
+        "Review Powers",
+      ),
+    ),
+  );
+
+  gearReport.incompleteItems.forEach((message) =>
+    addBlockerOrWarning(
+      setupReviewIssue(
+        "blocker",
+        "Gear setup incomplete",
+        message,
+        "gear",
+        "Go to Gear",
+      ),
+    ),
+  );
+  gearReport.warnings.forEach((message) =>
+    warnings.push(
+      setupReviewIssue(
+        "warning",
+        "Gear needs review",
+        message,
+        "gear",
+        "Review Gear",
+      ),
+    ),
+  );
+  if (!gearReport.counts.vehicles) {
+    optional.push(
+      setupReviewIssue(
+        "optional",
+        "No vehicles purchased",
+        "Vehicles are optional and can be ignored unless this character should start with one.",
+        "gear",
+        "Review Gear",
+      ),
+    );
+  }
+
+  importWarnings.forEach((warning) =>
+    warnings.push(
+      setupReviewIssue(
+        "warning",
+        warning.name || "Import warning",
+        warning.text || "Imported data needs table review.",
+        "review",
+        "Review Import Notes",
+      ),
+    ),
+  );
+  if (sourceAudit.needsExceptions.length) {
+    warnings.push(
+      setupReviewIssue(
+        "warning",
+        "Setup source needs table review",
+        `${sourceAudit.needsExceptions.length} records need a GM/table exception note or a more specific setup source.`,
+        "review",
+        "Review Source Audit",
+      ),
+    );
+  }
+
+  if (!String(character.description || character.background || "").trim()) {
+    optional.push(
+      setupReviewIssue(
+        "optional",
+        "No background notes recorded",
+        "Description and background notes are optional.",
+        "concept",
+        "Review Concept",
+      ),
+    );
+  }
+
+  const status = blockers.length
+    ? "Needs Fix"
+    : warnings.length
+      ? "Warnings Present"
+      : "Ready to Play";
+  return {
+    editable,
+    finalized,
+    status,
+    blockers,
+    warnings,
+    optional,
+    stepStatuses,
+    importWarnings,
+    hindranceStats,
+    hindranceSpending,
+    edgeReport,
+    powerReport,
+    gearReport,
+    sourceAudit,
+  };
+}
 function setupPowerAuditContext() {
   const arcaneEdges = (character.edges || []).filter((edge) =>
     isArcaneBackgroundEdge(edge.name),

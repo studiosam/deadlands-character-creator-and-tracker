@@ -255,9 +255,8 @@ test("selects hindrances in character setup and summarizes point expectations", 
 
   await page.locator("[data-setup-step='review']").click();
   const reviewPanel = page.locator("#setupReviewPanel");
-  await expect(reviewPanel).toContainText("Hindrance Count");
-  await expect(reviewPanel).toContainText("Total Hindrance Points");
-  await expect(reviewPanel).toContainText("Hindrance Benefit Cap");
+  await expect(reviewPanel).toContainText("Character Sheet Preview");
+  await expect(reviewPanel).toContainText("Edges & Hindrances");
   await expect(reviewPanel).toContainText("Bad Luck");
   await expect(reviewPanel).toContainText("Cursed");
 });
@@ -1271,14 +1270,20 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
   await expect(braveCard).not.toContainText("Rank");
 
   await page.locator("[data-setup-step='review']").click();
-  await page
-    .locator("#characterSetupPanel [data-setup-action='confirmSetup']")
+  const reviewPanel = page.locator("#setupReviewPanel");
+  await expect(reviewPanel).toContainText("Needs Fix");
+  await expect(reviewPanel).toContainText("Starting Edge needs fix");
+  await expect(
+    reviewPanel.getByRole("button", { name: "Confirm Setup & Start Playing" }),
+  ).toBeDisabled();
+  await reviewPanel
+    .getByRole("button", { name: "Go to Edges" })
     .first()
     .click();
-  await expect(page.locator("#toastRegion")).toContainText(
-    "Resolve invalid source-tracked starting Edges",
+  await expect(page.locator("#setupEdgesPanel")).toBeVisible();
+  await expect(edgesPanel).toContainText(
+    "Human free Edge no longer satisfies starting Edge eligibility",
   );
-  await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await expect(
     page.locator(".setup-step[data-setup-step='edges']"),
   ).toContainText("Needs review");

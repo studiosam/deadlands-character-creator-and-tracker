@@ -398,8 +398,10 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await page
-    .locator("#characterSetupPanel [data-setup-action='confirmSetup']")
+    .locator("#setupReviewPanel [data-setup-action='finishSetup']")
     .click();
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSetupPanel")).toBeHidden();
   await expect(page.locator(".shell")).not.toHaveClass(/character-setup-page/);
   await expect(page.locator(".shell > .hero")).toBeVisible();
@@ -490,7 +492,7 @@ test("shows a clean reference sheet for confirmed characters", async ({
     });
 });
 
-test("finishes character setup and starts playing with a saved character", async ({
+test("Review blocks unfinished setup and jumps to the relevant step", async ({
   page,
 }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
@@ -534,71 +536,161 @@ test("finishes character setup and starts playing with a saved character", async
   await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupReviewPanel")).toBeVisible();
 
-  await page.locator("[data-setup-action='finishSetup']").click();
-  await expect(page.locator("#appDialog")).toBeVisible();
-  await expect(page.locator("#appDialogTitle")).toHaveText("Finish setup?");
-  await expect(page.locator("#appDialogMessage")).toContainText("Attributes");
-  await page.locator("#appDialogConfirmBtn").click();
-
-  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  const reviewPanel = page.locator("#setupReviewPanel");
+  await expect(reviewPanel).toContainText("Needs Fix");
+  await expect(reviewPanel).toContainText("Blocking Issues");
+  await expect(reviewPanel).toContainText("Edges needs attention");
+  await expect(reviewPanel).toContainText("Character Sheet Preview");
+  await expect(
+    reviewPanel.getByRole("button", { name: "Confirm Setup & Start Playing" }),
+  ).toBeDisabled();
+  await reviewPanel.getByRole("button", { name: "Go to Edges" }).click();
+  await expect(page.locator("#setupEdgesPanel")).toBeVisible();
+  await page.locator("[data-setup-step='concept']").click();
   await expect(page.locator("#characterName")).toContainText(
     "Finished Setup Character",
   );
-  await expect(page.locator("#landingPage")).toBeHidden();
+  await expect(page.locator("#setupNameInput")).toHaveValue(
+    "Finished Setup Character",
+  );
+});
 
-  await expect
-    .poll(() =>
-      page.evaluate(
-        ({ libraryKey, storageKey }) => {
-          const library = JSON.parse(
-            localStorage.getItem(libraryKey) || "null",
-          );
-          const tracker = JSON.parse(
-            localStorage.getItem(storageKey) || "null",
-          );
-          const active =
-            library?.charactersById?.[library.activeCharacterId]?.character ||
-            null;
-          return {
-            slotCount: Object.keys(library?.charactersById || {}).length,
-            activeName: active?.name || "",
-            activeFinalized: Boolean(active?.creation?.finalized),
-            activeSetupStatus: active?.setupStatus || "",
-            trackerName: tracker?.name || "",
-            trackerFinalized: Boolean(tracker?.creation?.finalized),
-            trackerSetupStatus: tracker?.setupStatus || "",
-          };
+test("Review shows ready preview and finalizes a valid setup character", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await page.evaluate(() => {
+    const alertness = EDGE_CATALOG.find(
+      (edge) => edge.id === "swade-edge-alertness",
+    );
+    const characterData = normalize({
+      source: "created",
+      setupStatus: "needsReview",
+      name: "Ready Review Character",
+      rank: "Novice",
+      ancestry: "Human",
+      archetype: "Scout",
+      gender: "Nonbinary",
+      age: "31",
+      player: "Playwright",
+      description: "A careful scout ready for table play.",
+      background: "Built through the setup review ready-state test.",
+      attributes: {
+        agility: "d6",
+        smarts: "d6",
+        spirit: "d6",
+        strength: "d6",
+        vigor: "d6",
+      },
+      skills: [
+        {
+          name: "Athletics",
+          die: "d4",
+          linkedAttribute: "Agility",
+          core: true,
         },
-        { libraryKey: CHARACTER_LIBRARY_KEY, storageKey: STORAGE_KEY },
-      ),
-    )
-    .toEqual({
-      slotCount: 1,
-      activeName: "Finished Setup Character",
-      activeFinalized: true,
-      activeSetupStatus: "complete",
-      trackerName: "Finished Setup Character",
-      trackerFinalized: true,
-      trackerSetupStatus: "complete",
+        {
+          name: "Common Knowledge",
+          die: "d4",
+          linkedAttribute: "Smarts",
+          core: true,
+        },
+        { name: "Notice", die: "d4", linkedAttribute: "Smarts", core: true },
+        {
+          name: "Persuasion",
+          die: "d4",
+          linkedAttribute: "Spirit",
+          core: true,
+        },
+        { name: "Stealth", die: "d4", linkedAttribute: "Agility", core: true },
+        {
+          name: "Language",
+          die: "d8",
+          linkedAttribute: "Smarts",
+          core: true,
+        },
+        { name: "Shooting", die: "d6", linkedAttribute: "Agility" },
+        { name: "Fighting", die: "d6", linkedAttribute: "Agility" },
+        { name: "Riding", die: "d6", linkedAttribute: "Agility" },
+        { name: "Survival", die: "d6", linkedAttribute: "Smarts" },
+        { name: "Healing", die: "d6", linkedAttribute: "Smarts" },
+        { name: "Repair", die: "d6", linkedAttribute: "Smarts" },
+      ],
+      hindrances: [],
+      edges: [
+        {
+          ...alertness,
+          id: "ready-alertness",
+          catalogId: alertness.id,
+          creationSource: "human-free-edge",
+          source: "Human free Edge",
+          isCustom: false,
+        },
+      ],
+      powers: [],
+      resources: [],
+      inventory: [
+        {
+          id: "ready-backpack",
+          catalogId: "backpack",
+          name: "Backpack",
+          count: 1,
+          weight: 3,
+          costCents: 200,
+          location: "carried",
+          creationSource: "setup-starting-gear",
+          source: "Starting Gear Purchase",
+          sourceDetail: {
+            kind: "starting-funds",
+            purchaseType: "gear",
+            catalogId: "backpack",
+            costCents: 200,
+            quantity: 1,
+          },
+        },
+      ],
+      moneyCents: 24800,
+      ammo: {},
+      weapons: [],
+      armorInventory: [],
+      consumables: [],
+      vehicles: [],
+      advances: [],
     });
-
-  await reloadIntoTracker(page);
-  await openCombat(page);
-  await expect(page.locator("#characterName")).toContainText(
-    "Finished Setup Character",
-  );
+    const entry = addCharacterSlot(characterData, {
+      source: "test",
+      preferredId: "ready-review-character",
+    });
+    character = normalize(entry.character);
+    characterSetupReviewOpen = true;
+    characterSetupStep = "review";
+    characterDraftMode = false;
+    render();
+    renderDemoExperience();
+  });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterSetupPanel")).toBeHidden();
-  await expect(page.locator("#reviewSetupBtn")).toBeVisible();
-  await page.locator("#reviewSetupBtn").click();
-  await expect(page.locator("#characterSetupPanel")).toBeVisible();
-  await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Character ready to play",
+  const reviewPanel = page.locator("#setupReviewPanel");
+  await expect(reviewPanel).toContainText("Ready to Play");
+  await expect(reviewPanel).toContainText("No blocking setup issues.");
+  await expect(reviewPanel).toContainText(
+    "No warnings requiring Marshal review.",
   );
-  await expect(
-    page.locator("[data-setup-action='finishSetup']").first(),
-  ).toHaveText("Start Playing");
+  await expect(reviewPanel).toContainText("Character Sheet Preview");
+  await expect(reviewPanel).toContainText("Ready Review Character");
+  await expect(reviewPanel).toContainText("Alertness");
+  await expect(reviewPanel).toContainText("Backpack");
+  await expect(reviewPanel.locator(".setup-review-preview button")).toHaveCount(
+    0,
+  );
+
+  const finalButton = reviewPanel.getByRole("button", {
+    name: "Confirm Setup & Start Playing",
+  });
+  await expect(finalButton).toBeEnabled();
+  await finalButton.click();
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  await expect(page.locator("#characterSetupPanel")).toBeHidden();
 });
 
 test("shows human ancestry in concept setup", async ({ page }) => {
@@ -690,10 +782,14 @@ test("shows setup review for imported characters until confirmed @mobile", async
   await expect(page.locator("#appTabs")).toBeHidden();
   await expect(page.locator("#characterSetupStepper")).toBeVisible();
   await expect(page.locator("#setupReviewPanel")).toBeVisible();
-  const confirmSetupButton = page.locator(
-    "#characterSetupPanel [data-setup-action='confirmSetup']",
+  const finalSetupButton = page.locator(
+    "#setupReviewPanel [data-setup-action='finishSetup']",
   );
-  await expect(confirmSetupButton).toBeVisible();
+  await expect(finalSetupButton).toBeVisible();
+  await expect(finalSetupButton).toBeEnabled();
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Playable with Warnings",
+  );
 
   await expect
     .poll(() =>
@@ -719,7 +815,9 @@ test("shows setup review for imported characters until confirmed @mobile", async
       trackerStatus: "needsReview",
     });
 
-  await confirmSetupButton.click();
+  await finalSetupButton.click();
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSetupPanel")).toBeHidden();
   await expect(page.locator("#reviewSetupBtn")).toBeVisible();
 
