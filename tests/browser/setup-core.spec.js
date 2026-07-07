@@ -287,6 +287,19 @@ test("starts new characters directly in character setup @mobile", async ({
     )
     .toBe(1);
 
+  await page.locator("#setupMainMenuBtn").click();
+  const unsavedDraftDialog = page.locator("#appDialog");
+  await expect(unsavedDraftDialog).toBeVisible();
+  await expect(unsavedDraftDialog.locator("#appDialogTitle")).toHaveText(
+    "Unsaved Character Draft",
+  );
+  await expect(
+    unsavedDraftDialog.getByRole("button", { name: "Stay Here" }),
+  ).toHaveCount(1);
+  await unsavedDraftDialog.getByRole("button", { name: "Stay Here" }).click();
+  await expect(unsavedDraftDialog).toBeHidden();
+  await expect(page.locator("#characterSetupPanel")).toBeVisible();
+
   await page.locator("[data-setup-step='review']").click();
   await expect(
     page.locator("[data-setup-action='discardDraftCharacter']"),

@@ -595,7 +595,13 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await page.locator("[data-setup-step='review']").click();
   await expect(page.locator("#setupReviewPanel")).toContainText("Lehi Larson");
   await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Import Warnings",
+    "Needs Attention",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Setup Source Audit",
+  );
+  await expect(page.locator("#setupReviewPanel")).toContainText(
+    "Needs GM/Table Exception",
   );
 });
 

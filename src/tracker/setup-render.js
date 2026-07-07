@@ -1752,7 +1752,15 @@ function setupGearEntryPriceLabel(entry) {
   return Number.isFinite(unitCost) ? money(unitCost * count) : "—";
 }
 
-function setupGearCard(name, price, weight, details, note = "", actions = "") {
+function setupGearCard(
+  name,
+  price,
+  weight,
+  details,
+  note = "",
+  actions = "",
+  summaryActions = "",
+) {
   const detailItems = [
     `Price ${price || "—"}`,
     `Weight ${weight || "—"}`,
@@ -1773,7 +1781,10 @@ function setupGearCard(name, price, weight, details, note = "", actions = "") {
         </details>`
     : `<div class="setup-gear-card-static">${summaryMarkup}</div>`;
   return `<div class="setup-gear-line setup-gear-card">
-    ${contentMarkup}
+    <div class="setup-gear-card-top">
+      ${contentMarkup}
+      ${summaryActions}
+    </div>
     ${actions}
   </div>`;
 }
@@ -1944,16 +1955,84 @@ function setupGearPlayerEntryLine(entry) {
     ]
       .filter(Boolean)
       .join(" "),
-    setupGearSellBackAction(entry),
+    setupGearEntryActions(entry),
+    setupGearSummaryActions(entry),
   );
 }
 
-function setupGearSellBackAction(entry) {
+function setupGearSellBackButton(entry) {
   if (!setupTraitsEditable()) return "";
   if (setupGearCreationSource(entry.item) !== "setup-starting-gear") return "";
-  return `<div class="creator-actions setup-gear-actions">
-    <button class="ghost tag-action danger-lite" type="button" data-setup-action="sellBackSetupGear" data-setup-gear-type="${esc(entry.type)}" data-setup-gear-id="${esc(entry.id)}">Sell Back</button>
+  return `<button class="ghost tag-action danger-lite" type="button" data-setup-action="sellBackSetupGear" data-setup-gear-type="${esc(entry.type)}" data-setup-gear-id="${esc(entry.id)}">Sell Back</button>`;
+}
+
+function setupBackpackContainer() {
+  return (
+    flattenInventory()
+      .map(({ item }) => item)
+      .find(
+        (item) =>
+          item?.isContainer && /backpack/i.test(String(item.name || "")),
+      ) || null
+  );
+}
+
+function setupGearEntryIsBackpack(entry, backpack) {
+  return entry?.type === "gear" && backpack?.id && entry.id === backpack.id;
+}
+
+function setupGearEntryIsInsideBackpack(entry, backpack) {
+  if (!backpack?.id) return false;
+  return entry.parent?.id === backpack.id || entry.containerId === backpack.id;
+}
+
+function setupGearBackpackMoveAction(entry) {
+  if (!setupTraitsEditable()) return "";
+  if (entry.type === "vehicle") return "";
+  const backpack = setupBackpackContainer();
+  if (!backpack || setupGearEntryIsBackpack(entry, backpack)) return "";
+  const insideBackpack = setupGearEntryIsInsideBackpack(entry, backpack);
+  const action = insideBackpack
+    ? "moveSetupGearToBody"
+    : "moveSetupGearToBackpack";
+  const label = insideBackpack ? "Move to Body" : "Put in Backpack";
+  return `<button class="ghost tag-action" type="button" data-setup-action="${esc(action)}" data-setup-gear-type="${esc(entry.type)}" data-setup-gear-id="${esc(entry.id)}" data-setup-backpack-id="${esc(backpack.id)}">${esc(label)}</button>`;
+}
+
+function setupWeaponAmmoPurchaseAction(entry) {
+  if (!setupTraitsEditable() || entry.type !== "weapon") return "";
+  const item = entry.item || {};
+  const ammoType = exactAmmoTypeForWeapon(item);
+  const catalogItem = ammoType ? catalogAmmoForKey(ammoType, item) : null;
+  if (!ammoType || !catalogItem) return "";
+  const ammoLabel = requiredAmmoLabelForWeapon(item, entry.catalog);
+  const unitCostCents = Math.max(0, Number(catalogItem.costCents) || 0);
+  const unitCost = money(unitCostCents);
+  return `<div class="creator-actions setup-gear-actions setup-weapon-ammo-actions">
+    <span class="setup-weapon-ammo-cost">Ammo ${esc(unitCost)} each · <strong data-setup-ammo-total-for="${esc(entry.id)}">${esc(unitCost)}</strong></span>
+    <span class="setup-weapon-ammo-stepper" aria-label="Ammo quantity for ${esc(entry.label)}">
+      <button class="tag-action" type="button" data-setup-action="adjustSetupAmmoQuantity" data-setup-weapon-id="${esc(entry.id)}" data-direction="-1" aria-label="Decrease ammo quantity for ${esc(entry.label)}">−</button>
+      <input class="setup-weapon-ammo-qty" type="number" min="1" step="1" value="1" data-setup-ammo-weapon-id="${esc(entry.id)}" data-setup-ammo-unit-cost="${esc(unitCostCents)}" aria-label="Ammo quantity for ${esc(entry.label)}">
+      <button class="tag-action" type="button" data-setup-action="adjustSetupAmmoQuantity" data-setup-weapon-id="${esc(entry.id)}" data-direction="1" aria-label="Increase ammo quantity for ${esc(entry.label)}">+</button>
+    </span>
+    <button class="setup-weapon-ammo-buy" type="button" data-setup-action="addSetupAmmoForWeapon" data-setup-weapon-id="${esc(entry.id)}" aria-label="Buy ${esc(ammoLabel || "Ammo")} for ${esc(entry.label)}">Buy Ammo</button>
   </div>`;
+}
+
+function setupGearEntryActions(entry) {
+  const backpackAction = setupGearBackpackMoveAction(entry);
+  const sellBackAction = setupGearSellBackButton(entry);
+  const managementActions =
+    backpackAction || sellBackAction
+      ? `<div class="creator-actions setup-gear-actions setup-gear-management-actions">${backpackAction}${sellBackAction}</div>`
+      : "";
+  return [setupWeaponAmmoPurchaseAction(entry), managementActions]
+    .filter(Boolean)
+    .join("");
+}
+
+function setupGearSummaryActions(entry) {
+  return "";
 }
 
 function setupContainerAuditLine(container) {
@@ -1971,7 +2050,7 @@ function setupContainerAuditLine(container) {
     contentNames.length
       ? `Contains: ${contentNames.join(", ")}`
       : "No contents recorded.",
-    setupGearSellBackAction(container),
+    `<div class="creator-actions setup-gear-actions setup-gear-management-actions">${setupGearSellBackButton(container)}</div>`,
   );
 }
 
@@ -2059,108 +2138,6 @@ function renderSetupGearGroups(report) {
     .join("");
 }
 
-function setupPurchaseOptions(items, placeholder) {
-  return [
-    `<option value="">${esc(placeholder)}</option>`,
-    ...items.map(
-      (item) =>
-        `<option value="${esc(item.id)}">${esc(item.name)} - ${esc(item.category || item.book || "Catalog")} - ${esc(money(item.costCents || 0))}</option>`,
-    ),
-  ].join("");
-}
-
-function setupCatalogAmmoIdsForWeaponAmmoType(ammoType, weapon = {}) {
-  const type = String(ammoType || "");
-  if (!type) return [];
-  const exactCatalogIds = new Set(
-    GEAR_CATALOG.filter(isAmmo).map((item) => item.id),
-  );
-  if (exactCatalogIds.has(type)) return [type];
-  if (/^shotgun-/i.test(type)) return ["shotgun-shells"];
-  if (type === "gatling-pistol-drum") return ["gatling-pistol-ammo-drum"];
-  if (type === "gatling-shotgun-drum") return ["gatling-shotgun-ammo-drum"];
-  if (type === "gatling-rifle-carbine-drum") {
-    return /carbine/i.test(weapon.name || "")
-      ? ["gatling-carbine-ammo-drum"]
-      : ["gatling-rifle-ammo-drum"];
-  }
-  return [];
-}
-
-function setupOwnedAmmoNeeds() {
-  const needsByKey = new Map();
-  (character.weapons || []).forEach((weapon) => {
-    const ammoType = exactAmmoTypeForWeapon(weapon);
-    if (!ammoType) return;
-    const match = String(ammoType).match(/^(pistol|rifle)-(\d{2})-ammo$/);
-    const key = match ? `${match[1]}-${match[2]}` : ammoType;
-    const existing = needsByKey.get(key) || {
-      ammoType,
-      kind: match?.[1] || "",
-      caliber: match ? `.${match[2]}` : "",
-      catalogIds: setupCatalogAmmoIdsForWeaponAmmoType(ammoType, weapon),
-      weaponNames: [],
-    };
-    if (weapon.name && !existing.weaponNames.includes(weapon.name)) {
-      existing.weaponNames.push(weapon.name);
-    }
-    needsByKey.set(key, existing);
-  });
-  return [...needsByKey.values()].filter(
-    (need) => need.kind || need.catalogIds.length,
-  );
-}
-
-function setupAmmoItemMatchesNeed(item, need) {
-  if (!item || !need) return false;
-  if (need.catalogIds.includes(item.id)) return true;
-  const kind = AMMO_KIND_BY_CATALOG_ID[item.id];
-  return Boolean(
-    kind &&
-    kind === need.kind &&
-    AMMO_CALIBERS_BY_CATALOG_ID[item.id]?.includes(need.caliber),
-  );
-}
-
-function setupAmmoNeedLabel(weaponNames) {
-  const names = [...new Set(weaponNames.filter(Boolean))];
-  if (!names.length) return "purchased weapon";
-  if (names.length <= 2) return names.join(", ");
-  return `${names.slice(0, 2).join(", ")} +${names.length - 2} more`;
-}
-
-function setupAmmoPurchaseOption(item, needs) {
-  const matchingNeeds = needs.filter((need) =>
-    setupAmmoItemMatchesNeed(item, need),
-  );
-  const matchLabel = matchingNeeds.length
-    ? `for ${setupAmmoNeedLabel(matchingNeeds.flatMap((need) => need.weaponNames))}`
-    : "no matching weapon";
-  return `<option value="${esc(item.id)}">${esc(item.name)} - ${esc(matchLabel)} - ${esc(money(item.costCents || 0))}</option>`;
-}
-
-function setupAmmoPurchaseOptions(items, placeholder) {
-  const needs = setupOwnedAmmoNeeds();
-  const usefulItems = items.filter((item) =>
-    needs.some((need) => setupAmmoItemMatchesNeed(item, need)),
-  );
-  const otherItems = items.filter((item) => !usefulItems.includes(item));
-  if (!needs.length) return setupPurchaseOptions(items, placeholder);
-  return [
-    `<option value="">${esc(placeholder)}</option>`,
-    usefulItems.length
-      ? `<optgroup label="Ammo for purchased weapons">${usefulItems.map((item) => setupAmmoPurchaseOption(item, needs)).join("")}</optgroup>`
-      : "",
-    otherItems.length
-      ? `<optgroup label="No matching purchased weapon">${otherItems.map((item) => setupAmmoPurchaseOption(item, needs)).join("")}</optgroup>`
-      : "",
-  ].join("");
-}
-
-function setupQuantityInput(id) {
-  return `<input id="${esc(id)}" class="creator-small" type="number" min="1" value="1" />`;
-}
-
 function setupWeaponPickerGroup(item) {
   const category = String(item?.category || "");
   const text = `${category} ${item?.name || ""} ${item?.ammoType || ""}`;
@@ -2196,8 +2173,8 @@ function setupWeaponPickerShortRange(item) {
   return match ? Number(match[0]) : "";
 }
 
-function setupWeaponPickerDamageAverage(item) {
-  const text = String(item?.damage || "")
+function setupWeaponPickerDamageExpressionAverage(value) {
+  const text = String(value || "")
     .replace(/[–—]/g, "-")
     .replace(/\bStr\b\s*\+?/gi, "")
     .trim();
@@ -2238,6 +2215,14 @@ function setupWeaponPickerDamageAverage(item) {
   });
 
   return hasValue ? total : "";
+}
+
+function setupWeaponPickerDamageAverage(item) {
+  const values = String(item?.damage || "")
+    .split("/")
+    .map(setupWeaponPickerDamageExpressionAverage)
+    .filter((value) => Number.isFinite(value));
+  return values.length ? Math.max(...values) : "";
 }
 
 function setupWeaponPickerRofShots(item) {
@@ -2289,6 +2274,23 @@ function setupWeaponPickerCell(label, value, className = "") {
   return `<span class="setup-catalog-picker-cell ${esc(className)}" data-label="${esc(label)}">${esc(value)}</span>`;
 }
 
+function setupCatalogPickerDetails(items = [], note = "") {
+  const detailItems = items.filter(Boolean);
+  const cleanNote = String(note || "").trim();
+  if (!detailItems.length && !cleanNote) return "";
+  return `<details class="setup-catalog-picker-details">
+    <summary>Details</summary>
+    <div class="setup-catalog-picker-detail-list">
+      ${detailItems.map((item) => `<span>${esc(item)}</span>`).join("")}
+      ${cleanNote ? `<p>${esc(cleanNote)}</p>` : ""}
+    </div>
+  </details>`;
+}
+
+function setupCatalogPickerSummary(content) {
+  return `<div class="setup-catalog-picker-summary">${content}</div>`;
+}
+
 function setupWeaponPickerRow(item) {
   const group = setupWeaponPickerGroup(item);
   const ammoLabel = requiredAmmoLabelForWeapon(item, item);
@@ -2297,42 +2299,52 @@ function setupWeaponPickerRow(item) {
   const damageSort = setupWeaponPickerDamageAverage(item);
   const searchText = setupWeaponPickerSearchText(item, group, ammoLabel);
   return `<div class="setup-catalog-picker-row" data-setup-weapon-row data-weapon-group="${esc(group)}" data-weapon-search="${esc(searchText)}" data-weapon-sort-name="${esc(String(item.name || "").toLowerCase())}" data-weapon-sort-type="${esc(group.toLowerCase())}" data-weapon-sort-price="${esc(Number(item.costCents) || 0)}" data-weapon-sort-weight="${esc(weight)}" data-weapon-sort-range="${esc(rangeSort)}" data-weapon-sort-damage="${esc(damageSort)}">
-    <div class="setup-catalog-picker-cell setup-catalog-picker-name" data-label="Name">
-      <strong>${esc(item.name || "Unnamed weapon")}</strong>
-    </div>
-    ${setupWeaponPickerCell("Type", group, "setup-catalog-picker-type")}
-    ${setupWeaponPickerCell("Damage", setupWeaponPickerDisplay(item.damage), "setup-catalog-picker-damage")}
-    ${setupWeaponPickerCell("Range", setupWeaponPickerDisplay(item.range), "setup-catalog-picker-range")}
-    ${setupWeaponPickerCell("RoF / Shots", setupWeaponPickerDisplay(setupWeaponPickerRofShots(item)), "setup-catalog-picker-rof")}
-    ${setupWeaponPickerCell("Price", money(item.costCents || 0), "setup-catalog-picker-price")}
-    ${setupWeaponPickerCell("Load", weight !== "" ? formatWeightPounds(weight) : "—", "setup-catalog-picker-load")}
-    <span class="setup-catalog-picker-cell setup-catalog-picker-add" data-label="Buy"><button type="button" data-setup-action="addSetupWeaponPurchase" data-setup-weapon-id="${esc(item.id)}">Buy</button></span>
+    ${setupCatalogPickerSummary(`
+      <div class="setup-catalog-picker-cell setup-catalog-picker-name" data-label="Name">
+        <strong>${esc(item.name || "Unnamed weapon")}</strong>
+      </div>
+      ${setupWeaponPickerCell("Type", group, "setup-catalog-picker-type")}
+      ${setupWeaponPickerCell("Damage", setupWeaponPickerDisplay(item.damage), "setup-catalog-picker-damage")}
+      ${setupWeaponPickerCell("Range", setupWeaponPickerDisplay(item.range), "setup-catalog-picker-range")}
+      ${setupWeaponPickerCell("RoF / Shots", setupWeaponPickerDisplay(setupWeaponPickerRofShots(item)), "setup-catalog-picker-rof")}
+      ${setupWeaponPickerCell("Price", money(item.costCents || 0), "setup-catalog-picker-price")}
+      ${setupWeaponPickerCell("Load", weight !== "" ? formatWeightPounds(weight) : "\u2014", "setup-catalog-picker-load")}
+      <span class="setup-catalog-picker-cell setup-catalog-picker-add" data-label="Buy"><button type="button" data-setup-action="addSetupWeaponPurchase" data-setup-weapon-id="${esc(item.id)}">Buy</button></span>
+    `)}
+    ${setupCatalogPickerDetails(
+      [
+        ammoLabel ? `Ammo ${ammoLabel}` : "",
+        item.ap !== undefined && item.ap !== "" ? `AP ${item.ap}` : "",
+        item.minStr ? `Min Str ${item.minStr}` : "",
+        item.book || "",
+      ],
+      setupWeaponPickerNotes(item),
+    )}
   </div>`;
 }
 
 function setupWeaponPicker(items) {
-  return `<article class="setup-purchase-card setup-catalog-picker" id="setupWeaponPicker">
-    <h5>Weapons</h5>
+  return `<details class="setup-purchase-card setup-catalog-picker" id="setupWeaponPicker" open>
+    <summary class="setup-catalog-picker-title"><h5>Weapons</h5><span>Search, compare, and buy weapons.</span></summary>
     <div class="setup-form-grid setup-purchase-form setup-catalog-picker-controls">
-      <label class="setup-wide">Search weapons<input id="setupWeaponSearchInput" type="search" placeholder="Search weapons..." autocomplete="off" /></label>
+      <label>Search weapons<input id="setupWeaponSearchInput" type="search" placeholder="Search weapons..." autocomplete="off" /></label>
       <label>Type<select id="setupWeaponCategoryFilter" aria-label="Filter weapons by type">${setupWeaponPickerGroupOptions(items)}</select></label>
-      <label>Qty ${setupQuantityInput("setupWeaponPurchaseQty")}</label>
-    </div>
-    <div class="setup-catalog-picker-header" aria-label="Weapon catalog columns">
-      ${setupWeaponPickerHeaderCell("Name", "name")}
-      ${setupWeaponPickerHeaderCell("Type", "type")}
-      ${setupWeaponPickerHeaderCell("Damage", "damage")}
-      ${setupWeaponPickerHeaderCell("Range", "range")}
-      ${setupWeaponPickerHeaderCell("RoF / Shots")}
-      ${setupWeaponPickerHeaderCell("Price", "price")}
-      ${setupWeaponPickerHeaderCell("Load", "weight")}
-      <span aria-hidden="true"></span>
     </div>
     <div class="setup-catalog-picker-list">
+      <div class="setup-catalog-picker-header" aria-label="Weapon catalog columns">
+        ${setupWeaponPickerHeaderCell("Name", "name")}
+        ${setupWeaponPickerHeaderCell("Type", "type")}
+        ${setupWeaponPickerHeaderCell("Damage", "damage")}
+        ${setupWeaponPickerHeaderCell("Range", "range")}
+        ${setupWeaponPickerHeaderCell("RoF / Shots")}
+        ${setupWeaponPickerHeaderCell("Price", "price")}
+        ${setupWeaponPickerHeaderCell("Load", "weight")}
+        <span aria-hidden="true"></span>
+      </div>
       ${items.map(setupWeaponPickerRow).join("")}
       <p class="empty-state setup-catalog-picker-empty hidden">No weapons match that search.</p>
     </div>
-  </article>`;
+  </details>`;
 }
 
 function setupWeaponSortValue(row, key) {
@@ -2418,72 +2430,516 @@ function filterSetupWeaponPicker() {
   updateSetupWeaponSortButtons(picker);
 }
 
-function setupPurchaseForm(label, selectId, qtyId, action, items) {
-  return `<div class="setup-form-grid setup-purchase-form">
-    <label class="setup-wide"><span class="sr-only">Choose ${esc(label.toLowerCase())}</span><select id="${esc(selectId)}" aria-label="Choose ${esc(label.toLowerCase())}">${setupPurchaseOptions(items, `Choose ${label.toLowerCase()}...`)}</select></label>
-    <label>Qty ${setupQuantityInput(qtyId)}</label>
-    <div class="creator-actions">
-      <button type="button" data-setup-action="${esc(action)}">Buy ${esc(label)}</button>
-    </div>
+function setupGearPickerGroup(item) {
+  return String(item?.category || item?.book || "Gear").trim() || "Gear";
+}
+
+function setupGearPickerGroupOptions(items) {
+  return [
+    '<option value="All">All</option>',
+    ...[...new Set(items.map(setupGearPickerGroup).filter(Boolean))]
+      .sort((left, right) => left.localeCompare(right))
+      .map((group) => `<option value="${esc(group)}">${esc(group)}</option>`),
+  ].join("");
+}
+
+function setupGearPickerHeaderCell(label, sortKey = "") {
+  if (!sortKey)
+    return `<strong class="setup-catalog-picker-heading">${esc(label)}</strong>`;
+  return `<button class="setup-catalog-sort-button" type="button" data-setup-gear-sort="${esc(sortKey)}">${esc(label)}</button>`;
+}
+
+function setupGearPickerWeight(item) {
+  const value = Number(item?.weight);
+  return Number.isFinite(value) ? value : "";
+}
+
+function setupGearPickerSearchText(item, group) {
+  return [
+    item.name,
+    group,
+    item.book,
+    item.costText || money(item.costCents || 0),
+    setupGearPickerWeight(item) !== ""
+      ? formatWeightPounds(setupGearPickerWeight(item))
+      : "",
+    item.notes,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function setupGearPickerRow(item) {
+  const group = setupGearPickerGroup(item);
+  const weight = setupGearPickerWeight(item);
+  const searchText = setupGearPickerSearchText(item, group);
+  return `<div class="setup-catalog-picker-row" data-setup-gear-row data-gear-group="${esc(group)}" data-gear-search="${esc(searchText)}" data-gear-sort-name="${esc(String(item.name || "").toLowerCase())}" data-gear-sort-type="${esc(group.toLowerCase())}" data-gear-sort-price="${esc(Number(item.costCents) || 0)}" data-gear-sort-weight="${esc(weight)}">
+    ${setupCatalogPickerSummary(`
+      <div class="setup-catalog-picker-cell setup-catalog-picker-name" data-label="Name">
+        <strong>${esc(item.name || "Unnamed gear")}</strong>
+      </div>
+      ${setupWeaponPickerCell("Type", group, "setup-catalog-picker-type")}
+      ${setupWeaponPickerCell("Price", money(item.costCents || 0), "setup-catalog-picker-price")}
+      ${setupWeaponPickerCell("Load", weight !== "" ? formatWeightPounds(weight) : "\u2014", "setup-catalog-picker-load")}
+      <span class="setup-catalog-picker-cell setup-catalog-picker-add" data-label="Buy"><button type="button" data-setup-action="addSetupGearPurchase" data-setup-gear-id="${esc(item.id)}">Buy</button></span>
+    `)}
+    ${setupCatalogPickerDetails([group, item.book || ""], item.notes)}
   </div>`;
 }
 
-function setupPurchaseControl(
-  cardTitle,
-  label,
-  selectId,
-  qtyId,
-  action,
-  items,
-) {
-  return `<article class="setup-purchase-card">
-    <h5>${esc(cardTitle)}</h5>
-    ${setupPurchaseForm(label, selectId, qtyId, action, items)}
-  </article>`;
+function setupGearPicker(items) {
+  return `<details class="setup-purchase-card setup-catalog-picker setup-gear-catalog-picker" id="setupGearPicker">
+    <summary class="setup-catalog-picker-title"><h5>Gear</h5><span>General equipment and services.</span></summary>
+    <div class="setup-form-grid setup-purchase-form setup-catalog-picker-controls">
+      <label>Search gear<input id="setupGearSearchInput" type="search" placeholder="Search gear..." autocomplete="off" /></label>
+      <label>Type<select id="setupGearCategoryFilter" aria-label="Filter gear by type">${setupGearPickerGroupOptions(items)}</select></label>
+    </div>
+    <div class="setup-catalog-picker-list">
+      <div class="setup-catalog-picker-header" aria-label="Gear catalog columns">
+        ${setupGearPickerHeaderCell("Name", "name")}
+        ${setupGearPickerHeaderCell("Type", "type")}
+        ${setupGearPickerHeaderCell("Price", "price")}
+        ${setupGearPickerHeaderCell("Load", "weight")}
+        <span aria-hidden="true"></span>
+      </div>
+      ${items.map(setupGearPickerRow).join("")}
+      <p class="empty-state setup-catalog-picker-empty hidden">No gear matches that search.</p>
+    </div>
+  </details>`;
 }
 
-function setupAmmoCaliberOptions() {
-  const calibers = [
-    ...new Set(
-      Object.values(AMMO_CALIBERS_BY_CATALOG_ID).flat().filter(Boolean),
-    ),
-  ];
-  const needByCaliber = new Map();
-  setupOwnedAmmoNeeds()
-    .filter((need) => need.caliber)
-    .forEach((need) => {
-      const names = needByCaliber.get(need.caliber) || [];
-      names.push(...need.weaponNames);
-      needByCaliber.set(need.caliber, names);
-    });
-  const usefulCalibers = calibers.filter((caliber) =>
-    needByCaliber.has(caliber),
-  );
-  const otherCalibers = calibers.filter(
-    (caliber) => !needByCaliber.has(caliber),
-  );
-  if (usefulCalibers.length) {
-    return [
-      `<optgroup label="For purchased weapons">${usefulCalibers
-        .map(
-          (caliber, index) =>
-            `<option value="${esc(caliber)}"${index === 0 ? " selected" : ""}>${esc(`${caliber} - for ${setupAmmoNeedLabel(needByCaliber.get(caliber) || [])}`)}</option>`,
-        )
-        .join("")}</optgroup>`,
-      `<optgroup label="No matching purchased weapon">${otherCalibers
-        .map(
-          (caliber) =>
-            `<option value="${esc(caliber)}">${esc(`${caliber} - no matching weapon`)}</option>`,
-        )
-        .join("")}</optgroup>`,
-    ].join("");
+function setupGearSortValue(row, key) {
+  if (["price", "weight"].includes(key)) {
+    const value = row.dataset[`gearSort${key[0].toUpperCase()}${key.slice(1)}`];
+    return value === "" ? null : Number(value);
   }
+  return String(
+    row.dataset[`gearSort${key[0].toUpperCase()}${key.slice(1)}`] || "",
+  );
+}
+
+function compareSetupGearRows(left, right, key, direction) {
+  const leftValue = setupGearSortValue(left, key);
+  const rightValue = setupGearSortValue(right, key);
+  const leftMissing = leftValue === null || leftValue === "";
+  const rightMissing = rightValue === null || rightValue === "";
+  if (leftMissing && rightMissing) return 0;
+  if (leftMissing) return 1;
+  if (rightMissing) return -1;
+  const result =
+    typeof leftValue === "number" && typeof rightValue === "number"
+      ? leftValue - rightValue
+      : String(leftValue).localeCompare(String(rightValue));
+  return direction === "desc" ? -result : result;
+}
+
+function updateSetupGearSortButtons(picker) {
+  const key = picker.dataset.sortKey || "";
+  const direction = picker.dataset.sortDirection || "asc";
+  picker.querySelectorAll("[data-setup-gear-sort]").forEach((button) => {
+    const active = button.dataset.setupGearSort === key;
+    button.classList.toggle("active", active);
+    button.setAttribute(
+      "aria-sort",
+      active ? (direction === "desc" ? "descending" : "ascending") : "none",
+    );
+  });
+}
+
+function sortSetupGearPicker(key) {
+  const picker = document.getElementById("setupGearPicker");
+  if (!picker || !key) return;
+  const currentKey = picker.dataset.sortKey || "";
+  const currentDirection = picker.dataset.sortDirection || "asc";
+  const direction =
+    currentKey === key && currentDirection === "asc" ? "desc" : "asc";
+  picker.dataset.sortKey = key;
+  picker.dataset.sortDirection = direction;
+  const list = picker.querySelector(".setup-catalog-picker-list");
+  const emptyState = picker.querySelector(".setup-catalog-picker-empty");
+  [...picker.querySelectorAll("[data-setup-gear-row]")]
+    .sort((left, right) => compareSetupGearRows(left, right, key, direction))
+    .forEach((row) => list?.insertBefore(row, emptyState || null));
+  updateSetupGearSortButtons(picker);
+}
+
+function filterSetupGearPicker() {
+  const picker = document.getElementById("setupGearPicker");
+  if (!picker) return;
+  const search = String(
+    document.getElementById("setupGearSearchInput")?.value || "",
+  )
+    .trim()
+    .toLowerCase();
+  const category =
+    document.getElementById("setupGearCategoryFilter")?.value || "All";
+  const rows = [...picker.querySelectorAll("[data-setup-gear-row]")];
+  let visibleCount = 0;
+  rows.forEach((row) => {
+    const matchesSearch =
+      !search || String(row.dataset.gearSearch || "").includes(search);
+    const matchesCategory =
+      category === "All" || row.dataset.gearGroup === category;
+    const visible = matchesSearch && matchesCategory;
+    row.classList.toggle("hidden", !visible);
+    if (visible) visibleCount += 1;
+  });
+  picker
+    .querySelector(".setup-catalog-picker-empty")
+    ?.classList.toggle("hidden", visibleCount > 0);
+  updateSetupGearSortButtons(picker);
+}
+
+function setupArmorPickerLocationOptions(items) {
   return [
-    '<option value="">Default caliber</option>',
-    ...calibers.map(
-      (caliber) => `<option value="${esc(caliber)}">${esc(caliber)}</option>`,
-    ),
+    '<option value="All">All</option>',
+    ...[
+      ...new Set(
+        items
+          .map((item) => item.location)
+          .filter(Boolean)
+          .map((location) => armorLabel(location)),
+      ),
+    ]
+      .sort((left, right) => left.localeCompare(right))
+      .map((label) => `<option value="${esc(label)}">${esc(label)}</option>`),
   ].join("");
+}
+
+function setupArmorPickerHeaderCell(label, sortKey = "") {
+  if (!sortKey)
+    return `<strong class="setup-catalog-picker-heading">${esc(label)}</strong>`;
+  return `<button class="setup-catalog-sort-button" type="button" data-setup-armor-sort="${esc(sortKey)}">${esc(label)}</button>`;
+}
+
+function setupArmorPickerWeight(item) {
+  const value = Number(item?.weight);
+  return Number.isFinite(value) ? value : "";
+}
+
+function setupArmorPickerSearchText(item, locationLabel) {
+  return [
+    item.name,
+    locationLabel,
+    item.book,
+    item.minStr,
+    item.armor !== undefined ? `+${item.armor}` : "",
+    item.costText || money(item.costCents || 0),
+    setupArmorPickerWeight(item) !== ""
+      ? formatWeightPounds(setupArmorPickerWeight(item))
+      : "",
+    item.notes,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function setupArmorPickerRow(item) {
+  const locationLabel = armorLabel(item.location || "");
+  const weight = setupArmorPickerWeight(item);
+  const armorValue = Number(item.armor);
+  const armorSort = Number.isFinite(armorValue) ? armorValue : "";
+  const searchText = setupArmorPickerSearchText(item, locationLabel);
+  return `<div class="setup-catalog-picker-row" data-setup-armor-row data-armor-location="${esc(locationLabel)}" data-armor-search="${esc(searchText)}" data-armor-sort-name="${esc(String(item.name || "").toLowerCase())}" data-armor-sort-armor="${esc(armorSort)}" data-armor-sort-location="${esc(locationLabel.toLowerCase())}" data-armor-sort-min-str="${esc(getDieStep(item.minStr))}" data-armor-sort-price="${esc(Number(item.costCents) || 0)}" data-armor-sort-weight="${esc(weight)}">
+    ${setupCatalogPickerSummary(`
+      <div class="setup-catalog-picker-cell setup-catalog-picker-name" data-label="Name">
+        <strong>${esc(item.name || "Unnamed armor")}</strong>
+      </div>
+      ${setupWeaponPickerCell("Armor", Number.isFinite(armorValue) ? `+${armorValue}` : "\u2014", "setup-catalog-picker-armor")}
+      ${setupWeaponPickerCell("Location", locationLabel || "\u2014", "setup-catalog-picker-location")}
+      ${setupWeaponPickerCell("Min Str", item.minStr || "\u2014", "setup-catalog-picker-min-str")}
+      ${setupWeaponPickerCell("Price", money(item.costCents || 0), "setup-catalog-picker-price")}
+      ${setupWeaponPickerCell("Load", weight !== "" ? formatWeightPounds(weight) : "\u2014", "setup-catalog-picker-load")}
+      <span class="setup-catalog-picker-cell setup-catalog-picker-add" data-label="Buy"><button type="button" data-setup-action="addSetupArmorPurchase" data-setup-armor-id="${esc(item.id)}">Buy</button></span>
+    `)}
+    ${setupCatalogPickerDetails([item.book || ""], item.notes)}
+  </div>`;
+}
+
+function setupArmorPicker(items) {
+  return `<details class="setup-purchase-card setup-catalog-picker setup-armor-catalog-picker" id="setupArmorPicker">
+    <summary class="setup-catalog-picker-title"><h5>Armor</h5><span>Protective gear by location.</span></summary>
+    <div class="setup-form-grid setup-purchase-form setup-catalog-picker-controls">
+      <label>Search armor<input id="setupArmorSearchInput" type="search" placeholder="Search armor..." autocomplete="off" /></label>
+      <label>Location<select id="setupArmorLocationFilter" aria-label="Filter armor by location">${setupArmorPickerLocationOptions(items)}</select></label>
+    </div>
+    <div class="setup-catalog-picker-list">
+      <div class="setup-catalog-picker-header" aria-label="Armor catalog columns">
+        ${setupArmorPickerHeaderCell("Name", "name")}
+        ${setupArmorPickerHeaderCell("Armor", "armor")}
+        ${setupArmorPickerHeaderCell("Location", "location")}
+        ${setupArmorPickerHeaderCell("Min Str", "min-str")}
+        ${setupArmorPickerHeaderCell("Price", "price")}
+        ${setupArmorPickerHeaderCell("Load", "weight")}
+        <span aria-hidden="true"></span>
+      </div>
+      ${items.map(setupArmorPickerRow).join("")}
+      <p class="empty-state setup-catalog-picker-empty hidden">No armor matches that search.</p>
+    </div>
+  </details>`;
+}
+
+function setupArmorSortValue(row, key) {
+  if (["armor", "min-str", "price", "weight"].includes(key)) {
+    const value =
+      row.dataset[
+        `armorSort${key.replace(/(^|-)([a-z])/g, (_, __, char) => char.toUpperCase())}`
+      ];
+    return value === "" || value === "-1" ? null : Number(value);
+  }
+  return String(
+    row.dataset[
+      `armorSort${key.replace(/(^|-)([a-z])/g, (_, __, char) => char.toUpperCase())}`
+    ] || "",
+  );
+}
+
+function compareSetupArmorRows(left, right, key, direction) {
+  const leftValue = setupArmorSortValue(left, key);
+  const rightValue = setupArmorSortValue(right, key);
+  const leftMissing = leftValue === null || leftValue === "";
+  const rightMissing = rightValue === null || rightValue === "";
+  if (leftMissing && rightMissing) return 0;
+  if (leftMissing) return 1;
+  if (rightMissing) return -1;
+  const result =
+    typeof leftValue === "number" && typeof rightValue === "number"
+      ? leftValue - rightValue
+      : String(leftValue).localeCompare(String(rightValue));
+  return direction === "desc" ? -result : result;
+}
+
+function updateSetupArmorSortButtons(picker) {
+  const key = picker.dataset.sortKey || "";
+  const direction = picker.dataset.sortDirection || "asc";
+  picker.querySelectorAll("[data-setup-armor-sort]").forEach((button) => {
+    const active = button.dataset.setupArmorSort === key;
+    button.classList.toggle("active", active);
+    button.setAttribute(
+      "aria-sort",
+      active ? (direction === "desc" ? "descending" : "ascending") : "none",
+    );
+  });
+}
+
+function sortSetupArmorPicker(key) {
+  const picker = document.getElementById("setupArmorPicker");
+  if (!picker || !key) return;
+  const currentKey = picker.dataset.sortKey || "";
+  const currentDirection = picker.dataset.sortDirection || "asc";
+  const direction =
+    currentKey === key && currentDirection === "asc" ? "desc" : "asc";
+  picker.dataset.sortKey = key;
+  picker.dataset.sortDirection = direction;
+  const list = picker.querySelector(".setup-catalog-picker-list");
+  const emptyState = picker.querySelector(".setup-catalog-picker-empty");
+  [...picker.querySelectorAll("[data-setup-armor-row]")]
+    .sort((left, right) => compareSetupArmorRows(left, right, key, direction))
+    .forEach((row) => list?.insertBefore(row, emptyState || null));
+  updateSetupArmorSortButtons(picker);
+}
+
+function filterSetupArmorPicker() {
+  const picker = document.getElementById("setupArmorPicker");
+  if (!picker) return;
+  const search = String(
+    document.getElementById("setupArmorSearchInput")?.value || "",
+  )
+    .trim()
+    .toLowerCase();
+  const location =
+    document.getElementById("setupArmorLocationFilter")?.value || "All";
+  const rows = [...picker.querySelectorAll("[data-setup-armor-row]")];
+  let visibleCount = 0;
+  rows.forEach((row) => {
+    const matchesSearch =
+      !search || String(row.dataset.armorSearch || "").includes(search);
+    const matchesLocation =
+      location === "All" || row.dataset.armorLocation === location;
+    const visible = matchesSearch && matchesLocation;
+    row.classList.toggle("hidden", !visible);
+    if (visible) visibleCount += 1;
+  });
+  picker
+    .querySelector(".setup-catalog-picker-empty")
+    ?.classList.toggle("hidden", visibleCount > 0);
+  updateSetupArmorSortButtons(picker);
+}
+
+function setupVehiclePickerGroup(item) {
+  return (
+    String(item?.category || item?.book || "Vehicles").trim() || "Vehicles"
+  );
+}
+
+function setupVehiclePickerGroupOptions(items) {
+  return [
+    '<option value="All">All</option>',
+    ...[...new Set(items.map(setupVehiclePickerGroup).filter(Boolean))]
+      .sort((left, right) => left.localeCompare(right))
+      .map((group) => `<option value="${esc(group)}">${esc(group)}</option>`),
+  ].join("");
+}
+
+function setupVehiclePickerHeaderCell(label, sortKey = "") {
+  if (!sortKey)
+    return `<strong class="setup-catalog-picker-heading">${esc(label)}</strong>`;
+  return `<button class="setup-catalog-sort-button" type="button" data-setup-vehicle-sort="${esc(sortKey)}">${esc(label)}</button>`;
+}
+
+function setupVehiclePickerNumber(value) {
+  const match = String(value ?? "").match(/[+-]?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : "";
+}
+
+function setupVehiclePickerSearchText(item, group) {
+  return [
+    item.name,
+    group,
+    item.book,
+    item.size,
+    item.handling,
+    item.topSpeed,
+    item.toughness,
+    item.crew,
+    item.costText || money(item.costCents || 0),
+    item.notes,
+  ]
+    .filter((value) => value !== undefined && value !== null && value !== "")
+    .join(" ")
+    .toLowerCase();
+}
+
+function setupVehiclePickerRow(item) {
+  const group = setupVehiclePickerGroup(item);
+  const searchText = setupVehiclePickerSearchText(item, group);
+  return `<div class="setup-catalog-picker-row" data-setup-vehicle-row data-vehicle-group="${esc(group)}" data-vehicle-search="${esc(searchText)}" data-vehicle-sort-name="${esc(String(item.name || "").toLowerCase())}" data-vehicle-sort-type="${esc(group.toLowerCase())}" data-vehicle-sort-handling="${esc(setupVehiclePickerNumber(item.handling))}" data-vehicle-sort-speed="${esc(setupVehiclePickerNumber(item.topSpeed))}" data-vehicle-sort-toughness="${esc(setupVehiclePickerNumber(item.toughness))}" data-vehicle-sort-crew="${esc(setupVehiclePickerNumber(item.crew))}" data-vehicle-sort-price="${esc(Number(item.costCents) || 0)}">
+    ${setupCatalogPickerSummary(`
+      <div class="setup-catalog-picker-cell setup-catalog-picker-name" data-label="Name">
+        <strong>${esc(item.name || "Unnamed vehicle")}</strong>
+      </div>
+      ${setupWeaponPickerCell("Type", group, "setup-catalog-picker-type")}
+      ${setupWeaponPickerCell("Handling", setupWeaponPickerDisplay(item.handling), "setup-catalog-picker-handling")}
+      ${setupWeaponPickerCell("Speed", setupWeaponPickerDisplay(item.topSpeed), "setup-catalog-picker-speed")}
+      ${setupWeaponPickerCell("Toughness", setupWeaponPickerDisplay(item.toughness), "setup-catalog-picker-toughness")}
+      ${setupWeaponPickerCell("Crew", setupWeaponPickerDisplay(item.crew), "setup-catalog-picker-crew")}
+      ${setupWeaponPickerCell("Price", money(item.costCents || 0), "setup-catalog-picker-price")}
+      <span class="setup-catalog-picker-cell setup-catalog-picker-add" data-label="Buy"><button type="button" data-setup-action="addSetupVehiclePurchase" data-setup-vehicle-id="${esc(item.id)}">Buy</button></span>
+    `)}
+    ${setupCatalogPickerDetails(
+      [item.size ? `Size ${item.size}` : "", item.book || ""],
+      item.notes,
+    )}
+  </div>`;
+}
+
+function setupVehiclePicker(items) {
+  return `<details class="setup-purchase-card setup-catalog-picker setup-vehicle-catalog-picker" id="setupVehiclePicker">
+    <summary class="setup-catalog-picker-title"><h5>Vehicles</h5><span>Mounts, wagons, boats, and infernal vehicles.</span></summary>
+    <div class="setup-form-grid setup-purchase-form setup-catalog-picker-controls">
+      <label>Search vehicles<input id="setupVehicleSearchInput" type="search" placeholder="Search vehicles..." autocomplete="off" /></label>
+      <label>Type<select id="setupVehicleCategoryFilter" aria-label="Filter vehicles by type">${setupVehiclePickerGroupOptions(items)}</select></label>
+    </div>
+    <div class="setup-catalog-picker-list">
+      <div class="setup-catalog-picker-header" aria-label="Vehicle catalog columns">
+        ${setupVehiclePickerHeaderCell("Name", "name")}
+        ${setupVehiclePickerHeaderCell("Type", "type")}
+        ${setupVehiclePickerHeaderCell("Handling", "handling")}
+        ${setupVehiclePickerHeaderCell("Speed", "speed")}
+        ${setupVehiclePickerHeaderCell("Toughness", "toughness")}
+        ${setupVehiclePickerHeaderCell("Crew", "crew")}
+        ${setupVehiclePickerHeaderCell("Price", "price")}
+        <span aria-hidden="true"></span>
+      </div>
+      ${items.map(setupVehiclePickerRow).join("")}
+      <p class="empty-state setup-catalog-picker-empty hidden">No vehicles match that search.</p>
+    </div>
+  </details>`;
+}
+
+function setupVehicleSortValue(row, key) {
+  if (["handling", "speed", "toughness", "crew", "price"].includes(key)) {
+    const value =
+      row.dataset[`vehicleSort${key[0].toUpperCase()}${key.slice(1)}`];
+    return value === "" ? null : Number(value);
+  }
+  return String(
+    row.dataset[`vehicleSort${key[0].toUpperCase()}${key.slice(1)}`] || "",
+  );
+}
+
+function compareSetupVehicleRows(left, right, key, direction) {
+  const leftValue = setupVehicleSortValue(left, key);
+  const rightValue = setupVehicleSortValue(right, key);
+  const leftMissing = leftValue === null || leftValue === "";
+  const rightMissing = rightValue === null || rightValue === "";
+  if (leftMissing && rightMissing) return 0;
+  if (leftMissing) return 1;
+  if (rightMissing) return -1;
+  const result =
+    typeof leftValue === "number" && typeof rightValue === "number"
+      ? leftValue - rightValue
+      : String(leftValue).localeCompare(String(rightValue));
+  return direction === "desc" ? -result : result;
+}
+
+function updateSetupVehicleSortButtons(picker) {
+  const key = picker.dataset.sortKey || "";
+  const direction = picker.dataset.sortDirection || "asc";
+  picker.querySelectorAll("[data-setup-vehicle-sort]").forEach((button) => {
+    const active = button.dataset.setupVehicleSort === key;
+    button.classList.toggle("active", active);
+    button.setAttribute(
+      "aria-sort",
+      active ? (direction === "desc" ? "descending" : "ascending") : "none",
+    );
+  });
+}
+
+function sortSetupVehiclePicker(key) {
+  const picker = document.getElementById("setupVehiclePicker");
+  if (!picker || !key) return;
+  const currentKey = picker.dataset.sortKey || "";
+  const currentDirection = picker.dataset.sortDirection || "asc";
+  const direction =
+    currentKey === key && currentDirection === "asc" ? "desc" : "asc";
+  picker.dataset.sortKey = key;
+  picker.dataset.sortDirection = direction;
+  const list = picker.querySelector(".setup-catalog-picker-list");
+  const emptyState = picker.querySelector(".setup-catalog-picker-empty");
+  [...picker.querySelectorAll("[data-setup-vehicle-row]")]
+    .sort((left, right) => compareSetupVehicleRows(left, right, key, direction))
+    .forEach((row) => list?.insertBefore(row, emptyState || null));
+  updateSetupVehicleSortButtons(picker);
+}
+
+function filterSetupVehiclePicker() {
+  const picker = document.getElementById("setupVehiclePicker");
+  if (!picker) return;
+  const search = String(
+    document.getElementById("setupVehicleSearchInput")?.value || "",
+  )
+    .trim()
+    .toLowerCase();
+  const category =
+    document.getElementById("setupVehicleCategoryFilter")?.value || "All";
+  const rows = [...picker.querySelectorAll("[data-setup-vehicle-row]")];
+  let visibleCount = 0;
+  rows.forEach((row) => {
+    const matchesSearch =
+      !search || String(row.dataset.vehicleSearch || "").includes(search);
+    const matchesCategory =
+      category === "All" || row.dataset.vehicleGroup === category;
+    const visible = matchesSearch && matchesCategory;
+    row.classList.toggle("hidden", !visible);
+    if (visible) visibleCount += 1;
+  });
+  picker
+    .querySelector(".setup-catalog-picker-empty")
+    ?.classList.toggle("hidden", visibleCount > 0);
+  updateSetupVehicleSortButtons(picker);
 }
 
 function renderSetupGearPurchaseControls(report) {
@@ -2493,30 +2949,12 @@ function renderSetupGearPurchaseControls(report) {
 
   return `<section class="setup-trait-group" aria-labelledby="setupGearPurchaseHeading">
     <h4 id="setupGearPurchaseHeading">Buy Starting Gear</h4>
-    <p class="creator-note">Choose catalog items, set quantity when needed, and spend starting funds.</p>
+    <p class="creator-note">Choose catalog items and spend starting funds. Buy matching ammunition from the weapon's inventory card after adding a weapon.</p>
     <div class="setup-purchase-card-list">
       ${setupWeaponPicker(WEAPON_CATALOG)}
-      <article class="setup-purchase-card">
-        <h5>Ammunition</h5>
-        <div class="setup-form-grid setup-purchase-form">
-          <label class="setup-wide"><span class="sr-only">Choose ammunition</span><select id="setupAmmoPurchaseSelect" aria-label="Choose ammunition">${setupAmmoPurchaseOptions(GEAR_CATALOG.filter(isAmmo), "Choose ammunition...")}</select></label>
-          <label>Caliber<select id="setupAmmoPurchaseCaliber">${setupAmmoCaliberOptions()}</select></label>
-          <label>Qty ${setupQuantityInput("setupAmmoPurchaseQty")}</label>
-          <div class="creator-actions"><button type="button" data-setup-action="addSetupAmmoPurchase">Buy Ammo</button></div>
-        </div>
-      </article>
-      <article class="setup-purchase-card">
-        <h5>Gear</h5>
-        ${setupPurchaseForm(
-          "Gear",
-          "setupGearPurchaseSelect",
-          "setupGearPurchaseQty",
-          "addSetupGearPurchase",
-          GEAR_CATALOG.filter((item) => !isAmmo(item)),
-        )}
-        ${setupPurchaseForm("Armor", "setupArmorPurchaseSelect", "setupArmorPurchaseQty", "addSetupArmorPurchase", ARMOR_CATALOG)}
-      </article>
-      ${setupPurchaseControl("Vehicles", "Vehicle", "setupVehiclePurchaseSelect", "setupVehiclePurchaseQty", "addSetupVehiclePurchase", VEHICLE_CATALOG)}
+      ${setupGearPicker(GEAR_CATALOG.filter((item) => !isAmmo(item)))}
+      ${setupArmorPicker(ARMOR_CATALOG)}
+      ${setupVehiclePicker(VEHICLE_CATALOG)}
     </div>
   </section>`;
 }
@@ -2568,6 +3006,144 @@ function renderSetupPlaceholder(title, body, details = []) {
   </section>`;
 }
 
+function setupReviewStepStatusCards() {
+  const steps = [
+    ["Concept", characterSetupStatus("concept")],
+    ["Attributes", characterSetupStatus("traits")],
+    ["Skills", characterSetupStatus("skills")],
+    ["Edges", characterSetupStatus("edges")],
+    ["Hindrances", characterSetupStatus("hindrances")],
+    ["Powers", characterSetupStatus("powers")],
+    ["Gear", characterSetupStatus("gear")],
+  ];
+  return `<section class="setup-trait-group setup-review-checklist" aria-labelledby="setupReviewChecklistHeading">
+    <h4 id="setupReviewChecklistHeading">Final Checklist</h4>
+    <div class="setup-review-status-grid">
+      ${steps
+        .map(
+          ([label, status]) => `<article class="setup-review-status-card">
+            <strong>${esc(label)}</strong>
+            ${setupStatusMarkup(status)}
+          </article>`,
+        )
+        .join("")}
+    </div>
+  </section>`;
+}
+
+function setupReviewWarningMessages({
+  ancestryNeedsReview,
+  arcaneEdgeCount,
+  edgeReport,
+  edgeSelectionEditable,
+  expectedHumanEdges,
+  hindranceEdgeSlots,
+  hindranceEdges,
+  hindranceSpending,
+  hindranceStats,
+  humanEdges,
+}) {
+  return [
+    ancestryNeedsReview
+      ? "Needs review: this profile currently supports Human only."
+      : "",
+    edgeSelectionEditable &&
+    hindranceStats.count &&
+    hindranceSpending.remaining > 0
+      ? "Hindrances incomplete: spend remaining Benefit Points or remove enough Hindrances to leave no unspent Benefit Points."
+      : "",
+    hindranceStats.overCap
+      ? `Above the standard Hindrance benefit cap: ${hindranceStats.total} points selected, ${hindranceStats.benefitPoints} Benefit Points under default rules. Record any extra reward as a table or GM exception.`
+      : "",
+    hindranceSpending.spent > hindranceSpending.available
+      ? "Needs review: Hindrance benefit spending exceeds earned Benefit Points."
+      : "",
+    edgeSelectionEditable && humanEdges < expectedHumanEdges
+      ? "Edges incomplete: select the Human free starting Edge."
+      : "",
+    edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
+      ? "You have unspent Edge points."
+      : "",
+    edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
+      ? "Edges need review: one or more Hindrance benefit Edges are not covered by Hindrance benefit spending and must be removed."
+      : "",
+    edgeSelectionEditable && edgeReport.invalidEdges.length
+      ? `Edges need review: ${edgeReport.invalidEdges
+          .map((item) => item.validation.messages.join(" "))
+          .join(" ")}`
+      : "",
+    arcaneEdgeCount > 1
+      ? "Needs review: more than one Arcane Background Edge is recorded."
+      : "",
+  ].filter(Boolean);
+}
+
+function setupReviewWarningsSection(messages, importWarnings) {
+  const warnings = [
+    ...messages.map((message) => ["Setup", message]),
+    ...importWarnings.map((warning) => [warning.name, warning.text]),
+  ];
+  return `<section class="setup-review-warnings" aria-labelledby="setupReviewWarningsHeading">
+    <h4 id="setupReviewWarningsHeading">Needs Attention</h4>
+    ${
+      warnings.length
+        ? warnings
+            .map(
+              ([title, text]) =>
+                `<article class="dossier-note warning"><strong>${esc(title)}</strong><p>${esc(text)}</p></article>`,
+            )
+            .join("")
+        : emptyState("No blocking setup warnings currently recorded.")
+    }
+  </section>`;
+}
+
+function setupReviewHindranceCards(hindrances) {
+  return `<section class="setup-review-list setup-review-compact-list" aria-labelledby="setupReviewHindrancesHeading">
+    <h4 id="setupReviewHindrancesHeading">Selected Hindrances</h4>
+    ${
+      hindrances.length
+        ? hindrances
+            .map(
+              (hindrance) =>
+                `<article class="dossier-note"><strong>${esc(hindrance.name || "Unnamed Hindrance")}</strong><p>${esc(hindrance.severity || "Unknown")} ? ${esc(hindrancePointText(hindrance))}</p></article>`,
+            )
+            .join("")
+        : emptyState("No Hindrances selected.")
+    }
+  </section>`;
+}
+
+function setupReviewSourceAuditSection(sourceAudit, sourceExceptionEditable) {
+  return `<details class="setup-review-details" open>
+    <summary>Setup Source Audit</summary>
+    <div class="setup-review-grid setup-review-audit-grid">
+      ${setupDetail("Setup Source Records", `${sourceAudit.explained.length} explained`)}
+      ${setupDetail("Needs GM/Table Exception", `${sourceAudit.needsExceptions.length}`)}
+    </div>
+    <div class="setup-review-list setup-review-compact-list">
+      ${
+        sourceAudit.records.length
+          ? sourceAudit.records
+              .map(
+                (record) =>
+                  `<article class="dossier-note${record.needsException ? " warning" : ""}"><strong>${esc(record.type)}: ${esc(record.label)}</strong><p>${
+                    record.needsException
+                      ? "Needs a GM/table exception note or a specific setup source."
+                      : `Explained by ${esc(record.sourceLabel)}.`
+                  }</p>${
+                    record.needsException && sourceExceptionEditable
+                      ? `<button type="button" class="ghost small-action" data-setup-action="markSetupException" data-setup-collection="${esc(record.collection)}" data-setup-record-id="${esc(record.recordId)}" data-setup-record-type="${esc(record.type)}" data-setup-record-label="${esc(record.label)}">Mark Exception</button>`
+                      : ""
+                  }</article>`,
+              )
+              .join("")
+          : emptyState("No source-tracked setup records yet.")
+      }
+    </div>
+  </details>`;
+}
+
 function renderSetupReview() {
   const importWarnings = character.reminders.filter(
     (reminder) => reminder.type === "Import Warning",
@@ -2593,138 +3169,92 @@ function renderSetupReview() {
   const gearCounts = gearReport.counts;
   const sourceAudit = setupSourceAuditReport();
   const sourceExceptionEditable = setupTraitsEditable();
+  const reviewWarnings = setupReviewWarningMessages({
+    ancestryNeedsReview,
+    arcaneEdgeCount,
+    edgeReport,
+    edgeSelectionEditable,
+    expectedHumanEdges,
+    hindranceEdgeSlots,
+    hindranceEdges,
+    hindranceSpending,
+    hindranceStats,
+    humanEdges,
+  });
+  const rankLabel = [character.rank, character.ancestry, character.archetype]
+    .filter(Boolean)
+    .join(" ? ");
+  const powerPointLabel = powerPoints
+    ? `${powerPoints.current} / ${powerPoints.max || "?"}`
+    : "Not recorded";
+
   return `<section id="setupReviewPanel" class="setup-step-panel" aria-labelledby="setupReviewHeading">
     <div class="section-title">
       <div>
         <h3 id="setupReviewHeading">Review</h3>
-        <p>Summary only. Full rules validation is not part of this slice.</p>
+        <p>Final check before saving or starting play. Fix anything marked incomplete, or leave clear notes for table-approved exceptions.</p>
       </div>
-      ${setupStatusMarkup("Needs review")}
+      ${setupStatusMarkup(character.creation?.finalized ? "Complete" : "Needs review")}
     </div>
-    <div class="setup-review-grid">
-      ${setupDetail("Name", character.name)}
-      ${setupDetail("Gender", character.gender)}
-      ${setupDetail("Age", character.age)}
-      ${setupDetail("Profession or Title", character.archetype)}
-      ${setupDetail("Race / Ancestry", character.ancestry)}
-      ${setupDetail("Player Name", character.player)}
-      ${setupDetail("Recorded Rank", character.rank)}
-      ${setupDetail("Hindrance Count", `${hindranceStats.count}`)}
-      ${setupDetail("Total Hindrance Points", `${hindranceStats.total}`)}
-      ${setupDetail("Hindrance Benefit Cap", `${hindranceStats.benefitCap}`)}
-      ${setupDetail("Hindrance Benefits Spent", `${hindranceSpending.spent} / ${hindranceSpending.available}`)}
-      ${setupDetail("Edge Count", `${edgeCount}`)}
-      ${setupDetail("Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
-      ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
-      ${setupDetail("Arcane Background Edges", `${arcaneEdgeCount}`)}
-      ${setupDetail("Known Powers", `${powersCount}`)}
-      ${setupDetail("Power Points", powerPoints ? `${powerPoints.current} / ${powerPoints.max || "—"}` : "Not recorded")}
-      ${setupDetail("Gear Items", `${gearCounts.totalItems}`)}
-      ${setupDetail("Money", money(gearCounts.moneyCents))}
-      ${setupDetail("Gear Status", gearReport.status)}
-      ${setupDetail("Gear Warnings", `${gearReport.warnings.length}`)}
-      ${setupDetail("Setup Source Records", `${sourceAudit.explained.length} explained`)}
-      ${setupDetail("Needs GM/Table Exception", `${sourceAudit.needsExceptions.length}`)}
-      ${setupDetail("Description", character.description)}
-      ${setupDetail("Background", character.background)}
-    </div>
-    ${
-      ancestryNeedsReview
-        ? '<p class="entry-warning">Needs review: this profile currently supports Human only.</p>'
-        : ""
-    }
-    ${
-      edgeSelectionEditable &&
-      hindranceStats.count &&
-      hindranceSpending.remaining > 0
-        ? '<p class="entry-warning">Hindrances incomplete: spend remaining Benefit Points or remove enough Hindrances to leave no unspent Benefit Points.</p>'
-        : ""
-    }
-    ${
-      hindranceStats.overCap
-        ? `<p class="entry-advisory"><strong>Above the standard Hindrance benefit cap:</strong> ${hindranceStats.total} points selected, ${hindranceStats.benefitPoints} Benefit Points under default rules. Record any extra reward as a table or GM exception.</p>`
-        : ""
-    }
-    ${
-      hindranceSpending.spent > hindranceSpending.available
-        ? '<p class="entry-warning">Needs review: Hindrance benefit spending exceeds earned Benefit Points.</p>'
-        : ""
-    }
-    ${
-      edgeSelectionEditable && humanEdges < expectedHumanEdges
-        ? '<p class="entry-warning">Edges incomplete: select the Human free starting Edge.</p>'
-        : ""
-    }
-    ${
-      edgeSelectionEditable && hindranceEdges < hindranceEdgeSlots
-        ? '<p class="entry-warning">Hindrances incomplete: choose all paid Hindrance benefit Edges or adjust Hindrance benefit spending.</p>'
-        : ""
-    }
-    ${
-      edgeSelectionEditable && hindranceEdges > hindranceEdgeSlots
-        ? '<p class="entry-warning">Edges need review: one or more Hindrance benefit Edges are not covered by Hindrance benefit spending and must be removed.</p>'
-        : ""
-    }
-    ${
-      edgeSelectionEditable && edgeReport.invalidEdges.length
-        ? `<p class="entry-warning">Edges need review: ${esc(
-            edgeReport.invalidEdges
-              .map((item) => item.validation.messages.join(" "))
-              .join(" "),
-          )}</p>`
-        : ""
-    }
-    ${
-      arcaneEdgeCount > 1
-        ? '<p class="entry-warning">Needs review: more than one Arcane Background Edge is recorded.</p>'
-        : ""
-    }
-    <div class="setup-review-list">
-      <h4>Selected Hindrances</h4>
-      ${
-        character.hindrances.length
-          ? character.hindrances
-              .map(
-                (hindrance) =>
-                  `<article class="dossier-note"><strong>${esc(hindrance.name || "Unnamed Hindrance")}</strong><p>${esc(hindrance.severity || "Unknown")} • ${esc(hindrancePointText(hindrance))}</p></article>`,
-              )
-              .join("")
-          : emptyState("No Hindrances selected yet.")
-      }
-    </div>
-    <div class="setup-review-list">
-      <h4>Setup Source Audit</h4>
-      ${
-        sourceAudit.records.length
-          ? sourceAudit.records
-              .map(
-                (record) =>
-                  `<article class="dossier-note${record.needsException ? " warning" : ""}"><strong>${esc(record.type)}: ${esc(record.label)}</strong><p>${
-                    record.needsException
-                      ? "Needs a GM/table exception note or a specific setup source."
-                      : `Explained by ${esc(record.sourceLabel)}.`
-                  }</p>${
-                    record.needsException && sourceExceptionEditable
-                      ? `<button type="button" class="ghost small-action" data-setup-action="markSetupException" data-setup-collection="${esc(record.collection)}" data-setup-record-id="${esc(record.recordId)}" data-setup-record-type="${esc(record.type)}" data-setup-record-label="${esc(record.label)}">Mark Exception</button>`
-                      : ""
-                  }</article>`,
-              )
-              .join("")
-          : emptyState("No source-tracked setup records yet.")
-      }
-    </div>
-    <div class="setup-review-warnings">
-      <h4>Import Warnings</h4>
-      ${
-        importWarnings.length
-          ? importWarnings
-              .map(
-                (warning) =>
-                  `<article class="dossier-note warning"><strong>${esc(warning.name)}</strong><p>${esc(warning.text)}</p></article>`,
-              )
-              .join("")
-          : emptyState("No import warnings.")
-      }
-    </div>
+    <section class="setup-trait-group setup-review-hero" aria-labelledby="setupReviewCharacterHeading">
+      <h4 id="setupReviewCharacterHeading">Character Summary</h4>
+      <article class="setup-review-character-card">
+        <div>
+          <strong>${esc(character.name || "Unnamed Character")}</strong>
+          <span>${esc(rankLabel || "Novice ? Human")}</span>
+          <p>${esc([character.gender, character.age, character.player ? `Player: ${character.player}` : ""].filter(Boolean).join(" ? ") || "Concept details incomplete.")}</p>
+        </div>
+      </article>
+      <div class="setup-review-grid setup-review-concept-grid">
+        ${setupDetail("Name", character.name)}
+        ${setupDetail("Gender", character.gender)}
+        ${setupDetail("Age", character.age)}
+        ${setupDetail("Profession or Title", character.archetype)}
+        ${setupDetail("Race / Ancestry", character.ancestry)}
+        ${setupDetail("Player Name", character.player)}
+        ${setupDetail("Recorded Rank", character.rank)}
+      </div>
+    </section>
+    ${setupReviewStepStatusCards()}
+    ${setupReviewWarningsSection(reviewWarnings, importWarnings)}
+    <section class="setup-trait-group setup-review-summary" aria-labelledby="setupReviewBuildHeading">
+      <h4 id="setupReviewBuildHeading">Build Summary</h4>
+      <div class="setup-review-grid setup-review-meter-grid">
+        ${setupMeterSummary("Benefit Points", hindranceStats.benefitPoints, hindranceStats.benefitCap, "Earned Hindrance Benefit Points toward the standard starting cap.")}
+        ${setupMeterSummary("Benefits Spent", hindranceSpending.spent, hindranceSpending.available, "Benefit Points spent on starting bonuses.")}
+        ${setupMeterSummary("Free Edge", humanEdges, expectedHumanEdges, "Human free starting Edge slots filled.")}
+        ${setupMeterSummary("Hindrance Benefit Edges", hindranceEdges, hindranceEdgeSlots, "Extra Edge slots bought with Hindrance benefits.")}
+      </div>
+      <div class="setup-review-grid setup-review-core-grid">
+        ${setupDetail("Edge Count", `${edgeCount}`)}
+        ${setupDetail("Arcane Background Edges", `${arcaneEdgeCount}`)}
+        ${setupDetail("Known Powers", `${powersCount}`)}
+        ${setupDetail("Power Points", powerPointLabel)}
+        ${setupDetail("Gear Items", `${gearCounts.totalItems}`)}
+        ${setupDetail("Money", money(gearCounts.moneyCents))}
+        ${setupDetail("Gear Status", gearReport.status)}
+        ${setupDetail("Gear Warnings", `${gearReport.warnings.length}`)}
+      </div>
+    </section>
+    ${setupReviewHindranceCards(character.hindrances || [])}
+    <details class="setup-review-details" open>
+      <summary>Concept Notes</summary>
+      <div class="setup-review-grid setup-review-notes-grid">
+        ${setupDetail("Description", character.description)}
+        ${setupDetail("Background", character.background)}
+      </div>
+    </details>
+    <details class="setup-review-details">
+      <summary>Audit Details</summary>
+      <div class="setup-review-grid setup-review-audit-grid">
+        ${setupDetail("Hindrance Count", `${hindranceStats.count}`)}
+        ${setupDetail("Total Hindrance Points", `${hindranceStats.total}`)}
+        ${setupDetail("Hindrance Benefit Cap", `${hindranceStats.benefitCap}`)}
+        ${setupDetail("Hindrance Benefits Spent", `${hindranceSpending.spent} / ${hindranceSpending.available}`)}
+        ${setupDetail("Free Edge", edgeSelectionEditable ? `${humanEdges} / ${expectedHumanEdges}` : "Source unknown")}
+        ${setupDetail("Hindrance Benefit Edges", edgeSelectionEditable ? `${hindranceEdges} / ${hindranceEdgeSlots}` : "Source unknown")}
+      </div>
+    </details>
+    ${setupReviewSourceAuditSection(sourceAudit, sourceExceptionEditable)}
   </section>`;
 }

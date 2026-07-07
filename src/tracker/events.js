@@ -99,6 +99,18 @@ document.addEventListener("click", async (event) => {
   if (setupWeaponSort) {
     sortSetupWeaponPicker(setupWeaponSort.dataset.setupWeaponSort || "");
   }
+  const setupGearSort = event.target?.closest?.("[data-setup-gear-sort]");
+  if (setupGearSort) {
+    sortSetupGearPicker(setupGearSort.dataset.setupGearSort || "");
+  }
+  const setupArmorSort = event.target?.closest?.("[data-setup-armor-sort]");
+  if (setupArmorSort) {
+    sortSetupArmorPicker(setupArmorSort.dataset.setupArmorSort || "");
+  }
+  const setupVehicleSort = event.target?.closest?.("[data-setup-vehicle-sort]");
+  if (setupVehicleSort) {
+    sortSetupVehiclePicker(setupVehicleSort.dataset.setupVehicleSort || "");
+  }
   const setupStep = event.target?.closest?.("[data-setup-step]");
   if (setupStep) {
     collectConceptInputs();
@@ -158,17 +170,33 @@ document.addEventListener("click", async (event) => {
   ) {
     setSetupStartingPowerPoints();
   } else if (setupAction?.dataset.setupAction === "addSetupGearPurchase") {
-    addSetupGearPurchase();
-  } else if (setupAction?.dataset.setupAction === "addSetupAmmoPurchase") {
-    addSetupAmmoPurchase();
+    addSetupGearPurchase(setupAction.dataset.setupGearId || "");
+  } else if (setupAction?.dataset.setupAction === "adjustSetupAmmoQuantity") {
+    adjustSetupAmmoQuantity(
+      setupAction.dataset.setupWeaponId || "",
+      Number(setupAction.dataset.direction) || 0,
+    );
+  } else if (setupAction?.dataset.setupAction === "addSetupAmmoForWeapon") {
+    addSetupAmmoForWeapon(setupAction.dataset.setupWeaponId || "");
   } else if (setupAction?.dataset.setupAction === "addSetupArmorPurchase") {
-    addSetupArmorPurchase();
+    addSetupArmorPurchase(setupAction.dataset.setupArmorId || "");
   } else if (setupAction?.dataset.setupAction === "addSetupWeaponPurchase") {
     addSetupWeaponPurchase(setupAction.dataset.setupWeaponId || "");
   } else if (setupAction?.dataset.setupAction === "addSetupVehiclePurchase") {
-    addSetupVehiclePurchase();
+    addSetupVehiclePurchase(setupAction.dataset.setupVehicleId || "");
   } else if (setupAction?.dataset.setupAction === "sellBackSetupGear") {
     sellBackSetupGearPurchase(
+      setupAction.dataset.setupGearType || "",
+      setupAction.dataset.setupGearId || "",
+    );
+  } else if (setupAction?.dataset.setupAction === "moveSetupGearToBackpack") {
+    moveSetupGearToBackpack(
+      setupAction.dataset.setupGearType || "",
+      setupAction.dataset.setupGearId || "",
+      setupAction.dataset.setupBackpackId || "",
+    );
+  } else if (setupAction?.dataset.setupAction === "moveSetupGearToBody") {
+    moveSetupGearToBody(
       setupAction.dataset.setupGearType || "",
       setupAction.dataset.setupGearId || "",
     );
@@ -208,12 +236,42 @@ document.addEventListener("click", async (event) => {
   if (!event.target?.closest?.(".header-tools")) closeHeaderMenu();
 });
 
+document.addEventListener(
+  "toggle",
+  (event) => {
+    const picker = event.target?.matches?.(".setup-catalog-picker")
+      ? event.target
+      : null;
+    if (!picker?.open) return;
+    const setupGearPanel = picker.closest("#setupGearPanel");
+    if (!setupGearPanel) return;
+    setupGearPanel
+      .querySelectorAll(".setup-catalog-picker[open]")
+      .forEach((otherPicker) => {
+        if (otherPicker !== picker) otherPicker.open = false;
+      });
+  },
+  true,
+);
+
 document.addEventListener("input", (event) => {
   const conceptInput = event.target?.closest?.("[data-concept-field]");
   if (conceptInput) applyConceptField(conceptInput);
   if (event.target?.closest?.("#catalogSearchInput")) renderCatalogBrowser();
   if (event.target?.closest?.("#setupWeaponSearchInput"))
     filterSetupWeaponPicker();
+  if (event.target?.closest?.("#setupGearSearchInput")) filterSetupGearPicker();
+  if (event.target?.closest?.("#setupArmorSearchInput"))
+    filterSetupArmorPicker();
+  if (event.target?.closest?.("#setupVehicleSearchInput"))
+    filterSetupVehiclePicker();
+  const setupAmmoQuantity = event.target?.closest?.(
+    "[data-setup-ammo-weapon-id]",
+  );
+  if (setupAmmoQuantity)
+    updateSetupAmmoQuantityTotal(
+      setupAmmoQuantity.dataset.setupAmmoWeaponId || "",
+    );
 });
 
 document.addEventListener("change", (event) => {
@@ -222,6 +280,12 @@ document.addEventListener("change", (event) => {
   if (event.target?.closest?.("[data-catalog-filter]")) renderCatalogBrowser();
   if (event.target?.closest?.("#setupWeaponCategoryFilter"))
     filterSetupWeaponPicker();
+  if (event.target?.closest?.("#setupGearCategoryFilter"))
+    filterSetupGearPicker();
+  if (event.target?.closest?.("#setupArmorLocationFilter"))
+    filterSetupArmorPicker();
+  if (event.target?.closest?.("#setupVehicleCategoryFilter"))
+    filterSetupVehiclePicker();
   if (event.target?.closest?.("#setupHindranceCatalogSelect")) {
     syncSetupHindranceSeverity();
     updateSetupHindranceSelectionPreview();

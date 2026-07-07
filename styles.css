@@ -653,6 +653,12 @@ h3 {
   border-color: rgba(255, 113, 95, 0.58);
 }
 
+body:has(#setupGearPanel) .toast-region {
+  right: auto;
+  left: 1rem;
+  width: min(20rem, calc(100vw - 2rem));
+}
+
 .app-dialog {
   box-sizing: border-box;
   width: max-content;
@@ -2497,8 +2503,17 @@ h3 {
 .setup-gear-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(12rem, 18vw, 16rem);
+  grid-template-areas: "shop inventory";
   gap: 0.75rem;
   align-items: start;
+}
+
+.setup-gear-workbench > .setup-trait-group:not(.setup-recorded-gear) {
+  grid-area: shop;
+}
+
+.setup-gear-workbench > .setup-recorded-gear {
+  grid-area: inventory;
 }
 
 .setup-purchase-card-list {
@@ -2521,6 +2536,46 @@ h3 {
   margin: 0;
   color: var(--dossier-ink);
   font-size: 0.96rem;
+}
+
+.setup-catalog-picker-title {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  column-gap: 0.35rem;
+  row-gap: 0.16rem;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+
+.setup-catalog-picker-title h5 {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.setup-catalog-picker-title::-webkit-details-marker {
+  display: none;
+}
+
+.setup-catalog-picker-title::after {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: start;
+  color: var(--dossier-muted);
+  content: "\25b8";
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+}
+
+.setup-catalog-picker[open] > .setup-catalog-picker-title::after {
+  content: "\25be";
+}
+
+.setup-catalog-picker-title span {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  color: var(--dossier-muted);
+  font-size: 0.78rem;
 }
 
 .setup-purchase-form {
@@ -2560,14 +2615,11 @@ h3 {
 }
 
 .setup-catalog-picker-controls {
-  grid-template-columns: minmax(14rem, 1fr) minmax(9rem, 12rem) minmax(
-      5rem,
-      6rem
-    );
+  grid-template-columns: minmax(14rem, 1fr) minmax(9rem, 12rem);
 }
 
 .setup-catalog-picker-header,
-.setup-catalog-picker-row {
+.setup-catalog-picker-summary {
   display: grid;
   grid-template-columns:
     minmax(7.5rem, 1.1fr) minmax(4.5rem, 0.5fr)
@@ -2577,8 +2629,44 @@ h3 {
   align-items: center;
 }
 
+.setup-gear-catalog-picker .setup-catalog-picker-header,
+.setup-gear-catalog-picker .setup-catalog-picker-summary {
+  grid-template-columns:
+    minmax(8rem, 1fr) minmax(7rem, 0.7fr) 4.25rem 4.25rem
+    3.75rem;
+}
+
+.setup-armor-catalog-picker .setup-catalog-picker-header,
+.setup-armor-catalog-picker .setup-catalog-picker-summary {
+  grid-template-columns:
+    minmax(8rem, 1fr) 3.5rem minmax(5.8rem, 0.7fr) 4rem 4.25rem
+    4.25rem 3.75rem;
+}
+
+.setup-vehicle-catalog-picker .setup-catalog-picker-header,
+.setup-vehicle-catalog-picker .setup-catalog-picker-summary {
+  grid-template-columns:
+    minmax(5.75rem, 0.85fr) minmax(4.75rem, 0.55fr) 4.25rem 3.6rem
+    4.85rem 3.25rem minmax(6.5rem, 7rem) 3rem;
+  gap: 0.35rem;
+}
+
+.setup-vehicle-catalog-picker .setup-catalog-picker-header {
+  padding-right: 0.35rem;
+  padding-left: 0.35rem;
+}
+
+.setup-vehicle-catalog-picker .setup-catalog-picker-row {
+  padding-right: 0.35rem;
+  padding-left: 0.35rem;
+}
+
 .setup-catalog-picker-header {
+  position: sticky;
+  z-index: 1;
+  top: 0;
   padding: 0.2rem 0.55rem 0;
+  background: #f7eedc;
   color: var(--dossier-muted);
   font-family: var(--font-display);
   font-size: 0.72rem;
@@ -2604,18 +2692,32 @@ h3 {
   cursor: pointer;
 }
 
+.setup-catalog-picker-header > :not(:first-child):not(:last-child) {
+  justify-self: center;
+  text-align: center;
+}
+
 .setup-catalog-sort-button.active::after {
-  content: " ↑";
+  content: " \2191";
 }
 
 .setup-catalog-sort-button.active[aria-sort="descending"]::after {
-  content: " ↓";
+  content: " \2193";
 }
 
 .setup-catalog-sort-button[data-setup-weapon-sort="range"],
 .setup-catalog-sort-button[data-setup-weapon-sort="damage"],
 .setup-catalog-sort-button[data-setup-weapon-sort="price"],
-.setup-catalog-sort-button[data-setup-weapon-sort="weight"] {
+.setup-catalog-sort-button[data-setup-weapon-sort="weight"],
+.setup-catalog-sort-button[data-setup-armor-sort="armor"],
+.setup-catalog-sort-button[data-setup-armor-sort="min-str"],
+.setup-catalog-sort-button[data-setup-armor-sort="price"],
+.setup-catalog-sort-button[data-setup-armor-sort="weight"],
+.setup-catalog-sort-button[data-setup-vehicle-sort="handling"],
+.setup-catalog-sort-button[data-setup-vehicle-sort="speed"],
+.setup-catalog-sort-button[data-setup-vehicle-sort="toughness"],
+.setup-catalog-sort-button[data-setup-vehicle-sort="crew"],
+.setup-catalog-sort-button[data-setup-vehicle-sort="price"] {
   justify-self: center;
   text-align: center;
 }
@@ -2633,6 +2735,10 @@ h3 {
   border: 1px solid rgba(121, 73, 24, 0.24);
   border-radius: 8px;
   background: rgba(255, 250, 239, 0.38);
+}
+
+.setup-catalog-picker-summary {
+  min-width: 0;
 }
 
 .setup-catalog-picker-cell {
@@ -2659,6 +2765,15 @@ h3 {
 
 .setup-catalog-picker-price,
 .setup-catalog-picker-load,
+.setup-catalog-picker-armor,
+.setup-catalog-picker-location,
+.setup-catalog-picker-min-str,
+.setup-catalog-picker-handling,
+.setup-catalog-picker-speed,
+.setup-catalog-picker-toughness,
+.setup-catalog-picker-crew,
+.setup-catalog-picker-type,
+.setup-catalog-picker-damage,
 .setup-catalog-picker-range,
 .setup-catalog-picker-rof {
   justify-self: center;
@@ -2670,6 +2785,50 @@ h3 {
   align-self: end;
   justify-self: end;
   justify-content: flex-end;
+}
+
+.setup-catalog-picker-details {
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--dossier-rule);
+}
+
+.setup-catalog-picker-details summary {
+  color: var(--dossier-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.setup-catalog-picker-detail-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.setup-catalog-picker-detail-list span {
+  display: inline-flex;
+  padding: 0.14rem 0.42rem;
+  border: 1px solid rgba(121, 73, 24, 0.18);
+  border-radius: 999px;
+  background: rgba(121, 73, 24, 0.07);
+  color: var(--dossier-ink);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.setup-catalog-picker-detail-list p {
+  flex-basis: 100%;
+  margin: 0.1rem 0 0;
+  color: var(--dossier-muted);
+  font-size: 0.8rem;
+}
+
+.setup-vehicle-catalog-picker .setup-catalog-picker-add button {
+  min-width: 3rem;
+  padding-right: 0.5rem;
+  padding-left: 0.5rem;
 }
 
 .setup-form-grid label {
@@ -3065,6 +3224,14 @@ h3 {
   padding: 0.52rem 0.65rem;
 }
 
+.setup-gear-card-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: start;
+  min-width: 0;
+}
+
 .setup-gear-line .setup-gear-card-summary {
   display: grid;
   grid-template-columns: 0.85rem minmax(0, 1fr);
@@ -3101,13 +3268,13 @@ h3 {
 }
 
 .setup-gear-card-disclosure .setup-gear-card-arrow::before {
-  content: "▸";
+  content: "\25b8";
 }
 
 .setup-gear-line-details[open]
   > .setup-gear-card-disclosure
   .setup-gear-card-arrow::before {
-  content: "▾";
+  content: "\25be";
 }
 
 .setup-gear-line-details {
@@ -3160,15 +3327,134 @@ h3 {
 }
 
 .setup-recorded-gear {
+  box-sizing: border-box;
   position: sticky;
   top: 0.85rem;
   max-height: calc(100vh - 1.7rem);
   overflow: auto;
+  padding-inline-end: 0.35rem;
+  scrollbar-gutter: stable;
 }
 
 .setup-gear-actions {
+  gap: 0.35rem;
   justify-content: flex-start;
   margin: 0;
+}
+
+.setup-gear-management-actions {
+  justify-content: space-between;
+}
+
+.setup-gear-management-actions button:first-child:not(:last-child) {
+  margin-right: auto;
+}
+
+.setup-gear-management-actions .danger-lite {
+  margin-left: auto;
+}
+
+.setup-gear-summary-actions {
+  align-self: start;
+  justify-content: flex-end;
+}
+
+.setup-gear-summary-actions button {
+  min-height: 1.65rem;
+  padding: 0.16rem 0.48rem;
+  font-size: 0.68rem;
+}
+
+.setup-weapon-ammo-actions {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: start;
+  justify-items: start;
+  gap: 0.26rem;
+  padding-top: 0.1rem;
+}
+
+.setup-weapon-ammo-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--dossier-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.setup-weapon-ammo-cost {
+  grid-column: 1 / -1;
+  justify-self: start;
+  color: var(--dossier-muted);
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.setup-weapon-ammo-cost strong {
+  color: var(--dossier-ink);
+}
+
+.setup-weapon-ammo-stepper {
+  display: inline-grid;
+  grid-template-columns: 1.08rem 2.08rem 1.08rem;
+  align-items: center;
+  gap: 0.16rem;
+}
+
+.setup-weapon-ammo-stepper .tag-action {
+  box-sizing: border-box;
+  justify-content: center;
+  width: 1.08rem;
+  min-width: 1.08rem;
+  height: 1.08rem;
+  min-height: 1.08rem;
+  padding: 0;
+  border-color: rgba(151, 103, 38, 0.36);
+  border-radius: 50%;
+  background: linear-gradient(180deg, #edc98f, #dba866);
+  color: #5b3217;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.setup-weapon-ammo-qty {
+  box-sizing: border-box;
+  width: 2.24rem;
+  min-height: 1.42rem;
+  padding: 0.12rem 0.2rem;
+  border: 1px solid var(--dossier-rule);
+  border-radius: 999px;
+  background: rgba(255, 250, 239, 0.58);
+  color: var(--dossier-ink);
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.setup-weapon-ammo-qty::-webkit-outer-spin-button,
+.setup-weapon-ammo-qty::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.setup-weapon-ammo-qty {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.setup-weapon-ammo-buy {
+  flex: 0 0 auto;
+  justify-self: start;
+  min-width: 4.45rem;
+  min-height: 1.45rem;
+  padding: 0.16rem 0.35rem;
+  font-size: 0.68rem;
 }
 
 .setup-audit-group {
@@ -3323,6 +3609,108 @@ h3 {
 }
 
 .setup-review-warnings {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.setup-review-hero,
+.setup-review-summary,
+.setup-review-checklist,
+.setup-review-details,
+.setup-review-compact-list {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--dossier-rule);
+  border-left: 4px solid rgba(121, 73, 24, 0.58);
+  border-radius: 8px;
+  background: rgba(255, 250, 239, 0.5);
+}
+
+.setup-review-character-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(121, 73, 24, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 250, 239, 0.58);
+}
+
+.setup-review-character-card strong {
+  display: block;
+  color: var(--dossier-ink);
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+}
+
+.setup-review-character-card span,
+.setup-review-character-card p {
+  margin: 0;
+  color: var(--dossier-muted);
+  font-size: 0.86rem;
+}
+
+.setup-review-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.55rem;
+}
+
+.setup-review-status-card {
+  display: grid;
+  align-content: space-between;
+  justify-items: center;
+  min-height: 4.65rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(121, 73, 24, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 250, 239, 0.46);
+  text-align: center;
+}
+
+.setup-review-status-card strong {
+  color: var(--dossier-ink);
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+}
+
+.setup-review-status-card .setup-status {
+  justify-content: center;
+  width: 6.25rem;
+  min-height: 1.75rem;
+}
+
+.setup-review-meter-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.setup-review-core-grid,
+.setup-review-concept-grid,
+.setup-review-audit-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.setup-review-notes-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.setup-review-details {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.setup-review-details summary {
+  color: var(--dossier-ink);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.setup-review-details > *:not(summary) {
+  margin-top: 0.65rem;
+}
+
+.setup-review-compact-list {
   display: grid;
   gap: 0.55rem;
 }
@@ -4562,6 +4950,13 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .setup-review-meter-grid,
+  .setup-review-core-grid,
+  .setup-review-concept-grid,
+  .setup-review-audit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .attribute-dice-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -4756,7 +5151,7 @@ h3 {
   .setup-gear-groups,
   .setup-catalog-picker-controls,
   .setup-catalog-picker-header,
-  .setup-catalog-picker-row,
+  .setup-catalog-picker-summary,
   .setup-edge-details {
     grid-template-columns: 1fr;
   }
@@ -4791,6 +5186,12 @@ h3 {
     overflow: visible;
   }
 
+  .setup-gear-workbench {
+    grid-template-areas:
+      "shop"
+      "inventory";
+  }
+
   .setup-purchase-form .creator-actions {
     grid-column: 1 / -1;
     justify-self: stretch;
@@ -4800,9 +5201,29 @@ h3 {
     display: none;
   }
 
+  .setup-catalog-picker-list {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
   .setup-catalog-picker-row {
     align-items: stretch;
     gap: 0.45rem;
+    padding: 0.7rem;
+  }
+
+  .setup-catalog-picker-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.38rem;
+    align-items: stretch;
+  }
+
+  .setup-gear-catalog-picker .setup-catalog-picker-summary,
+  .setup-armor-catalog-picker .setup-catalog-picker-summary,
+  .setup-vehicle-catalog-picker .setup-catalog-picker-summary {
+    grid-template-columns: 1fr;
   }
 
   .setup-catalog-picker-cell {
@@ -4829,6 +5250,7 @@ h3 {
 
   .setup-catalog-picker-add {
     justify-content: flex-end;
+    padding-top: 0.2rem;
   }
 
   .setup-catalog-picker-name::before,
@@ -4837,10 +5259,24 @@ h3 {
   }
 
   .setup-catalog-picker-name strong {
-    font-size: 1rem;
+    font-size: 1.03rem;
+  }
+
+  body:has(#setupGearPanel) .toast-region {
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
   }
 
   .setup-review-grid.setup-hindrance-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-review-meter-grid,
+  .setup-review-core-grid,
+  .setup-review-concept-grid,
+  .setup-review-audit-grid,
+  .setup-review-notes-grid {
     grid-template-columns: 1fr;
   }
 
@@ -4931,6 +5367,21 @@ h3 {
   .dialog-actions button,
   .dialog-choices button {
     flex: 1 1 auto;
+  }
+
+  .setup-weapon-ammo-actions {
+    justify-content: start;
+    justify-items: start;
+  }
+
+  .setup-weapon-ammo-buy,
+  .setup-weapon-ammo-stepper .tag-action {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .setup-weapon-ammo-stepper .tag-action {
+    width: 1.08rem;
   }
 }
 

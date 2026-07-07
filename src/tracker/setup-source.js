@@ -241,6 +241,95 @@ function setupGearRecordDetail(record, purchaseType = "gear") {
   };
 }
 
+function setupStartingGearStackCount(record) {
+  return Math.max(
+    1,
+    Math.floor(Number(record?.count ?? record?.quantity ?? 1) || 1),
+  );
+}
+
+function setupStartingGearRecordId(record, purchaseType, index) {
+  const baseId = record?.id || record?.catalogId || purchaseType || "gear";
+  return `${baseId}-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeSingleSetupStartingGearRecord(record, purchaseType, index) {
+  const normalized = index === 0 ? record : clone(record);
+  if (index > 0)
+    normalized.id = setupStartingGearRecordId(record, purchaseType, index);
+  normalized.catalogId ||= record?.catalogId || record?.id || "";
+  normalized.count = 1;
+  delete normalized.quantity;
+  if (normalized.sourceDetail && typeof normalized.sourceDetail === "object") {
+    normalized.sourceDetail = {
+      ...normalized.sourceDetail,
+      purchaseType,
+      catalogId: normalized.catalogId || normalized.id || "",
+      quantity: 1,
+    };
+  }
+  normalizeSetupSourceFields(
+    normalized,
+    "setup-starting-gear",
+    setupGearRecordDetail(normalized, purchaseType),
+  );
+  return normalized;
+}
+
+function normalizeSetupStartingGearStackedRecords(
+  records,
+  purchaseType = "gear",
+) {
+  if (!Array.isArray(records)) return [];
+  const normalizedRecords = [];
+  records.forEach((record) => {
+    if (!record || typeof record !== "object") return;
+    if (Array.isArray(record.contents)) {
+      record.contents = normalizeSetupStartingGearStackedRecords(
+        record.contents,
+        "gear",
+      );
+    }
+    const count = setupStartingGearStackCount(record);
+    const isSetupStartingGear =
+      normalizeSetupSourceToken(record.creationSource) ===
+      "setup-starting-gear";
+    if (!isSetupStartingGear || count <= 1) {
+      normalizedRecords.push(record);
+      return;
+    }
+    for (let index = 0; index < count; index += 1) {
+      normalizedRecords.push(
+        normalizeSingleSetupStartingGearRecord(record, purchaseType, index),
+      );
+    }
+  });
+  return normalizedRecords;
+}
+
+function normalizeSetupStartingGearStacks(currentCharacter = character) {
+  currentCharacter.inventory = normalizeSetupStartingGearStackedRecords(
+    currentCharacter.inventory,
+    "gear",
+  );
+  currentCharacter.weapons = normalizeSetupStartingGearStackedRecords(
+    currentCharacter.weapons,
+    "weapon",
+  );
+  currentCharacter.armorInventory = normalizeSetupStartingGearStackedRecords(
+    currentCharacter.armorInventory,
+    "armor",
+  );
+  currentCharacter.vehicles = normalizeSetupStartingGearStackedRecords(
+    currentCharacter.vehicles,
+    "vehicle",
+  );
+  currentCharacter.consumables = normalizeSetupStartingGearStackedRecords(
+    currentCharacter.consumables,
+    "consumable",
+  );
+}
+
 /**
  * Normalize setup source tracking across every setup-owned collection.
  *
@@ -275,7 +364,10 @@ function normalizeSetupSourceTracking(
     normalizeSetupSourceFields(ammo),
   );
 
-  if (!assumeCurrentRecordsAreSetup) return currentCharacter;
+  if (!assumeCurrentRecordsAreSetup) {
+    normalizeSetupStartingGearStacks(currentCharacter);
+    return currentCharacter;
+  }
 
   (currentCharacter.powers || []).forEach((power) =>
     normalizeSetupSourceFields(power, "setup-starting-power", {
@@ -333,6 +425,7 @@ function normalizeSetupSourceTracking(
     ),
   );
 
+  normalizeSetupStartingGearStacks(currentCharacter);
   return currentCharacter;
 }
 

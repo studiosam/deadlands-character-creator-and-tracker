@@ -44,6 +44,7 @@ useAppTestHooks();
 
 async function addSetupWeaponFromPicker(page, weaponName) {
   const setupGearPanel = page.locator("#setupGearPanel");
+  await openSetupPicker(page, "#setupWeaponPicker");
   await page.locator("#setupWeaponSearchInput").fill(weaponName);
   const row = setupGearPanel
     .locator("[data-setup-weapon-row]")
@@ -56,10 +57,78 @@ function visibleWeaponRows(page) {
   return page.locator("#setupWeaponPicker [data-setup-weapon-row]:visible");
 }
 
+function visibleGearRows(page) {
+  return page.locator("#setupGearPicker [data-setup-gear-row]:visible");
+}
+
+function visibleArmorRows(page) {
+  return page.locator("#setupArmorPicker [data-setup-armor-row]:visible");
+}
+
+function visibleVehicleRows(page) {
+  return page.locator("#setupVehiclePicker [data-setup-vehicle-row]:visible");
+}
+
+function exactTextPattern(text) {
+  return new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
+}
+
+async function openSetupPicker(page, selector) {
+  const picker = page.locator(selector);
+  await expect(picker).toBeVisible();
+  const isOpen = await picker.evaluate((element) =>
+    "open" in element ? element.open : true,
+  );
+  if (!isOpen) {
+    await picker.locator(".setup-catalog-picker-title").click();
+  }
+}
+
+function setupGearCardByName(page, itemName) {
+  return page.locator(".setup-gear-line").filter({
+    has: page.locator(".setup-gear-card-summary > strong", {
+      hasText: exactTextPattern(itemName),
+    }),
+  });
+}
+
 async function visibleWeaponNames(page) {
   return visibleWeaponRows(page)
     .locator(".setup-catalog-picker-name strong")
     .allTextContents();
+}
+
+async function addSetupGearFromPicker(page, gearName) {
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await openSetupPicker(page, "#setupGearPicker");
+  await page.locator("#setupGearSearchInput").fill(gearName);
+  const row = setupGearPanel
+    .locator("[data-setup-gear-row]")
+    .filter({ hasText: gearName });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Buy" }).click();
+}
+
+async function addSetupArmorFromPicker(page, armorName) {
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await openSetupPicker(page, "#setupArmorPicker");
+  await page.locator("#setupArmorSearchInput").fill(armorName);
+  const row = setupGearPanel
+    .locator("[data-setup-armor-row]")
+    .filter({ hasText: armorName });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Buy" }).click();
+}
+
+async function addSetupVehicleFromPicker(page, vehicleName) {
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await openSetupPicker(page, "#setupVehiclePicker");
+  await page.locator("#setupVehicleSearchInput").fill(vehicleName);
+  const row = setupGearPanel
+    .locator("[data-setup-vehicle-row]")
+    .filter({ hasText: vehicleName });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Buy" }).click();
 }
 
 test("Gear setup audit separates money carried gear stored gear and load", async ({
@@ -225,8 +294,8 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   ).toHaveCount(1);
   await expect(setupGearPanel.locator(".setup-purchase-card h5")).toHaveText([
     "Weapons",
-    "Ammunition",
     "Gear",
+    "Armor",
     "Vehicles",
   ]);
   await expect(
@@ -234,30 +303,112 @@ test("Gear setup audit separates money carried gear stored gear and load", async
   ).toHaveCount(0);
   await expect(page.locator("#setupWeaponSearchInput")).toBeVisible();
   await expect(page.locator("#setupWeaponCategoryFilter")).toBeVisible();
+  await expect(page.locator("#setupWeaponPurchaseQty")).toHaveCount(0);
+  const weaponPicker = setupGearPanel.locator("#setupWeaponPicker");
   await expect(
-    setupGearPanel.locator(".setup-catalog-picker-header"),
+    weaponPicker.locator(".setup-catalog-picker-header"),
   ).toContainText("Name");
   await expect(
-    setupGearPanel.locator(".setup-catalog-picker-header"),
+    weaponPicker.locator(".setup-catalog-picker-header"),
   ).toContainText("Type");
   await expect(
-    setupGearPanel.locator(".setup-catalog-picker-header"),
+    weaponPicker.locator(".setup-catalog-picker-header"),
   ).toContainText("Damage");
   await expect(
-    setupGearPanel.locator(".setup-catalog-picker-header"),
+    weaponPicker.locator(".setup-catalog-picker-header"),
   ).toContainText("Range");
   await expect(
-    setupGearPanel.locator(".setup-catalog-picker-header"),
+    weaponPicker.locator(".setup-catalog-picker-header"),
   ).toContainText("RoF / Shots");
   await expect(
-    setupGearPanel.locator(".setup-catalog-picker-header"),
+    weaponPicker.locator(".setup-catalog-picker-header"),
   ).toContainText("Price");
   await expect(
-    setupGearPanel.locator(".setup-catalog-picker-header"),
+    weaponPicker.locator(".setup-catalog-picker-header"),
   ).toContainText("Load");
   await expect(
-    setupGearPanel.locator(".setup-catalog-picker-header"),
+    weaponPicker.locator(".setup-catalog-picker-header"),
   ).not.toContainText("Notes");
+  const gearPicker = setupGearPanel.locator("#setupGearPicker");
+  await expect(setupGearPanel.locator("#setupGearPurchaseSelect")).toHaveCount(
+    0,
+  );
+  await expect(setupGearPanel.locator("#setupGearPurchaseQty")).toHaveCount(0);
+  await expect(page.locator("#setupGearSearchInput")).toBeHidden();
+  await openSetupPicker(page, "#setupGearPicker");
+  await expect(page.locator("#setupGearSearchInput")).toBeVisible();
+  await expect(page.locator("#setupGearCategoryFilter")).toBeVisible();
+  await expect(
+    gearPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Name");
+  await expect(
+    gearPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Type");
+  await expect(
+    gearPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Price");
+  await expect(
+    gearPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Load");
+  const armorPicker = setupGearPanel.locator("#setupArmorPicker");
+  await expect(setupGearPanel.locator("#setupArmorPurchaseSelect")).toHaveCount(
+    0,
+  );
+  await expect(setupGearPanel.locator("#setupArmorPurchaseQty")).toHaveCount(0);
+  await expect(page.locator("#setupArmorSearchInput")).toBeHidden();
+  await openSetupPicker(page, "#setupArmorPicker");
+  await expect(page.locator("#setupArmorSearchInput")).toBeVisible();
+  await expect(page.locator("#setupArmorLocationFilter")).toBeVisible();
+  await expect(
+    armorPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Name");
+  await expect(
+    armorPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Armor");
+  await expect(
+    armorPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Location");
+  await expect(
+    armorPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Min Str");
+  await expect(
+    armorPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Price");
+  await expect(
+    armorPicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Load");
+  const vehiclePicker = setupGearPanel.locator("#setupVehiclePicker");
+  await expect(
+    setupGearPanel.locator("#setupVehiclePurchaseSelect"),
+  ).toHaveCount(0);
+  await expect(setupGearPanel.locator("#setupVehiclePurchaseQty")).toHaveCount(
+    0,
+  );
+  await expect(page.locator("#setupVehicleSearchInput")).toBeHidden();
+  await openSetupPicker(page, "#setupVehiclePicker");
+  await expect(page.locator("#setupVehicleSearchInput")).toBeVisible();
+  await expect(page.locator("#setupVehicleCategoryFilter")).toBeVisible();
+  await expect(
+    vehiclePicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Name");
+  await expect(
+    vehiclePicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Type");
+  await expect(
+    vehiclePicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Handling");
+  await expect(
+    vehiclePicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Speed");
+  await expect(
+    vehiclePicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Toughness");
+  await expect(
+    vehiclePicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Crew");
+  await expect(
+    vehiclePicker.locator(".setup-catalog-picker-header"),
+  ).toContainText("Price");
 
   const before = await page.evaluate(() =>
     JSON.stringify({
@@ -306,9 +457,18 @@ test("Gear setup weapon picker searches filters and sorts catalog rows", async (
 
   await page.locator("#setupWeaponSearchInput").fill("");
   await page.locator("#setupWeaponCategoryFilter").selectOption("Shotguns");
+  const singleBarrelShotgunRow = visibleWeaponRows(page).filter({
+    hasText: "Single-Barrel Shotgun",
+  });
+  await expect(singleBarrelShotgunRow).toBeVisible();
   await expect(
-    visibleWeaponRows(page).filter({ hasText: "Single-Barrel Shotgun" }),
-  ).toBeVisible();
+    singleBarrelShotgunRow.locator(".setup-catalog-picker-damage"),
+  ).toContainText("3d6/2d6/1d6");
+  expect(
+    Number(
+      await singleBarrelShotgunRow.getAttribute("data-weapon-sort-damage"),
+    ),
+  ).toBeCloseTo(10.5, 5);
   await expect(
     setupGearPanel
       .locator("[data-setup-weapon-row]")
@@ -317,29 +477,169 @@ test("Gear setup weapon picker searches filters and sorts catalog rows", async (
 
   if (testInfo.project.name === "mobile") return;
 
-  await setupGearPanel.getByRole("button", { name: "Name" }).click();
+  const weaponPicker = setupGearPanel.locator("#setupWeaponPicker");
+  const headerBox = await weaponPicker
+    .locator(".setup-catalog-picker-header")
+    .boundingBox();
+  const firstRowBox = await visibleWeaponRows(page).first().boundingBox();
+  if (!headerBox || !firstRowBox) {
+    throw new Error("Expected weapon picker header and rows to render");
+  }
+  expect(Math.abs(headerBox.x - firstRowBox.x)).toBeLessThan(1);
+  expect(Math.abs(headerBox.width - firstRowBox.width)).toBeLessThan(1);
+
+  await weaponPicker.getByRole("button", { name: "Name" }).click();
   expect((await visibleWeaponNames(page))[0]).toBe("Colt Revolving Shotgun");
 
-  await setupGearPanel.getByRole("button", { name: "Price" }).click();
+  await weaponPicker.getByRole("button", { name: "Price" }).click();
   await expect(
     visibleWeaponRows(page).first().locator(".setup-catalog-picker-price"),
   ).toContainText("$25.00");
 
-  await setupGearPanel.getByRole("button", { name: "Load" }).click();
+  await weaponPicker.getByRole("button", { name: "Load" }).click();
   await expect(
     visibleWeaponRows(page).first().locator(".setup-catalog-picker-load"),
   ).toContainText("4 lb");
 
-  await setupGearPanel.getByRole("button", { name: "Range" }).click();
+  await weaponPicker.getByRole("button", { name: "Range" }).click();
   await expect(
     visibleWeaponRows(page).first().locator(".setup-catalog-picker-range"),
   ).toContainText("5/10/20");
 
   await page.locator("#setupWeaponCategoryFilter").selectOption("Rifles");
-  await setupGearPanel.getByRole("button", { name: "Damage" }).click();
+  await weaponPicker.getByRole("button", { name: "Damage" }).click();
   await expect(
     visibleWeaponRows(page).first().locator(".setup-catalog-picker-damage"),
   ).toContainText("2d8-1");
+
+  const gearPicker = setupGearPanel.locator("#setupGearPicker");
+  await openSetupPicker(page, "#setupGearPicker");
+  await page.locator("#setupGearSearchInput").fill("Backpack");
+  await expect(
+    visibleGearRows(page).filter({ hasText: "Backpack" }),
+  ).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-gear-row]")
+      .filter({ hasText: "Bedroll" }),
+  ).toBeHidden();
+
+  await page.locator("#setupGearSearchInput").fill("");
+  await page.locator("#setupGearCategoryFilter").selectOption("Transportation");
+  await expect(
+    visibleGearRows(page).filter({ hasText: "Horse" }),
+  ).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-gear-row]")
+      .filter({ hasText: "Backpack" }),
+  ).toBeHidden();
+
+  await page.locator("#setupGearCategoryFilter").selectOption("All");
+  await gearPicker.getByRole("button", { name: "Name" }).click();
+  await expect(
+    visibleGearRows(page).first().locator(".setup-catalog-picker-name"),
+  ).toContainText("Adrenal booster");
+
+  await gearPicker.getByRole("button", { name: "Price" }).click();
+  await expect(
+    visibleGearRows(page).first().locator(".setup-catalog-picker-price"),
+  ).toContainText("$0.05");
+
+  await gearPicker.getByRole("button", { name: "Load" }).click();
+  await expect(
+    visibleGearRows(page).first().locator(".setup-catalog-picker-load"),
+  ).toContainText("0 lb");
+  const backpackRow = visibleGearRows(page).filter({ hasText: "Backpack" });
+  await backpackRow.locator(".setup-catalog-picker-details summary").click();
+  await expect(
+    backpackRow.locator(".setup-catalog-picker-detail-list"),
+  ).toContainText("General Equipment");
+
+  const armorPicker = setupGearPanel.locator("#setupArmorPicker");
+  await openSetupPicker(page, "#setupArmorPicker");
+  await page.locator("#setupArmorSearchInput").fill("Armored duster");
+  await expect(
+    visibleArmorRows(page).filter({ hasText: "Armored duster (light)" }),
+  ).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-armor-row]")
+      .filter({ hasText: "Native Armor" }),
+  ).toBeHidden();
+
+  await page.locator("#setupArmorSearchInput").fill("");
+  await page.locator("#setupArmorLocationFilter").selectOption("Head");
+  await expect(
+    visibleArmorRows(page).filter({ hasText: "Armored hat (light)" }),
+  ).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-armor-row]")
+      .filter({ hasText: "Armored vest/corset (light)" }),
+  ).toBeHidden();
+
+  await page.locator("#setupArmorLocationFilter").selectOption("All");
+  await armorPicker.getByRole("button", { name: "Name" }).click();
+  await expect(
+    visibleArmorRows(page).first().locator(".setup-catalog-picker-name"),
+  ).toContainText("Armored duster (heavy)");
+
+  await armorPicker.getByRole("button", { name: "Price" }).click();
+  await expect(
+    visibleArmorRows(page).first().locator(".setup-catalog-picker-price"),
+  ).toContainText("$2.00");
+
+  await armorPicker.getByRole("button", { name: "Load" }).click();
+  await expect(
+    visibleArmorRows(page).first().locator(".setup-catalog-picker-load"),
+  ).toContainText("2 lb");
+
+  const vehiclePicker = setupGearPanel.locator("#setupVehiclePicker");
+  await openSetupPicker(page, "#setupVehiclePicker");
+  await page.locator("#setupVehicleSearchInput").fill("Bateaux");
+  await expect(
+    visibleVehicleRows(page).filter({ hasText: "Bateaux" }),
+  ).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-vehicle-row]")
+      .filter({ hasText: "Stagecoach" }),
+  ).toBeHidden();
+
+  await page.locator("#setupVehicleSearchInput").fill("");
+  await page
+    .locator("#setupVehicleCategoryFilter")
+    .selectOption("Water Vehicles");
+  await expect(
+    visibleVehicleRows(page).filter({ hasText: "Bateaux" }),
+  ).toBeVisible();
+  await expect(
+    setupGearPanel
+      .locator("[data-setup-vehicle-row]")
+      .filter({ hasText: "Buckboard/buggy" }),
+  ).toBeHidden();
+
+  await page.locator("#setupVehicleCategoryFilter").selectOption("All");
+  await vehiclePicker.getByRole("button", { name: "Name" }).click();
+  await expect(
+    visibleVehicleRows(page).first().locator(".setup-catalog-picker-name"),
+  ).toContainText("Air Carriage");
+
+  await vehiclePicker.getByRole("button", { name: "Price" }).click();
+  await expect(
+    visibleVehicleRows(page).first().locator(".setup-catalog-picker-price"),
+  ).toContainText("$50.00");
+
+  await vehiclePicker.getByRole("button", { name: "Speed" }).click();
+  await expect(
+    visibleVehicleRows(page).first().locator(".setup-catalog-picker-speed"),
+  ).toContainText("0");
+  const bateauxRow = visibleVehicleRows(page).filter({ hasText: "Bateaux" });
+  await bateauxRow.locator(".setup-catalog-picker-details summary").click();
+  await expect(
+    bateauxRow.locator(".setup-catalog-picker-detail-list"),
+  ).toContainText("Flat-bottomed boat");
 });
 
 test("Gear setup weapon picker stacks into usable mobile cards", async ({
@@ -363,7 +663,7 @@ test("Gear setup weapon picker stacks into usable mobile cards", async ({
     "Shotguns",
   );
   await expect(row.locator(".setup-catalog-picker-damage")).toContainText(
-    "1-3d6",
+    "3d6/2d6/1d6",
   );
   await expect(row.locator(".setup-catalog-picker-range")).toContainText(
     "12/24/48",
@@ -373,10 +673,13 @@ test("Gear setup weapon picker stacks into usable mobile cards", async ({
   );
   await expect(row.locator(".setup-catalog-picker-load")).toContainText("6 lb");
   await expect(row.getByRole("button", { name: "Buy" })).toBeVisible();
-  const mobileColumnCount = await row.evaluate(
-    (element) =>
-      getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length,
-  );
+  const mobileColumnCount = await row
+    .locator(".setup-catalog-picker-summary")
+    .evaluate(
+      (element) =>
+        getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/)
+          .length,
+    );
   expect(mobileColumnCount).toBe(1);
 });
 
@@ -390,8 +693,7 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   });
 
   const setupGearPanel = page.locator("#setupGearPanel");
-  await page.locator("#setupGearPurchaseSelect").selectOption("backpack");
-  await setupGearPanel.getByRole("button", { name: "Buy Gear" }).click();
+  await addSetupGearFromPicker(page, "Backpack");
   await page.locator("#setupWeaponCategoryFilter").selectOption("Pistols");
   await page.locator("#setupWeaponSearchInput").fill("Peacemaker");
   const peacemakerRow = setupGearPanel
@@ -407,27 +709,109 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   await expect(
     setupGearPanel.locator(".setup-audit-group[aria-label='Ammunition']"),
   ).toHaveCount(0);
-  const ammoOptionTexts = await page
-    .locator("#setupAmmoPurchaseSelect option")
-    .evaluateAll((options) =>
-      options.map((option) => option.textContent?.trim() || ""),
-    );
-  const purchasableAmmoOptions = ammoOptionTexts.filter(
-    (text) => text && !text.startsWith("Choose"),
-  );
-  expect(purchasableAmmoOptions[0]).toContain(
-    "Pistol Ammunition (Large, .40-.50 caliber)",
-  );
-  expect(purchasableAmmoOptions[0]).toContain("for Colt Peacemaker (.45)");
+  await expect(page.locator("#setupAmmoPurchaseSelect")).toHaveCount(0);
+  await expect(page.locator("#setupAmmoPurchaseCaliber")).toHaveCount(0);
+  await expect(page.locator("#setupAmmoPurchaseQty")).toHaveCount(0);
+  const peacemakerInventoryCard = setupGearPanel
+    .locator(".setup-gear-line")
+    .filter({ hasText: "Colt Peacemaker (.45)" });
+  await expect(peacemakerInventoryCard).toContainText("Ammo $0.06 each");
+  await expect(
+    peacemakerInventoryCard.getByRole("button", { name: "Put in Backpack" }),
+  ).toBeVisible();
+  await peacemakerInventoryCard
+    .getByRole("button", { name: "Put in Backpack" })
+    .click();
+  await expect(
+    setupGearPanel
+      .locator(".setup-gear-line")
+      .filter({ hasText: "Colt Peacemaker (.45)" })
+      .first()
+      .getByRole("button", { name: "Move to Body" }),
+  ).toBeVisible();
   expect(
-    purchasableAmmoOptions.some((text) => text.includes("no matching weapon")),
+    await page.evaluate(() => {
+      const weapon = character.weapons.find(
+        (item) => item.catalogId === "ww-colt-peacemaker-45",
+      );
+      const backpack = character.inventory.find(
+        (item) => item.catalogId === "backpack" || item.name === "Backpack",
+      );
+      return {
+        itemLocation: weapon?.itemLocation,
+        containerId: weapon?.containerId,
+        backpackId: backpack?.id,
+      };
+    }),
+  ).toEqual(
+    expect.objectContaining({
+      itemLocation: "container",
+    }),
+  );
+  expect(
+    await page.evaluate(() => {
+      const weapon = character.weapons.find(
+        (item) => item.catalogId === "ww-colt-peacemaker-45",
+      );
+      const backpack = character.inventory.find(
+        (item) => item.catalogId === "backpack" || item.name === "Backpack",
+      );
+      return weapon?.containerId === backpack?.id;
+    }),
   ).toBe(true);
-  await expect(page.locator("#setupAmmoPurchaseCaliber")).toHaveValue(".45");
-  await page
-    .locator("#setupAmmoPurchaseSelect")
-    .selectOption("pistol-ammunition-large-40-50-caliber");
-  await page.locator("#setupAmmoPurchaseQty").fill("6");
-  await setupGearPanel.getByRole("button", { name: "Buy Ammo" }).click();
+  await setupGearPanel
+    .locator(".setup-gear-line")
+    .filter({ hasText: "Colt Peacemaker (.45)" })
+    .first()
+    .getByRole("button", { name: "Move to Body" })
+    .click();
+  expect(
+    await page.evaluate(() => {
+      const weapon = character.weapons.find(
+        (item) => item.catalogId === "ww-colt-peacemaker-45",
+      );
+      return {
+        itemLocation: weapon?.itemLocation,
+        containerId: weapon?.containerId || "",
+      };
+    }),
+  ).toEqual({ itemLocation: "carried", containerId: "" });
+  const managementActions = peacemakerInventoryCard.locator(
+    ".setup-gear-management-actions",
+  );
+  await expect(
+    managementActions.getByRole("button", { name: "Put in Backpack" }),
+  ).toBeVisible();
+  await expect(
+    managementActions.getByRole("button", { name: "Sell Back" }),
+  ).toBeVisible();
+  const backpackButtonBox = await managementActions
+    .getByRole("button", { name: "Put in Backpack" })
+    .boundingBox();
+  const sellBackButtonBox = await managementActions
+    .getByRole("button", { name: "Sell Back" })
+    .boundingBox();
+  if (!backpackButtonBox || !sellBackButtonBox) {
+    throw new Error("Expected backpack and sell back buttons to render");
+  }
+  expect(backpackButtonBox.x).toBeLessThan(sellBackButtonBox.x);
+  await peacemakerInventoryCard
+    .getByRole("button", {
+      name: "Increase ammo quantity for Colt Peacemaker (.45)",
+    })
+    .click();
+  await expect(
+    peacemakerInventoryCard.locator("[data-setup-ammo-total-for]"),
+  ).toContainText("$0.12");
+  await peacemakerInventoryCard
+    .locator("[data-setup-ammo-weapon-id]")
+    .fill("6");
+  await expect(
+    peacemakerInventoryCard.locator("[data-setup-ammo-total-for]"),
+  ).toContainText("$0.36");
+  await peacemakerInventoryCard
+    .getByRole("button", { name: /Buy Pistol ammo \(\.45\)/ })
+    .click();
   const ammunitionGroup = setupGearPanel.locator(
     ".setup-audit-group[aria-label='Ammunition']",
   );
@@ -435,10 +819,8 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   await expect(
     ammunitionGroup.locator(".setup-gear-card-summary > strong"),
   ).toHaveText(["Pistol ammo (.45)"]);
-  await page.locator("#setupArmorPurchaseSelect").selectOption("native-armor");
-  await setupGearPanel.getByRole("button", { name: "Buy Armor" }).click();
-  await page.locator("#setupVehiclePurchaseSelect").selectOption("bateaux");
-  await setupGearPanel.getByRole("button", { name: "Buy Vehicle" }).click();
+  await addSetupArmorFromPicker(page, "Native Armor");
+  await addSetupVehicleFromPicker(page, "Bateaux");
 
   await expect(page.locator("[data-setup-step='gear']")).toContainText(
     "Complete",
@@ -456,13 +838,20 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
 
   const snapshot = await page.evaluate(() => ({
     moneyCents: character.moneyCents,
-    backpack: character.inventory.find((item) => item.id === "backpack"),
+    backpack: character.inventory.find(
+      (item) => item.catalogId === "backpack" || item.name === "Backpack",
+    ),
     ammo: Object.values(character.ammo)[0],
     weapon: character.weapons.find(
       (weapon) => weapon.catalogId === "ww-colt-peacemaker-45",
     ),
-    armor: character.armorInventory.find((item) => item.id === "native-armor"),
-    vehicle: character.vehicles.find((item) => item.id === "bateaux"),
+    armor: character.armorInventory.find(
+      (item) =>
+        item.catalogId === "native-armor" || item.name === "Native Armor",
+    ),
+    vehicle: character.vehicles.find(
+      (item) => item.catalogId === "bateaux" || item.name === "Bateaux",
+    ),
   }));
   expect(snapshot.moneyCents).toBe(18064);
   expect(snapshot.backpack).toEqual(
@@ -520,10 +909,12 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   const persisted = await page.evaluate(() => ({
     moneyCents: character.moneyCents,
     armorSource: character.armorInventory.find(
-      (item) => item.id === "native-armor",
+      (item) =>
+        item.catalogId === "native-armor" || item.name === "Native Armor",
     )?.creationSource,
-    vehicleSource: character.vehicles.find((item) => item.id === "bateaux")
-      ?.creationSource,
+    vehicleSource: character.vehicles.find(
+      (item) => item.catalogId === "bateaux" || item.name === "Bateaux",
+    )?.creationSource,
   }));
   expect(persisted).toEqual({
     moneyCents: 18064,
@@ -531,21 +922,19 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
     vehicleSource: "setup-starting-gear",
   });
 
-  const sellBack = async (label) => {
-    const gearCard = page
-      .locator(".setup-gear-line")
-      .filter({ hasText: label });
-    await expect(gearCard).toHaveCount(1);
-    await gearCard.getByRole("button", { name: "Sell Back" }).click();
-    await expect(
-      page.locator(".setup-gear-line").filter({ hasText: label }),
-    ).toHaveCount(0);
+  const sellBack = async (label, times = 1) => {
+    for (let index = 0; index < times; index += 1) {
+      const gearCard = setupGearCardByName(page, label);
+      await expect(gearCard).toHaveCount(1);
+      await gearCard.getByRole("button", { name: "Sell Back" }).click();
+    }
+    await expect(setupGearCardByName(page, label)).toHaveCount(0);
   };
 
   await sellBack("Bateaux");
   await sellBack("Colt Peacemaker (.45)");
   await sellBack("Native Armor");
-  await sellBack("Pistol ammo (.45)");
+  await sellBack("Pistol ammo (.45)", 6);
   await sellBack("Backpack");
 
   await expect(setupGearPanel).toContainText("Funds Remaining");
@@ -568,6 +957,143 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   });
 });
 
+test("Gear setup repeated non-ammo purchases create separate entries", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Stacked Gear Seller",
+    preferredId: "stacked-gear-seller",
+    moneyCents: 25000,
+  });
+
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await addSetupGearFromPicker(page, "Backpack");
+  await addSetupGearFromPicker(page, "Backpack");
+  await expect(setupGearPanel).toContainText("$246.00");
+
+  const backpackCards = setupGearCardByName(page, "Backpack");
+  await expect(backpackCards).toHaveCount(2);
+  await backpackCards.first().locator("summary").click();
+  await expect(
+    backpackCards.first().locator(".setup-gear-detail-list"),
+  ).toContainText("Price $2.00");
+  await expect(
+    backpackCards.first().locator(".setup-gear-detail-list"),
+  ).toContainText("Weight 3 lb");
+  expect(
+    await page.evaluate(() => ({
+      moneyCents: character.moneyCents,
+      count: character.inventory.filter(
+        (item) => item.catalogId === "backpack" || item.name === "Backpack",
+      ).length,
+      counts: character.inventory
+        .filter(
+          (item) => item.catalogId === "backpack" || item.name === "Backpack",
+        )
+        .map((item) => item.count),
+      sourceQuantities: character.inventory
+        .filter(
+          (item) => item.catalogId === "backpack" || item.name === "Backpack",
+        )
+        .map((item) => item.sourceDetail?.quantity),
+      uniqueIds: new Set(
+        character.inventory
+          .filter(
+            (item) => item.catalogId === "backpack" || item.name === "Backpack",
+          )
+          .map((item) => item.id),
+      ).size,
+    })),
+  ).toEqual({
+    moneyCents: 24600,
+    count: 2,
+    counts: [1, 1],
+    sourceQuantities: [1, 1],
+    uniqueIds: 2,
+  });
+
+  await backpackCards
+    .first()
+    .getByRole("button", { name: "Sell Back" })
+    .click();
+  await expect(setupGearPanel).toContainText("$248.00");
+  await expect(setupGearCardByName(page, "Backpack")).toHaveCount(1);
+  expect(
+    await page.evaluate(() => ({
+      moneyCents: character.moneyCents,
+      count: character.inventory.filter(
+        (item) => item.catalogId === "backpack" || item.name === "Backpack",
+      ).length,
+      sourceQuantity: character.inventory.find(
+        (item) => item.catalogId === "backpack" || item.name === "Backpack",
+      )?.sourceDetail?.quantity,
+    })),
+  ).toEqual({ moneyCents: 24800, count: 1, sourceQuantity: 1 });
+
+  await setupGearCardByName(page, "Backpack")
+    .getByRole("button", { name: "Sell Back" })
+    .click();
+  await expect(setupGearPanel).toContainText("$250.00");
+  await expect(setupGearCardByName(page, "Backpack")).toHaveCount(0);
+  expect(
+    await page.evaluate(() => ({
+      moneyCents: character.moneyCents,
+      inventory: character.inventory.length,
+    })),
+  ).toEqual({ moneyCents: 25000, inventory: 0 });
+});
+
+test("Gear setup normalizes legacy non-ammo setup stacks into separate entries", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Legacy Stacked Gear",
+    preferredId: "legacy-stacked-gear",
+    moneyCents: 24600,
+    inventory: [
+      {
+        id: "backpack",
+        catalogId: "backpack",
+        name: "Backpack",
+        count: 2,
+        weight: 3,
+        costCents: 200,
+        location: "carried",
+        creationSource: "setup-starting-gear",
+        sourceDetail: {
+          kind: "starting-funds",
+          purchaseType: "gear",
+          catalogId: "backpack",
+          costCents: 200,
+          quantity: 2,
+        },
+      },
+    ],
+  });
+
+  const backpackCards = setupGearCardByName(page, "Backpack");
+  await expect(backpackCards).toHaveCount(2);
+  await expect(backpackCards.first()).not.toContainText("Qty 2");
+  expect(
+    await page.evaluate(() => {
+      const backpacks = character.inventory.filter(
+        (item) => item.catalogId === "backpack" || item.name === "Backpack",
+      );
+      return {
+        count: backpacks.length,
+        counts: backpacks.map((item) => item.count),
+        sourceQuantities: backpacks.map((item) => item.sourceDetail?.quantity),
+        uniqueIds: new Set(backpacks.map((item) => item.id)).size,
+      };
+    }),
+  ).toEqual({
+    count: 2,
+    counts: [1, 1],
+    sourceQuantities: [1, 1],
+    uniqueIds: 2,
+  });
+});
+
 test("Gear setup reset confirms before clearing starting purchases", async ({
   page,
 }) => {
@@ -583,8 +1109,7 @@ test("Gear setup reset confirms before clearing starting purchases", async ({
   });
   await expect(resetButton).toBeDisabled();
 
-  await page.locator("#setupGearPurchaseSelect").selectOption("backpack");
-  await setupGearPanel.getByRole("button", { name: "Buy Gear" }).click();
+  await addSetupGearFromPicker(page, "Backpack");
   await addSetupWeaponFromPicker(page, "Colt Peacemaker (.45)");
   await expect(resetButton).toBeEnabled();
   await expect(setupGearPanel).toContainText("$233.00");
@@ -596,7 +1121,9 @@ test("Gear setup reset confirms before clearing starting purchases", async ({
   await dialog.getByRole("button", { name: "Keep Gear" }).click();
   await expect(dialog).toBeHidden();
   await expect(
-    setupGearPanel.locator(".setup-gear-line").filter({ hasText: "Backpack" }),
+    setupGearPanel
+      .locator(".setup-gear-card-summary > strong")
+      .filter({ hasText: /^Backpack$/ }),
   ).toHaveCount(1);
   await expect(
     setupGearPanel
@@ -609,7 +1136,9 @@ test("Gear setup reset confirms before clearing starting purchases", async ({
   await dialog.getByRole("button", { name: "Reset Gear" }).click();
   await expect(dialog).toBeHidden();
   await expect(
-    setupGearPanel.locator(".setup-gear-line").filter({ hasText: "Backpack" }),
+    setupGearPanel
+      .locator(".setup-gear-card-summary > strong")
+      .filter({ hasText: /^Backpack$/ }),
   ).toHaveCount(0);
   await expect(
     setupGearPanel

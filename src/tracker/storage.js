@@ -654,7 +654,6 @@ async function resolveUnsavedCharacterDraft(message) {
     [
       { value: "save", label: "Save Draft" },
       { value: "discard", label: "Discard Draft", danger: true },
-      { value: "cancel", label: "Stay Here", ghost: true },
     ],
     {
       title: "Unsaved Character Draft",
