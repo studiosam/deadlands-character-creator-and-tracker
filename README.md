@@ -74,9 +74,9 @@ want a local, private, session-focused tracker at the table.
   undo/redo, Deadlands bookkeeping records, and automated browser/static checks.
 - Implemented setup scaffolding: concept, Attributes, Skills, Edges,
   optional Hindrances with benefit spending, Powers setup, Gear purchases,
-  setup sell-back, useful-ammo prioritization, setup source tracking, GM/table
-  exception markers, Gear finalization, and creation baseline snapshots for
-  eligible created pre-advance characters.
+  setup sell-back, useful-ammo prioritization, setup source tracking, Gear
+  finalization, and creation baseline snapshots for eligible created pre-advance
+  characters.
 - Implemented Advancement baseline: canonical app-owned Advancement entries,
   supported application for existing advancement types, persistence,
   import-history handling, and safe undo checks where reliable before/after
@@ -85,6 +85,21 @@ want a local, private, session-focused tracker at the table.
   free/source-granted starting gear modeling, imported advanced-character
   baseline reconstruction, editable campaign/source configuration, and any
   system that would replace Marshal adjudication.
+
+## Versioning
+
+Current app version: `0.2.0`.
+
+Use semantic versioning from this point forward:
+
+- Patch releases (`0.2.1`, `0.2.2`, etc.) are for bug fixes, small visual
+  polish, docs, tests, and other low-risk corrections.
+- Minor releases (`0.3.0`, `0.4.0`, etc.) are for meaningful workflow or feature
+  milestones, such as the next live Character Tracker cleanup pass.
+- Major release `1.0.0` is reserved for a broadly table-ready app with both
+  Character Setup and the live tracker stabilized.
+
+`0.2.0` marks the Character Setup MVP milestone.
 
 ## Known Limitations
 
