@@ -622,23 +622,27 @@ function renderSetupConcept() {
       </div>
       ${setupStatusMarkup(status)}
     </div>
+    <div class="creator-actions setup-concept-randomizer-actions" aria-label="Concept randomizer actions">
+      <button class="ghost" type="button" data-setup-action="randomizeConceptEmpty">Randomize Empty Fields</button>
+      <button class="ghost" type="button" data-setup-action="randomizeConceptAll">Randomize All Fields</button>
+    </div>
     <div class="setup-form-grid">
-      <label>Character name<input id="setupNameInput" data-concept-field="name" value="${esc(character.name || "")}" placeholder="Character Name" autocomplete="off"></label>
-      <label>Gender<input id="setupGenderInput" data-concept-field="gender" value="${esc(character.gender || "")}" placeholder="Gender Identity" autocomplete="off" list="setupGenderOptions"></label>
-      <label>Age<input id="setupAgeInput" data-concept-field="age" value="${esc(character.age || "")}" placeholder="32" autocomplete="off"></label>
-      <label>Profession or Title<input id="setupArchetypeInput" data-concept-field="archetype" value="${esc(character.archetype || "")}" placeholder="Profession or Title" autocomplete="off"></label>
-      <label>Player Name<input id="setupPlayerInput" data-concept-field="player" value="${esc(character.player || "")}" placeholder="Player Name" autocomplete="off"></label>
+      <label>Character name<input id="setupNameInput" data-concept-field="name" value="${esc(character.name || "")}" placeholder="e.g. Abigail Stone" autocomplete="off"></label>
+      <label>Gender<select id="setupGenderInput" data-concept-field="gender">
+        <option value="">Choose gender...</option>
+        <option value="Male"${character.gender === "Male" ? " selected" : ""}>Male</option>
+        <option value="Female"${character.gender === "Female" ? " selected" : ""}>Female</option>
+        <option value="Nonbinary"${character.gender === "Nonbinary" ? " selected" : ""}>Nonbinary</option>
+      </select></label>
+      <label>Age<input id="setupAgeInput" data-concept-field="age" value="${esc(character.age || "")}" placeholder="e.g. 19, 40s, elderly" autocomplete="off"></label>
+      <label>Profession or Title<input id="setupArchetypeInput" data-concept-field="archetype" value="${esc(character.archetype || "")}" placeholder="e.g. drifter, deputy, huckster" autocomplete="off"></label>
+      <label>Player Name (optional)<input id="setupPlayerInput" data-concept-field="player" value="${esc(character.player || "")}" placeholder="e.g. player at the table" autocomplete="off"></label>
       <div class="setup-readonly-field">
         <span>Race / Ancestry</span>
         <div class="setup-form-detail readonly"><div class="setup-readonly-value"><strong>${esc(character.ancestry || "Human")}</strong></div></div>
       </div>
-      <label class="setup-wide">Description<textarea id="setupDescriptionInput" data-concept-field="description" rows="4" placeholder="Tall, wary, dusty coat">${esc(character.description || "")}</textarea></label>
-      <label class="setup-wide">Background<textarea id="setupBackgroundInput" data-concept-field="background" rows="5" placeholder="Why they ride">${esc(character.background || "")}</textarea></label>
-      <datalist id="setupGenderOptions">
-        <option value="Female"></option>
-        <option value="Male"></option>
-        <option value="Nonbinary"></option>
-      </datalist>
+      <label class="setup-wide">Description<textarea id="setupDescriptionInput" data-concept-field="description" rows="4" placeholder="Build, clothes, voice, obvious habits">${esc(character.description || "")}</textarea></label>
+      <label class="setup-wide">Background<textarea id="setupBackgroundInput" data-concept-field="background" rows="5" placeholder="Where they came from and why they ride">${esc(character.background || "")}</textarea></label>
     </div>
     ${
       isHumanAncestry(character.ancestry)

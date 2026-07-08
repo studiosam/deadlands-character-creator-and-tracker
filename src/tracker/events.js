@@ -145,6 +145,10 @@ document.addEventListener("click", async (event) => {
     await confirmSetupReview();
   } else if (setupAction?.dataset.setupAction === "finishSetup") {
     await finishSetupAndStartPlaying();
+  } else if (setupAction?.dataset.setupAction === "randomizeConceptEmpty") {
+    await randomizeConceptFields({ onlyEmpty: true });
+  } else if (setupAction?.dataset.setupAction === "randomizeConceptAll") {
+    await randomizeConceptFields({ onlyEmpty: false });
   } else if (setupAction?.dataset.setupAction === "deleteCharacterSlot") {
     await deleteActiveCharacterSlotFromSetup();
   } else if (setupAction?.dataset.setupAction === "addHindrance") {

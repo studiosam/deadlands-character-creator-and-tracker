@@ -61,31 +61,46 @@ test("starts new characters directly in character setup @mobile", async ({
   await expect(page.locator("#setupArchetypeInput")).toHaveValue("");
   await expect(page.locator("#setupNameInput")).toHaveAttribute(
     "placeholder",
-    "Character Name",
+    "e.g. Abigail Stone",
   );
-  await expect(page.locator("#setupGenderInput")).toHaveAttribute(
-    "placeholder",
-    "Gender Identity",
-  );
+  await expect(page.locator("#setupGenderInput")).toHaveValue("");
+  await expect
+    .poll(() =>
+      page.locator("#setupGenderInput option").evaluateAll((options) =>
+        options.map((option) => ({
+          label: option.textContent.trim(),
+          value: option.value,
+        })),
+      ),
+    )
+    .toEqual([
+      { label: "Choose gender...", value: "" },
+      { label: "Male", value: "Male" },
+      { label: "Female", value: "Female" },
+      { label: "Nonbinary", value: "Nonbinary" },
+    ]);
   await expect(page.locator("#setupAgeInput")).toHaveAttribute(
     "placeholder",
-    "32",
+    "e.g. 19, 40s, elderly",
   );
   await expect(page.locator("#setupArchetypeInput")).toHaveAttribute(
     "placeholder",
-    "Profession or Title",
+    "e.g. drifter, deputy, huckster",
   );
   await expect(page.locator("#setupPlayerInput")).toHaveAttribute(
     "placeholder",
-    "Player Name",
+    "e.g. player at the table",
+  );
+  await expect(page.locator("#setupConceptPanel")).toContainText(
+    "Player Name (optional)",
   );
   await expect(page.locator("#setupDescriptionInput")).toHaveAttribute(
     "placeholder",
-    "Tall, wary, dusty coat",
+    "Build, clothes, voice, obvious habits",
   );
   await expect(page.locator("#setupBackgroundInput")).toHaveAttribute(
     "placeholder",
-    "Why they ride",
+    "Where they came from and why they ride",
   );
   await expect(page.locator("[data-setup-step='concept']")).toContainText(
     "Incomplete",
@@ -329,6 +344,59 @@ test("starts new characters directly in character setup @mobile", async ({
     .toBe(0);
 });
 
+test("randomizes Concept fields from Weird West name tables", async ({
+  page,
+}) => {
+  await page.route("**/docs/deadlands_weird_west_names.json", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        firstNames: ["Ada"],
+        lastNames: ["Carter"],
+        professions: ["Bounty Hunter"],
+        descriptionTraits: ["dust-worn"],
+        descriptionDetails: ["a battered hat"],
+        backgroundOrigins: ["a railroad camp"],
+        backgroundTroubles: ["a debt came due"],
+        backgroundMotives: ["work"],
+      }),
+    }),
+  );
+  await startNewCharacterFromLanding(page);
+  await page.evaluate(() => {
+    Math.random = () => 0;
+  });
+
+  await page.locator("#setupNameInput").fill("Kept Name");
+  await page.getByRole("button", { name: "Randomize Empty Fields" }).click();
+
+  await expect(page.locator("#setupNameInput")).toHaveValue("Kept Name");
+  await expect(page.locator("#setupGenderInput")).toHaveValue("");
+  await expect(page.locator("#setupAgeInput")).toHaveValue("18");
+  await expect(page.locator("#setupArchetypeInput")).toHaveValue(
+    "Bounty Hunter",
+  );
+  await expect(page.locator("#setupPlayerInput")).toHaveValue("");
+  await expect(page.locator("#setupDescriptionInput")).toHaveValue(
+    "dust-worn bounty hunter with a battered hat",
+  );
+  await expect(page.locator("#setupBackgroundInput")).toHaveValue(
+    "Left a railroad camp after a debt came due; now rides for work.",
+  );
+
+  await page.locator("#setupGenderInput").selectOption("Male");
+  await page.locator("#setupPlayerInput").fill("Kept Player");
+  await page.getByRole("button", { name: "Randomize All Fields" }).click();
+
+  await expect(page.locator("#setupNameInput")).toHaveValue("Ada Carter");
+  await expect(page.locator("#setupGenderInput")).toHaveValue("Male");
+  await expect(page.locator("#setupPlayerInput")).toHaveValue("Kept Player");
+  await expect(page.locator("#setupAgeInput")).toHaveValue("18");
+  await expect(page.locator("#setupArchetypeInput")).toHaveValue(
+    "Bounty Hunter",
+  );
+});
+
 test("normalizes legacy characters without setupStatus as complete", async ({
   page,
 }) => {
@@ -499,7 +567,7 @@ test("Gear finalization blocks unfinished setup and jumps to the relevant step",
   await expect(page.locator("#setupConceptPanel")).toBeVisible();
 
   await page.locator("#setupNameInput").fill("Finished Setup Character");
-  await page.locator("#setupGenderInput").fill("Female");
+  await page.locator("#setupGenderInput").selectOption("Female");
   await page.locator("#setupAgeInput").fill("29");
   await page.locator("#setupArchetypeInput").fill("Trail Scout");
   await page.locator("#setupPlayerInput").fill("Playwright");

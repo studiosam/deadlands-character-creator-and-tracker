@@ -59,7 +59,7 @@ test("edits concept information in character setup and preserves it across reloa
   await expect(page.locator("#setupRankInput")).toHaveCount(0);
 
   await page.locator("#setupNameInput").fill("Concept Test Character");
-  await page.locator("#setupGenderInput").fill("Male");
+  await page.locator("#setupGenderInput").selectOption("Male");
   await page.locator("#setupAgeInput").fill("61");
   await page.locator("#setupArchetypeInput").fill("Rail Scout");
   await page.locator("#setupPlayerInput").fill("Austin");

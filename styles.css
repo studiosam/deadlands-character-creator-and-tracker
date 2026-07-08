@@ -2492,6 +2492,11 @@ body:has(#setupGearPanel) .toast-region {
   gap: 0.7rem;
 }
 
+.setup-concept-randomizer-actions {
+  justify-content: flex-start;
+  margin: 0;
+}
+
 .setup-review-grid.setup-hindrance-summary-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

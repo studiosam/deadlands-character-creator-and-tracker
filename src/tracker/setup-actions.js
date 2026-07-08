@@ -5,6 +5,142 @@
  * coordinate audit remediation. Rendering stays in setup-render.js, while
  * validation and status helpers stay in setup-model.js.
  */
+const CONCEPT_RANDOMIZER_DATA_URL = "docs/deadlands_weird_west_names.json";
+const CONCEPT_RANDOMIZER_FIELDS = [
+  "name",
+  "age",
+  "archetype",
+  "description",
+  "background",
+];
+let conceptRandomizerDataCache = null;
+let conceptRandomizerDataPromise = null;
+
+function randomFromList(values) {
+  if (!Array.isArray(values) || !values.length) return "";
+  return values[Math.floor(Math.random() * values.length)] || values[0] || "";
+}
+
+function randomIntegerInclusive(minimum, maximum) {
+  const min = Math.ceil(Number(minimum));
+  const max = Math.floor(Number(maximum));
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function cleanRandomizerList(values) {
+  return Array.isArray(values)
+    ? values.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+}
+
+function normalizeConceptRandomizerData(data) {
+  const names = {
+    firstNames: cleanRandomizerList(data?.firstNames),
+    lastNames: cleanRandomizerList(data?.lastNames),
+    professions: cleanRandomizerList(data?.professions),
+    descriptionTraits: cleanRandomizerList(data?.descriptionTraits),
+    descriptionDetails: cleanRandomizerList(data?.descriptionDetails),
+    backgroundOrigins: cleanRandomizerList(data?.backgroundOrigins),
+    backgroundTroubles: cleanRandomizerList(data?.backgroundTroubles),
+    backgroundMotives: cleanRandomizerList(data?.backgroundMotives),
+  };
+  if (
+    !names.firstNames.length ||
+    !names.lastNames.length ||
+    !names.professions.length ||
+    !names.descriptionTraits.length ||
+    !names.descriptionDetails.length ||
+    !names.backgroundOrigins.length ||
+    !names.backgroundTroubles.length ||
+    !names.backgroundMotives.length
+  ) {
+    throw new Error("Concept randomizer data is missing required tables.");
+  }
+  return names;
+}
+
+async function loadConceptRandomizerData() {
+  if (conceptRandomizerDataCache) return conceptRandomizerDataCache;
+  if (!conceptRandomizerDataPromise) {
+    conceptRandomizerDataPromise = fetch(CONCEPT_RANDOMIZER_DATA_URL)
+      .then((response) => {
+        if (!response.ok)
+          throw new Error(
+            `Concept randomizer data failed to load: ${response.status}`,
+          );
+        return response.json();
+      })
+      .then((data) => {
+        conceptRandomizerDataCache = normalizeConceptRandomizerData(data);
+        return conceptRandomizerDataCache;
+      })
+      .catch((error) => {
+        conceptRandomizerDataPromise = null;
+        throw error;
+      });
+  }
+  return conceptRandomizerDataPromise;
+}
+
+function randomConceptValues(data) {
+  const firstName = randomFromList(data.firstNames);
+  const lastName = randomFromList(data.lastNames);
+  const profession = randomFromList(data.professions);
+  const trait = randomFromList(data.descriptionTraits);
+  const detail = randomFromList(data.descriptionDetails);
+  const origin = randomFromList(data.backgroundOrigins);
+  const trouble = randomFromList(data.backgroundTroubles);
+  const motive = randomFromList(data.backgroundMotives);
+
+  return {
+    name: `${firstName} ${lastName}`.trim(),
+    age: String(randomIntegerInclusive(18, 72)),
+    archetype: profession,
+    description: `${trait} ${profession.toLowerCase()} with ${detail}`,
+    background: `Left ${origin} after ${trouble}; now rides for ${motive}.`,
+  };
+}
+
+function shouldRandomizeConceptField(field, onlyEmpty) {
+  if (!CONCEPT_RANDOMIZER_FIELDS.includes(field)) return false;
+  return !onlyEmpty || !String(character[field] || "").trim();
+}
+
+async function randomizeConceptFields({ onlyEmpty = false } = {}) {
+  collectConceptInputs();
+  let data;
+  try {
+    data = await loadConceptRandomizerData();
+  } catch (error) {
+    console.error(error);
+    appToast("Could not load the Weird West name tables.", "danger");
+    return;
+  }
+
+  const values = randomConceptValues(data);
+  let changedCount = 0;
+  for (const field of CONCEPT_RANDOMIZER_FIELDS) {
+    if (!shouldRandomizeConceptField(field, onlyEmpty)) continue;
+    character[field] = values[field];
+    changedCount += 1;
+  }
+
+  if (!changedCount) {
+    appToast("No empty Concept fields to randomize.", "success");
+    return;
+  }
+
+  renderCharacterIdentityDisplays();
+  renderCharacterSetup();
+  save();
+  appToast(
+    onlyEmpty
+      ? "Empty Concept fields randomized."
+      : "Concept fields randomized.",
+    "success",
+  );
+}
+
 function applyConceptField(input) {
   const field = input.dataset.conceptField;
   if (
