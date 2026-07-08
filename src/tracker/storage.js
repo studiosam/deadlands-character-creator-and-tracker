@@ -472,6 +472,7 @@ function setSaveState(message) {
 function validSetupStepId(stepId, fallback = "concept") {
   const value = String(stepId || "");
   if (value === "attributesSkills") return "traits";
+  if (value === "review") return "gear";
   return CHARACTER_SETUP_STEPS.some((step) => step.id === value)
     ? value
     : fallback;

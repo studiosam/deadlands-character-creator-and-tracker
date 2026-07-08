@@ -602,25 +602,21 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await expect(hindrancePanel).not.toContainText(
     "Needs review: one or more Hindrances need Minor or Major severity.",
   );
-  await page.locator("[data-setup-step='review']").click();
-  await expect(page.locator("#setupReviewPanel")).toContainText("Lehi Larson");
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Playable with Warnings",
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
+  await page.locator("[data-setup-step='gear']").click();
+  await expect(page.locator("#setupGearPanel")).toContainText(
+    "Finish Setup & Start Playing",
   );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Blocking Issues",
-  );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "No blocking setup issues.",
-  );
-  await expect(page.locator("#setupReviewPanel")).toContainText("Warnings");
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Character Sheet Preview",
-  );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
+  await expect(page.locator("#setupGearPanel")).toContainText("warning");
+  await page
+    .locator("#setupGearPanel details")
+    .filter({ hasText: "Setup Source Audit" })
+    .locator("summary")
+    .click();
+  await expect(page.locator("#setupGearPanel")).toContainText(
     "Setup Source Audit",
   );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
+  await expect(page.locator("#setupGearPanel")).toContainText(
     "Needs GM/Table Exception",
   );
 });

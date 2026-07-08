@@ -500,24 +500,22 @@ function renderCharacterSetup() {
     edges: renderSetupEdges,
     powers: renderSetupPowersClean,
     gear: renderSetupGear,
-    review: renderSetupReview,
   };
 
   els.characterSetupContent.innerHTML =
-    (characterSetupStep === "review" ? renderSetupPersistencePanel() : "") +
+    (characterSetupStep === "gear" ? renderSetupPersistencePanel() : "") +
     (renderers[characterSetupStep]?.() || renderSetupConcept()) +
     renderSetupStepNavigation();
 }
 
 function renderSetupPersistencePanel() {
-  const reviewStep = characterSetupStep === "review";
-  if (!reviewStep) return "";
+  if (characterSetupStep !== "gear") return "";
 
   if (isUnsavedCharacterDraft()) {
     return `<div class="setup-persistence-panel unsaved">
       <div>
-        <strong>Review and save character</strong>
-        <p>This draft resumes on reload, but it is not a saved character slot until you save or finish setup.</p>
+        <strong>Save character draft</strong>
+        <p>This draft resumes on reload, but it is not a saved character slot until you save or finish setup from Gear.</p>
       </div>
       <div class="creator-actions">
         <button type="button" data-setup-action="saveDraftCharacter">Save Character</button>
@@ -530,11 +528,11 @@ function renderSetupPersistencePanel() {
   if (!active) return "";
   return `<div class="setup-persistence-panel">
     <div>
-      <strong>${character.creation?.finalized ? "Character ready to play" : "Review and save character"}</strong>
+      <strong>${character.creation?.finalized ? "Character ready to play" : "Save character setup"}</strong>
       <p>${
         character.creation?.finalized
-          ? "This setup is marked finished. Use Start Playing to return to Combat."
-          : "Review the setup summary, then save or finish this character."
+          ? "This setup is marked finished. Use Finish Setup & Start Playing to return to the live tracker."
+          : "Save this character or finish setup from the Gear step."
       }</p>
     </div>
     <div class="creator-actions">
@@ -2952,8 +2950,42 @@ function renderSetupGearPurchaseControls(report) {
   </section>`;
 }
 
+function setupFinalizeBlockerList(report) {
+  if (!report.blockers.length) return "";
+  return `<div class="setup-finalize-blockers" aria-label="Blocking setup issues">
+    <strong>Fix setup issues before starting play:</strong>
+    <div class="setup-review-list setup-finalize-blocker-list">
+      ${report.blockers.map(setupReviewIssueCard).join("")}
+    </div>
+  </div>`;
+}
+
+function setupFinalizeWarningSummary(report) {
+  if (!report.warnings.length) return "";
+  return `<p class="creator-note setup-finalize-warning-summary">${esc(report.warnings.length)} warning${report.warnings.length === 1 ? "" : "s"} remain for table review, but they do not block starting play.</p>`;
+}
+
+function renderSetupFinalizePanel(report) {
+  const blocked = report.blockers.length > 0;
+  const sourceExceptionEditable = setupTraitsEditable();
+  return `<section class="setup-review-finalize setup-gear-finalize" aria-labelledby="setupGearFinalizeHeading">
+    <div>
+      <h4 id="setupGearFinalizeHeading">Finish Setup & Start Playing</h4>
+      <p>${
+        blocked
+          ? "Resolve blocking setup issues before finalizing this character."
+          : "Finalize setup to save the starting baseline and open the normal Character Sheet / live tracker."
+      }</p>
+      ${blocked ? setupFinalizeBlockerList(report) : setupFinalizeWarningSummary(report)}
+    </div>
+    <button type="button" data-setup-action="finishSetup"${blocked ? " disabled" : ""}>${blocked ? "Fix setup issues" : "Finish Setup & Start Playing"}</button>
+    ${setupReviewSourceAuditSection(report.sourceAudit, sourceExceptionEditable)}
+  </section>`;
+}
+
 function renderSetupGear() {
-  const report = setupGearAuditReport();
+  const validationReport = setupReviewValidationReport();
+  const report = validationReport.gearReport;
 
   return `<section id="setupGearPanel" class="setup-step-panel" aria-labelledby="setupGearHeading">
     <div class="section-title">
@@ -2981,6 +3013,7 @@ function renderSetupGear() {
         </div>
       </section>
     </div>
+    ${renderSetupFinalizePanel(validationReport)}
   </section>`;
 }
 

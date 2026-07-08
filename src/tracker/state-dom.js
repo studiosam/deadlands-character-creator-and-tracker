@@ -16,7 +16,6 @@ const CHARACTER_SETUP_STEPS = [
   { id: "hindrances", label: "Hindrances" },
   { id: "powers", label: "Powers" },
   { id: "gear", label: "Gear" },
-  { id: "review", label: "Review" },
 ];
 var characterSetupStep = "concept";
 var characterSetupReviewOpen = false;

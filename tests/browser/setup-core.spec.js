@@ -98,7 +98,7 @@ test("starts new characters directly in character setup @mobile", async ({
     "Progress is saved locally.",
   );
   await expect(page.locator("#characterSetupPanel")).toContainText(
-    "Final save controls appear on Review.",
+    "Final save controls appear on Gear.",
   );
   await expect(
     page.locator("[data-setup-action='saveDraftCharacter']"),
@@ -138,7 +138,6 @@ test("starts new characters directly in character setup @mobile", async ({
       "5. Hindrances",
       "6. Powers",
       "7. Gear",
-      "8. Review",
     ]);
 
   await page.locator("[data-setup-step='traits']").click();
@@ -215,7 +214,7 @@ test("starts new characters directly in character setup @mobile", async ({
   );
   await expect(page.locator("#setupTraitsPanel")).toContainText("Attributes");
 
-  await page.locator("[data-setup-step='review']").click();
+  await page.locator("[data-setup-step='gear']").click();
   await page.locator("[data-setup-action='saveDraftCharacter']").click();
   await expect(page.locator("#appDialog")).toBeVisible();
   await page.locator("#appDialogInput").fill("Saved Draft Prospect");
@@ -224,7 +223,7 @@ test("starts new characters directly in character setup @mobile", async ({
     "Saved Draft Prospect",
   );
   await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Review and save character",
+    "Save character setup",
   );
 
   await expect
@@ -300,7 +299,7 @@ test("starts new characters directly in character setup @mobile", async ({
   await expect(unsavedDraftDialog).toBeHidden();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
 
-  await page.locator("[data-setup-step='review']").click();
+  await page.locator("[data-setup-step='gear']").click();
   await expect(
     page.locator("[data-setup-action='discardDraftCharacter']"),
   ).toBeVisible();
@@ -311,7 +310,7 @@ test("starts new characters directly in character setup @mobile", async ({
     "Saved Draft Prospect",
   );
 
-  await page.locator("[data-setup-step='review']").click();
+  await page.locator("[data-setup-step='gear']").click();
   await page.locator("[data-setup-action='deleteCharacterSlot']").click();
   await expect(page.locator("#appDialog")).toBeVisible();
   await page.locator("#appDialogConfirmBtn").click();
@@ -398,7 +397,7 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await page
-    .locator("#setupReviewPanel [data-setup-action='finishSetup']")
+    .locator("#setupGearPanel [data-setup-action='finishSetup']")
     .click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
   await page.getByRole("button", { name: "Character", exact: true }).click();
@@ -492,7 +491,7 @@ test("shows a clean reference sheet for confirmed characters", async ({
     });
 });
 
-test("Review blocks unfinished setup and jumps to the relevant step", async ({
+test("Gear finalization blocks unfinished setup and jumps to the relevant step", async ({
   page,
 }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
@@ -533,18 +532,21 @@ test("Review blocks unfinished setup and jumps to the relevant step", async ({
   await expect(page.locator("#setupPowersPanel")).toBeVisible();
   await page.locator("[data-setup-action='nextSetupStep']").click();
   await expect(page.locator("#setupGearPanel")).toBeVisible();
-  await page.locator("[data-setup-action='nextSetupStep']").click();
-  await expect(page.locator("#setupReviewPanel")).toBeVisible();
+  await expect(page.locator("[data-setup-action='nextSetupStep']")).toHaveCount(
+    0,
+  );
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
 
-  const reviewPanel = page.locator("#setupReviewPanel");
-  await expect(reviewPanel).toContainText("Needs Fix");
-  await expect(reviewPanel).toContainText("Blocking Issues");
-  await expect(reviewPanel).toContainText("Edges needs attention");
-  await expect(reviewPanel).toContainText("Character Sheet Preview");
+  const gearPanel = page.locator("#setupGearPanel");
+  await expect(gearPanel).toContainText("Finish Setup & Start Playing");
+  await expect(gearPanel).toContainText(
+    "Fix setup issues before starting play",
+  );
+  await expect(gearPanel).toContainText("Edges needs attention");
   await expect(
-    reviewPanel.getByRole("button", { name: "Confirm Setup & Start Playing" }),
+    gearPanel.getByRole("button", { name: "Fix setup issues" }),
   ).toBeDisabled();
-  await reviewPanel.getByRole("button", { name: "Go to Edges" }).click();
+  await gearPanel.getByRole("button", { name: "Go to Edges" }).click();
   await expect(page.locator("#setupEdgesPanel")).toBeVisible();
   await page.locator("[data-setup-step='concept']").click();
   await expect(page.locator("#characterName")).toContainText(
@@ -555,7 +557,7 @@ test("Review blocks unfinished setup and jumps to the relevant step", async ({
   );
 });
 
-test("Review shows ready preview and finalizes a valid setup character", async ({
+test("Gear finalization starts play for a valid setup character", async ({
   page,
 }) => {
   await enterTracker(page);
@@ -566,7 +568,7 @@ test("Review shows ready preview and finalizes a valid setup character", async (
     const characterData = normalize({
       source: "created",
       setupStatus: "needsReview",
-      name: "Ready Review Character",
+      name: "Ready Gear Character",
       rank: "Novice",
       ancestry: "Human",
       archetype: "Scout",
@@ -574,7 +576,7 @@ test("Review shows ready preview and finalizes a valid setup character", async (
       age: "31",
       player: "Playwright",
       description: "A careful scout ready for table play.",
-      background: "Built through the setup review ready-state test.",
+      background: "Built through the setup gear finalization test.",
       attributes: {
         agility: "d6",
         smarts: "d6",
@@ -659,33 +661,25 @@ test("Review shows ready preview and finalizes a valid setup character", async (
     });
     const entry = addCharacterSlot(characterData, {
       source: "test",
-      preferredId: "ready-review-character",
+      preferredId: "ready-gear-character",
     });
     character = normalize(entry.character);
     characterSetupReviewOpen = true;
-    characterSetupStep = "review";
+    characterSetupStep = "gear";
     characterDraftMode = false;
     render();
     renderDemoExperience();
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  const reviewPanel = page.locator("#setupReviewPanel");
-  await expect(reviewPanel).toContainText("Ready to Play");
-  await expect(reviewPanel).toContainText("No blocking setup issues.");
-  await expect(reviewPanel).toContainText(
-    "No warnings requiring Marshal review.",
-  );
-  await expect(reviewPanel).toContainText("Character Sheet Preview");
-  await expect(reviewPanel).toContainText("Ready Review Character");
-  await expect(reviewPanel).toContainText("Alertness");
-  await expect(reviewPanel).toContainText("Backpack");
-  await expect(reviewPanel.locator(".setup-review-preview button")).toHaveCount(
-    0,
-  );
+  const gearPanel = page.locator("#setupGearPanel");
+  await expect(gearPanel).toBeVisible();
+  await expect(gearPanel).toContainText("Finish Setup & Start Playing");
+  await expect(gearPanel).toContainText("Current Inventory");
+  await expect(gearPanel).toContainText("Backpack");
 
-  const finalButton = reviewPanel.getByRole("button", {
-    name: "Confirm Setup & Start Playing",
+  const finalButton = gearPanel.getByRole("button", {
+    name: "Finish Setup & Start Playing",
   });
   await expect(finalButton).toBeEnabled();
   await finalButton.click();
@@ -755,11 +749,12 @@ test("shows human ancestry in concept setup", async ({ page }) => {
     });
   expect(stepTopSpread).toBeLessThanOrEqual(1);
 
-  await page.locator("[data-setup-step='review']").click();
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Race / Ancestry",
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
+  await page.locator("[data-setup-step='gear']").click();
+  await expect(page.locator("#setupGearPanel")).toBeVisible();
+  await expect(page.locator("#setupGearPanel")).toContainText(
+    "Finish Setup & Start Playing",
   );
-  await expect(page.locator("#setupReviewPanel")).toContainText("Human");
 });
 
 test("shows setup review for imported characters until confirmed @mobile", async ({
@@ -781,15 +776,14 @@ test("shows setup review for imported characters until confirmed @mobile", async
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await expect(page.locator("#appTabs")).toBeHidden();
   await expect(page.locator("#characterSetupStepper")).toBeVisible();
-  await expect(page.locator("#setupReviewPanel")).toBeVisible();
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
+  await expect(page.locator("#setupGearPanel")).toBeVisible();
   const finalSetupButton = page.locator(
-    "#setupReviewPanel [data-setup-action='finishSetup']",
+    "#setupGearPanel [data-setup-action='finishSetup']",
   );
   await expect(finalSetupButton).toBeVisible();
   await expect(finalSetupButton).toBeEnabled();
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Playable with Warnings",
-  );
+  await expect(page.locator("#setupGearPanel")).toContainText("warning");
 
   await expect
     .poll(() =>
@@ -852,7 +846,8 @@ test("shows setup review for imported characters until confirmed @mobile", async
 
   await page.locator("#reviewSetupBtn").click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
-  await expect(page.locator("#setupReviewPanel")).toBeVisible();
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
+  await expect(page.locator("#setupConceptPanel")).toBeVisible();
 
   await expect
     .poll(() =>

@@ -350,7 +350,8 @@ test("landing create edit button opens saved-character editor", async ({
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#characterName")).toContainText("Saved Dusty");
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
-  await expect(page.locator("#setupReviewPanel")).toBeVisible();
+  await expect(page.locator("#setupGearPanel")).toBeVisible();
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
 });
 
 test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {

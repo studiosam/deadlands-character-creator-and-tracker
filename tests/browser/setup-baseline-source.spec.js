@@ -75,18 +75,19 @@ test("edits concept information in character setup and preserves it across reloa
   );
   await expect(page.locator("#characterSubtitle")).toContainText("Rail Scout");
 
-  await page.locator("[data-setup-step='review']").click();
-  const reviewPanel = page.locator("#setupReviewPanel");
-  await expect(reviewPanel).toBeVisible();
-  await expect(reviewPanel).toContainText("Concept Test Character");
-  await expect(reviewPanel).toContainText("Male");
-  await expect(reviewPanel).toContainText("61");
-  await expect(reviewPanel).toContainText("Rail Scout");
-  await expect(reviewPanel).toContainText("Austin");
-  await expect(reviewPanel).toContainText(
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
+  await page.locator("[data-setup-step='concept']").click();
+  await expect(page.locator("#setupNameInput")).toHaveValue(
+    "Concept Test Character",
+  );
+  await expect(page.locator("#setupGenderInput")).toHaveValue("Male");
+  await expect(page.locator("#setupAgeInput")).toHaveValue("61");
+  await expect(page.locator("#setupArchetypeInput")).toHaveValue("Rail Scout");
+  await expect(page.locator("#setupPlayerInput")).toHaveValue("Austin");
+  await expect(page.locator("#setupDescriptionInput")).toHaveValue(
     "A weathered scout with steady hands and a careful eye.",
   );
-  await expect(reviewPanel).toContainText(
+  await expect(page.locator("#setupBackgroundInput")).toHaveValue(
     "Dusty left Deseret after hard accusations and harder losses.",
   );
 
@@ -99,18 +100,18 @@ test("edits concept information in character setup and preserves it across reloa
   );
   await expect(page.locator("#characterSubtitle")).toContainText("Rail Scout");
 
-  await page.locator("[data-setup-step='review']").click();
-  await expect(page.locator("#setupReviewPanel")).toContainText(
+  await page.locator("[data-setup-step='concept']").click();
+  await expect(page.locator("#setupNameInput")).toHaveValue(
     "Concept Test Character",
   );
-  await expect(page.locator("#setupReviewPanel")).toContainText("Male");
-  await expect(page.locator("#setupReviewPanel")).toContainText("61");
-  await expect(page.locator("#setupReviewPanel")).toContainText("Rail Scout");
-  await expect(page.locator("#setupReviewPanel")).toContainText("Austin");
-  await expect(page.locator("#setupReviewPanel")).toContainText(
+  await expect(page.locator("#setupGenderInput")).toHaveValue("Male");
+  await expect(page.locator("#setupAgeInput")).toHaveValue("61");
+  await expect(page.locator("#setupArchetypeInput")).toHaveValue("Rail Scout");
+  await expect(page.locator("#setupPlayerInput")).toHaveValue("Austin");
+  await expect(page.locator("#setupDescriptionInput")).toHaveValue(
     "A weathered scout with steady hands and a careful eye.",
   );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
+  await expect(page.locator("#setupBackgroundInput")).toHaveValue(
     "Dusty left Deseret after hard accusations and harder losses.",
   );
 });
@@ -198,7 +199,7 @@ test("finalizing setup snapshots source-tracked creation baseline and round-trip
     });
     character = normalize(entry.character);
     characterSetupReviewOpen = true;
-    characterSetupStep = "review";
+    characterSetupStep = "gear";
     characterDraftMode = false;
     render();
     renderDemoExperience();
@@ -206,17 +207,11 @@ test("finalizing setup snapshots source-tracked creation baseline and round-trip
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Playable with Warnings",
-  );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "No blocking setup issues.",
-  );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Character Sheet Preview",
+  await expect(page.locator("#setupGearPanel")).toContainText(
+    "Finish Setup & Start Playing",
   );
   await expect(
-    page.locator("#setupReviewPanel [data-setup-action='finishSetup']"),
+    page.locator("#setupGearPanel [data-setup-action='finishSetup']"),
   ).toBeEnabled();
   await page.locator("[data-setup-action='finishSetup']").click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
@@ -278,15 +273,20 @@ test("finalizing setup snapshots source-tracked creation baseline and round-trip
 
   await reloadIntoTracker(page);
   await openCharacterSetupReview(page);
-  await page.locator("[data-setup-step='review']").click();
-  await expect(page.locator("#setupReviewPanel")).toContainText(
+  await page.locator("[data-setup-step='gear']").click();
+  await page
+    .locator("#setupGearPanel details")
+    .filter({ hasText: "Setup Source Audit" })
+    .locator("summary")
+    .click();
+  await expect(page.locator("#setupGearPanel")).toContainText(
     "Setup Source Audit",
   );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
+  await expect(page.locator("#setupGearPanel")).toContainText(
     "Needs GM/Table Exception",
   );
-  await expect(page.locator("#setupReviewPanel")).toContainText("0");
-  await expect(page.locator("#setupReviewPanel")).toContainText(
+  await expect(page.locator("#setupGearPanel")).toContainText("0");
+  await expect(page.locator("#setupGearPanel")).toContainText(
     "Explained by Starting Gear Purchase.",
   );
 
@@ -375,7 +375,7 @@ test("marks setup source audit records as GM table exceptions", async ({
     });
     character = normalize(entry.character);
     characterSetupReviewOpen = true;
-    characterSetupStep = "review";
+    characterSetupStep = "gear";
     characterDraftMode = false;
     render();
     renderDemoExperience();
@@ -383,13 +383,13 @@ test("marks setup source audit records as GM table exceptions", async ({
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
-  await page.locator("[data-setup-step='review']").click();
+  await page.locator("[data-setup-step='gear']").click();
 
-  const relicAuditRow = page.locator("#setupReviewPanel .dossier-note").filter({
+  const relicAuditRow = page.locator("#setupGearPanel .dossier-note").filter({
     hasText: "Mysterious Relic",
   });
   await page
-    .locator("#setupReviewPanel details")
+    .locator("#setupGearPanel details")
     .filter({ hasText: "Setup Source Audit" })
     .locator("summary")
     .click();
@@ -397,7 +397,7 @@ test("marks setup source audit records as GM table exceptions", async ({
   await relicAuditRow.getByRole("button", { name: "Mark Exception" }).click();
 
   await expect(
-    page.locator("#setupReviewPanel .dossier-note").filter({
+    page.locator("#setupGearPanel .dossier-note").filter({
       hasText: "Mysterious Relic",
     }),
   ).toContainText("Explained by GM / table exception.");
@@ -593,15 +593,8 @@ test("shows usage notes and audits setup traits, edges, powers, and gear", async
   await expect(setupGearPanel).toContainText("Native Armor");
   await expect(setupGearPanel).toContainText("Ammunition");
 
-  await page.locator("[data-setup-step='review']").click();
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Character Sheet Preview",
-  );
-  await expect(page.locator("#setupReviewPanel")).toContainText(
-    "Edges & Hindrances",
-  );
-  await expect(page.locator("#setupReviewPanel")).toContainText("Arcane");
-  await expect(page.locator("#setupReviewPanel")).toContainText("Gear");
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
+  await expect(setupGearPanel).toContainText("Finish Setup & Start Playing");
 });
 
 test("edits setup traits for created characters and stores the creation baseline", async ({

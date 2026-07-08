@@ -253,12 +253,11 @@ test("selects hindrances in character setup and summarizes point expectations", 
   await expect(page.locator("#setupHindrancesPanel")).toContainText("Cursed");
   await expect(page.locator("#setupHindrancesPanel")).toContainText("4 / 4");
 
-  await page.locator("[data-setup-step='review']").click();
-  const reviewPanel = page.locator("#setupReviewPanel");
-  await expect(reviewPanel).toContainText("Character Sheet Preview");
-  await expect(reviewPanel).toContainText("Edges & Hindrances");
-  await expect(reviewPanel).toContainText("Bad Luck");
-  await expect(reviewPanel).toContainText("Cursed");
+  await expect(page.locator("[data-setup-step='review']")).toHaveCount(0);
+  await page.locator("[data-setup-step='gear']").click();
+  await expect(page.locator("#setupGearPanel")).toContainText(
+    "Finish Setup & Start Playing",
+  );
 });
 
 test("Hindrance Benefit Point meters update for Minor Major and spending states", async ({
@@ -668,10 +667,10 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await expect(
     page.locator("[data-setup-action='saveDraftCharacter']"),
   ).toHaveCount(0);
-  await page.locator("[data-setup-step='review']").click();
+  await page.locator("[data-setup-step='gear']").click();
   await page.locator("[data-setup-action='saveDraftCharacter']").click();
   await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Review and save character",
+    "Save character setup",
   );
 
   await page.locator(".setup-step[data-setup-step='edges']").click();
@@ -1269,17 +1268,16 @@ test("starting Edge validation blocks stale invalid Human free Edge choices", as
   await expect(braveCard).not.toContainText("Catalog matched");
   await expect(braveCard).not.toContainText("Rank");
 
-  await page.locator("[data-setup-step='review']").click();
-  const reviewPanel = page.locator("#setupReviewPanel");
-  await expect(reviewPanel).toContainText("Needs Fix");
-  await expect(reviewPanel).toContainText("Starting Edge needs fix");
+  await page.locator("[data-setup-step='gear']").click();
+  const gearPanel = page.locator("#setupGearPanel");
+  await expect(gearPanel).toContainText(
+    "Fix setup issues before starting play",
+  );
+  await expect(gearPanel).toContainText("Starting Edge needs fix");
   await expect(
-    reviewPanel.getByRole("button", { name: "Confirm Setup & Start Playing" }),
+    gearPanel.getByRole("button", { name: "Fix setup issues" }),
   ).toBeDisabled();
-  await reviewPanel
-    .getByRole("button", { name: "Go to Edges" })
-    .first()
-    .click();
+  await gearPanel.getByRole("button", { name: "Go to Edges" }).first().click();
   await expect(page.locator("#setupEdgesPanel")).toBeVisible();
   await expect(edgesPanel).toContainText(
     "Human free Edge no longer satisfies starting Edge eligibility",

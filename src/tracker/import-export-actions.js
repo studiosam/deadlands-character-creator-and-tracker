@@ -51,7 +51,7 @@ function importJsonText(text) {
         (isSavagedUsExport(data) ? "savaged.us" : "imported"),
     });
     character = normalize(entry.character);
-    characterSetupStep = "review";
+    characterSetupStep = "gear";
     if (character?.setupStatus === "needsReview") importType = "setup-review";
     storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   }

@@ -3754,6 +3754,30 @@ body:has(#setupGearPanel) .toast-region {
   border-left: 5px solid rgba(74, 118, 80, 0.72);
 }
 
+.setup-gear-finalize {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.setup-gear-finalize .setup-review-details {
+  grid-column: 1 / -1;
+}
+
+.setup-finalize-blockers {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.setup-finalize-blocker-list {
+  gap: 0.55rem;
+}
+
+.setup-finalize-warning-summary {
+  margin-top: 0.6rem;
+}
+
 .setup-review-hero,
 .setup-review-summary,
 .setup-review-checklist,
@@ -5234,6 +5258,10 @@ body:has(#setupGearPanel) .toast-region {
   .setup-review-finalize {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .setup-gear-finalize {
+    grid-template-columns: 1fr;
   }
 
   .setup-review-two-column {

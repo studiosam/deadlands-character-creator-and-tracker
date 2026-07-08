@@ -7,7 +7,7 @@ resources, active powers, notes, advancement history, and table reminders live
 in one static web app that can run from GitHub Pages or directly from the
 project folder.
 
-Character Setup is included as setup scaffolding and review support for this
+Character Setup is included as setup scaffolding and validation support for this
 prototype, but the app is not a replacement for Savaged.us, Pinnacle products,
 the official books, or a full VTT. In a real official integration, Savaged.us or
 another licensed builder would remain the source of truth for official
@@ -40,8 +40,8 @@ want a local, private, session-focused tracker at the table.
   declarations.
 - Manage weapons, loaded rounds, reserve ammunition, armor by location, gear,
   vehicles, storage locations, carrying capacity, and encumbrance.
-- Build or review a Deadlands/SWADE character through Character Setup, confirm
-  setup, and start play from the Combat tab.
+- Build or review a Deadlands/SWADE character through Character Setup, finish
+  setup from Gear, and start play from the live tracker.
 - Review imported or newly created characters through the `setupStatus`
   lifecycle: characters start as `needsReview`, confirmed setup becomes
   `complete`, and Review Setup can intentionally reopen setup later.
@@ -69,14 +69,14 @@ want a local, private, session-focused tracker at the table.
 
 - Implemented: combat tracking, Combat Declaration, inventory/equipment
   management, active powers, local character library, JSON import/export,
-  minimal landing page, read-only Sources & Rulesets, Character Setup review,
+  minimal landing page, read-only Sources & Rulesets, Character Setup validation,
   confirmed Character Sheet mode, Characters panel profile editing, global
   undo/redo, Deadlands bookkeeping records, and automated browser/static checks.
 - Implemented setup scaffolding: concept, Attributes, Skills, Edges,
   optional Hindrances with benefit spending, Powers setup, Gear purchases,
   setup sell-back, useful-ammo prioritization, setup source tracking, GM/table
-  exception markers, setup review, and creation baseline snapshots for eligible
-  created pre-advance characters.
+  exception markers, Gear finalization, and creation baseline snapshots for
+  eligible created pre-advance characters.
 - Implemented Advancement baseline: canonical app-owned Advancement entries,
   supported application for existing advancement types, persistence,
   import-history handling, and safe undo checks where reliable before/after
@@ -131,8 +131,8 @@ Recommended portfolio screenshots/GIFs:
   Normal Carry is only a separate out-of-combat allowance when shown.
 - Arcane tab showing Power Points, known powers, active powers, runtime
   reminders, and variable Power Point spend details.
-- Character Setup review, confirmed Character Sheet mode, and creation baseline
-  audit.
+- Character Setup Gear finalization, confirmed Character Sheet mode, and
+  creation baseline audit.
 - Characters panel profile editor.
 - Read-only Sources & Rulesets page.
 - Savaged.us import flow with import warnings.
@@ -154,8 +154,8 @@ Recommended portfolio screenshots/GIFs:
 - App-styled dialogs and toasts replace native browser alerts/confirms.
 - Image-backed minimal landing page supports saved-character selection, creation,
   JSON import, sample loading, and read-only Sources & Rulesets access.
-- `setupStatus` separates one-time Character Setup review from the normal
-  confirmed Character Sheet.
+- `setupStatus` separates one-time Character Setup validation/finalization from
+  the normal confirmed Character Sheet.
 - Characters panel profile editing keeps stable identity/profile updates out of
   casual Character Sheet reference use.
 - Local Data centralizes app status, backup/export actions, and browser storage

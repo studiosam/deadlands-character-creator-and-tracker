@@ -1672,7 +1672,7 @@ async function confirmSetupReview() {
 function ensureSetupReviewCanFinalize() {
   const report = setupReviewValidationReport();
   if (!report.blockers.length) return true;
-  characterSetupStep = "review";
+  characterSetupStep = validSetupStepId(report.blockers[0]?.step, "gear");
   saveSetupProgressState(characterSetupStep);
   render();
   appToast("Resolve blocking setup issues before finalizing.", "danger");
@@ -1681,7 +1681,7 @@ function ensureSetupReviewCanFinalize() {
 
 function reopenSetupReview() {
   characterSetupReviewOpen = true;
-  characterSetupStep = "review";
+  characterSetupStep = validSetupStepId(characterSetupStep, "concept");
   saveSetupProgressState(characterSetupStep);
   render();
   $("#characterSetupPanel")?.scrollIntoView({
@@ -1754,7 +1754,7 @@ async function finishSetupAndStartPlaying() {
     saveCharacterSlot(character);
   }
 
-  characterSetupStep = "review";
+  characterSetupStep = "gear";
   render();
   setAppTab("play");
   renderDemoExperience();

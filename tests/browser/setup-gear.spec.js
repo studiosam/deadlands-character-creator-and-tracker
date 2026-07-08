@@ -827,7 +827,9 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   );
   await expect(setupGearPanel).toContainText("Funds Remaining");
   await expect(setupGearPanel).toContainText("$180.64");
-  await expect(setupGearPanel).not.toContainText("Starting Gear Purchase");
+  await expect(setupGearPanel.locator(".setup-gear-groups")).not.toContainText(
+    "Starting Gear Purchase",
+  );
   await expect(setupGearPanel).toContainText("Bateaux");
   await expect(
     setupGearPanel

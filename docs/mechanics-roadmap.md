@@ -24,7 +24,8 @@ the rules.
   Armor, Weapons, and Vehicles.
 - Character Setup shell: Concept, Attributes, Skills, Edges, optional
   Hindrances with benefit spending, Powers setup, Gear purchases, setup source
-  audit, GM/table exception markers, creation baseline snapshots, and Review.
+  audit, GM/table exception markers, creation baseline snapshots, and Gear
+  finalization.
 - Advancement: canonical ledger entries for current supported advancement
   types, canonical changes, application, persistence, and safe undo model.
 - Arcane support: Arcane Background profiles, Power Points, known powers,
@@ -40,7 +41,7 @@ the rules.
 - Character Setup is feature-complete for the current MVP scaffolding: created
   pre-advance characters can draft Concept, Attributes, Skills, Edges,
   optional Hindrances and benefits, Powers, Gear purchases, setup source fields,
-  and Review.
+  and finish setup from Gear.
 - New SWADE / Deadlands setup characters use the current baseline skill model:
   Athletics, Common Knowledge, Notice, Persuasion, and Stealth start at `d4`;
   Language starts at `d8`; other default setup skills start Unskilled unless
@@ -571,8 +572,8 @@ Current top-to-bottom audit findings:
    at the current player-owned tracker scope, and Phase 6 should wait for manual
    source/profile investigation.
 2. The highest product value now is Character Setup UX polish, especially Gear
-   and final Review clarity, because that is where new users still spend the
-   most decision-heavy time.
+   finalization clarity, because that is where new users still spend the most
+   decision-heavy time.
 3. The highest maintainability value is a mechanical refactor of the largest
    setup files after the current Gear UX stabilizes. `src/tracker/setup-render.js`
    and `src/tracker/setup-actions.js` are the next obvious split candidates.
