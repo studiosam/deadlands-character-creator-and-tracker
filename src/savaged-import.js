@@ -40,6 +40,15 @@ function savagedAdvanceLabel(advance) {
   );
 }
 
+function savagedText(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return "";
+}
+
 /**
  * Preserve Savaged.us advancement text as canonical imported history.
  *
@@ -626,10 +635,25 @@ function fromSavagedUs(data) {
     source: "savaged.us",
     setupStatus: "needsReview",
     sourceId: data.uuid || data.id || data.saveID,
-    name: data.name || "Imported Character",
-    rank: data.rankName || data.rank || "Novice",
-    ancestry: data.race || "—",
-    archetype: data.professionOrTitle || "",
+    name: savagedText(data.name, data.characterName, "Imported Character"),
+    gender: savagedText(
+      data.gender,
+      data.sex,
+      data.character?.gender,
+      data.profile?.gender,
+    ),
+    age: savagedText(data.age, data.character?.age, data.profile?.age),
+    archetype: savagedText(
+      data.professionOrTitle,
+      data.profession,
+      data.occupation,
+      data.concept,
+    ),
+    player: savagedText(data.playerName, data.player, data.owner),
+    description: savagedText(data.description, data.appearance),
+    background: savagedText(data.background, data.backstory),
+    rank: savagedText(data.rankName, data.rank, "Novice"),
+    ancestry: savagedText(data.race, "—"),
     attributes: Object.fromEntries(
       arr(data.attributes)
         .filter((attribute) => attribute.name && attribute.value)

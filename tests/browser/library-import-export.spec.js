@@ -580,6 +580,16 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await expect(page.locator("#appTabs")).toBeHidden();
+  await page.locator("[data-setup-step='concept']").click();
+  await expect(page.locator("#setupGenderInput")).toHaveValue("Male");
+  await expect(page.locator("#setupAgeInput")).toHaveValue("19");
+  await expect(page.locator("#setupArchetypeInput")).toHaveValue(
+    "Elder of the Melchizedek Priesthood",
+  );
+  await expect(page.locator("#setupPlayerInput")).toHaveValue("Trevor");
+  await expect(page.locator("[data-setup-step='concept']")).toContainText(
+    "Complete",
+  );
   await expect(page.locator("[data-setup-step='hindrances']")).toContainText(
     "Ready",
   );
