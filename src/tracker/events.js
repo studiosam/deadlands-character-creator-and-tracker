@@ -135,12 +135,6 @@ document.addEventListener("click", async (event) => {
     await nextSetupStep();
   } else if (setupAction?.dataset.setupAction === "previousSetupStep") {
     previousSetupStep();
-  } else if (setupAction?.dataset.setupAction === "saveDraftCharacter") {
-    await saveDraftCharacterFromSetup();
-  } else if (setupAction?.dataset.setupAction === "discardDraftCharacter") {
-    await discardDraftCharacterFromSetup();
-  } else if (setupAction?.dataset.setupAction === "saveCharacterNow") {
-    await saveCurrentCharacterToLibrary();
   } else if (setupAction?.dataset.setupAction === "confirmSetup") {
     await confirmSetupReview();
   } else if (setupAction?.dataset.setupAction === "finishSetup") {
@@ -149,8 +143,6 @@ document.addEventListener("click", async (event) => {
     await randomizeConceptFields({ onlyEmpty: true });
   } else if (setupAction?.dataset.setupAction === "randomizeConceptAll") {
     await randomizeConceptFields({ onlyEmpty: false });
-  } else if (setupAction?.dataset.setupAction === "deleteCharacterSlot") {
-    await deleteActiveCharacterSlotFromSetup();
   } else if (setupAction?.dataset.setupAction === "addHindrance") {
     addSetupHindrance();
   } else if (setupAction?.dataset.setupAction === "removeHindrance") {
@@ -216,13 +208,6 @@ document.addEventListener("click", async (event) => {
     );
   } else if (setupAction?.dataset.setupAction === "resetSetupGear") {
     await resetSetupGear();
-  } else if (setupAction?.dataset.setupAction === "markSetupException") {
-    markSetupRecordAsException(
-      setupAction.dataset.setupCollection || "",
-      setupAction.dataset.setupRecordId || "",
-      setupAction.dataset.setupRecordType || "",
-      setupAction.dataset.setupRecordLabel || "",
-    );
   } else if (setupAction?.dataset.setupAction === "incAttribute") {
     changeSetupAttribute(setupAction.dataset.traitName || "", 1);
   } else if (setupAction?.dataset.setupAction === "decAttribute") {

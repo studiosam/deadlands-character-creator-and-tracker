@@ -2408,46 +2408,11 @@ body:has(#setupGearPanel) .toast-region {
   min-width: 0;
 }
 
-.setup-persistence-panel {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.85rem;
-  align-items: center;
-  margin-top: 0.9rem;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid rgba(65, 36, 16, 0.24);
-  border-radius: 8px;
-  background: rgba(255, 250, 239, 0.66);
-  color: var(--dossier-ink);
-}
-
-.setup-persistence-panel.unsaved {
-  border-color: rgba(143, 84, 0, 0.5);
-  background: #fff0ca;
-}
-
-.setup-persistence-panel.setup-progress-panel {
-  background: rgba(255, 250, 239, 0.52);
-}
-
-.setup-persistence-panel strong {
-  display: block;
-  font-size: 0.95rem;
-}
-
-.setup-persistence-panel p {
-  margin: 0.25rem 0 0;
-  color: var(--dossier-muted);
-}
-
-.setup-persistence-panel .creator-actions {
-  justify-content: flex-end;
-  margin: 0;
-}
-
 .setup-step-navigation {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 34rem) minmax(0, 1fr);
+  grid-template-columns:
+    minmax(max-content, 1fr) minmax(0, 34rem)
+    minmax(max-content, 1fr);
   gap: 0.55rem;
   align-items: center;
   margin-top: 0.15rem;
@@ -2493,8 +2458,12 @@ body:has(#setupGearPanel) .toast-region {
 }
 
 .setup-concept-randomizer-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
   justify-content: flex-start;
   margin: 0;
+  white-space: nowrap;
 }
 
 .setup-review-grid.setup-hindrance-summary-grid {
@@ -2503,11 +2472,20 @@ body:has(#setupGearPanel) .toast-region {
 
 .setup-gear-summary-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  position: sticky;
+  top: 0.75rem;
+  z-index: 5;
+  margin: 0 0 0.85rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(65, 36, 16, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 250, 239, 0.96);
+  box-shadow: 0 0.45rem 1.1rem rgba(66, 38, 12, 0.12);
 }
 
 .setup-gear-workbench {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(12rem, 18vw, 16rem);
+  grid-template-columns: minmax(0, 1fr) clamp(15rem, 24vw, 22rem);
   grid-template-areas: "shop inventory";
   gap: 0.75rem;
   align-items: start;
@@ -2545,8 +2523,8 @@ body:has(#setupGearPanel) .toast-region {
 
 .setup-catalog-picker-title {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  column-gap: 0.35rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 0.45rem;
   row-gap: 0.16rem;
   align-items: center;
   cursor: pointer;
@@ -2554,7 +2532,7 @@ body:has(#setupGearPanel) .toast-region {
 }
 
 .setup-catalog-picker-title h5 {
-  grid-column: 1;
+  grid-column: 2;
   grid-row: 1;
 }
 
@@ -2563,13 +2541,14 @@ body:has(#setupGearPanel) .toast-region {
 }
 
 .setup-catalog-picker-title::after {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 1;
   justify-self: start;
   color: var(--dossier-muted);
   content: "\25b8";
   font-family: var(--font-display);
-  font-size: 0.85rem;
+  font-size: 1.08rem;
+  line-height: 1;
 }
 
 .setup-catalog-picker[open] > .setup-catalog-picker-title::after {
@@ -2627,7 +2606,7 @@ body:has(#setupGearPanel) .toast-region {
 .setup-catalog-picker-summary {
   display: grid;
   grid-template-columns:
-    minmax(7.5rem, 1.1fr) minmax(4.5rem, 0.5fr)
+    minmax(5.5rem, 0.75fr) minmax(4.5rem, 0.5fr)
     minmax(4.25rem, 0.48fr) minmax(3.8rem, 0.4fr)
     minmax(4.8rem, 0.5fr) 4.25rem 4.25rem 3.75rem;
   gap: 0.4rem;
@@ -2637,21 +2616,21 @@ body:has(#setupGearPanel) .toast-region {
 .setup-gear-catalog-picker .setup-catalog-picker-header,
 .setup-gear-catalog-picker .setup-catalog-picker-summary {
   grid-template-columns:
-    minmax(8rem, 1fr) minmax(7rem, 0.7fr) 4.25rem 4.25rem
+    minmax(5.5rem, 0.75fr) minmax(7rem, 0.7fr) 4.25rem 4.25rem
     3.75rem;
 }
 
 .setup-armor-catalog-picker .setup-catalog-picker-header,
 .setup-armor-catalog-picker .setup-catalog-picker-summary {
   grid-template-columns:
-    minmax(8rem, 1fr) 3.5rem minmax(5.8rem, 0.7fr) 4rem 4.25rem
+    minmax(5.75rem, 0.75fr) 3.5rem minmax(5.8rem, 0.7fr) 4rem 4.25rem
     4.25rem 3.75rem;
 }
 
 .setup-vehicle-catalog-picker .setup-catalog-picker-header,
 .setup-vehicle-catalog-picker .setup-catalog-picker-summary {
   grid-template-columns:
-    minmax(5.75rem, 0.85fr) minmax(4.75rem, 0.55fr) 4.25rem 3.6rem
+    minmax(4.75rem, 0.65fr) minmax(4.75rem, 0.55fr) 4.25rem 3.6rem
     4.85rem 3.25rem minmax(6.5rem, 7rem) 3rem;
   gap: 0.35rem;
 }
@@ -2757,8 +2736,11 @@ body:has(#setupGearPanel) .toast-region {
 }
 
 .setup-catalog-picker-name strong {
+  display: block;
   color: var(--dossier-ink);
   font-size: 0.94rem;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .setup-catalog-picker-load,
@@ -5250,15 +5232,6 @@ body:has(#setupGearPanel) .toast-region {
     justify-content: flex-start;
   }
 
-  .setup-persistence-panel {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .setup-persistence-panel .creator-actions {
-    justify-content: flex-start;
-  }
-
   .setup-review-status-banner,
   .setup-review-finalize {
     align-items: stretch;
@@ -5285,6 +5258,11 @@ body:has(#setupGearPanel) .toast-region {
   .setup-step-navigation-previous {
     grid-column: 1;
     grid-row: 2;
+  }
+
+  .setup-concept-randomizer-actions {
+    flex-wrap: wrap;
+    white-space: normal;
   }
 
   .setup-step-navigation-next {
@@ -5368,6 +5346,10 @@ body:has(#setupGearPanel) .toast-region {
     position: static;
     max-height: none;
     overflow: visible;
+  }
+
+  .setup-gear-summary-grid {
+    position: static;
   }
 
   .setup-gear-workbench {

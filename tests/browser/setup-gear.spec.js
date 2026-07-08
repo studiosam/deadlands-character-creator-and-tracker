@@ -1303,3 +1303,41 @@ test("Gear setup audit flags missing or unknown gear data", async ({
     }),
   );
 });
+
+test("Gear setup audit accepts generic clothing without price or weight", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Clothing Gear Audit",
+    preferredId: "clothing-gear-audit",
+    moneyCents: 25000,
+    injectInvalidInventory: [
+      {
+        id: "clothing",
+        name: "Clothing",
+        count: 1,
+        location: "carried",
+      },
+    ],
+  });
+
+  await expect(page.locator("[data-setup-step='gear']")).toContainText(
+    "Complete",
+  );
+  await expect(page.locator(".setup-step-navigation")).not.toContainText(
+    "Gear needs review:",
+  );
+  await expect(page.locator(".setup-step-navigation")).not.toContainText(
+    "Weight is unknown",
+  );
+  await expect(page.locator(".setup-step-navigation")).not.toContainText(
+    "Cost is unknown",
+  );
+  await expect(page.locator("#setupGearPanel")).toContainText("Clothing");
+  await expect(
+    page.locator(".setup-gear-finalize", { hasText: "Gear: Clothing" }),
+  ).toHaveCount(0);
+  await expect(page.locator("#setupGearPanel")).not.toContainText(
+    "Setup Source Audit",
+  );
+});

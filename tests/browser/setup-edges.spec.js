@@ -668,10 +668,7 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
     page.locator("[data-setup-action='saveDraftCharacter']"),
   ).toHaveCount(0);
   await page.locator("[data-setup-step='gear']").click();
-  await page.locator("[data-setup-action='saveDraftCharacter']").click();
-  await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Save character setup",
-  );
+  await expect(page.locator(".setup-persistence-panel")).toHaveCount(0);
 
   await page.locator(".setup-step[data-setup-step='edges']").click();
   const edgesPanel = page.locator("#setupEdgesPanel");
@@ -852,6 +849,12 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await expect(
     page.locator(".setup-step[data-setup-step='edges']"),
   ).toContainText("Complete");
+
+  await page.locator("#setupMainMenuBtn").click();
+  const saveDraftDialog = page.locator("#appDialog");
+  await expect(saveDraftDialog).toBeVisible();
+  await saveDraftDialog.getByRole("button", { name: "Save Draft" }).click();
+  await expect(page.locator("#landingPage")).toBeVisible();
 
   await expect
     .poll(() =>

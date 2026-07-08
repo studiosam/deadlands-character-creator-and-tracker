@@ -608,16 +608,11 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
     "Finish Setup & Start Playing",
   );
   await expect(page.locator("#setupGearPanel")).toContainText("warning");
-  await page
-    .locator("#setupGearPanel details")
-    .filter({ hasText: "Setup Source Audit" })
-    .locator("summary")
-    .click();
   await expect(page.locator("#setupGearPanel")).toContainText(
-    "Setup Source Audit",
+    "Current Inventory",
   );
-  await expect(page.locator("#setupGearPanel")).toContainText(
-    "Needs GM/Table Exception",
+  await expect(page.locator("#setupGearPanel")).not.toContainText(
+    "Setup Source Audit",
   );
 });
 

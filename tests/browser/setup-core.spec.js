@@ -113,8 +113,23 @@ test("starts new characters directly in character setup @mobile", async ({
     "Progress is saved locally.",
   );
   await expect(page.locator("#characterSetupPanel")).toContainText(
-    "Final save controls appear on Gear.",
+    "Setup finalization appears on Gear.",
   );
+  await expect(
+    page.locator(
+      ".setup-step-navigation-previous [data-setup-action='randomizeConceptEmpty']",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.locator(
+      ".setup-step-navigation-previous [data-setup-action='randomizeConceptAll']",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.locator(
+      "#setupConceptPanel [data-setup-action='randomizeConceptEmpty']",
+    ),
+  ).toHaveCount(0);
   await expect(
     page.locator("[data-setup-action='saveDraftCharacter']"),
   ).toHaveCount(0);
@@ -229,17 +244,16 @@ test("starts new characters directly in character setup @mobile", async ({
   );
   await expect(page.locator("#setupTraitsPanel")).toContainText("Attributes");
 
-  await page.locator("[data-setup-step='gear']").click();
-  await page.locator("[data-setup-action='saveDraftCharacter']").click();
-  await expect(page.locator("#appDialog")).toBeVisible();
-  await page.locator("#appDialogInput").fill("Saved Draft Prospect");
-  await page.locator("#appDialogConfirmBtn").click();
+  await page.locator("[data-setup-step='concept']").click();
+  await page.locator("#setupNameInput").fill("Saved Draft Prospect");
   await expect(page.locator("#characterName")).toContainText(
     "Saved Draft Prospect",
   );
-  await expect(page.locator(".setup-persistence-panel")).toContainText(
-    "Save character setup",
-  );
+  await page.locator("#setupMainMenuBtn").click();
+  const saveDraftDialog = page.locator("#appDialog");
+  await expect(saveDraftDialog).toBeVisible();
+  await saveDraftDialog.getByRole("button", { name: "Save Draft" }).click();
+  await expect(page.locator("#landingPage")).toBeVisible();
 
   await expect
     .poll(() =>
@@ -270,8 +284,6 @@ test("starts new characters directly in character setup @mobile", async ({
       hasBaseline: true,
     });
 
-  await page.locator("#setupMainMenuBtn").click();
-  await expect(page.locator("#landingPage")).toBeVisible();
   await expect(page.locator("#landingCreateBtn")).toHaveText(
     "Create/Edit Character",
   );
@@ -314,21 +326,11 @@ test("starts new characters directly in character setup @mobile", async ({
   await expect(unsavedDraftDialog).toBeHidden();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
 
-  await page.locator("[data-setup-step='gear']").click();
-  await expect(
-    page.locator("[data-setup-action='discardDraftCharacter']"),
-  ).toBeVisible();
-  await page.locator("[data-setup-action='discardDraftCharacter']").click();
-  await expect(page.locator("#appDialog")).toBeVisible();
-  await page.locator("#appDialogConfirmBtn").click();
-  await expect(page.locator("#characterName")).toContainText(
-    "Saved Draft Prospect",
-  );
-
-  await page.locator("[data-setup-step='gear']").click();
-  await page.locator("[data-setup-action='deleteCharacterSlot']").click();
-  await expect(page.locator("#appDialog")).toBeVisible();
-  await page.locator("#appDialogConfirmBtn").click();
+  await page.locator("#setupMainMenuBtn").click();
+  await expect(unsavedDraftDialog).toBeVisible();
+  await unsavedDraftDialog
+    .getByRole("button", { name: "Discard Draft" })
+    .click();
   await expect(page.locator("#landingPage")).toBeVisible();
   await expect
     .poll(() =>
@@ -341,7 +343,7 @@ test("starts new characters directly in character setup @mobile", async ({
         CHARACTER_LIBRARY_KEY,
       ),
     )
-    .toBe(0);
+    .toBe(1);
 });
 
 test("randomizes Concept fields from Weird West name tables", async ({

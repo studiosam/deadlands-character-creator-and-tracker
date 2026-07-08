@@ -503,43 +503,8 @@ function renderCharacterSetup() {
   };
 
   els.characterSetupContent.innerHTML =
-    (characterSetupStep === "gear" ? renderSetupPersistencePanel() : "") +
     (renderers[characterSetupStep]?.() || renderSetupConcept()) +
     renderSetupStepNavigation();
-}
-
-function renderSetupPersistencePanel() {
-  if (characterSetupStep !== "gear") return "";
-
-  if (isUnsavedCharacterDraft()) {
-    return `<div class="setup-persistence-panel unsaved">
-      <div>
-        <strong>Save character draft</strong>
-        <p>This draft resumes on reload, but it is not a saved character slot until you save or finish setup from Gear.</p>
-      </div>
-      <div class="creator-actions">
-        <button type="button" data-setup-action="saveDraftCharacter">Save Character</button>
-        <button class="ghost danger-lite" type="button" data-setup-action="discardDraftCharacter">Discard Draft</button>
-      </div>
-    </div>`;
-  }
-
-  const active = activeCharacterSlot();
-  if (!active) return "";
-  return `<div class="setup-persistence-panel">
-    <div>
-      <strong>${character.creation?.finalized ? "Character ready to play" : "Save character setup"}</strong>
-      <p>${
-        character.creation?.finalized
-          ? "This setup is marked finished. Use Finish Setup & Start Playing to return to the live tracker."
-          : "Save this character or finish setup from the Gear step."
-      }</p>
-    </div>
-    <div class="creator-actions">
-      <button class="ghost" type="button" data-setup-action="saveCharacterNow">Save Character</button>
-      <button class="ghost danger-lite" type="button" data-setup-action="deleteCharacterSlot">Delete Character</button>
-    </div>
-  </div>`;
 }
 
 function renderSetupStepNavigation() {
@@ -554,12 +519,22 @@ function renderSetupStepNavigation() {
   const footerWarning = setupStepFooterWarningMarkup();
   return `<div class="setup-step-navigation">
     <div class="setup-step-navigation-previous">
-      ${previousStep ? `<button class="ghost" type="button" data-setup-action="previousSetupStep">Previous: ${esc(previousStep.label)}</button>` : ""}
+      ${setupPreviousStepControls(previousStep)}
     </div>
     ${footerWarning}
     <div class="setup-step-navigation-next">
       ${nextStep ? `<button type="button" data-setup-action="nextSetupStep"${nextDisabled ? " disabled" : ""}>${esc(nextLabel)}</button>` : ""}
     </div>
+  </div>`;
+}
+
+function setupPreviousStepControls(previousStep) {
+  if (previousStep)
+    return `<button class="ghost" type="button" data-setup-action="previousSetupStep">Previous: ${esc(previousStep.label)}</button>`;
+  if (characterSetupStep !== "concept") return "";
+  return `<div class="creator-actions setup-concept-randomizer-actions" aria-label="Concept randomizer actions">
+    <button class="ghost" type="button" data-setup-action="randomizeConceptEmpty">Randomize Empty Fields</button>
+    <button class="ghost" type="button" data-setup-action="randomizeConceptAll">Randomize All Fields</button>
   </div>`;
 }
 
@@ -621,10 +596,6 @@ function renderSetupConcept() {
         <p>Sketch the character's identity first. Name, gender, age, and title are required before Concept is complete.</p>
       </div>
       ${setupStatusMarkup(status)}
-    </div>
-    <div class="creator-actions setup-concept-randomizer-actions" aria-label="Concept randomizer actions">
-      <button class="ghost" type="button" data-setup-action="randomizeConceptEmpty">Randomize Empty Fields</button>
-      <button class="ghost" type="button" data-setup-action="randomizeConceptAll">Randomize All Fields</button>
     </div>
     <div class="setup-form-grid">
       <label>Character name<input id="setupNameInput" data-concept-field="name" value="${esc(character.name || "")}" placeholder="e.g. Abigail Stone" autocomplete="off"></label>
@@ -2943,8 +2914,11 @@ function renderSetupGearPurchaseControls(report) {
   }
 
   return `<section class="setup-trait-group" aria-labelledby="setupGearPurchaseHeading">
-    <h4 id="setupGearPurchaseHeading">Buy Starting Gear</h4>
-    <p class="creator-note">Choose catalog items and spend starting funds. Buy matching ammunition from the weapon's inventory card after adding a weapon.</p>
+    <div class="section-title">
+      <div>
+        <h4 id="setupGearPurchaseHeading">Buy Starting Gear</h4>
+      </div>
+    </div>
     <div class="setup-purchase-card-list">
       ${setupWeaponPicker(WEAPON_CATALOG)}
       ${setupGearPicker(GEAR_CATALOG.filter((item) => !isAmmo(item)))}
@@ -2971,7 +2945,6 @@ function setupFinalizeWarningSummary(report) {
 
 function renderSetupFinalizePanel(report) {
   const blocked = report.blockers.length > 0;
-  const sourceExceptionEditable = setupTraitsEditable();
   return `<section class="setup-review-finalize setup-gear-finalize" aria-labelledby="setupGearFinalizeHeading">
     <div>
       <h4 id="setupGearFinalizeHeading">Finish Setup & Start Playing</h4>
@@ -2983,7 +2956,6 @@ function renderSetupFinalizePanel(report) {
       ${blocked ? setupFinalizeBlockerList(report) : setupFinalizeWarningSummary(report)}
     </div>
     <button type="button" data-setup-action="finishSetup"${blocked ? " disabled" : ""}>${blocked ? "Fix setup issues" : "Finish Setup & Start Playing"}</button>
-    ${setupReviewSourceAuditSection(report.sourceAudit, sourceExceptionEditable)}
   </section>`;
 }
 
@@ -3009,7 +2981,6 @@ function renderSetupGear() {
         <div class="section-title">
           <div>
             <h4 id="setupRecordedGearHeading">Current Inventory</h4>
-            <p class="creator-note">Visible while buying so you can compare purchases without scrolling.</p>
           </div>
         </div>
         <div class="setup-gear-groups">
@@ -3419,39 +3390,8 @@ function setupReviewCharacterSheetPreview(report) {
   </section>`;
 }
 
-function setupReviewSourceAuditSection(sourceAudit, sourceExceptionEditable) {
-  return `<details class="setup-review-details">
-    <summary>Setup Source Audit</summary>
-    <div class="setup-review-grid setup-review-audit-grid">
-      ${setupDetail("Setup Source Records", `${sourceAudit.explained.length} explained`)}
-      ${setupDetail("Needs GM/Table Exception", `${sourceAudit.needsExceptions.length}`)}
-    </div>
-    <div class="setup-review-list setup-review-compact-list">
-      ${
-        sourceAudit.records.length
-          ? sourceAudit.records
-              .map(
-                (record) =>
-                  `<article class="dossier-note${record.needsException ? " warning" : ""}"><strong>${esc(record.type)}: ${esc(record.label)}</strong><p>${
-                    record.needsException
-                      ? "Needs a GM/table exception note or a specific setup source."
-                      : `Explained by ${esc(record.sourceLabel)}.`
-                  }</p>${
-                    record.needsException && sourceExceptionEditable
-                      ? `<button type="button" class="ghost small-action" data-setup-action="markSetupException" data-setup-collection="${esc(record.collection)}" data-setup-record-id="${esc(record.recordId)}" data-setup-record-type="${esc(record.type)}" data-setup-record-label="${esc(record.label)}">Mark Exception</button>`
-                      : ""
-                  }</article>`,
-              )
-              .join("")
-          : emptyState("No source-tracked setup records yet.")
-      }
-    </div>
-  </details>`;
-}
-
 function renderSetupReview() {
   const report = setupReviewValidationReport();
-  const sourceExceptionEditable = setupTraitsEditable();
   const finalizeDisabled = report.blockers.length > 0;
   const finishLabel = character.creation?.finalized
     ? "Start Playing"
@@ -3479,6 +3419,5 @@ function renderSetupReview() {
       </div>
       <button type="button" data-setup-action="finishSetup"${finalizeDisabled ? " disabled" : ""}>${esc(finishLabel)}</button>
     </section>
-    ${setupReviewSourceAuditSection(report.sourceAudit, sourceExceptionEditable)}
   </section>`;
 }

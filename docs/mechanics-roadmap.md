@@ -24,8 +24,7 @@ the rules.
   Armor, Weapons, and Vehicles.
 - Character Setup shell: Concept, Attributes, Skills, Edges, optional
   Hindrances with benefit spending, Powers setup, Gear purchases, setup source
-  audit, GM/table exception markers, creation baseline snapshots, and Gear
-  finalization.
+  tracking, creation baseline snapshots, and Gear finalization.
 - Advancement: canonical ledger entries for current supported advancement
   types, canonical changes, application, persistence, and safe undo model.
 - Arcane support: Arcane Background profiles, Power Points, known powers,
@@ -57,8 +56,7 @@ the rules.
   purchased weapons.
 - Creation baselines snapshot finalized eligible created characters across
   Attributes, Skills, Hindrances, starting Edges, Powers, Gear, money, and setup
-  source fields. Basic GM/table exception marking stores metadata on the
-  affected record and in `setupExceptions`.
+  source fields.
 - Remaining Character Setup work is polish or explicit backlog: richer
   exception notes, free/source-granted gear modeling, organization-granted gear,
   full Edge prerequisite validation, and stronger table-dependent Power
@@ -154,8 +152,7 @@ Completed scope:
 4. Creation baselines for finalized eligible created characters across
    Attributes, Skills, Hindrances, starting Edges, Powers, Gear, money, and
    setup source fields.
-5. Explicit GM/table exception records for setup-time deviations.
-6. Optional Hindrance flow: players may take no Hindrances, but benefits can
+5. Optional Hindrance flow: players may take no Hindrances, but benefits can
    only be spent from earned counted Hindrance points.
 
 Completion criteria:
@@ -167,19 +164,19 @@ Completion criteria:
   matched Arcane Background profile, including required starting powers.
 - Created pre-advance characters can record starting Gear purchases against
   starting funds and explain free or source-granted gear separately.
-- Setup status reflects missing required choices, overspending, invalid
-  source-tracked choices, and explicit GM exceptions consistently.
+- Setup status reflects missing required choices, overspending, and invalid
+  source-tracked choices consistently.
 - Imported and advanced characters remain audit-only unless the app has reliable
   creation-time data.
 - Browser tests cover starting Powers selection, starting Gear purchase
-  validation, creation baseline persistence, setup source persistence, setup
-  exception persistence, and reload/export/import behavior.
+  validation, creation baseline persistence, setup source persistence, and
+  reload/export/import behavior.
 
 Phase 1 is complete for the current MVP setup/source-tracking scope. Remaining
 work belongs to follow-up backlog slices rather than blocking the live tracker:
-richer exception notes, free/source-granted gear modeling,
-organization-granted gear, full Edge prerequisite validation, and imported
-advanced-character baseline reconstruction.
+free/source-granted gear modeling, organization-granted gear, full Edge
+prerequisite validation, and imported advanced-character baseline
+reconstruction.
 
 ### Advancement Backlog
 
@@ -190,8 +187,7 @@ changing derived display math.
 - Implement Hindrance reduction/removal as canonical Advancement entries.
 - Support Minor Hindrance removal and Major Hindrance reduction as one
   Advancement entry.
-- Model full Major Hindrance removal as either a two-Advance spend or an
-  explicit GM/table exception path.
+- Model full Major Hindrance removal as a supported table ruling path.
 - Preserve imported advancement history as history unless reliable before/after
   mutation data exists.
 

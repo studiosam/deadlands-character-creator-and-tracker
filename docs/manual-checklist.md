@@ -54,8 +54,7 @@ automate.
 - [ ] Imported characters open Character Setup with `setupStatus: needsReview`.
 - [ ] Setup steps before Gear show a bottom Next button and do not show
       character save/finalization buttons.
-- [ ] Gear shows character save controls, blocker summary, and Finish Setup &
-      Start Playing.
+- [ ] Gear shows the blocker summary and Finish Setup & Start Playing.
 - [ ] Finish Setup hides the setup workflow and persists `setupStatus` as
       `complete`.
 - [ ] Complete characters open the Character tab as a reference-focused sheet.

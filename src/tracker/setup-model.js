@@ -119,7 +119,6 @@ function setupReviewValidationReport() {
   const edgeReport = setupStartingEdgeValidationReport();
   const powerReport = setupPowerAuditReport();
   const gearReport = setupGearAuditReport();
-  const sourceAudit = setupSourceAuditReport();
   const attributeStats = setupAttributePointStats();
   const skillStats = setupSkillPointStats();
   const arcaneEdgeCount = (character.edges || []).filter((edge) =>
@@ -386,18 +385,6 @@ function setupReviewValidationReport() {
       ),
     ),
   );
-  if (sourceAudit.needsExceptions.length) {
-    warnings.push(
-      setupReviewIssue(
-        "warning",
-        "Setup source needs table review",
-        `${sourceAudit.needsExceptions.length} records need a GM/table exception note or a more specific setup source.`,
-        "review",
-        "Review Source Audit",
-      ),
-    );
-  }
-
   if (!String(character.description || character.background || "").trim()) {
     optional.push(
       setupReviewIssue(
@@ -429,7 +416,6 @@ function setupReviewValidationReport() {
     edgeReport,
     powerReport,
     gearReport,
-    sourceAudit,
   };
 }
 function setupPowerAuditContext() {
@@ -912,10 +898,13 @@ function setupGearEntryWarnings(entry, catalog) {
     entry.location || item.location || item.itemLocation || "",
   ).trim();
   const count = Number(item.count ?? item.quantity ?? item.qty ?? 1);
+  const normalClothing =
+    entry.type === "gear" && isNormalClothingItem({ ...item, name: rawName });
   const locationKnown =
     entry.type === "vehicle" ||
     INVENTORY_LOCATIONS.includes(rawLocation || "carried");
   const hasExplicitWeight =
+    normalClothing ||
     parseWeightNumber(item.weight) !== null ||
     parseWeightNumber(item.unitWeight) !== null ||
     parseWeightNumber(item.totalWeight) !== null ||
@@ -930,6 +919,7 @@ function setupGearEntryWarnings(entry, catalog) {
     warnings.push("Weight is unknown; verify manually.");
   if (
     entry.type !== "vehicle" &&
+    !normalClothing &&
     item.costCents === undefined &&
     catalog?.costCents === undefined
   )

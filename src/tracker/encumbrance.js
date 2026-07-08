@@ -140,7 +140,7 @@ function carriedItemKey(item) {
 
 function isNormalClothingItem(item) {
   const text = normalizeRuleName(`${item?.id || ""} ${item?.name || ""}`);
-  return /\b(boots|shirt blouse|shirt|blouse|trousers skirt|trousers|skirt)\b/.test(
+  return /\b(clothing|clothes|boots|shirt blouse|shirt|blouse|trousers skirt|trousers|skirt)\b/.test(
     text,
   );
 }
