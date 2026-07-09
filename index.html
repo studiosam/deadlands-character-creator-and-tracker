@@ -11,6 +11,25 @@
         visibility: hidden;
       }
     </style>
+    <script>
+      (() => {
+        const allowedThemes = new Set([
+          "weird-west",
+          "night-trail",
+          "parchment",
+          "blood-moon",
+          "ghostlight",
+          "prairie-sage",
+          "violet-dusk",
+          "rose-pink",
+          "high-contrast",
+        ]);
+        const theme = localStorage.getItem("deadlands-tracker-theme-v1");
+        document.documentElement.dataset.theme = allowedThemes.has(theme)
+          ? theme
+          : "weird-west";
+      })();
+    </script>
     <link rel="stylesheet" href="styles.css" />
     <link
       rel="icon"
@@ -38,6 +57,23 @@
       aria-label="Deadlands tracker landing page"
     >
       <div class="landing-shade" aria-hidden="true"></div>
+      <label
+        class="theme-picker landing-theme-toolbar"
+        for="landingThemeSelect"
+      >
+        <span>Visual Theme</span>
+        <select id="landingThemeSelect">
+          <option value="weird-west">Weird West</option>
+          <option value="night-trail">Night Trail</option>
+          <option value="parchment">Parchment</option>
+          <option value="blood-moon">Blood Moon</option>
+          <option value="ghostlight">Ghostlight</option>
+          <option value="prairie-sage">Prairie Sage</option>
+          <option value="violet-dusk">Violet Dusk</option>
+          <option value="rose-pink">Rose Pink</option>
+          <option value="high-contrast">High Contrast</option>
+        </select>
+      </label>
       <div class="landing-content">
         <h1>Deadlands Character Tracker</h1>
         <p class="landing-copy">
@@ -180,6 +216,24 @@
                 <button class="ghost" id="pasteImportBtn" type="button">
                   Paste JSON
                 </button>
+              </section>
+
+              <section class="menu-group">
+                <h2>Theme</h2>
+                <label class="theme-picker" for="themeSelect">
+                  <span>Visual Theme</span>
+                  <select id="themeSelect">
+                    <option value="weird-west">Weird West</option>
+                    <option value="night-trail">Night Trail</option>
+                    <option value="parchment">Parchment</option>
+                    <option value="blood-moon">Blood Moon</option>
+                    <option value="ghostlight">Ghostlight</option>
+                    <option value="prairie-sage">Prairie Sage</option>
+                    <option value="violet-dusk">Violet Dusk</option>
+                    <option value="rose-pink">Rose Pink</option>
+                    <option value="high-contrast">High Contrast</option>
+                  </select>
+                </label>
               </section>
 
               <section class="menu-group">
@@ -1703,15 +1757,6 @@
                   <span id="catalogResultSummary" class="pill"></span>
                 </div>
                 <div id="catalogResultsList" class="catalog-results-list"></div>
-              </section>
-              <section
-                class="catalog-detail-shell"
-                aria-labelledby="catalogDetailHeading"
-              >
-                <div class="catalog-section-heading">
-                  <h3 id="catalogDetailHeading">Details</h3>
-                </div>
-                <div id="catalogDetailPanel" class="catalog-detail-panel"></div>
               </section>
             </div>
           </section>

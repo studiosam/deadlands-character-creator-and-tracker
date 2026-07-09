@@ -6,6 +6,50 @@
  * so feature modules can supply their own messages and decisions.
  */
 let activeDialogResolve = null;
+const APP_THEMES = [
+  { id: "weird-west", label: "Weird West" },
+  { id: "night-trail", label: "Night Trail" },
+  { id: "parchment", label: "Parchment" },
+  { id: "blood-moon", label: "Blood Moon" },
+  { id: "ghostlight", label: "Ghostlight" },
+  { id: "prairie-sage", label: "Prairie Sage" },
+  { id: "violet-dusk", label: "Violet Dusk" },
+  { id: "rose-pink", label: "Rose Pink" },
+  { id: "high-contrast", label: "High Contrast" },
+];
+const DEFAULT_APP_THEME = "weird-west";
+
+function normalizeAppTheme(themeId) {
+  const candidate = String(themeId || "").trim();
+  return APP_THEMES.some((theme) => theme.id === candidate)
+    ? candidate
+    : DEFAULT_APP_THEME;
+}
+
+function applyAppTheme(themeId) {
+  const normalizedTheme = normalizeAppTheme(themeId);
+  document.documentElement.dataset.theme = normalizedTheme;
+  document
+    .querySelectorAll("#themeSelect, #landingThemeSelect")
+    .forEach((themeSelect) => {
+      themeSelect.value = normalizedTheme;
+    });
+  return normalizedTheme;
+}
+
+function readStoredAppTheme() {
+  return normalizeAppTheme(storageAdapter.readText(THEME_KEY));
+}
+
+function saveAppTheme(themeId) {
+  const normalizedTheme = applyAppTheme(themeId);
+  storageAdapter.writeText(THEME_KEY, normalizedTheme);
+  return normalizedTheme;
+}
+
+function initializeAppTheme() {
+  applyAppTheme(readStoredAppTheme());
+}
 
 function appToast(message, tone = "info") {
   const region = document.getElementById("toastRegion");

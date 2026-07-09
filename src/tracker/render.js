@@ -467,6 +467,10 @@ function renderCharacterSummary() {
   els.characterSummaryName.textContent = character.name;
   els.characterDossierSubtitle.textContent = characterDossierSubtitleText();
   els.characterSourceBadge.textContent = sourceLabel();
+  els.characterSourceBadge.classList.toggle(
+    "unsaved-draft",
+    isUnsavedCharacterDraft(),
+  );
   els.characterBasicsList.innerHTML = "";
 
   const powerPoints = powerPointResource();

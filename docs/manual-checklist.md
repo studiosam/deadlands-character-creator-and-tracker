@@ -67,6 +67,8 @@ automate.
       setup by default.
 - [ ] The global Manage menu opens character-management controls and the
       Characters panel profile editor without showing setup controls inline.
+- [ ] The landing page and global Manage menu theme pickers change the visual
+      theme and keep it after refresh.
 - [ ] Characters panel profile edits update the header and Character Sheet while
       preserving `setupStatus`.
 - [ ] Human free Edge and Hindrance benefit Edge selectors hide Edges blocked by

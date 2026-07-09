@@ -328,9 +328,18 @@ test("starts new characters directly in character setup @mobile", async ({
 
   await page.locator("#setupMainMenuBtn").click();
   await expect(unsavedDraftDialog).toBeVisible();
-  await unsavedDraftDialog
-    .getByRole("button", { name: "Discard Draft" })
-    .click();
+  const discardDraftButton = unsavedDraftDialog.getByRole("button", {
+    name: "Discard Draft",
+  });
+  await expect(discardDraftButton).toHaveClass(/danger/);
+  await expect
+    .poll(() =>
+      discardDraftButton.evaluate(
+        (button) => getComputedStyle(button).backgroundImage,
+      ),
+    )
+    .toContain("linear-gradient");
+  await discardDraftButton.click();
   await expect(page.locator("#landingPage")).toBeVisible();
   await expect
     .poll(() =>

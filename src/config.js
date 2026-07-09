@@ -14,5 +14,6 @@ const SETUP_DRAFT_KEY = "deadlands-setup-draft-v1";
 const SETUP_PROGRESS_KEY = "deadlands-setup-progress-v1";
 const DEMO_MODE_KEY = "deadlands-tracker-demo-mode-v1";
 const WELCOME_DISMISSED_KEY = "deadlands-tracker-welcome-dismissed-v1";
+const THEME_KEY = "deadlands-tracker-theme-v1";
 const DEMO_URL =
   "https://studiosam.github.io/deadlands-character-creator-and-tracker/";

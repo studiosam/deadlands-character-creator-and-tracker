@@ -4,6 +4,7 @@ const {
   useAppTestHooks,
   STORAGE_KEY,
   CHARACTER_LIBRARY_KEY,
+  THEME_KEY,
   clearAppStorage,
   enterTracker,
   reloadIntoTracker,
@@ -41,6 +42,86 @@ const {
 } = require("./helpers");
 
 useAppTestHooks();
+
+function luminance([red, green, blue]) {
+  const channels = [red, green, blue].map((value) => {
+    const normalized = value / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(foreground, background) {
+  const light = Math.max(luminance(foreground), luminance(background));
+  const dark = Math.min(luminance(foreground), luminance(background));
+  return (light + 0.05) / (dark + 0.05);
+}
+
+function parseRgb(value) {
+  const hex = value.trim().match(/^#([\da-f]{3}|[\da-f]{6})$/i);
+  if (hex) {
+    const normalized =
+      hex[1].length === 3
+        ? hex[1]
+            .split("")
+            .map((digit) => `${digit}${digit}`)
+            .join("")
+        : hex[1];
+    return [0, 2, 4].map((index) =>
+      Number.parseInt(normalized.slice(index, index + 2), 16),
+    );
+  }
+  const srgb = value.match(/color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/i);
+  if (srgb) return srgb.slice(1, 4).map((channel) => Number(channel) * 255);
+  return value
+    .match(/\d+(\.\d+)?/g)
+    .slice(0, 3)
+    .map(Number);
+}
+
+function colorDistance(first, second) {
+  return Math.hypot(
+    first[0] - second[0],
+    first[1] - second[1],
+    first[2] - second[2],
+  );
+}
+
+async function contrastFor(page, selector) {
+  return page
+    .locator(selector)
+    .first()
+    .evaluate((element) => {
+      const visibleBackground = (startElement) => {
+        let current = startElement;
+        while (current) {
+          const backgroundColor = getComputedStyle(current).backgroundColor;
+          const alpha = Number(
+            backgroundColor.match(
+              /rgba?\([^,]+,[^,]+,[^,]+,\s*([^)]+)\)/,
+            )?.[1] ?? 1,
+          );
+          if (backgroundColor !== "rgba(0, 0, 0, 0)" && alpha > 0)
+            return backgroundColor;
+          current = current.parentElement;
+        }
+        return "rgb(255, 255, 255)";
+      };
+      const style = getComputedStyle(element);
+      return {
+        background: visibleBackground(element),
+        color: style.color,
+      };
+    });
+}
+
+function expectContrastAtLeast(colors, minimumRatio = 4.5) {
+  expect(
+    contrastRatio(parseRgb(colors.color), parseRgb(colors.background)),
+  ).toBeGreaterThanOrEqual(minimumRatio);
+}
 
 test("local data and privacy links open distinct panels", async ({ page }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
@@ -297,6 +378,7 @@ test("landing create edit button opens saved-character editor", async ({
   await renameActiveCharacter(page, "Saved Dusty");
   await openHeaderMenu(page);
   await page.locator("#mainMenuBtn").click();
+  await page.locator("#landingThemeSelect").selectOption("parchment");
 
   await expect(page.locator("#landingPage")).toBeVisible();
   await expect(page.locator("#landingCreateBtn")).toHaveText(
@@ -306,6 +388,9 @@ test("landing create edit button opens saved-character editor", async ({
 
   const dialog = page.locator("#appDialog");
   await expect(dialog).toBeVisible();
+  expectContrastAtLeast(await contrastFor(page, "#appDialog"));
+  expectContrastAtLeast(await contrastFor(page, "#appDialogMessage"));
+  expectContrastAtLeast(await contrastFor(page, "#appDialogSelectText"));
   await expect(dialog.locator("#appDialogTitle")).toHaveText(
     "Create/Edit Character",
   );
@@ -357,6 +442,39 @@ test("landing create edit button opens saved-character editor", async ({
 test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   await expect(page.locator("#landingPage")).toBeVisible();
   const panel = page.locator("#catalogPanel");
+  const assertCatalogHasNoTextColumnOverflow = async () => {
+    const layoutReport = await panel.evaluate((catalogPanel) => {
+      const visibleElements = Array.from(
+        catalogPanel.querySelectorAll(
+          [
+            "#catalogResultsList",
+            ".catalog-result",
+            ".catalog-result-heading",
+            ".catalog-result-details",
+            ".catalog-result-details > div",
+            ".catalog-result p",
+            ".catalog-result dd",
+          ].join(", "),
+        ),
+      ).filter(
+        (element) =>
+          element instanceof HTMLElement &&
+          element.offsetWidth > 0 &&
+          element.offsetHeight > 0,
+      );
+      const overflowingElements = visibleElements
+        .map((element) => ({
+          id: element.id,
+          className: element.className,
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth,
+        }))
+        .filter((item) => item.scrollWidth > item.clientWidth + 3);
+      return { overflowingElements };
+    });
+
+    expect(layoutReport.overflowingElements).toEqual([]);
+  };
   const assertCatalogMode = async (label) => {
     await expect(
       panel.locator(".catalog-type-selector button.active"),
@@ -364,9 +482,8 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
     await expect(
       panel.locator("#catalogResultsList .catalog-result").first(),
     ).toBeVisible();
-    await expect(
-      panel.locator("#catalogDetailPanel .catalog-detail-card"),
-    ).toBeVisible();
+    await expect(panel.locator(".catalog-detail-shell")).toHaveCount(0);
+    await assertCatalogHasNoTextColumnOverflow();
   };
 
   await expect(page.locator("#landingCatalogBtn")).toHaveCount(0);
@@ -412,6 +529,219 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   await page.evaluate(() => window.history.back());
   await expect(page.locator("#characterPanel")).toHaveClass(/active/);
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
+});
+
+test("global menu theme picker applies and persists visual themes", async ({
+  page,
+}) => {
+  const landingThemeSelect = page.locator("#landingThemeSelect");
+  await expect(landingThemeSelect).toBeVisible();
+  await landingThemeSelect.selectOption("parchment");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "parchment");
+  await expect
+    .poll(() => page.evaluate((key) => localStorage.getItem(key), THEME_KEY))
+    .toBe("parchment");
+
+  await enterTracker(page);
+  await openHeaderMenu(page);
+
+  const themeSelect = page.locator("#themeSelect");
+  await expect(themeSelect).toBeVisible();
+  await expect(themeSelect).toHaveValue("parchment");
+  for (const themeLabel of [
+    "Weird West",
+    "Night Trail",
+    "Parchment",
+    "Blood Moon",
+    "Ghostlight",
+    "Prairie Sage",
+    "Violet Dusk",
+    "Rose Pink",
+    "High Contrast",
+  ]) {
+    await expect(themeSelect).toContainText(themeLabel);
+  }
+
+  await themeSelect.selectOption("violet-dusk");
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-theme",
+    "violet-dusk",
+  );
+  await expect
+    .poll(() => page.evaluate((key) => localStorage.getItem(key), THEME_KEY))
+    .toBe("violet-dusk");
+
+  await themeSelect.selectOption("night-trail");
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-theme",
+    "night-trail",
+  );
+  await expect
+    .poll(() => page.evaluate((key) => localStorage.getItem(key), THEME_KEY))
+    .toBe("night-trail");
+
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-theme",
+    "night-trail",
+  );
+  await enterTracker(page);
+  await openHeaderMenu(page);
+  await expect(page.locator("#themeSelect")).toHaveValue("night-trail");
+});
+
+test("light themes keep landing controls and app tabs readable", async ({
+  page,
+}) => {
+  for (const theme of ["parchment", "prairie-sage"]) {
+    await clearAppStorage(page);
+    await expect(page.locator("#landingThemeSelect")).toBeVisible();
+    await page.locator("#landingThemeSelect").selectOption(theme);
+    const toast = page.locator(".toast").last();
+    await expect(toast).toContainText("Theme changed");
+    expectContrastAtLeast(await contrastFor(page, ".toast"));
+
+    expectContrastAtLeast(await contrastFor(page, "#landingCharacterSelect"));
+
+    await enterTracker(page);
+    expectContrastAtLeast(
+      await contrastFor(page, ".creator-tabs button:not(.active)"),
+    );
+
+    await openHeaderMenu(page);
+    await page.locator("#mainMenuBtn").click();
+    await page.locator("#landingCreateBtn").click();
+    const dialog = page.locator("#appDialog");
+    if (await dialog.isVisible()) {
+      await dialog
+        .getByRole("button", { name: "Create New Character" })
+        .click();
+      await expect(dialog).toBeHidden();
+    }
+    await expect(page.locator("#characterSetupStepper")).toBeVisible();
+    await expect(page.locator("#characterSourceBadge")).toHaveText(
+      "Unsaved draft",
+    );
+    await expect(page.locator("#characterSourceBadge")).toHaveClass(
+      /unsaved-draft/,
+    );
+    expectContrastAtLeast(await contrastFor(page, "#characterSourceBadge"));
+    expectContrastAtLeast(await contrastFor(page, ".setup-step:not(.active)"));
+    expectContrastAtLeast(
+      await contrastFor(page, ".setup-step:not(.active) .setup-status"),
+    );
+    const incompleteStatusColors = await page
+      .locator(".setup-step:not(.active) .setup-status.incomplete")
+      .first()
+      .evaluate((element) => {
+        const rootStyle = getComputedStyle(document.documentElement);
+        return {
+          border: getComputedStyle(element).borderTopColor,
+          warn: rootStyle.getPropertyValue("--warn").trim(),
+        };
+      });
+    expect(
+      colorDistance(
+        parseRgb(incompleteStatusColors.border),
+        parseRgb(incompleteStatusColors.warn),
+      ),
+    ).toBeGreaterThan(10);
+    expectContrastAtLeast(await contrastFor(page, ".setup-step.active"));
+    expectContrastAtLeast(
+      await contrastFor(page, ".setup-step.active .setup-status"),
+    );
+    await page.locator("[data-setup-step='skills']").click();
+    await expect(page.locator(".setup-skill-points-card")).toBeVisible();
+    const skillPointsCardColors = await page
+      .locator(".setup-skill-points-card")
+      .evaluate((element) => {
+        const rootStyle = getComputedStyle(document.documentElement);
+        const meter = element.querySelector(".setup-skill-meter");
+        const overview = element.closest(".setup-skill-overview-list");
+        return {
+          border: getComputedStyle(element).borderTopColor,
+          leftBorder: getComputedStyle(element).borderLeftColor,
+          meterBorder: getComputedStyle(meter).borderTopColor,
+          overviewBackground: getComputedStyle(overview).backgroundColor,
+          overviewShadow: getComputedStyle(overview).boxShadow,
+          warn: rootStyle.getPropertyValue("--warn").trim(),
+        };
+      });
+    expect(
+      colorDistance(
+        parseRgb(skillPointsCardColors.border),
+        parseRgb(skillPointsCardColors.warn),
+      ),
+    ).toBeGreaterThan(10);
+    expect(
+      colorDistance(
+        parseRgb(skillPointsCardColors.border),
+        parseRgb(skillPointsCardColors.leftBorder),
+      ),
+    ).toBeLessThan(3);
+    expect(
+      colorDistance(
+        parseRgb(skillPointsCardColors.border),
+        parseRgb(skillPointsCardColors.meterBorder),
+      ),
+    ).toBeLessThan(3);
+    expect(skillPointsCardColors.overviewBackground).toBe("rgba(0, 0, 0, 0)");
+    expect(skillPointsCardColors.overviewShadow).toBe("none");
+    expectContrastAtLeast(
+      await contrastFor(page, "#setupSkillsPanel .setup-skill-rules-note"),
+    );
+    expectContrastAtLeast(
+      await contrastFor(page, ".setup-skill-points-card strong"),
+    );
+
+    await page.locator("[data-setup-step='hindrances']").click();
+    await expect(page.locator(".setup-hindrance-entry-card")).toBeVisible();
+    await page
+      .locator("#setupHindranceCatalogSelect")
+      .selectOption("swade-hindrance-bad-luck");
+    await page.locator("#setupAddHindranceBtn").click();
+    await expect(page.locator(".setup-hindrance-row")).toContainText(
+      "Bad Luck",
+    );
+    await expect(
+      page.getByRole("button", { name: "Reset Hindrances" }),
+    ).not.toHaveClass(/danger-lite/);
+    const hindranceEntryCardColors = await page
+      .locator(".setup-hindrance-entry-card")
+      .evaluate((element) => {
+        const rootStyle = getComputedStyle(document.documentElement);
+        return {
+          border: getComputedStyle(element).borderTopColor,
+          leftBorder: getComputedStyle(element).borderLeftColor,
+          warn: rootStyle.getPropertyValue("--warn").trim(),
+        };
+      });
+    expect(
+      colorDistance(
+        parseRgb(hindranceEntryCardColors.border),
+        parseRgb(hindranceEntryCardColors.warn),
+      ),
+    ).toBeGreaterThan(10);
+    expect(
+      colorDistance(
+        parseRgb(hindranceEntryCardColors.border),
+        parseRgb(hindranceEntryCardColors.leftBorder),
+      ),
+    ).toBeLessThan(3);
+    const selectedHindranceCardColors = await page
+      .locator(".setup-hindrance-row")
+      .first()
+      .evaluate((element) => ({
+        border: getComputedStyle(element).borderTopColor,
+        leftBorder: getComputedStyle(element).borderLeftColor,
+      }));
+    expect(
+      colorDistance(
+        parseRgb(selectedHindranceCardColors.border),
+        parseRgb(selectedHindranceCardColors.leftBorder),
+      ),
+    ).toBeLessThan(3);
+  }
 });
 
 test("shows the read-only sources and rulesets page from the global menu", async ({

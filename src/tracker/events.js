@@ -91,10 +91,6 @@ document.addEventListener("click", async (event) => {
   if (catalogTypeButton) {
     catalogSetType(catalogTypeButton.dataset.catalogType || "edges");
   }
-  const catalogResult = event.target?.closest?.("[data-catalog-result-id]");
-  if (catalogResult) {
-    catalogSelectResult(catalogResult.dataset.catalogResultId || "");
-  }
   const setupWeaponSort = event.target?.closest?.("[data-setup-weapon-sort]");
   if (setupWeaponSort) {
     sortSetupWeaponPicker(setupWeaponSort.dataset.setupWeaponSort || "");
@@ -274,6 +270,16 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("change", (event) => {
+  const themeSelect = event.target?.closest?.(
+    "#themeSelect, #landingThemeSelect",
+  );
+  if (themeSelect) {
+    const theme = saveAppTheme(themeSelect.value);
+    appToast(
+      `Theme changed to ${APP_THEMES.find((entry) => entry.id === theme)?.label || "selected theme"}.`,
+      "success",
+    );
+  }
   const conceptInput = event.target?.closest?.("[data-concept-field]");
   if (conceptInput) applyConceptField(conceptInput);
   if (event.target?.closest?.("[data-catalog-filter]")) renderCatalogBrowser();
@@ -644,6 +650,8 @@ els.localDataClearAllBtn.onclick = async () => {
   storageAdapter.remove(CHARACTER_LIBRARY_KEY);
   storageAdapter.remove(UNDO_HISTORY_KEY);
   storageAdapter.remove(CREATION_KEY);
+  storageAdapter.remove(THEME_KEY);
+  initializeAppTheme();
   clearSetupResumeState();
   storageAdapter.writeFlag(DEMO_MODE_KEY, false);
   storageAdapter.writeFlag(WELCOME_DISMISSED_KEY, false);

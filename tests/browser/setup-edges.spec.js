@@ -681,6 +681,20 @@ test("spends hindrance benefits and selects source-tracked setup edges", async (
   await expect(setupNavigation).toContainText(
     "Select the Human free starting Edge.",
   );
+  const warningLineMetrics = await setupNavigation
+    .locator(".setup-step-navigation-warning")
+    .evaluate((element) => {
+      const label = element.querySelector("strong");
+      const firstMessage = element.querySelector("li");
+      return {
+        labelTop: Math.round(label.getBoundingClientRect().top),
+        messageTop: Math.round(firstMessage.getBoundingClientRect().top),
+        viewportWidth: window.innerWidth,
+      };
+    });
+  if (warningLineMetrics.viewportWidth >= 680) {
+    expect(warningLineMetrics.messageTop).toBe(warningLineMetrics.labelTop);
+  }
   await expect(edgesPanel).not.toContainText("Recorded Edges");
   await expect(edgesPanel).not.toContainText("Catalog Matches");
   await expect(edgesPanel).toContainText("Free Edge");

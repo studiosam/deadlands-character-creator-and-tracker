@@ -10,6 +10,7 @@ function revealAppAfterBoot() {
 }
 
 function performInitialRender() {
+  initializeAppTheme();
   installUndoHistoryInteractionTracking();
   syncUndoHistoryForActiveCharacter();
   catalogs();

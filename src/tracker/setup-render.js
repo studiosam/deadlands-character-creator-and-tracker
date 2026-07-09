@@ -768,7 +768,7 @@ function renderSetupHindrances() {
     <section class="setup-trait-group setup-selected-hindrances" aria-labelledby="setupSelectedHindrancesHeading">
       <div class="setup-section-heading-row">
         <h4 id="setupSelectedHindrancesHeading">Selected Hindrances</h4>
-        <button class="ghost small-action danger-lite" type="button" data-setup-action="resetSetupHindrances"${setupHindranceResetAvailable(stats, spending) ? "" : " disabled"}>Reset Hindrances</button>
+        <button class="ghost small-action" type="button" data-setup-action="resetSetupHindrances"${setupHindranceResetAvailable(stats, spending) ? "" : " disabled"}>Reset Hindrances</button>
       </div>
       <div class="setup-hindrance-list">
         ${renderSetupHindranceRows()}

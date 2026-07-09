@@ -27,6 +27,9 @@ const storageAdapter = {
   readText(key) {
     return localStorage.getItem(key);
   },
+  writeText(key, value) {
+    localStorage.setItem(key, String(value));
+  },
   writeJson(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
   },

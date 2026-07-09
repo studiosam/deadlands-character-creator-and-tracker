@@ -98,11 +98,6 @@ function chosen(items, id) {
 }
 
 var catalogBrowserType = "edges";
-var catalogBrowserSelectedIds = {
-  edges: "",
-  hindrances: "",
-  powers: "",
-};
 
 function catalogBrowserTypes() {
   return {
@@ -311,103 +306,47 @@ function catalogResultMeta(item, type) {
   return `${item.category || "Unknown"} • ${item.rank || "Unknown"} • ${item.source || "Unknown source"}`;
 }
 
-function catalogRenderResult(item, type, selectedId) {
-  const selected = item.id === selectedId;
-  return `<button class="catalog-result ${selected ? "active" : ""}" type="button" data-catalog-result-id="${esc(item.id)}"${selected ? ' aria-current="true"' : ""}>
-    <strong>${esc(item.name)}</strong>
-    <span>${esc(catalogResultMeta(item, type))}</span>
-    ${item.shortSummary ? `<small>${esc(item.shortSummary)}</small>` : ""}
-  </button>`;
-}
-
-function catalogDetailGrid(rows) {
-  return `<div class="catalog-detail-grid">${rows
-    .map(
-      ([label, value]) =>
-        `<div><span>${esc(label)}</span><strong>${esc(value || "None recorded")}</strong></div>`,
-    )
-    .join("")}</div>`;
-}
-
-function edgeChoiceText(edge) {
-  if (edge?.subchoice === true) return "Required choice";
-  const text = catalogText(edge?.subchoice);
-  return text || "None recorded";
-}
-
-function catalogRenderEdgeDetail(edge) {
-  return `<article class="catalog-detail-card">
-    <div class="catalog-detail-heading">
-      <div>
-        <p class="eyebrow">Edge</p>
-        <h3>${esc(edge.name)}</h3>
-      </div>
-      <span class="pill">${esc(edge.rank || "Unknown")}</span>
-    </div>
-    ${catalogDetailGrid([
-      ["Category", edge.category],
-      ["Rank", edge.rank],
-      ["Requirements", edge.requirements || "None"],
-      ["Required Choice", edgeChoiceText(edge)],
-      ["Source", edge.source],
-    ])}
-    ${edge.shortSummary ? `<p>${esc(edge.shortSummary)}</p>` : ""}
-  </article>`;
-}
-
-function catalogRenderHindranceDetail(hindrance) {
-  return `<article class="catalog-detail-card">
-    <div class="catalog-detail-heading">
-      <div>
-        <p class="eyebrow">Hindrance</p>
-        <h3>${esc(hindrance.name)}</h3>
-      </div>
-      <span class="pill">${esc(hindrance.severity || "Unknown")}</span>
-    </div>
-    ${catalogDetailGrid([
-      ["Severity", hindrance.severity],
-      ["Source", hindrance.source],
-    ])}
-    ${hindrance.shortSummary ? `<p>${esc(hindrance.shortSummary)}</p>` : ""}
-  </article>`;
-}
-
 function catalogRenderRestrictionList(power) {
   const restrictions = Object.entries(power?.restrictionsByBackground || {});
   if (!restrictions.length) return "None";
   return restrictions.map(([name, text]) => `${name}: ${text}`).join("; ");
 }
 
-function catalogRenderPowerDetail(power) {
-  const tags = power.tags || [];
-  return `<article class="catalog-detail-card">
-    <div class="catalog-detail-heading">
-      <div>
-        <p class="eyebrow">Power</p>
-        <h3>${esc(power.name)}</h3>
-      </div>
-      <span class="pill">${esc(power.rank || "Unknown")}</span>
+function catalogResultDetailRows(item, type) {
+  if (type === "powers") {
+    return [
+      ["Range", item.range],
+      ["Duration", item.duration],
+      [
+        "Allowed Backgrounds",
+        (item.allowedBackgrounds || []).join(", ") || "None recorded",
+      ],
+      ["Restrictions", catalogRenderRestrictionList(item)],
+      item.variableCostNotes ? ["Variable PP", item.variableCostNotes] : null,
+    ].filter(Boolean);
+  }
+  if (type === "hindrances") return [];
+  return [["Requirements", item.requirements || "None"]];
+}
+
+function catalogRenderResult(item, type) {
+  const detailRows = catalogResultDetailRows(item, type);
+  const tags = type === "powers" ? item.tags || [] : [];
+  return `<article class="catalog-result">
+    <div class="catalog-result-heading">
+      <strong>${esc(item.name)}</strong>
+      <span class="pill">${esc(type === "hindrances" ? item.severity || "Unknown" : item.rank || item.category || "Unknown")}</span>
     </div>
-    ${catalogDetailGrid([
-      ["Rank", power.rank],
-      ["Power Points", power.powerPoints],
-      ["Range", power.range],
-      ["Duration", power.duration],
-      [
-        "Allowed Arcane Backgrounds",
-        (power.allowedBackgrounds || []).join(", "),
-      ],
-      [
-        "Required Arcane Backgrounds",
-        catalogPowerRequiredText(power) || "None",
-      ],
-      ["Restrictions", catalogRenderRestrictionList(power)],
-      ["Source", power.source],
-    ])}
-    ${power.shortSummary ? `<p>${esc(power.shortSummary)}</p>` : ""}
+    <span class="catalog-result-meta">${esc(catalogResultMeta(item, type))}</span>
+    ${item.shortSummary ? `<p>${esc(item.shortSummary)}</p>` : ""}
     ${
-      power.variableCostNotes
-        ? `<p class="muted"><strong>Variable PP:</strong> ${esc(power.variableCostNotes)}</p>`
+      detailRows.length
+        ? `<dl class="catalog-result-details">${detailRows
+            .map(
+              ([label, value]) =>
+                `<div><dt>${esc(label)}</dt><dd>${esc(value || "None recorded")}</dd></div>`,
+            )
+            .join("")}</dl>`
         : ""
     }
     ${
@@ -420,22 +359,9 @@ function catalogRenderPowerDetail(power) {
   </article>`;
 }
 
-function catalogRenderDetail(item, type) {
-  if (!item) return emptyState("Choose a catalog entry to view details.");
-  if (type === "powers") return catalogRenderPowerDetail(item);
-  if (type === "hindrances") return catalogRenderHindranceDetail(item);
-  return catalogRenderEdgeDetail(item);
-}
-
 function catalogSetType(type) {
   if (!catalogBrowserTypes()[type]) return;
   catalogBrowserType = type;
-  renderCatalogBrowser();
-}
-
-function catalogSelectResult(id) {
-  if (!id) return;
-  catalogBrowserSelectedIds[catalogBrowserType] = id;
   renderCatalogBrowser();
 }
 
@@ -443,8 +369,7 @@ function renderCatalogBrowser() {
   if (
     !els.catalogSearchInput ||
     !els.catalogFilterFields ||
-    !els.catalogResultsList ||
-    !els.catalogDetailPanel
+    !els.catalogResultsList
   )
     return;
 
@@ -464,21 +389,12 @@ function renderCatalogBrowser() {
   });
 
   const results = catalogFilterItems(config.records(), type, filters, query);
-  let selectedId = catalogBrowserSelectedIds[type];
-  if (!results.some((item) => item.id === selectedId))
-    selectedId = results[0]?.id || "";
-  catalogBrowserSelectedIds[type] = selectedId;
-  const selected = results.find((item) => item.id === selectedId) || null;
-
   els.catalogResultSummary.textContent = results.length
     ? `${results.length} ${config.label}`
     : "No matches";
   els.catalogResultsList.innerHTML = results.length
-    ? results
-        .map((item) => catalogRenderResult(item, type, selectedId))
-        .join("")
+    ? results.map((item) => catalogRenderResult(item, type)).join("")
     : emptyState(config.empty);
-  els.catalogDetailPanel.innerHTML = catalogRenderDetail(selected, type);
 }
 
 function updatePreviews() {

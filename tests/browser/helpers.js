@@ -4,6 +4,7 @@ const STORAGE_KEY = "deadlands-tracker-v2";
 const CHARACTER_LIBRARY_KEY = "deadlands-character-library-v1";
 const SETUP_DRAFT_KEY = "deadlands-setup-draft-v1";
 const SETUP_PROGRESS_KEY = "deadlands-setup-progress-v1";
+const THEME_KEY = "deadlands-tracker-theme-v1";
 const runtimeErrorsByPage = new WeakMap();
 
 function installRuntimeErrorCollectors(page) {
@@ -783,6 +784,7 @@ module.exports = {
   CHARACTER_LIBRARY_KEY,
   SETUP_DRAFT_KEY,
   SETUP_PROGRESS_KEY,
+  THEME_KEY,
   clearAppStorage,
   enterTracker,
   reloadIntoTracker,
