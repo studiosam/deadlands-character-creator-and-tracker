@@ -96,13 +96,7 @@ test("Session and action-card effects render concrete model hooks", async ({
     "Level Headed: Draw one additional Action Card and choose which to use",
   );
   const actionCardPanel = page.locator("#actionCardPanel");
-  await expect(actionCardPanel).toBeVisible();
-  await expect(actionCardPanel).toContainText(
-    "Draw 2 Action Cards; Hesitant keeps the lowest except Jokers, with Level Headed extra draw included.",
-  );
-  await expect(actionCardPanel).toContainText(
-    "Quick: record an Action Card to check redraw.",
-  );
+  await expect(actionCardPanel).toBeHidden();
 
   const computed = await page.evaluate(() =>
     effectHookSummariesForSurface(character, "character")
@@ -268,7 +262,7 @@ test("Rapid Recharge effects set hourly Power Point recovery controls", async ({
   );
 });
 
-test("Luck and Bad Luck update starting Bennies and Start Session reset", async ({
+test("Luck and Bad Luck update starting Bennies without session reset UI", async ({
   page,
 }) => {
   await seedEffectHookCharacter(page, {
@@ -292,13 +286,10 @@ test("Luck and Bad Luck update starting Bennies and Start Session reset", async 
   });
 
   await openHeaderMenu(page);
-  await page.locator("#newSessionBtn").click();
-  await page.locator("#appDialogConfirmBtn").click();
-  await expect(page.locator("#benniesValue")).toHaveText("4");
-  expect(await page.evaluate(() => character.bennies.current)).toBe(4);
+  await expect(page.locator("#newSessionBtn")).toBeHidden();
 });
 
-test("Action Card model tracks Quick redraw state and persists cards", async ({
+test("Action Card model tracks Quick redraw state without normal tracker UI", async ({
   page,
 }) => {
   await seedEffectHookCharacter(page, {
@@ -310,41 +301,35 @@ test("Action Card model tracks Quick redraw state and persists cards", async ({
 
   await openCombat(page);
   const panel = page.locator("#actionCardPanel");
-  await expect(panel).toBeVisible();
-  await expect(panel).toContainText(
-    "Quick: record an Action Card to check redraw.",
-  );
-  await expect(panel).toContainText(
-    "Level Headed: Draw one additional Action Card and choose which to use",
-  );
-  await expect(panel).toContainText(
-    "Hesitant: Draw two Action Cards and keep the lowest, except Jokers",
-  );
-  await expect(panel).toContainText(
-    "Draw 2 Action Cards; Hesitant keeps the lowest except Jokers, with Level Headed extra draw included.",
-  );
+  await expect(panel).toBeHidden();
 
-  await page.locator("#actionCardInput").fill("5H");
-  await expect(panel).toContainText("Quick redraw available for this card.");
-  await page.locator("#actionCardSecondaryInput").fill("King");
-  await page.locator("#actionCardNotesInput").fill("Round 1");
+  await page.evaluate(() => {
+    character.actionCards.current = "5H";
+    character.actionCards.secondary = "King";
+    character.actionCards.notes = "Round 1";
+    save();
+  });
   expect(await page.evaluate(() => character.actionCards)).toEqual({
     current: "5H",
     secondary: "King",
     notes: "Round 1",
   });
+  expect(
+    await page.evaluate(() => quickRedrawStatus(character).available),
+  ).toBe(true);
 
   await reloadIntoTracker(page);
   await openCombat(page);
-  await expect(page.locator("#actionCardInput")).toHaveValue("5H");
-  await expect(page.locator("#actionCardSecondaryInput")).toHaveValue("King");
-  await expect(page.locator("#actionCardNotesInput")).toHaveValue("Round 1");
-  await expect(panel).toContainText("Quick redraw available for this card.");
-
-  await page.locator("#actionCardInput").fill("Joker");
-  await expect(panel).toContainText("Quick: Joker is not redrawn.");
-  await page.locator("#clearActionCardsBtn").click();
-  await expect(page.locator("#actionCardInput")).toHaveValue("");
+  await expect(page.locator("#actionCardPanel")).toBeHidden();
+  expect(await page.evaluate(() => character.actionCards)).toEqual({
+    current: "5H",
+    secondary: "King",
+    notes: "Round 1",
+  });
+  await page.evaluate(() => {
+    character.actionCards = normalizeActionCardState(null);
+    save();
+  });
   expect(await page.evaluate(() => character.actionCards)).toEqual({
     current: "",
     secondary: "",
@@ -371,14 +356,7 @@ test("Improved Level Headed replaces Level Headed Action Card draw count", async
 
   await openCombat(page);
   const panel = page.locator("#actionCardPanel");
-  await expect(panel).toBeVisible();
-  await expect(panel).toContainText(
-    "Draw 3 Action Cards and choose which to use.",
-  );
-  await expect(panel).toContainText("Improved Level Headed");
-  await expect(panel).not.toContainText(
-    "Level Headed: Draw one additional Action Card",
-  );
+  await expect(panel).toBeHidden();
 
   expect(
     await page.evaluate(() => {

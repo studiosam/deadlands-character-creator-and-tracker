@@ -67,7 +67,10 @@ test("counts backpack load separately for combat and normal carrying", async ({
   await expect(gearRow(page, "Backpack")).toContainText("Total 13 lb");
   await expect(gearRow(page, "Bedroll")).toContainText("Inside Backpack");
   await expect(page.locator("#encumbranceDetails")).toContainText(
-    "Current Load (Combat Load)",
+    "Current Load",
+  );
+  await expect(page.locator("#encumbranceDetails")).toContainText(
+    "Combat Load",
   );
 
   const carried = await page.evaluate(() => ({
@@ -152,13 +155,158 @@ test("shows current load combat load and carrying capacity separately", async ({
   expect(after.maximumNormalCarry).toBe(80);
 
   const details = page.locator("#encumbranceDetails");
-  await expect(details).toContainText("Current Load (Combat Load)");
+  await expect(details).toContainText("Current Load");
+  await expect(details).toContainText("Combat Load");
   await expect(details).toContainText("Carrying Capacity");
   await expect(details).toContainText("Maximum Normal Carry");
-  await expect(details).toContainText(
-    "Normal - Encumbered, Combat - Unencumbered",
-  );
+  await expect(details).not.toContainText("Owned Gear");
+  await expect(details.locator(".encumbrance-load-card")).toContainText([
+    /Current Load[\s\S]*Encumbered/,
+    /Combat Load[\s\S]*Unencumbered/,
+  ]);
   await expect(details).not.toContainText(after.misleadingCurrentLoad);
+});
+
+test("buys matching reserve ammo from the weapon inventory card", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Weapon Ammo Buyer",
+    preferredId: "weapon-ammo-buyer",
+    weapons: [
+      {
+        id: "test-peacemaker",
+        catalogId: "colt-peacemaker",
+        name: "Colt Peacemaker",
+        damage: "2d6+1",
+        range: "12/24/48",
+        ap: 1,
+        rof: 1,
+        shotsMax: 6,
+        shotsLoaded: 0,
+        ammoType: "pistol-45-ammo",
+        minStr: "d6",
+        weight: 3,
+        itemLocation: "carried",
+      },
+    ],
+    ammo: {},
+  });
+  const unitCost = await page.evaluate(() => {
+    const catalogItem = catalogAmmoForKey("pistol-45-ammo", {
+      kind: "pistol",
+      caliber: ".45",
+    });
+    character.moneyCents = Math.max(0, Number(catalogItem.costCents) || 0) * 6;
+    render();
+    save();
+    return Math.max(0, Number(catalogItem.costCents) || 0);
+  });
+
+  await openInventory(page);
+  const row = weaponRow(page, "Colt Peacemaker");
+  await expect(row.locator(".weapon-ammo-purchase")).toContainText(
+    "Buy Pistol ammo (.45)",
+  );
+  await row.locator(".weapon-ammo-buy-qty").fill("6");
+  await row.getByRole("button", { name: "Buy Ammo" }).click();
+
+  await expect(row).toContainText("Pistol ammo (.45) reserve: 6");
+  await expect(
+    page.getByRole("heading", { name: "Ammo Reserves" }),
+  ).toHaveCount(0);
+  await expect(page.locator("#inventoryList")).not.toContainText(
+    "Pistol ammo (.45)",
+  );
+  const purchased = await page.evaluate(() => ({
+    ammoCount: character.ammo["pistol-45-ammo"]?.count || 0,
+    moneyCents: character.moneyCents,
+  }));
+  expect(purchased.ammoCount).toBe(6);
+  expect(purchased.moneyCents).toBe(0);
+  expect(unitCost).toBeGreaterThan(0);
+});
+
+test("shows unmatched carried ammo as gear instead of a separate reserve panel", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Unmatched Ammo Carrier",
+    preferredId: "unmatched-ammo-carrier",
+    weapons: [],
+    ammo: {
+      "shotgun-shells": {
+        label: "Shotgun Shells",
+        count: 8,
+        weight: 0.1,
+        itemLocation: "carried",
+      },
+    },
+  });
+
+  await openInventory(page);
+  await expect(
+    page.getByRole("heading", { name: "Ammo Reserves" }),
+  ).toHaveCount(0);
+  const ammoRow = page.locator("#inventoryList .inventory-row", {
+    has: page.getByText("Shotgun Shells", { exact: true }),
+  });
+  await expect(ammoRow).toContainText("Qty 8");
+  await expect(ammoRow).toContainText("On Body");
+});
+
+test("encumbrance meter layers show progress toward the next overload tier", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  await openInventory(page);
+
+  const readCurrentLoadMeter = async (loadMultiplier) =>
+    page.evaluate((multiplier) => {
+      const capacity = calculateEncumbrance(character).carryingCapacity;
+      character.weapons = [];
+      character.armorInventory = [];
+      character.ammo = {};
+      character.consumables = [];
+      character.inventory = [
+        {
+          id: "tiered-load-test",
+          name: "Tiered Load Test",
+          count: 1,
+          weight: capacity * multiplier,
+          location: "carried",
+        },
+      ];
+      render();
+      const card = document.querySelector(
+        "#encumbranceDetails .encumbrance-load-card",
+      );
+      const meter = card.querySelector(".encumbrance-meter");
+      return {
+        className: meter.className,
+        safe: parseFloat(
+          meter.querySelector(".encumbrance-meter-layer.safe").style.width,
+        ),
+        caution: parseFloat(
+          meter.querySelector(".encumbrance-meter-layer.caution").style.width,
+        ),
+        danger: parseFloat(
+          meter.querySelector(".encumbrance-meter-layer.danger").style.width,
+        ),
+      };
+    }, loadMultiplier);
+
+  const encumbered = await readCurrentLoadMeter(1.5);
+  expect(encumbered.className).toContain("encumbered");
+  expect(encumbered.safe).toBeCloseTo(100, 2);
+  expect(encumbered.caution).toBeCloseTo(25, 2);
+  expect(encumbered.danger).toBeCloseTo(0, 2);
+
+  const heavy = await readCurrentLoadMeter(3.5);
+  expect(heavy.className).toContain("heavy");
+  expect(heavy.safe).toBeCloseTo(100, 2);
+  expect(heavy.caution).toBeCloseTo(100, 2);
+  expect(heavy.danger).toBeCloseTo(50, 2);
 });
 
 test("imports Savaged.us backpack contents without double-counting load", async ({
@@ -211,10 +359,11 @@ test("excludes off-person storage locations from carried load", async ({
     quantity: "1",
     locationValue: "stored:home",
   });
-  await expect(gearRow(page, "Pick")).toContainText("Home");
+  await expect(gearRow(page, "Pick")).toHaveCount(0);
   await expect(page.locator("#storageLocationList")).toContainText(
     "12 lb stored here",
   );
+  await expect(page.locator("#storageLocationList")).toContainText("Pick");
 
   const stored = await page.evaluate(() => ({
     normalLoad: calculateEncumbrance(character).normalLoad,
@@ -225,7 +374,12 @@ test("excludes off-person storage locations from carried load", async ({
   expect(stored.combatLoad).toBeCloseTo(before.combatLoad, 5);
   expect(stored.storedLoad - before.storedLoad).toBeCloseTo(12, 5);
 
-  await gearRow(page, "Pick").locator("select").selectOption("carried");
+  await page
+    .locator("#storageLocationList .inventory-row", {
+      has: page.getByText("Pick", { exact: true }),
+    })
+    .locator("select")
+    .selectOption("carried");
   await expect(gearRow(page, "Pick")).toContainText("On Body");
 
   const carried = await page.evaluate(() => ({

@@ -20,24 +20,6 @@ function ammoOptions(selected = "") {
   ].join("");
 }
 
-function caliberOptionsForAmmo(item, selected = "") {
-  const options = AMMO_CALIBERS_BY_CATALOG_ID[item?.id] || [];
-  if (!options.length) {
-    return '<option value="">No caliber selection</option>';
-  }
-  const selectedCaliber =
-    normalizeCaliber(selected) ||
-    caliberFromText(els.ammoLabelInput.value) ||
-    LEGACY_AMMO_KEY_DEFAULTS[item.id]?.caliber ||
-    options[0];
-  return options
-    .map(
-      (caliber) =>
-        `<option value="${esc(caliber)}"${caliber === selectedCaliber ? " selected" : ""}>${esc(caliber)}</option>`,
-    )
-    .join("");
-}
-
 function entryCatalogOptions(items, placeholder) {
   return [
     `<option value="">${placeholder}</option>`,
@@ -54,11 +36,6 @@ function catalogs() {
   els.gearSelect.innerHTML = optionList(
     byName(GEAR_CATALOG),
     "Choose gear from catalog…",
-    (item) => `${wt(item.weight)} lb • ${money(item.costCents)}`,
-  );
-  els.ammoGearSelect.innerHTML = optionList(
-    GEAR_CATALOG.filter(isAmmo),
-    "Choose ammunition from catalog…",
     (item) => `${wt(item.weight)} lb • ${money(item.costCents)}`,
   );
   els.armorCatalogSelect.innerHTML = optionList(
@@ -90,7 +67,6 @@ function catalogs() {
       `<option value="${esc(location.id)}">${esc(location.label)}</option>`,
   ).join("");
   els.weaponAmmoTypeSelect.innerHTML = ammoOptions();
-  els.ammoCaliberSelect.innerHTML = caliberOptionsForAmmo();
 }
 
 function chosen(items, id) {
@@ -431,18 +407,6 @@ function updatePreviews() {
       ? `${gear.name} - Adds ${packageCount * unitsPerPackage} ${consumableConversion.unit} to Consumables`
       : `${gear.name} - ${gear.category || "Gear"} - Weight ${wt(gear.weight)} - Cost ${money(gear.costCents)} each`
     : "Choose gear from the catalog or type custom gear.";
-
-  const ammo = chosen(GEAR_CATALOG, els.ammoGearSelect.value);
-  els.ammoGearPreview.textContent = ammo
-    ? `${ammo.name} • Weight ${wt(ammo.weight)} • Cost ${money(ammo.costCents)} each`
-    : "Choose ammunition from the catalog or type custom ammo.";
-  els.ammoCaliberSelect.innerHTML = caliberOptionsForAmmo(
-    ammo,
-    els.ammoCaliberSelect.value,
-  );
-  els.ammoCaliberSelect.disabled = !(
-    ammo && AMMO_CALIBERS_BY_CATALOG_ID[ammo.id]
-  );
 
   const armor = chosen(ARMOR_CATALOG, els.armorCatalogSelect.value);
   els.armorCatalogPreview.textContent = armor

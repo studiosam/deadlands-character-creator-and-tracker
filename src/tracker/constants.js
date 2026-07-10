@@ -5,13 +5,6 @@
  * IDs, or ordering. Feature-specific rule logic belongs with the feature module
  * that owns the calculation.
  */
-const AMMO_CALIBERS_BY_CATALOG_ID = {
-  "pistol-ammunition-small-22-38-caliber": [".22", ".32", ".36", ".38"],
-  "pistol-ammunition-large-40-50-caliber": [".40", ".41", ".44", ".45", ".50"],
-  "rifle-ammunition-small-38-44-caliber": [".38", ".40", ".44", ".45"],
-  "rifle-ammunition-large-50-caliber": [".50", ".56", ".57", ".58"],
-};
-
 const AMMO_KIND_BY_CATALOG_ID = {
   "pistol-ammunition-small-22-38-caliber": "pistol",
   "pistol-ammunition-large-40-50-caliber": "pistol",

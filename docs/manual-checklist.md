@@ -8,8 +8,8 @@ saved-character selection, setupStatus, confirmed Character Sheet cleanup,
 Characters panel profile editing, sample loading, Savaged.us paste import,
 export/import round trips, persistence, inventory item persistence, setup
 source tracking, canonical Advancement ledger save/reload coverage, active
-powers, Deadlands bookkeeping, global undo/redo, Combat Declaration, and core
-combat controls across desktop and mobile viewports. Keep this checklist for
+powers, Deadlands bookkeeping, global undo/redo, and core live tracker controls
+across desktop and mobile viewports. Keep this checklist for
 rules-heavy validation and table workflow checks that are not yet practical to
 automate.
 
@@ -20,7 +20,7 @@ automate.
   optional Hindrances and benefit spending, Gear purchases, landing page
   import/selection, Sources & Rulesets, Characters panel profile editing,
   confirmed Character Sheet reference mode, active powers, Deadlands
-  bookkeeping, Combat Declaration, and global undo/redo.
+  bookkeeping, and global undo/redo.
 - Advancement storage, adaptive forms, application helpers, skill filtering,
   canonical ledger entries, supported application types, imported history, and
   safe undo checks are implemented. The manual Advancement sections below focus

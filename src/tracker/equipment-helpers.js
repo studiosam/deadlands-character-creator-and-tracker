@@ -94,17 +94,6 @@ function requiredAmmoLabelForWeapon(weapon, catalogItem = null) {
   return caliber && !label.includes(caliber) ? `${label} (${caliber})` : label;
 }
 
-function exactAmmoTypeForCatalogAmmo(item, selectedCaliber = "") {
-  if (!item) return "";
-  const kind = AMMO_KIND_BY_CATALOG_ID[item.id];
-  if (!kind) return item.id;
-  const caliber =
-    normalizeCaliber(selectedCaliber) ||
-    caliberFromText(item.name) ||
-    LEGACY_AMMO_KEY_DEFAULTS[item.id]?.caliber;
-  return ammoKey(kind, caliber);
-}
-
 function migrateAmmoEntry(key, ammo) {
   const legacy = LEGACY_AMMO_KEY_DEFAULTS[key];
   if (!legacy) return { key, ammo };

@@ -1,9 +1,9 @@
 /**
- * Live combat dashboard rendering and controls.
+ * Live tracker rendering and controls.
  *
- * Combat state changes frequently during play: resources, cards, conditions,
- * loaded ammunition, active powers, and reminders. This module should render
- * session-facing controls without changing permanent character setup semantics.
+ * Table state changes frequently during play: resources, conditions, loaded
+ * ammunition, active powers, and reminders. This module should render
+ * character-sheet controls without changing permanent setup semantics.
  */
 function renderResourceControls(container, resources) {
   container.innerHTML = "";
@@ -196,30 +196,178 @@ function combatPenaltyInfo() {
   return { total, traitPenalties, modifiers };
 }
 
+function concisePenaltyLabel(label) {
+  return String(label || "")
+    .replace(
+      /^Athletics and rolls to resist Athletics -2$/,
+      "Athletics / resist Athletics -2",
+    )
+    .replace(/^Running die increases one step$/, "Running die +1 step")
+    .replace(/^Running die is d4$/, "Running die d4")
+    .replace(/^Ignore (\d+) points? of Gang Up bonus$/, "Gang Up ignored -$1")
+    .replace(
+      /^Fighting bonus damage die becomes (d\d+)$/,
+      "Fighting bonus damage $1",
+    )
+    .replace(/^Maximum Wounds \+(\d+);.*$/, "Max Wounds +$1")
+    .replace(
+      /^Actions at 5 inches \/ 10 yards or more -2$/,
+      "Distant actions -2",
+    )
+    .replace(/^Mechanical or electrical device rolls -2$/, "Device rolls -2")
+    .replace(/^Vigor to resist Fatigue -2$/, "Vigor vs Fatigue -2")
+    .trim();
+}
+
+function modifierLabelIsVisible(label) {
+  return /(?:^|\s)[+-]\d+\b|Pace \d|Running die|Parry|Toughness|Maximum Wounds|Ignore \d|bonus damage die/i.test(
+    label || "",
+  );
+}
+
+function modifierChip({ label, cause, legacyText, kind = "neutral" }) {
+  return `<span class="modifier-chip ${esc(kind)}" title="${esc(cause)}"><strong>${esc(label)}</strong><span class="sr-only">${esc(legacyText || `${cause}: ${label}`)}</span></span>`;
+}
+
+function conditionModifierChips() {
+  const conditionChips = [
+    ["shaken", "Limited actions", "Shaken: limited actions"],
+    ["vulnerable", "Attacks vs you +2", "Vulnerable: +2 attacks vs you"],
+    ["stunned", "Cannot act", "Stunned: cannot act; attacks vs you +2"],
+    ["stunned", "Attacks vs you +2", "Stunned: cannot act; attacks vs you +2"],
+    ["prone", "Attacks -2", "Prone: -2 attacks; close attacks vs you +2"],
+    [
+      "prone",
+      "Close attacks vs you +2",
+      "Prone: -2 attacks; close attacks vs you +2",
+    ],
+    ["bound", "Cannot move", "Bound: can't move; likely Distracted/Vulnerable"],
+    ["entangled", "Cannot move", "Entangled: can't move; likely Distracted"],
+    ["aiming", "Ranged attack +2", "Aiming: +2 ranged attack"],
+    ["defending", "Parry +4", "Defending: +4 Parry"],
+    ["theDrop", "Attack/damage +4", "The Drop: +4 attack/damage"],
+    [
+      "wildAttack",
+      "Fighting/damage +2",
+      "Wild Attack: +2 Fighting/damage; -2 Parry",
+    ],
+    ["wildAttack", "Parry -2", "Wild Attack: +2 Fighting/damage; -2 Parry"],
+  ];
+
+  return conditionChips
+    .filter(([key]) => character.conditions[key])
+    .map(([key, label, legacyText]) =>
+      modifierChip({
+        label,
+        cause: displayNameFromKey(key),
+        legacyText,
+        kind: /-\d|Cannot|Limited/.test(label) ? "penalty" : "bonus",
+      }),
+    );
+}
+
+function effectModifierChips() {
+  return effectHookSummariesForSurface(character, "combat")
+    .filter((effect) => modifierLabelIsVisible(effect.displayLabel))
+    .map((effect) => {
+      const value = Number(effect.value);
+      const kind = Number.isFinite(value)
+        ? value < 0
+          ? "penalty"
+          : "bonus"
+        : /-\d/.test(effect.displayLabel)
+          ? "penalty"
+          : /\+\d|Ignore|Maximum|bonus|Running die/i.test(effect.displayLabel)
+            ? "bonus"
+            : "neutral";
+      return modifierChip({
+        label: concisePenaltyLabel(effect.displayLabel),
+        cause: effect.sourceName,
+        legacyText: `${effect.sourceName}: ${effect.displayLabel}`,
+        kind,
+      });
+    });
+}
+
+function encumbrancePenaltyFacts(info) {
+  if (info.overloaded) {
+    return [
+      ["Max carry exceeded", "Above maximum lift/carry."],
+      [
+        "Inventory fix needed",
+        "Reduce carried load on Inventory before normal movement.",
+      ],
+    ];
+  }
+  if (info.heavyOverload) {
+    return [
+      ["Pace 1", "Pace 1 for Vigor rounds"],
+      ["Vigor each round", "After that: Vigor each round or take Fatigue"],
+      ["Agility -2", "Agility and Agility-linked skills -2"],
+      ["Agility-linked -2", "Agility and Agility-linked skills -2"],
+      ["Vigor vs Fatigue -2", "Vigor rolls to resist Fatigue -2"],
+    ];
+  }
+  if (info.encumbered) {
+    return [
+      ["Pace -2", "Pace -2, minimum 1"],
+      ["Running -2", "Running rolls -2"],
+      ["Agility -2", "Agility rolls -2"],
+      ["Agility-linked -2", "Agility-linked skills -2"],
+      ["Vigor vs Fatigue -2", "Vigor rolls to resist Fatigue -2"],
+    ];
+  }
+  return [];
+}
+
+function encumbranceModifierChips(info) {
+  return encumbrancePenaltyFacts(info).map(([label, detail]) =>
+    modifierChip({
+      label,
+      cause: `Encumbrance: ${detail}`,
+      legacyText: `Encumbrance: ${detail}`,
+      kind: "penalty",
+    }),
+  );
+}
+
 function renderCombatPenalties() {
   const { total, traitPenalties, modifiers } = combatPenaltyInfo();
   const encumbrance = calculateEncumbrance(character, { combat: true });
-  const loadText = `Current Load (Combat Load): ${esc(
-    compactLoadText(encumbrance),
-  )}. Carrying Capacity: ${esc(formatWeightPounds(encumbrance.carryingCapacity))}`;
-  const encumbranceWarning = esc(encumbranceWarningText(encumbrance));
-  const entries = [
+  const legacyEntries = [
     ...traitPenalties.map((penalty) => `${penalty.label} ${penalty.value}`),
     ...modifiers,
   ];
+  const modifierChips = [
+    ...traitPenalties.map((penalty) =>
+      modifierChip({
+        label: `Trait rolls ${penalty.value}`,
+        cause: penalty.label,
+        legacyText: `${penalty.label} ${penalty.value}`,
+        kind: "penalty",
+      }),
+    ),
+    ...conditionModifierChips(),
+    ...effectModifierChips(),
+    ...encumbranceModifierChips(encumbrance),
+  ];
 
-  els.combatPenaltyTotal.textContent = total ? `-${total}` : "0";
-  els.combatPenaltySummary.textContent = total
-    ? "Trait penalty total"
-    : "No trait penalties";
-  els.combatPenaltyBreakdown.innerHTML = entries.length
-    ? entries.map((entry) => `<span>${esc(entry)}</span>`).join("")
-    : "<span>No active penalty causes.</span>";
-  els.combatEncumbranceSummary.innerHTML = encumbrance.overloaded
-    ? `<strong>Encumbrance: Overloaded</strong><span>${loadText}. ${encumbranceWarning}</span>`
-    : encumbrance.encumbered
-      ? `<strong>Encumbrance: ${esc(encumbranceText(encumbrance))}</strong><span>${loadText}. ${encumbranceWarning}</span>`
-      : `<strong>Encumbrance: ${esc(encumbranceText(encumbrance))}</strong><span>${loadText}</span>`;
+  const hiddenLegacyEntries = legacyEntries.length
+    ? `<span class="sr-only">${esc(legacyEntries.join(" "))}</span>`
+    : "";
+  els.combatPenaltyTotal.textContent = total
+    ? `-${total}`
+    : modifierChips.length
+      ? `${modifierChips.length} active`
+      : "None";
+  els.combatPenaltySummary.textContent = modifierChips.length
+    ? "Hover a modifier for its source."
+    : "No active modifiers.";
+  els.combatPenaltyBreakdown.innerHTML = modifierChips.length
+    ? `${modifierChips.join("")}${hiddenLegacyEntries}`
+    : `<span>No active modifiers.</span>${hiddenLegacyEntries}`;
+  els.combatEncumbranceSummary.className = "hidden";
+  els.combatEncumbranceSummary.innerHTML = "";
 }
 
 function renderCombatPowerPoints() {

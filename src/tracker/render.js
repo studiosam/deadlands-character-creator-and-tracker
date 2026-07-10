@@ -421,6 +421,86 @@ function renderLocalDataSummary() {
     .join("");
 }
 
+function encumbranceStatusClass(info) {
+  if (info.overloaded) return "danger";
+  if (info.heavyOverload) return "warning";
+  if (info.encumbered) return "caution";
+  return "safe";
+}
+
+function encumbranceMeterLayers(load, capacity) {
+  const safeCapacity = Math.max(1, Number(capacity) || 0);
+  const currentLoad = Math.max(0, Number(load) || 0);
+  const encumbered = currentLoad > safeCapacity;
+  const heavy = currentLoad >= safeCapacity * 3;
+  const overloaded = currentLoad > safeCapacity * 4;
+
+  return {
+    state: overloaded
+      ? "overloaded"
+      : heavy
+        ? "heavy"
+        : encumbered
+          ? "encumbered"
+          : "safe",
+    safe: (encumbered
+      ? 100
+      : clamp((currentLoad / safeCapacity) * 100, 0, 100)
+    ).toFixed(2),
+    caution: (encumbered
+      ? heavy
+        ? 100
+        : clamp(
+            ((currentLoad - safeCapacity) / (safeCapacity * 2)) * 100,
+            0,
+            100,
+          )
+      : 0
+    ).toFixed(2),
+    danger: (heavy
+      ? overloaded
+        ? 100
+        : clamp(((currentLoad - safeCapacity * 3) / safeCapacity) * 100, 0, 100)
+      : 0
+    ).toFixed(2),
+  };
+}
+
+function encumbranceMeterMarkup(load, capacity) {
+  const layers = encumbranceMeterLayers(load, capacity);
+  return `<div class="encumbrance-meter ${esc(layers.state)}" aria-hidden="true">
+    <span class="encumbrance-meter-layer safe" style="width: ${layers.safe}%"></span>
+    <span class="encumbrance-meter-layer caution" style="width: ${layers.caution}%"></span>
+    <span class="encumbrance-meter-layer danger" style="width: ${layers.danger}%"></span>
+  </div>`;
+}
+
+function encumbranceLoadCard({
+  label,
+  load,
+  value,
+  capacity,
+  status,
+  help,
+  className,
+}) {
+  return `<div class="encumbrance-load-card ${esc(className)}">
+    <div class="encumbrance-load-card-heading">
+      <span>${esc(label)}</span>
+      <strong>${esc(value)}</strong>
+    </div>
+    ${encumbranceMeterMarkup(load, capacity)}
+    <div class="encumbrance-load-card-footer">
+      <span>${esc(help)}</span>
+      <strong>${esc(status)}</strong>
+    </div>
+  </div>`;
+}
+
+function encumbranceDetailCard(label, value, className = "") {
+  return `<div class="encumbrance-detail-card ${esc(className)}"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
+}
+
 function renderEncumbrance() {
   const info = calculateEncumbrance(character);
   const combatInfo = calculateEncumbrance(character, { combat: true });
@@ -434,31 +514,37 @@ function renderEncumbrance() {
       : info.encumbered
         ? `Normal ${encumbranceText(info)}`
         : "No encumbrance";
-  els.encumbranceDetails.innerHTML = [
-    ["Current Load (Combat Load)", compactLoadText(info)],
-    ["Carrying Capacity", formatWeightPounds(info.carryingCapacity)],
-    [
-      "Encumbrance",
-      `Normal - ${encumbranceText(info)}, Combat - ${encumbranceText(combatInfo)}`,
-    ],
-    ["Combat Load", formatWeightPounds(info.combatLoad)],
-    ["Normal Load", formatWeightPounds(info.normalLoad)],
-    ["Container Load", formatWeightPounds(info.inventoryTotals.containerLoad)],
-    ["Dropped Load", formatWeightPounds(info.inventoryTotals.droppedLoad)],
-    ["Stored Load", formatWeightPounds(info.inventoryTotals.storedLoad)],
-    ["Owned Gear", formatWeightPounds(info.inventoryTotals.ownedWeight)],
-    ["Maximum Normal Carry", formatWeightPounds(info.normalCapacity)],
-    ["Effective Strength", info.effectiveStrength],
-    ["Passive Effects", passiveEffectSummaryText("inventory")],
-    ["Combat Encumbrance", encumbranceText(combatInfo)],
-    ["Normal Encumbrance", encumbranceText(info)],
-    ["Next Combat Threshold", nextEncumbranceText(combatInfo)],
-  ]
-    .map(
-      ([label, value]) =>
-        `<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`,
-    )
-    .join("");
+  els.encumbranceDetails.innerHTML = `
+    <div class="encumbrance-load-summary">
+      ${encumbranceLoadCard({
+        label: "Current Load",
+        load: info.normalLoad,
+        value: formatWeightPounds(info.normalLoad),
+        capacity: info.carryingCapacity,
+        status: encumbranceText(info),
+        help: `Capacity ${formatWeightPounds(info.carryingCapacity)}`,
+        className: encumbranceStatusClass(info),
+      })}
+      ${encumbranceLoadCard({
+        label: "Combat Load",
+        load: combatInfo.combatLoad,
+        value: formatWeightPounds(combatInfo.combatLoad),
+        capacity: combatInfo.carryingCapacity,
+        status: encumbranceText(combatInfo),
+        help: "After dropped pack/container load",
+        className: encumbranceStatusClass(combatInfo),
+      })}
+    </div>
+    <div class="encumbrance-reference-grid">
+      ${encumbranceDetailCard("Carrying Capacity", formatWeightPounds(info.carryingCapacity))}
+      ${encumbranceDetailCard("Maximum Normal Carry", formatWeightPounds(info.normalCapacity))}
+      ${encumbranceDetailCard("Effective Strength", info.effectiveStrength)}
+      ${encumbranceDetailCard("Next Combat Threshold", nextEncumbranceText(combatInfo))}
+      ${encumbranceDetailCard("Container Load", formatWeightPounds(info.inventoryTotals.containerLoad))}
+      ${encumbranceDetailCard("Dropped Load", formatWeightPounds(info.inventoryTotals.droppedLoad))}
+      ${encumbranceDetailCard("Stored Load", formatWeightPounds(info.inventoryTotals.storedLoad))}
+      ${encumbranceDetailCard("Passive Effects", passiveEffectSummaryText("inventory"), "wide")}
+    </div>`;
   els.encumbranceWarning.textContent = warning;
   els.encumbranceWarning.classList.toggle("hidden", !warning);
 }
@@ -762,8 +848,6 @@ function renderKeyConditions() {
 function renderPlaySummary() {
   renderCombatWeapons();
   renderCombatStatusResources();
-  renderActionCards();
-  renderCombatDeclaration();
   renderCombatPowerPoints();
 
   const activeResources = character.resources.filter(
@@ -779,7 +863,6 @@ function renderPlaySummary() {
   els.playActivePowersCard.classList.toggle("hidden", !showPowers);
   if (showPowers) renderCombatPowers();
 
-  renderCombatHuckster();
   renderCombatConsumables();
   renderCombatReminders();
 }

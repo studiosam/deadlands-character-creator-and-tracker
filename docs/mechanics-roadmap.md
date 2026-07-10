@@ -83,9 +83,8 @@ the rules.
 - The app has a player-entered Action Card model for Quick, Hesitant, Level
   Headed, and Improved Level Headed, but not a full action deck, Joker reward,
   turn order, or Hold/interrupt workflow.
-- Combat Declaration supports player intent, action count, optional weapon,
-  target label, declaration details, common legal/limited action reminders, and
-  player-entered GM-adjudicated result application.
+- The live Tracker tab intentionally focuses on direct character-sheet
+  bookkeeping instead of player intent declaration or combat action legality.
 - The app intentionally does not need a full combat action legality engine if
   the table workflow is GM adjudication followed by quick player bookkeeping.
 - Weapon tracking handles loaded rounds and reserve ammunition. Attack rolls,
@@ -238,12 +237,11 @@ Current implementation:
   effects.
 - Rapid Recharge and Improved Rapid Recharge now set the computed Power Point
   recovery rate, with Improved Rapid Recharge replacing the base Edge.
-- Luck, Great Luck, and Bad Luck now modify computed starting Bennies through
-  the session resource model, and Start Session resets current Bennies to that
-  computed value.
-- Quick, Hesitant, Level Headed, and Improved Level Headed now feed a Combat
-  Action Cards model that records player-entered cards, checks Quick redraw
-  eligibility, and displays the effective draw/keep instruction.
+- Luck, Great Luck, and Bad Luck modify computed starting Bennies through the
+  session resource model.
+- Quick, Hesitant, Level Headed, and Improved Level Headed remain represented as
+  character effect reminders and underlying model data, but the normal Tracker
+  UI no longer includes a player-entered Action Card workflow.
 - Trademark Weapon and Reputation now store explicit subchoice metadata; their
   status markers change from `subchoice-required` to `subchoice-selected` once
   the chosen weapon or reputation type is recorded.
@@ -407,14 +405,12 @@ bookkeeping over action legality modeling.
 
 Completed scope:
 
-- Combat provides direct controls for Wounds, Fatigue, Bennies, conditions,
-  ammunition, Power Points, active powers, and notes.
-- Combat shows state the app already knows, including Wound penalties,
+- The live Tracker provides direct controls for Wounds, Fatigue, Bennies,
+  conditions, ammunition, Power Points, active powers, and notes.
+- The live Tracker shows state the app already knows, including Wound penalties,
   conditions, encumbrance, passive effect reminders, active Power reminders,
-  Action Card hooks, and loaded/reserve ammunition.
-- Combat Declaration exists as optional helper UI for player intent and
-  GM-adjudicated result bookkeeping, not as a required play workflow.
-- Snapshot-based global undo/redo protects mistakes across Combat, Inventory,
+  and loaded/reserve ammunition.
+- Snapshot-based global undo/redo protects mistakes across Tracker, Inventory,
   Arcane, Character Setup, Advancement, notes, and profile edits.
 
 Deferred unless a real table-use need appears:
@@ -428,9 +424,8 @@ Deferred unless a real table-use need appears:
 
 Completion criteria:
 
-- Combat provides direct, undoable controls for player-owned state.
-- Combat surfaces concise reminders from state the app already knows.
-- Combat Declaration remains optional helper UI, not a required workflow.
+- The live Tracker provides direct, undoable controls for player-owned state.
+- The live Tracker surfaces concise reminders from state the app already knows.
 - Browser tests cover direct combat bookkeeping, active-power reminders,
   conditions, ammo/resource changes, and undo/redo.
 

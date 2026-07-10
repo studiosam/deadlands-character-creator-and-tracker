@@ -111,11 +111,23 @@ function renderInventory() {
   renderInventoryLocationOptions();
   renderStorageLocations();
   els.inventoryList.innerHTML = "";
-  if (!character.inventory.length) {
-    els.inventoryList.innerHTML = emptyState("No inventory tracked yet.");
+
+  const visibleGear = (character.inventory || []).filter(
+    (item) => item.location !== "stored",
+  );
+  const visibleAmmo = unmatchedAmmoEntries().filter(
+    (entry) => entry.item.itemLocation !== "stored",
+  );
+  if (!visibleGear.length && !visibleAmmo.length) {
+    els.inventoryList.innerHTML = emptyState(
+      "No carried gear tracked here. Stored gear appears under Storage Locations.",
+    );
     return;
   }
-  character.inventory.forEach((item) => renderInventoryItemRow(item));
+  visibleGear.forEach((item) => renderInventoryItemRow(item));
+  visibleAmmo
+    .filter((entry) => entry.item.itemLocation !== "container")
+    .forEach((entry) => renderPhysicalNestedRow(entry, 0));
 }
 
 function inventoryMoveOptions(currentItem) {
@@ -187,19 +199,83 @@ function bindPhysicalMoveControls(root = document) {
   });
 }
 
-function renderPhysicalNestedRow(entry, depth = 1, parent = null) {
+function weaponAmmoKeys() {
+  return new Set(
+    (character.weapons || [])
+      .map((weapon) => exactAmmoTypeForWeapon(weapon) || weapon.ammoType || "")
+      .filter(Boolean),
+  );
+}
+
+function ammoMatchesOwnedWeapon(key) {
+  return weaponAmmoKeys().has(key);
+}
+
+function unmatchedAmmoEntries() {
+  return Object.entries(character.ammo || {})
+    .filter(([key]) => !ammoMatchesOwnedWeapon(key))
+    .map(([key, ammo]) => ({
+      type: "ammo",
+      id: key,
+      label: ammo.label || ammoReserveForKey(key).label,
+      item: ammo,
+    }));
+}
+
+function shouldRenderPhysicalGearEntry(
+  entry,
+  { includeMatchingAmmo = false } = {},
+) {
+  return (
+    includeMatchingAmmo ||
+    entry.type !== "ammo" ||
+    !ammoMatchesOwnedWeapon(entry.id)
+  );
+}
+
+function renderPhysicalNestedRow(
+  entry,
+  depth = 1,
+  parent = null,
+  target = els.inventoryList,
+) {
   const row = document.createElement("div");
   row.className = `row inventory-row physical-row depth-${Math.min(depth, 4)}`;
   const weight = physicalItemWeight(entry);
   const location = parent
     ? `Inside ${parent.name}`
     : physicalItemLocationLabel(entry);
-  row.innerHTML = `<div class="inventory-item-main" style="--depth:${depth}"><strong>${esc(entry.label)}</strong><span>${esc(location)} • ${esc(entry.type)} • Weight ${formatWeightPounds(weight)}</span></div><div class="controls inventory-actions">${physicalMoveControl(entry.type, entry.id)}</div>`;
+  const ammoCount =
+    entry.type === "ammo" ? Math.max(0, Number(entry.item.count) || 0) : null;
+  row.innerHTML = `<div class="inventory-item-main" style="--depth:${depth}"><strong>${esc(entry.label)}</strong><span>${esc(location)} • ${esc(entry.type)}${ammoCount !== null ? ` • Qty ${ammoCount}` : ""} • Weight ${formatWeightPounds(weight)}</span></div><div class="controls inventory-actions">${
+    ammoCount !== null
+      ? `<button type="button">&minus;</button><strong>${ammoCount}</strong><button type="button">+</button>`
+      : ""
+  }${physicalMoveControl(entry.type, entry.id)}${ammoCount !== null ? '<button class="delete-small" type="button" title="Remove ammo category">×</button>' : ""}</div>`;
+  if (ammoCount !== null) {
+    const buttons = row.querySelectorAll("button");
+    buttons[0].onclick = () => {
+      entry.item.count = Math.max(0, ammoCount - 1);
+      render();
+      save();
+    };
+    buttons[1].onclick = () => {
+      entry.item.count = ammoCount + 1;
+      render();
+      save();
+    };
+    buttons[2].onclick = () => removeAmmoCategory(entry.id);
+  }
   bindPhysicalMoveControls(row);
-  els.inventoryList.appendChild(row);
+  target.appendChild(row);
 }
 
-function renderInventoryItemRow(item, depth = 0, parent = null) {
+function renderInventoryItemRow(
+  item,
+  depth = 0,
+  parent = null,
+  target = els.inventoryList,
+) {
   const row = document.createElement("div");
   row.className = `row inventory-row depth-${Math.min(depth, 4)}`;
   const ownWeight = inventoryItemOwnWeight(item);
@@ -250,13 +326,15 @@ function renderInventoryItemRow(item, depth = 0, parent = null) {
     render();
     save();
   };
-  els.inventoryList.appendChild(row);
+  target.appendChild(row);
   (item.contents || []).forEach((child) =>
-    renderInventoryItemRow(child, depth + 1, item),
+    renderInventoryItemRow(child, depth + 1, item, target),
   );
-  physicalItemsInContainer(item.id).forEach((entry) =>
-    renderPhysicalNestedRow(entry, depth + 1, item),
-  );
+  physicalItemsInContainer(item.id)
+    .filter((entry) => shouldRenderPhysicalGearEntry(entry))
+    .forEach((entry) =>
+      renderPhysicalNestedRow(entry, depth + 1, item, target),
+    );
 }
 
 function renderInventoryLocationOptions() {
@@ -307,8 +385,8 @@ function renderStorageLocations() {
       ...storedPhysical.map((entry) => entry.label),
     ];
     const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `<div><strong>${esc(location.name)}</strong><span>${formatWeightPounds(weight)} stored here</span>${itemNames.length ? `<span>${esc(itemNames.join(", "))}</span>` : ""}</div><div class="controls">${location.builtin ? "" : `<input value="${esc(location.name)}" aria-label="Rename ${esc(location.name)}"><button type="button">Rename</button><button class="delete-small" type="button">×</button>`}</div>`;
+    row.className = "row storage-location-heading";
+    row.innerHTML = `<div><strong>${esc(location.name)}</strong><span>${formatWeightPounds(weight)} stored here</span>${itemNames.length ? `<span>${esc(itemNames.join(", "))}</span>` : "<span>No items stored here.</span>"}</div><div class="controls">${location.builtin ? "" : `<input value="${esc(location.name)}" aria-label="Rename ${esc(location.name)}"><button type="button">Rename</button><button class="delete-small" type="button">×</button>`}</div>`;
     if (!location.builtin) {
       const input = row.querySelector("input");
       const buttons = row.querySelectorAll("button");
@@ -330,6 +408,17 @@ function renderStorageLocations() {
       };
     }
     els.storageLocationList.appendChild(row);
+    if (storedGear.length || storedPhysical.length) {
+      const itemList = document.createElement("div");
+      itemList.className = "storage-location-items";
+      storedGear.forEach((item) =>
+        renderInventoryItemRow(item, 1, null, itemList),
+      );
+      storedPhysical.forEach((entry) =>
+        renderPhysicalNestedRow(entry, 1, null, itemList),
+      );
+      els.storageLocationList.appendChild(itemList);
+    }
   });
 }
 
@@ -461,40 +550,6 @@ function addVehicle() {
   els.vehicleQtyInput.value = "";
   els.vehicleNoteInput.value = "";
   els.vehicleAddForm.classList.add("hidden");
-  updatePreviews();
-  render();
-  save();
-}
-
-function addAmmo() {
-  const catalogItem = chosen(GEAR_CATALOG, els.ammoGearSelect.value);
-  const label = els.ammoLabelInput.value.trim() || catalogItem?.name;
-  if (!label) return;
-  const selectedCaliber = normalizeCaliber(els.ammoCaliberSelect.value);
-  const exactKey = exactAmmoTypeForCatalogAmmo(catalogItem, selectedCaliber);
-  const key = exactKey || catalogItem?.id || slugify(label);
-  const count = Math.max(1, Math.floor(Number(els.ammoCountInput.value) || 1));
-  if (character.ammo[key]) character.ammo[key].count += count;
-  else
-    character.ammo[key] = {
-      label:
-        AMMO_KIND_BY_CATALOG_ID[catalogItem?.id] && selectedCaliber
-          ? ammoLabel(AMMO_KIND_BY_CATALOG_ID[catalogItem.id], selectedCaliber)
-          : label,
-      count,
-      caliber: selectedCaliber || undefined,
-      kind: AMMO_KIND_BY_CATALOG_ID[catalogItem?.id],
-      note: els.ammoNoteInput.value.trim(),
-      weight: catalogItem?.weight,
-      costCents: catalogItem?.costCents,
-      itemLocation: "carried",
-    };
-  els.ammoGearSelect.value = "";
-  els.ammoLabelInput.value = "";
-  els.ammoCountInput.value = "";
-  els.ammoCaliberSelect.innerHTML = caliberOptionsForAmmo();
-  els.ammoNoteInput.value = "";
-  els.ammoAddForm.classList.add("hidden");
   updatePreviews();
   render();
   save();

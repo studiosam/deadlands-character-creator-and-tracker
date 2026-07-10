@@ -350,10 +350,6 @@ els.addVehicleBtn.onclick = addVehicle;
 els.cancelVehicleAddBtn.onclick = () => {
   els.vehicleAddForm.classList.add("hidden");
 };
-els.addAmmoBtn.onclick = addAmmo;
-els.cancelAmmoAddBtn.onclick = () => {
-  els.ammoAddForm.classList.add("hidden");
-};
 els.addArmorBtn.onclick = addArmor;
 els.cancelArmorAddBtn.onclick = () => {
   els.armorAddForm.classList.add("hidden");
@@ -415,14 +411,14 @@ els.saveAdvanceBtn.onclick = saveAdvanceEditor;
 els.cancelAdvanceEditBtn.onclick = closeAdvanceEditor;
 [
   els.gearSelect,
-  els.ammoGearSelect,
-  els.ammoCaliberSelect,
   els.armorCatalogSelect,
   els.weaponCatalogSelect,
   els.vehicleCatalogSelect,
-].forEach((select) => {
-  select.onchange = updatePreviews;
-});
+]
+  .filter(Boolean)
+  .forEach((select) => {
+    select.onchange = updatePreviews;
+  });
 [els.inventoryCountInput, els.inventoryUnitsInput].forEach((input) => {
   input.oninput = updatePreviews;
 });

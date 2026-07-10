@@ -784,7 +784,7 @@ test("shows the read-only sources and rulesets page from the global menu", async
     ["Inventory", "#inventoryPanel"],
     ["Arcane", "#arcanePanel"],
     ["Notes", "#notesPanel"],
-    ["Combat", "#playPanel"],
+    ["Tracker", "#playPanel"],
   ];
   for (const [name, panelId] of primaryTabs) {
     await page.getByRole("button", { name, exact: true }).click();

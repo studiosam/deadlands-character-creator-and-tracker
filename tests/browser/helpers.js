@@ -152,7 +152,7 @@ async function switchToCharacter(page, name) {
 }
 
 async function openCombat(page) {
-  await page.getByRole("button", { name: "Combat", exact: true }).click();
+  await page.getByRole("button", { name: "Tracker", exact: true }).click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
 }
 

@@ -168,8 +168,10 @@
                 <h2>Session</h2>
                 <button
                   id="newSessionBtn"
+                  class="hidden"
                   type="button"
-                  title="Reset bennies, conviction, resources, Action Cards, combat declarations, and temporary conditions for a new play session."
+                  aria-hidden="true"
+                  title="Legacy session reset kept for save compatibility; not shown in the normal tracker."
                 >
                   Start Session
                 </button>
@@ -335,7 +337,7 @@
           type="button"
           data-app-tab="play"
         >
-          Combat
+          Tracker
         </button>
         <button type="button" data-app-tab="character">Character</button>
         <button type="button" data-app-tab="inventory">Inventory</button>
@@ -440,7 +442,7 @@
 
                 <div class="combat-penalty-panel">
                   <div class="topline">
-                    <h3>Penalties</h3>
+                    <h3>Roll Modifiers</h3>
                     <span id="combatPenaltyTotal" class="loaded"></span>
                   </div>
                   <p id="combatPenaltySummary" class="muted"></p>
@@ -448,17 +450,18 @@
                     id="combatPenaltyBreakdown"
                     class="penalty-breakdown"
                   ></div>
-                  <div
-                    id="combatEncumbranceSummary"
-                    class="encumbrance-combat"
-                  ></div>
+                  <div id="combatEncumbranceSummary" class="hidden"></div>
                 </div>
 
                 <div
                   id="combatStatusResources"
                   class="grid combat-inline"
                 ></div>
-                <div id="actionCardPanel" class="block hidden">
+                <div
+                  id="actionCardPanel"
+                  class="block hidden simulator-tool"
+                  aria-hidden="true"
+                >
                   <div class="topline">
                     <h3>Action Cards</h3>
                     <span id="actionCardStatusPill" class="pill">Tracked</span>
@@ -495,7 +498,11 @@
             <div id="playPowerPointsList" class="list"></div>
           </section>
 
-          <section id="combatDeclarationCard" class="card wide">
+          <section
+            id="combatDeclarationCard"
+            class="card wide hidden simulator-tool"
+            aria-hidden="true"
+          >
             <div class="section-title">
               <div>
                 <h2>Combat Declaration</h2>
@@ -625,16 +632,20 @@
           </section>
 
           <section id="playResourcesCard" class="card">
-            <h2>Combat Resources</h2>
+            <h2>Resources</h2>
             <div id="playResourcesList" class="list"></div>
           </section>
 
           <section id="playActivePowersCard" class="card wide">
-            <h2>Combat Powers</h2>
+            <h2>Active Powers</h2>
             <div id="playActivePowersList" class="grid powers"></div>
           </section>
 
-          <section id="combatHucksterCard" class="card wide hidden">
+          <section
+            id="combatHucksterCard"
+            class="card wide hidden simulator-tool"
+            aria-hidden="true"
+          >
             <h2>Huckster: Deal in Combat</h2>
             <div id="combatHucksterHelper" class="creator-grid"></div>
           </section>
@@ -658,7 +669,7 @@
           </section>
 
           <section id="combatRemindersCard" class="card wide">
-            <h2>Combat Reminders</h2>
+            <h2>Reminders</h2>
             <div id="combatRemindersList" class="list"></div>
           </section>
         </section>
@@ -1284,7 +1295,10 @@
             <div class="section-title">
               <div>
                 <h2>Weapon Inventory</h2>
-                <p>Loaded rounds are tracked separately from reserve ammo.</p>
+                <p>
+                  Loaded rounds and matching reserve ammo are managed from each
+                  weapon card.
+                </p>
               </div>
               <button
                 class="ghost"
@@ -1364,60 +1378,6 @@
               </div>
             </div>
             <div id="weaponList" class="grid weapons"></div>
-          </section>
-
-          <section class="card wide">
-            <div class="section-title">
-              <div>
-                <h2>Ammo Inventory</h2>
-                <p>Reserve ammunition by firearm type and caliber.</p>
-              </div>
-              <button
-                class="ghost"
-                type="button"
-                data-toggle-form="ammoAddForm"
-              >
-                Add Ammo
-              </button>
-            </div>
-            <div id="ammoAddForm" class="add-panel collapsed-form hidden">
-              <h3>Add Ammunition</h3>
-              <div class="form">
-                <label class="full">
-                  Catalog ammunition
-                  <select id="ammoGearSelect"></select>
-                </label>
-                <label>
-                  Name override
-                  <input id="ammoLabelInput" placeholder="Custom ammo name" />
-                </label>
-                <label>
-                  Quantity
-                  <input
-                    id="ammoCountInput"
-                    class="tiny"
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="1"
-                  />
-                </label>
-                <label>
-                  Caliber
-                  <select id="ammoCaliberSelect"></select>
-                </label>
-                <label>
-                  Note
-                  <input id="ammoNoteInput" placeholder="Optional note" />
-                </label>
-                <button id="addAmmoBtn" type="button">Add Ammo</button>
-                <button id="cancelAmmoAddBtn" class="ghost" type="button">
-                  Cancel
-                </button>
-                <p id="ammoGearPreview" class="preview"></p>
-              </div>
-            </div>
-            <div id="ammoReserves" class="grid ammo"></div>
           </section>
 
           <section class="card wide">
@@ -2155,6 +2115,7 @@
           <button class="unload-btn" type="button">Unload</button>
           <button class="remove-btn danger" type="button">Remove</button>
         </div>
+        <div class="weapon-ammo-purchase hidden"></div>
         <p class="weapon-notes muted"></p>
         <p class="weapon-warning hidden"></p>
       </article>

@@ -62,7 +62,7 @@ The first screen is now a minimal application launcher rather than a marketing
 page. It lets a returning player continue the active saved character, select a
 saved character, create a character, import JSON, try the sample in the empty
 state, or open the read-only Sources & Rulesets page. After the launcher,
-Combat remains the default play tab, with high-frequency state controls near the
+Tracker remains the default play tab, with high-frequency state controls near the
 top.
 
 Character Setup is treated as a one-time creation/import confirmation workflow.
@@ -83,8 +83,8 @@ Recent product work adds:
 - Read-only Sources & Rulesets page for the current Deadlands-focused profile.
 - `setupStatus` separation between setup review and confirmed sheet reference.
 - Characters panel profile editor.
-- Combat Declaration for GM-facing player intent and GM-adjudicated result
-  bookkeeping without roll automation.
+- Live Tracker focus on direct character-sheet bookkeeping without roll
+  automation or combat-simulator workflow.
 - Character Setup scaffolding for Concept, Attributes, Skills, Edges,
   optional Hindrances with benefits, Powers, Gear purchases, setup source
   tracking, creation baselines, and Review.

@@ -38,8 +38,9 @@ want a local, private, session-focused tracker at the table.
 - Track wounds, fatigue, Bennies, Conviction, penalties, defenses, conditions,
   combat resources, powers, consumables, reminders, and GM-facing combat
   declarations.
-- Manage weapons, loaded rounds, reserve ammunition, armor by location, gear,
-  vehicles, storage locations, carrying capacity, and encumbrance.
+- Manage weapons, loaded rounds, weapon-card reserve ammo purchases, armor by
+  location, gear, vehicles, storage locations, carrying capacity, and
+  encumbrance.
 - Build or review a Deadlands/SWADE character through Character Setup, finish
   setup from Gear, and start play from the live tracker.
 - Review imported or newly created characters through the `setupStatus`
@@ -69,7 +70,7 @@ want a local, private, session-focused tracker at the table.
 
 ## Current Scope
 
-- Implemented: combat tracking, Combat Declaration, inventory/equipment
+- Implemented: live character tracker, inventory/equipment
   management, active powers, local character library, JSON import/export,
   minimal landing page, read-only Sources & Rulesets, Character Setup validation,
   confirmed Character Sheet mode, Characters panel profile editing, global
@@ -139,13 +140,16 @@ repository root.
 Recommended portfolio screenshots/GIFs:
 
 - Minimal landing page with saved-character selection.
-- Combat tab during live play with wounds, Bennies, weapons, ammo, conditions,
-  Combat Declaration, and Undo/Redo visible.
+- Tracker tab during live play with wounds, Bennies, weapons, concise roll
+  modifiers, ammo, conditions, active powers, reminders, and Undo/Redo visible.
 - Inventory tab showing storage locations and encumbrance.
 - Encumbrance separates Current Load from Combat Load: Current Load is what the
   character normally carries, Combat Load assumes droppable backpack/container
   load is dropped, Carrying Capacity is the base penalty threshold, and Maximum
   Normal Carry is only a separate out-of-combat allowance when shown.
+- Inventory visually separates on-body/backpack gear from off-body storage:
+  Gear shows carried and pack/container load, weapon cards show matching ammo
+  reserves, and Storage Locations shows home/cart/horse/camp items.
 - Arcane tab showing Power Points, known powers, active powers, runtime
   reminders, and variable Power Point spend details.
 - Character Setup Gear finalization, confirmed Character Sheet mode, and
@@ -181,8 +185,8 @@ Recommended portfolio screenshots/GIFs:
 - Playwright tests cover load, responsive tabs, sample loading, landing flows,
   setupStatus, profile editing, imports, export/import round trips, persistence,
   character-library isolation, inventory, setup flows, active powers,
-  Advancement, Deadlands bookkeeping, global undo/redo, Combat Declaration, and
-  core combat controls.
+  Advancement, Deadlands bookkeeping, global undo/redo, and core tracker
+  controls.
 
 ## Import and Export Formats
 

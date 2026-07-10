@@ -109,6 +109,7 @@ function renderWeapons() {
     const reload = query(".reload-btn");
     const unload = query(".unload-btn");
     const remove = query(".remove-btn");
+    const ammoPurchase = query(".weapon-ammo-purchase");
     remove.insertAdjacentHTML(
       "beforebegin",
       physicalMoveControl("weapon", weapon.id),
@@ -140,6 +141,7 @@ function renderWeapons() {
         `Loaded ${weapon.shotsLoaded} / ${weapon.shotsMax}`;
       query(".weapon-notes").textContent =
         `${reserve?.label || "Ammo"} reserve: ${reserveCount}${reserveEntry ? ` • ${physicalItemLocationLabel(reserveEntry)}` : ""}.`;
+      renderWeaponAmmoPurchase(ammoPurchase, weapon, reserve);
       fire.disabled = weapon.shotsLoaded <= 0;
       load.disabled =
         weapon.shotsLoaded >= weapon.shotsMax || reserveCount <= 0;
@@ -179,6 +181,8 @@ function renderWeapons() {
       query(".loaded").textContent = "No ammo";
       query(".weapon-notes").textContent =
         weapon.notes || "No ammunition tracking.";
+      ammoPurchase.classList.add("hidden");
+      ammoPurchase.innerHTML = "";
       [fire, load, reload, unload].forEach(
         (button) => (button.disabled = true),
       );
@@ -200,35 +204,96 @@ function renderWeapons() {
   });
 }
 
-function renderAmmo() {
-  els.ammoReserves.innerHTML = "";
-  if (!Object.keys(character.ammo).length) {
-    els.ammoReserves.innerHTML = emptyState("No ammo categories recorded.");
-    els.weaponAmmoTypeSelect.innerHTML = ammoOptions(
-      els.weaponAmmoTypeSelect.value,
-    );
+function weaponAmmoPurchaseInfo(weapon) {
+  const key = exactAmmoTypeForWeapon(weapon);
+  const catalogWeapon = catalogWeaponForRecord(weapon);
+  const catalogItem = key ? catalogAmmoForKey(key, weapon) : null;
+  if (!key || !catalogItem || !isAmmo(catalogItem)) return null;
+  const keyed = String(key).match(/^(pistol|rifle)-(\d{2})-ammo$/);
+  const caliber = keyed?.[2]
+    ? `.${keyed[2]}`
+    : normalizeCaliber(weapon.caliber) || "";
+  const unitCostCents = Math.max(0, Number(catalogItem.costCents) || 0);
+  return {
+    key,
+    catalogItem,
+    label:
+      requiredAmmoLabelForWeapon(weapon, catalogWeapon) || catalogItem.name,
+    caliber,
+    kind: keyed?.[1] || AMMO_KIND_BY_CATALOG_ID[catalogItem.id],
+    unitCostCents,
+  };
+}
+
+function renderWeaponAmmoPurchase(container, weapon, reserve) {
+  const info = weaponAmmoPurchaseInfo(weapon);
+  if (!info) {
+    container.classList.add("hidden");
+    container.innerHTML = "";
     return;
   }
-  Object.entries(character.ammo).forEach(([key, ammo]) => {
-    const row = document.createElement("div");
-    row.className = "row";
-    const entry = { type: "ammo", id: key, label: ammo.label, item: ammo };
-    row.innerHTML = `<div><strong>${ammo.count}</strong><span>${esc(ammo.label)} • ${esc(physicalItemLocationLabel(entry))} • Weight ${formatWeightPounds(physicalItemWeight(entry))}</span></div><div class="controls"><button type="button">&minus;</button><button type="button">+</button>${physicalMoveControl("ammo", key)}<button class="delete-small" type="button" title="Remove ammo category">×</button></div>`;
-    const buttons = row.querySelectorAll("button");
-    buttons[0].onclick = () => {
-      ammo.count = Math.max(0, ammo.count - 1);
-      render();
-      save();
-    };
-    buttons[1].onclick = () => {
-      ammo.count += 1;
-      render();
-      save();
-    };
-    buttons[2].onclick = () => removeAmmoCategory(key);
-    bindPhysicalMoveControls(row);
-    els.ammoReserves.appendChild(row);
-  });
+
+  const defaultQuantity = Math.max(1, Math.floor(Number(weapon.shotsMax) || 1));
+  container.classList.remove("hidden");
+  container.innerHTML = `<div class="weapon-ammo-purchase-row">
+    <label>
+      <span>Buy ${esc(info.label)}</span>
+      <input class="weapon-ammo-buy-qty" type="number" min="1" step="1" value="${esc(defaultQuantity)}" aria-label="Ammo quantity for ${esc(weapon.name)}">
+    </label>
+    <button class="weapon-ammo-buy-btn" type="button">Buy Ammo</button>
+    <small>${esc(money(info.unitCostCents))} each${reserve ? ` • ${reserve.count || 0} reserve` : ""}</small>
+  </div>`;
+  const input = container.querySelector(".weapon-ammo-buy-qty");
+  const button = container.querySelector(".weapon-ammo-buy-btn");
+  button.onclick = () => {
+    addAmmoForWeapon(weapon.id, input.value);
+  };
+}
+
+function addAmmoForWeapon(weaponId, rawQuantity = 1) {
+  const weapon = character.weapons.find((entry) => entry.id === weaponId);
+  if (!weapon) return;
+  const info = weaponAmmoPurchaseInfo(weapon);
+  if (!info) {
+    appToast("No catalog ammunition is matched to that weapon.", "danger");
+    return;
+  }
+  const quantity = Math.max(1, Math.floor(Number(rawQuantity) || 1));
+  const totalCost = info.unitCostCents * quantity;
+  if (totalCost > Math.max(0, Number(character.moneyCents) || 0)) {
+    appToast(`Not enough money. Ammo costs ${money(totalCost)}.`, "danger");
+    return;
+  }
+
+  const fallback = {
+    label: info.label,
+    count: 0,
+    caliber: info.caliber || undefined,
+    kind: info.kind,
+    note: "Purchased ammunition.",
+    weight: info.catalogItem.weight,
+    costCents: info.catalogItem.costCents,
+    itemLocation: "carried",
+  };
+  ensureAmmoReserve(info.key, fallback);
+  const ammo = character.ammo[info.key];
+  ammo.label = ammo.label || fallback.label;
+  ammo.caliber = ammo.caliber || fallback.caliber;
+  ammo.kind = ammo.kind || fallback.kind;
+  ammo.weight = ammo.weight ?? fallback.weight;
+  ammo.costCents = ammo.costCents ?? fallback.costCents;
+  ammo.itemLocation = ammo.itemLocation || "carried";
+  ammo.count = Math.max(0, Number(ammo.count) || 0) + quantity;
+  character.moneyCents = Math.max(
+    0,
+    Math.round((Number(character.moneyCents) || 0) - totalCost),
+  );
+  render();
+  save();
+  appToast(`${quantity} ${info.label} purchased.`, "success");
+}
+
+function renderAmmo() {
   els.weaponAmmoTypeSelect.innerHTML = ammoOptions(
     els.weaponAmmoTypeSelect.value,
   );
