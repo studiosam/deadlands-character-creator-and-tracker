@@ -54,9 +54,6 @@ function counterList(container, items, unitFn, emptyText) {
 function renderConsumables() {
   els.consumablesList.innerHTML = "";
   const consumables = character.consumables.filter((item) => item.count > 0);
-  const hasMatches = consumables.some(
-    (item) => item.id === "matches" || /^matches$/i.test(item.name || ""),
-  );
   if (!consumables.length) {
     els.consumablesList.innerHTML = emptyState("No consumables tracked.");
   }
@@ -87,24 +84,6 @@ function renderConsumables() {
     bindPhysicalMoveControls(row);
     els.consumablesList.appendChild(row);
   });
-
-  if (!hasMatches) {
-    const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `<div><strong>Matches</strong><span>0 matches</span></div><div class="controls consumable-use-actions"><input class="tiny" type="number" min="1" step="1" value="1" aria-label="Number of matches to add"><button type="button">Add</button></div>`;
-    const input = row.querySelector("input");
-    row.querySelector("button").onclick = () => {
-      addConsumableCount(
-        "matches",
-        "Matches",
-        "matches",
-        Math.max(1, Math.floor(Number(input.value) || 1)),
-      );
-      render();
-      save();
-    };
-    els.consumablesList.appendChild(row);
-  }
 }
 
 function renderInventory() {
@@ -186,6 +165,10 @@ function physicalMoveControl(type, id) {
   return `<select data-physical-move="${esc(type)}:${esc(id)}" aria-label="Move item">${physicalMoveOptions(type, id)}</select>`;
 }
 
+function inventoryQuantityStepper(count) {
+  return `<span class="inventory-qty-stepper"><button type="button" aria-label="Decrease quantity">&minus;</button><strong>${count}</strong><button type="button" aria-label="Increase quantity">+</button></span>`;
+}
+
 function bindPhysicalMoveControls(root = document) {
   root.querySelectorAll("[data-physical-move]").forEach((select) => {
     select.onchange = () => {
@@ -248,10 +231,8 @@ function renderPhysicalNestedRow(
   const ammoCount =
     entry.type === "ammo" ? Math.max(0, Number(entry.item.count) || 0) : null;
   row.innerHTML = `<div class="inventory-item-main" style="--depth:${depth}"><strong>${esc(entry.label)}</strong><span>${esc(location)} • ${esc(entry.type)}${ammoCount !== null ? ` • Qty ${ammoCount}` : ""} • Weight ${formatWeightPounds(weight)}</span></div><div class="controls inventory-actions">${
-    ammoCount !== null
-      ? `<button type="button">&minus;</button><strong>${ammoCount}</strong><button type="button">+</button>`
-      : ""
-  }${physicalMoveControl(entry.type, entry.id)}${ammoCount !== null ? '<button class="delete-small" type="button" title="Remove ammo category">×</button>' : ""}</div>`;
+    ammoCount !== null ? inventoryQuantityStepper(ammoCount) : ""
+  }${physicalMoveControl(entry.type, entry.id)}${ammoCount !== null ? '<button class="delete-small inventory-delete-action" type="button" title="Remove ammo category">×</button>' : ""}</div>`;
   if (ammoCount !== null) {
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
@@ -287,7 +268,7 @@ function renderInventoryItemRow(
   const contentSummary = item.isContainer
     ? ` • Empty ${formatWeightPounds(ownWeight)} • Contents ${formatWeightPounds(contentsWeight)} • Total ${formatWeightPounds(totalWeight)}`
     : ` • Weight ${formatWeightPounds(totalWeight)}`;
-  row.innerHTML = `<div class="inventory-item-main" style="--depth:${depth}"><strong>${esc(item.name)}</strong><span>${esc(location)} • Qty ${item.count}${contentSummary}${item.book ? ` • Book ${esc(item.book)}` : ""}${item.costCents !== undefined ? ` • Cost ${money(item.costCents)}` : ""}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls inventory-actions"><button type="button">&minus;</button><strong>${item.count}</strong><button type="button">+</button><select aria-label="Move ${esc(item.name)}">${inventoryMoveOptions(item)}</select>${parent ? '<button type="button">Out</button>' : ""}<button class="delete-small" type="button">×</button></div>`;
+  row.innerHTML = `<div class="inventory-item-main" style="--depth:${depth}"><strong>${esc(item.name)}</strong><span>${esc(location)} • Qty ${item.count}${contentSummary}${item.book ? ` • Book ${esc(item.book)}` : ""}${item.costCents !== undefined ? ` • Cost ${money(item.costCents)}` : ""}</span>${item.note ? `<span>${esc(item.note)}</span>` : ""}</div><div class="controls inventory-actions">${inventoryQuantityStepper(item.count)}<select aria-label="Move ${esc(item.name)}">${inventoryMoveOptions(item)}</select><button class="delete-small inventory-delete-action" type="button">×</button></div>`;
 
   const buttons = row.querySelectorAll("button");
   buttons[0].onclick = () => {
@@ -308,20 +289,7 @@ function renderInventoryItemRow(
     render();
     save();
   };
-  let deleteIndex = 2;
-  if (parent) {
-    buttons[2].onclick = () => {
-      moveInventoryItem(
-        item.id,
-        parent.location || "carried",
-        parent.storageId || "",
-      );
-      render();
-      save();
-    };
-    deleteIndex = 3;
-  }
-  buttons[deleteIndex].onclick = () => {
+  buttons[2].onclick = () => {
     removeInventoryItem(item.id);
     render();
     save();

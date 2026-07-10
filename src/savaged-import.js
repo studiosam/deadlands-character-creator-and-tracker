@@ -110,6 +110,75 @@ function isSavagedAmmo(item) {
   );
 }
 
+function savagedConsumableNameKey(name) {
+  return String(name || "")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/gi, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function savagedConsumableConversion(item) {
+  const itemKey = savagedConsumableNameKey(item?.name);
+  const catalogItems =
+    typeof GEAR_CATALOG !== "undefined" && Array.isArray(GEAR_CATALOG)
+      ? GEAR_CATALOG
+      : [];
+  if (typeof consumableConversionForGear === "function") {
+    const catalogItem = catalogItems.find(
+      (gear) =>
+        consumableConversionForGear(gear) &&
+        savagedConsumableNameKey(gear.name) === itemKey,
+    );
+    const catalogConversion = consumableConversionForGear(catalogItem);
+    if (catalogConversion) return catalogConversion;
+  }
+
+  const text = `${item?.name || ""} ${item?.notes || ""}`;
+  if (/ration/i.test(text))
+    return {
+      id: "trail-rations",
+      name: item?.name || "Trail rations",
+      unit: "days",
+      multiplier: 1,
+    };
+  if (/match/i.test(text))
+    return {
+      id: "matches",
+      name: "Matches",
+      unit: "matches",
+      multiplier: /100|box/i.test(text) ? 100 : 1,
+    };
+  if (/cigar/i.test(text))
+    return { id: "cigars", name: "Cigars", unit: "cigars", multiplier: 1 };
+  if (/tobacco/i.test(text))
+    return {
+      id: "tobacco",
+      name: item?.name || "Tobacco",
+      unit: "uses",
+      multiplier: 1,
+    };
+  if (
+    /elixir|tonic|unguent|pill|tablet|booster|courage|desensitizer|unction/i.test(
+      text,
+    )
+  )
+    return {
+      id: slugify(item?.uuid || item?.name || "consumable"),
+      name: item?.name || "Consumable",
+      unit: "doses",
+      multiplier: 1,
+    };
+  if (/oil/i.test(text))
+    return {
+      id: "lantern-oil",
+      name: item?.name || "Lantern oil",
+      unit: "gallons",
+      multiplier: 1,
+    };
+  return null;
+}
+
 function savagedWeaponAmmo(weapon) {
   const text = `${weapon?.name || ""} ${weapon?.notes || ""}`.toLowerCase();
   if (/shotgun|scattergun/.test(text)) return "shotgun-shells";
@@ -476,46 +545,23 @@ function fromSavagedUs(data) {
       return;
     }
 
-    if (/ration/i.test(item.name))
+    const consumableConversion = savagedConsumableConversion(item);
+    if (consumableConversion) {
+      const consumableCount =
+        count *
+        Math.max(1, Math.floor(Number(consumableConversion.multiplier) || 1));
       consumables.push({
         id: slugify(item.uuid || item.name),
         uuid: item.uuid,
         source: "savaged.us",
-        name: item.name,
-        count,
-        unit: "days",
-        weight: parseWeight(item.weight) / count,
+        name: consumableConversion.name,
+        count: consumableCount,
+        unit: consumableConversion.unit,
+        weight: parseWeight(item.weight) / consumableCount,
+        costCents: cents(item.costBuy ?? item.cost),
         itemLocation: "carried",
       });
-    else if (/match/i.test(item.name))
-      consumables.push({
-        id: slugify(item.uuid || item.name),
-        uuid: item.uuid,
-        source: "savaged.us",
-        name: "Matches",
-        count: count * (/100/.test(item.name) ? 100 : 1),
-        unit: "matches",
-        weight:
-          parseWeight(item.weight) /
-          (count * (/100/.test(item.name) ? 100 : 1)),
-        itemLocation: "carried",
-      });
-    else if (/elixir|oil|tobacco/i.test(item.name))
-      consumables.push({
-        id: slugify(item.uuid || item.name),
-        uuid: item.uuid,
-        source: "savaged.us",
-        name: item.name,
-        count,
-        unit: /oil/i.test(item.name)
-          ? "uses"
-          : /tobacco/i.test(item.name)
-            ? "pouch"
-            : "dose",
-        weight: parseWeight(item.weight) / count,
-        itemLocation: "carried",
-      });
-    else
+    } else
       inventory.push({
         id: slugify(item.uuid || item.name),
         uuid: item.uuid,

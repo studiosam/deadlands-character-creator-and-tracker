@@ -2428,18 +2428,104 @@ body:has(#setupGearPanel) .toast-region {
 }
 
 .inventory-actions {
-  gap: 0.4rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-width: min(100%, 25rem);
 }
 
 .inventory-actions select,
 .storage-location-list input {
-  min-height: 2.2rem;
+  min-height: 2.35rem;
   max-width: 12rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.94);
-  color: #271b13;
+  background: color-mix(in srgb, var(--input-bg) 88%, var(--surface) 12%);
+  color: var(--text);
   padding: 0.4rem 0.55rem;
+}
+
+.inventory-actions select {
+  flex: 0 1 12rem;
+  width: clamp(9rem, 22vw, 12rem);
+  box-shadow: none;
+}
+
+.inventory-qty-stepper {
+  display: inline-grid;
+  grid-template-columns: 2.15rem minmax(2rem, auto) 2.15rem;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.inventory-actions .inventory-qty-stepper button {
+  flex: 0 0 2.15rem;
+  width: 2.15rem;
+  min-width: 2.15rem;
+  min-height: 2.15rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--button-text);
+  background: color-mix(in srgb, var(--accent) 78%, var(--surface) 22%);
+  box-shadow: none;
+}
+
+.inventory-actions .inventory-qty-stepper button:hover {
+  transform: none;
+  background: color-mix(in srgb, var(--accent) 88%, var(--surface) 12%);
+}
+
+.inventory-qty-stepper strong {
+  min-width: 2rem;
+  padding: 0 0.5rem;
+  color: var(--text);
+  text-align: center;
+  line-height: 2.15rem;
+}
+
+.inventory-actions .inventory-delete-action {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  box-shadow: none;
+}
+
+.inventory-actions .inventory-delete-action {
+  width: 2.35rem !important;
+  min-width: 2.35rem;
+  padding: 0 !important;
+  border-radius: 999px;
+  font-size: 1.15rem;
+}
+
+@media (max-width: 760px) {
+  .inventory-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .inventory-actions {
+    justify-content: flex-start;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .inventory-actions select {
+    flex: 1 1 11rem;
+    width: auto;
+    max-width: none;
+  }
+
+  .inventory-qty-stepper {
+    flex: 0 0 auto;
+  }
 }
 
 .storage-location-list .controls {

@@ -2054,9 +2054,14 @@ function renderSetupGearGroups(report) {
     report.entries.filter((entry) => entry.type === type);
   const looseGear = report.entries.filter(
     (entry) =>
-      ["gear", "consumable"].includes(entry.type) &&
+      entry.type === "gear" && !entry.item?.isContainer && !entry.parent,
+  );
+  const looseConsumables = report.entries.filter(
+    (entry) =>
+      entry.type === "consumable" &&
       !entry.item?.isContainer &&
-      !entry.parent,
+      !entry.parent &&
+      entry.location !== "container",
   );
   const insideContainers = report.entries.filter(
     (entry) => entry.parent || entry.location === "container",
@@ -2070,6 +2075,12 @@ function renderSetupGearGroups(report) {
     ],
     ["Armor", byType("armor"), "No armor recorded.", setupGearPlayerEntryLine],
     ["Gear", looseGear, "No general gear recorded.", setupGearPlayerEntryLine],
+    [
+      "Consumables",
+      looseConsumables,
+      "No consumables recorded.",
+      setupGearPlayerEntryLine,
+    ],
     [
       "Containers",
       report.containers,

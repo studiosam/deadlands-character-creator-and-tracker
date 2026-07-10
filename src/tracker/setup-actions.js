@@ -1123,6 +1123,37 @@ function setupStartingGearNote(catalogItem, fallback = "") {
   return catalogItem?.notes || fallback || "";
 }
 
+function setupConsumableRecordFromGear(catalogItem, conversion, quantity = 1) {
+  const packageCount = Math.max(1, Math.floor(Number(quantity) || 1));
+  const unitsPerPackage = Math.max(
+    1,
+    Math.floor(Number(conversion?.multiplier) || 1),
+  );
+  const count = packageCount * unitsPerPackage;
+  const weight = parseWeight(catalogItem?.weight) / unitsPerPackage;
+  return applySetupStartingGearSource(
+    {
+      id: setupStartingPurchaseRecordId(catalogItem, "consumable"),
+      catalogId: catalogItem.id,
+      name: conversion.name,
+      count,
+      unit: conversion.unit,
+      note: setupStartingGearNote(
+        catalogItem,
+        `Converted from ${catalogItem.name}.`,
+      ),
+      weight,
+      costCents: catalogItem.costCents,
+      book: catalogItem.book,
+      category: catalogItem.category,
+      itemLocation: "carried",
+    },
+    catalogItem,
+    packageCount,
+    "consumable",
+  );
+}
+
 function setupSellBackQuantity(item, fallback = 1) {
   return Math.max(
     1,
@@ -1363,6 +1394,17 @@ function addSetupGearPurchase(gearId = "") {
     return;
   }
   if (!ensureSetupCanAffordPurchase(catalogItem, quantity)) return;
+  const conversion = consumableConversionForGear(catalogItem);
+  if (conversion) {
+    character.consumables.push(
+      setupConsumableRecordFromGear(catalogItem, conversion, quantity),
+    );
+    spendSetupStartingFunds(catalogItem, quantity);
+    render();
+    save();
+    appToast(`${conversion.name} purchased.`, "success");
+    return;
+  }
   const item = normalizeInventoryItem(
     applySetupStartingGearSource(
       {

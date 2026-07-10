@@ -229,6 +229,18 @@ const SKILL_USE_NOTES = {
 };
 
 const CONSUMABLE_GEAR_CONVERSIONS = {
+  "bacon-per-lb": {
+    id: "bacon",
+    name: "Bacon",
+    unit: "lb.",
+    multiplier: 1,
+  },
+  "coffee-per-lb": {
+    id: "coffee",
+    name: "Coffee",
+    unit: "lb.",
+    multiplier: 1,
+  },
   "matches-box-100": {
     id: "matches",
     name: "Matches",
@@ -245,13 +257,91 @@ const CONSUMABLE_GEAR_CONVERSIONS = {
   "lantern-oil-per-gallon": {
     id: "lantern-oil",
     name: "Lantern oil",
-    unit: "uses",
+    unit: "gallons",
+    multiplier: 1,
+  },
+  cigar: {
+    id: "cigars",
+    name: "Cigars",
+    unit: "cigars",
+    multiplier: 1,
+  },
+  "beer-glass": {
+    id: "beer",
+    name: "Beer",
+    unit: "glasses",
+    multiplier: 1,
+  },
+  shot: {
+    id: "liquor-shots",
+    name: "Liquor shots",
+    unit: "shots",
+    multiplier: 1,
+  },
+  bottle: {
+    id: "liquor-bottles",
+    name: "Liquor bottles",
+    unit: "bottles",
+    multiplier: 1,
+  },
+  "blasting-cap": {
+    id: "blasting-caps",
+    name: "Blasting caps",
+    unit: "caps",
+    multiplier: 1,
+  },
+  "fuse-per-foot": {
+    id: "fuse",
+    name: "Fuse",
+    unit: "feet",
+    multiplier: 1,
+  },
+  "adrenal-booster": {
+    id: "adrenal-booster",
+    name: "Adrenal booster",
+    unit: "doses",
+    multiplier: 1,
+  },
+  "dehydrated-air-tablet": {
+    id: "dehydrated-air-tablets",
+    name: "Dehydrated air tablets",
+    unit: "tablets",
+    multiplier: 1,
+  },
+  "greased-lightning-pill": {
+    id: "greased-lightning-pills",
+    name: "Greased lightning pills",
+    unit: "pills",
+    multiplier: 1,
+  },
+  "healing-unguent": {
+    id: "healing-unguent",
+    name: "Healing unguent",
+    unit: "applications",
     multiplier: 1,
   },
   "restoration-elixir": {
     id: "restoration-elixir",
     name: "Restoration elixir",
-    unit: "dose",
+    unit: "doses",
+    multiplier: 1,
+  },
+  "samson-s-elixir": {
+    id: "samsons-elixir",
+    name: "Samson's elixir",
+    unit: "doses",
+    multiplier: 1,
+  },
+  "tactile-desensitizer": {
+    id: "tactile-desensitizer",
+    name: "Tactile desensitizer",
+    unit: "doses",
+    multiplier: 1,
+  },
+  "vocal-unction-elixir": {
+    id: "vocal-unction-elixir",
+    name: "Vocal unction elixir",
+    unit: "doses",
     multiplier: 1,
   },
   "tobacco-smoking-pouch": {
@@ -269,7 +359,7 @@ const CONSUMABLE_GEAR_CONVERSIONS = {
   "liquid-courage": {
     id: "liquid-courage",
     name: "Liquid courage",
-    unit: "dose",
+    unit: "doses",
     multiplier: 1,
   },
 };

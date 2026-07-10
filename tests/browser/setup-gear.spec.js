@@ -959,6 +959,66 @@ test("Gear setup purchases source-track starting gear and reduce funds", async (
   });
 });
 
+test("Gear setup purchases catalog expendables as source-tracked consumables", async ({
+  page,
+}) => {
+  await seedGearSetupCharacter(page, {
+    name: "Consumable Gear Purchaser",
+    preferredId: "consumable-gear-purchaser",
+    moneyCents: 1000,
+  });
+
+  const setupGearPanel = page.locator("#setupGearPanel");
+  await addSetupGearFromPicker(page, "Cigar");
+  await addSetupGearFromPicker(page, "Matches (box of 100)");
+
+  const consumablesGroup = setupGearPanel.locator(
+    ".setup-audit-group[aria-label='Consumables']",
+  );
+  await expect(consumablesGroup).toContainText("Cigars");
+  await expect(consumablesGroup).toContainText("Matches");
+  await expect(
+    setupGearPanel.locator(".setup-audit-group[aria-label='Gear']"),
+  ).toHaveCount(0);
+
+  const snapshot = await page.evaluate(() => ({
+    moneyCents: character.moneyCents,
+    cigars: character.consumables.find((item) => item.catalogId === "cigar"),
+    matches: character.consumables.find(
+      (item) => item.catalogId === "matches-box-100",
+    ),
+    inventoryNames: character.inventory.map((item) => item.name),
+  }));
+  expect(snapshot.moneyCents).toBe(945);
+  expect(snapshot.cigars).toEqual(
+    expect.objectContaining({
+      name: "Cigars",
+      count: 1,
+      unit: "cigars",
+      creationSource: "setup-starting-gear",
+      source: "Starting Gear Purchase",
+    }),
+  );
+  expect(snapshot.cigars.sourceDetail).toEqual(
+    expect.objectContaining({
+      purchaseType: "consumable",
+      catalogId: "cigar",
+      costCents: 5,
+      quantity: 1,
+    }),
+  );
+  expect(snapshot.matches).toEqual(
+    expect.objectContaining({
+      name: "Matches",
+      count: 100,
+      unit: "matches",
+      creationSource: "setup-starting-gear",
+    }),
+  );
+  expect(snapshot.inventoryNames).not.toContain("Cigar");
+  expect(snapshot.inventoryNames).not.toContain("Matches (box of 100)");
+});
+
 test("Gear setup repeated non-ammo purchases create separate entries", async ({
   page,
 }) => {

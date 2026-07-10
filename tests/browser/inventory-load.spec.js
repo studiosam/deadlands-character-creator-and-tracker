@@ -255,6 +255,79 @@ test("shows unmatched carried ammo as gear instead of a separate reserve panel",
   await expect(ammoRow).toContainText("On Body");
 });
 
+test("catalog expendables are tracked as consumables instead of gear", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Catalog Consumable Buyer",
+    preferredId: "catalog-consumable-buyer",
+  });
+  await openInventory(page);
+
+  await addCustomGear(page, { catalogId: "cigar", quantity: "3" });
+  await addCustomGear(page, { catalogId: "matches-box-100", quantity: "1" });
+
+  await expect(page.locator("#consumablesList")).toContainText("Cigars");
+  await expect(page.locator("#consumablesList")).toContainText("3 cigars");
+  await expect(page.locator("#consumablesList")).toContainText("Matches");
+  await expect(page.locator("#consumablesList")).toContainText("100 matches");
+  await expect(page.locator("#inventoryList")).not.toContainText("Cigar");
+  await expect(page.locator("#inventoryList")).not.toContainText(
+    "Matches (box of 100)",
+  );
+
+  const snapshot = await page.evaluate(() => ({
+    cigars: character.consumables.find((item) => item.id === "cigars"),
+    matches: character.consumables.find((item) => item.id === "matches"),
+    inventoryNames: character.inventory.map((item) => item.name),
+  }));
+  expect(snapshot.cigars).toEqual(
+    expect.objectContaining({ count: 3, unit: "cigars" }),
+  );
+  expect(snapshot.matches).toEqual(
+    expect.objectContaining({ count: 100, unit: "matches" }),
+  );
+  expect(snapshot.inventoryNames).not.toContain("Cigar");
+  expect(snapshot.inventoryNames).not.toContain("Matches (box of 100)");
+});
+
+test("Savaged.us gear import classifies expendables as consumables", async ({
+  page,
+}) => {
+  await enterTracker(page);
+  const snapshot = await page.evaluate(() => {
+    const imported = fromSavagedUs({
+      name: "Imported Consumables",
+      attributes: [{ name: "strength", value: "d6" }],
+      gear: [
+        { name: "Cigar", quantity: 3, weight: 0, cost: 0.05 },
+        { name: "Matches (box of 100)", quantity: 1, weight: 0.25, cost: 0.5 },
+        { name: "Coffee (per lb.)", quantity: 2, weight: 2, cost: 0.5 },
+        { name: "Backpack", quantity: 1, weight: 3, cost: 2 },
+      ],
+    });
+    return {
+      consumables: imported.consumables.map((item) => ({
+        name: item.name,
+        count: item.count,
+        unit: item.unit,
+      })),
+      inventoryNames: imported.inventory.map((item) => item.name),
+    };
+  });
+
+  expect(snapshot.consumables).toEqual(
+    expect.arrayContaining([
+      { name: "Cigars", count: 3, unit: "cigars" },
+      { name: "Matches", count: 100, unit: "matches" },
+      { name: "Coffee", count: 2, unit: "lb." },
+    ]),
+  );
+  expect(snapshot.inventoryNames).toContain("Backpack");
+  expect(snapshot.inventoryNames).not.toContain("Cigar");
+  expect(snapshot.inventoryNames).not.toContain("Matches (box of 100)");
+});
+
 test("encumbrance meter layers show progress toward the next overload tier", async ({
   page,
 }) => {

@@ -924,14 +924,9 @@ function isCombatConsumable(item) {
   if (/backpack|pack|bag|sack|pouch|container/i.test(item.name || ""))
     return false;
   if (item.combatUsable || item.pinToCombat) return true;
-  return /healing|unguent|elixir|restoration|dynamite|explosive|grenade|bomb|oil|tonic|potion/i.test(
+  return /healing|unguent|elixir|restoration|dynamite|explosive|grenade|bomb|oil|tonic|potion|booster|tablet|pill|courage|desensitizer|unction/i.test(
     `${item.name || ""} ${item.unit || ""}`,
   );
-}
-
-function consumableConversionForGear(item) {
-  if (!item) return null;
-  return CONSUMABLE_GEAR_CONVERSIONS[item.id] || null;
 }
 
 function addConsumableFromGear(item, packageCount, unitsPerPackage) {

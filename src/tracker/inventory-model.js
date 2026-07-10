@@ -19,6 +19,11 @@ const BUILT_IN_STORAGE_LOCATIONS = [
   { id: "camp", name: "Camp" },
 ];
 
+function consumableConversionForGear(item) {
+  if (!item) return null;
+  return CONSUMABLE_GEAR_CONVERSIONS[item.id] || null;
+}
+
 function locationLabel(location, storageId = "") {
   if (location === "equipped") return "Equipped / Worn";
   if (location === "carried") return "On Body";
