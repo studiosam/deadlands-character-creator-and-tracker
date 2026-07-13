@@ -124,6 +124,25 @@ test("Known powers activate into editable active power records", async ({
     has: page.getByRole("heading", { name: "Protection" }),
   });
   await expect(knownPower).toContainText("Protection");
+  await expect(
+    knownPower.getByRole("button", { name: /^Activate/ }),
+  ).toHaveCount(1);
+  await expect(knownPower).not.toContainText("Variable Spend");
+  const castControlsFit = await knownPower
+    .locator(".power-card-casting")
+    .evaluate((casting) => {
+      const bounds = casting.getBoundingClientRect();
+      return [...casting.querySelectorAll("button, input, select")].every(
+        (control) => {
+          const controlBounds = control.getBoundingClientRect();
+          return (
+            controlBounds.left >= bounds.left - 1 &&
+            controlBounds.right <= bounds.right + 1
+          );
+        },
+      );
+    });
+  expect(castControlsFit).toBe(true);
   await knownPower.getByRole("button", { name: /Activate/ }).click();
 
   const activePower = page
@@ -890,8 +909,20 @@ test("Variable power spend records cost breakdown and preserves reminders", asyn
   const knownPower = page.locator("#powersList .power-card").filter({
     has: page.getByRole("heading", { name: "Protection" }),
   });
-  await knownPower.locator("[data-variable-spend='0']").fill("2");
-  await knownPower.getByRole("button", { name: "Spend 3 PP" }).click();
+  await expect(
+    knownPower.getByRole("button", { name: "Activate — 1 PP" }),
+  ).toHaveCount(1);
+  await knownPower
+    .getByRole("button", { name: "Increase Additional Recipients" })
+    .click();
+  await knownPower
+    .getByRole("button", { name: "Increase Additional Recipients" })
+    .click();
+  await expect(knownPower.locator("[data-variable-spend='0']")).toHaveValue(
+    "2",
+  );
+  await expect(knownPower).toContainText("Modifiers +2 PP");
+  await knownPower.getByRole("button", { name: "Activate — 3 PP" }).click();
 
   let activePower = page
     .locator("#activePowersList .active-power-card")
@@ -996,7 +1027,9 @@ test("Variable power spend blocks activation when Power Points are insufficient"
     has: page.getByRole("heading", { name: "Protection" }),
   });
   await knownPower.locator("[data-variable-spend='0']").fill("3");
-  const spendButton = knownPower.getByRole("button", { name: "Spend 4 PP" });
+  const spendButton = knownPower.getByRole("button", {
+    name: "Activate — 4 PP",
+  });
   await expect(spendButton).toBeDisabled();
   await expect(spendButton).toHaveAttribute("title", "Not enough Power Points");
   await expect(page.locator("#arcaneActivePowersPanel")).toBeHidden();
@@ -1008,6 +1041,145 @@ test("Variable power spend blocks activation when Power Points are insufficient"
   ).toEqual({
     powerPoints: 3,
     activePowers: [],
+  });
+});
+
+test("Imported and catalog modifiers share one activation configurator", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Unified Power Modifier Tester",
+    preferredId: "unified-power-modifier-tester",
+  });
+  await page.evaluate(() => {
+    character.powers[0].modifiers = [
+      "ADDITIONAL RECIPIENTS (+1): The power may affect additional targets at a cost of 1 Power Point each.",
+      "MORE ARMOR (+1): Success grants additional Armor.",
+      "TOUGHNESS (+1): Protection provides Toughness instead of Armor.",
+    ];
+    render();
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Protection" }),
+  });
+  await expect(knownPower.locator(".variable-spend-row")).toHaveCount(3);
+  await expect(
+    knownPower.locator(".variable-spend-copy strong", {
+      hasText: "Additional Recipients",
+    }),
+  ).toHaveCount(1);
+  await expect(
+    knownPower.getByRole("button", { name: /^Activate/ }),
+  ).toHaveCount(1);
+
+  await knownPower
+    .getByRole("button", { name: "Increase Additional Recipients" })
+    .click();
+  await knownPower
+    .locator(".variable-spend-row", { hasText: "More Armor" })
+    .getByRole("checkbox")
+    .check();
+  await knownPower.getByRole("button", { name: "Activate — 3 PP" }).click();
+
+  expect(
+    await page.evaluate(() => ({
+      powerPoints: powerPointResource().current,
+      breakdown: character.activePowers[0].spendBreakdown,
+    })),
+  ).toEqual({
+    powerPoints: 12,
+    breakdown: {
+      baseCost: 1,
+      totalCost: 3,
+      modifiers: [
+        expect.objectContaining({
+          label: "Additional Recipients",
+          quantity: 1,
+          totalCost: 1,
+        }),
+        expect.objectContaining({
+          label: "More Armor",
+          quantity: 1,
+          totalCost: 1,
+        }),
+      ],
+    },
+  });
+});
+
+test("Imported tiered modifiers use one clear cost selector", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Tiered Power Modifier Tester",
+    preferredId: "tiered-power-modifier-tester",
+    powerIds: ["power-holy-symbol"],
+  });
+  await page.evaluate(() => {
+    character.powers[0].modifiers = [
+      "AREA EFFECT (+2/+3): For +2 points the power affects all allies within a Medium Blast Template centered on the caster. For +3 points the area of effect is increased to a Large Blast Template.",
+      "STRONG (+1): Spirit rolls suffer an additional penalty.",
+    ];
+    render();
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Holy Symbol" }),
+  });
+  const areaCost = knownPower.getByRole("combobox", {
+    name: "Area Effect Power Point cost",
+  });
+  await expect(areaCost.locator("option")).toHaveText([
+    "Off",
+    "+2 PP — Medium Template",
+    "+3 PP — Large Template",
+  ]);
+  await expect(knownPower).toContainText(
+    "+2: Medium Template • +3: Large Template",
+  );
+  await areaCost.selectOption("3");
+  await knownPower
+    .locator(".variable-spend-row", { hasText: "Strong" })
+    .getByRole("checkbox")
+    .check();
+  await expect(
+    knownPower.getByRole("button", { name: "Activate — 7 PP" }),
+  ).toBeEnabled();
+});
+
+test("Special-cost powers require one explicit final Power Point cost", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Manual Power Cost Tester",
+    preferredId: "manual-power-cost-tester",
+    powerIds: ["power-beast-friend"],
+  });
+
+  await openArcane(page);
+  const knownPower = page.locator("#powersList .power-card").filter({
+    has: page.getByRole("heading", { name: "Beast Friend" }),
+  });
+  await expect(knownPower).not.toContainText("Activate — 0 PP");
+  const finalCost = knownPower.getByRole("spinbutton", {
+    name: "Final Power Point Cost",
+  });
+  const activate = knownPower.getByRole("button", { name: "Enter PP Cost" });
+  await expect(activate).toBeDisabled();
+  await finalCost.fill("4");
+  await knownPower.getByRole("button", { name: "Activate — 4 PP" }).click();
+
+  expect(
+    await page.evaluate(() => ({
+      powerPoints: powerPointResource().current,
+      cost: character.activePowers[0].cost,
+    })),
+  ).toEqual({
+    powerPoints: 11,
+    cost: 4,
   });
 });
 

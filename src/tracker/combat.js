@@ -538,14 +538,6 @@ function parsePowerModifier(modifier) {
   };
 }
 
-function comparePowerCosts(left, right) {
-  return (
-    left.cost - right.cost ||
-    Number(!left.base) - Number(!right.base) ||
-    String(left.name || "").localeCompare(String(right.name || ""))
-  );
-}
-
 function comparePowers(left, right) {
   return (
     powerCost(left) - powerCost(right) ||
@@ -555,7 +547,7 @@ function comparePowers(left, right) {
 
 function powerCastOptions(power) {
   const baseCost = powerCost(power);
-  const options = [
+  return [
     {
       name: "Activate",
       cost: baseCost,
@@ -563,26 +555,13 @@ function powerCastOptions(power) {
       base: true,
     },
   ];
-  (power.modifiers || []).forEach((modifier) => {
-    const parsed = parsePowerModifier(modifier);
-    const costs = parsed.costs.length ? parsed.costs : [parsed.cost];
-    costs.forEach((cost) => {
-      options.push({
-        ...parsed,
-        name: parsed.name,
-        cost: baseCost + cost,
-        modifierCost: cost,
-      });
-    });
-  });
-  return options.sort(comparePowerCosts);
 }
 
 function powerOptionButtonMarkup(option, index, powerPoints) {
-  return `<button class="cast-option-btn" type="button" data-power-option="${index}">${esc(option.name)}${powerPoints || option.cost ? ` (${option.cost} PP)` : ""}</button>`;
+  return `<button class="cast-option-btn" type="button" data-power-option="${index}">${esc(option.name)}${powerPoints || option.cost ? ` — ${option.cost} PP` : ""}</button>`;
 }
 
-function variableSpendOptionsForPower(power) {
+function catalogVariableSpendOptionsForPower(power) {
   const catalogPower =
     hasPowerCatalog() && power.catalogId
       ? findPowerCatalogEntryById(power.catalogId)
@@ -590,25 +569,200 @@ function variableSpendOptionsForPower(power) {
   const supportsVariableSpend = Boolean(
     power.supportsVariableSpend || catalogPower?.supportsVariableSpend,
   );
-  const options = Array.isArray(power.variableSpendOptions)
-    ? power.variableSpendOptions
-    : catalogPower?.variableSpendOptions || [];
+  const options =
+    Array.isArray(power.variableSpendOptions) &&
+    power.variableSpendOptions.length
+      ? power.variableSpendOptions
+      : catalogPower?.variableSpendOptions || [];
   return supportsVariableSpend ? options : [];
+}
+
+function manualVariableSpendForPower(power) {
+  const catalogPower =
+    hasPowerCatalog() && power.catalogId
+      ? findPowerCatalogEntryById(power.catalogId)
+      : null;
+  return Boolean(
+    power.manualVariableSpend || catalogPower?.manualVariableSpend,
+  );
+}
+
+function variableSpendOptionKey(label) {
+  return normalizeArcaneText(label)
+    .replace(/\brecipients\b/g, "recipient")
+    .trim();
+}
+
+function uniquePowerModifierCosts(costs) {
+  return [...new Set((costs || []).map(Number).filter(Number.isFinite))].sort(
+    (left, right) => left - right,
+  );
+}
+
+function catalogVariableSpendOption(option, index) {
+  const costPer = Number(option?.costPer);
+  const hasCost = Number.isFinite(costPer);
+  const quantityLabel = option?.quantityLabel || "use";
+  const repeatable = /extra target|template step/i.test(quantityLabel);
+  return {
+    id: option?.id || `catalog-modifier-${index + 1}`,
+    label: option?.label || "Modifier",
+    description: option?.description || "",
+    quantityLabel,
+    costPer: hasCost ? Math.max(0, costPer) : 0,
+    costs: hasCost ? [Math.max(0, costPer)] : [],
+    control: repeatable ? "quantity" : "toggle",
+    manualCost: !hasCost,
+  };
+}
+
+function powerModifierDisplayLabel(label) {
+  const value = String(label || "Modifier").trim();
+  if (value !== value.toUpperCase()) return value;
+  return value
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
+    .replace(/\bAp\b/g, "AP")
+    .replace(/\bPp\b/g, "PP");
+}
+
+function importedVariableSpendOption(modifier, index) {
+  const parsed = parsePowerModifier(modifier);
+  const costs = uniquePowerModifierCosts(parsed.costs);
+  return {
+    id: `imported-modifier-${index + 1}-${variableSpendOptionKey(parsed.name).replace(/\s+/g, "-")}`,
+    label: powerModifierDisplayLabel(parsed.name),
+    description: parsed.description || "",
+    quantityLabel: "use",
+    costPer: costs[0] || 0,
+    costs,
+    control: costs.length > 1 ? "choice" : "toggle",
+    manualCost: !costs.length,
+  };
+}
+
+function mergeVariableSpendOption(existing, imported) {
+  if (imported.description) existing.description = imported.description;
+  if (imported.costs.length > 1) {
+    existing.costs = imported.costs;
+    existing.costPer = imported.costs[0];
+    existing.control = "choice";
+    existing.quantityLabel = "selected level";
+    existing.manualCost = false;
+  } else if (imported.costs.length && existing.control !== "quantity") {
+    existing.costs = imported.costs;
+    existing.costPer = imported.costs[0];
+    existing.manualCost = false;
+  }
+  return existing;
+}
+
+function variableSpendOptionsForPower(power) {
+  const options = catalogVariableSpendOptionsForPower(power).map(
+    catalogVariableSpendOption,
+  );
+  (power.modifiers || []).forEach((modifier, index) => {
+    const imported = importedVariableSpendOption(modifier, index);
+    const existing = options.find(
+      (option) =>
+        variableSpendOptionKey(option.label) ===
+        variableSpendOptionKey(imported.label),
+    );
+    if (existing) {
+      mergeVariableSpendOption(existing, imported);
+    } else {
+      options.push(imported);
+    }
+  });
+  return options;
+}
+
+function variableSpendTemplateTier(option, cost) {
+  const description = String(option?.description || "");
+  const escapedCost = String(cost).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const forward = description.match(
+    new RegExp(
+      `\\+${escapedCost}\\b[\\s\\S]{0,140}?\\b(Small|Medium|Large)\\b(?:\\s+Blast)?\\s+Template`,
+      "i",
+    ),
+  );
+  const backward = description.match(
+    new RegExp(
+      `\\b(Small|Medium|Large)\\b(?:\\s+Blast)?\\s+Template[\\s\\S]{0,80}?(?:for\\s*)?\\+${escapedCost}\\b`,
+      "i",
+    ),
+  );
+  const size = forward?.[1] || backward?.[1] || "";
+  return size ? `${powerModifierDisplayLabel(size)} Template` : "";
+}
+
+function variableSpendChoiceLabel(option, cost) {
+  const tier = variableSpendTemplateTier(option, cost);
+  return `+${cost} PP${tier ? ` — ${tier}` : ""}`;
+}
+
+function variableSpendChoiceSummary(option) {
+  const tiers = option.costs.map((cost) => ({
+    cost,
+    detail: variableSpendTemplateTier(option, cost),
+  }));
+  if (tiers.every((tier) => tier.detail)) {
+    return tiers.map((tier) => `+${tier.cost}: ${tier.detail}`).join(" • ");
+  }
+  return option.description || "Choose one Power Point level";
+}
+
+function variableSpendCostLabel(option) {
+  if (option.manualCost) return "Cost handled manually";
+  if (option.control === "choice") return variableSpendChoiceSummary(option);
+  if (option.control === "quantity") {
+    return `+${option.costPer} PP per ${option.quantityLabel}`;
+  }
+  return `+${option.costPer} PP when selected`;
+}
+
+function variableSpendControlMarkup(option, index) {
+  const label = esc(option.label);
+  if (option.control === "choice") {
+    const choices = option.costs
+      .map(
+        (cost) =>
+          `<option value="${cost}">${esc(variableSpendChoiceLabel(option, cost))}</option>`,
+      )
+      .join("");
+    return `<select data-variable-spend="${index}" data-variable-control="choice" aria-label="${label} Power Point cost"><option value="0">Off</option>${choices}</select>`;
+  }
+  if (option.control === "toggle") {
+    return `<label class="variable-spend-toggle"><input data-variable-spend="${index}" data-variable-control="toggle" type="checkbox"><span>Include</span></label>`;
+  }
+  return `<div class="variable-spend-stepper"><button type="button" data-variable-spend-adjust="-1" data-variable-spend-index="${index}" aria-label="Decrease ${label}">−</button><input data-variable-spend="${index}" data-variable-control="quantity" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="${label} quantity"><button type="button" data-variable-spend-adjust="1" data-variable-spend-index="${index}" aria-label="Increase ${label}">+</button></div>`;
 }
 
 function variableSpendMarkup(power) {
   const options = variableSpendOptionsForPower(power);
   if (!options.length) return "";
   const rows = options
-    .map((option, index) => {
-      const hasCost = Number.isFinite(Number(option.costPer));
-      const unit = hasCost
-        ? `+${Number(option.costPer)} PP / ${esc(option.quantityLabel || "use")}`
-        : "manual PP";
-      return `<label class="variable-spend-row"><span><strong>${esc(option.label)}</strong><small>${unit}</small></span><input data-variable-spend="${index}" type="number" min="0" step="1" value="0" aria-label="${esc(option.label)} quantity"></label>`;
-    })
+    .map(
+      (option, index) =>
+        `<div class="variable-spend-row control-${esc(option.control)}" data-variable-spend-row="${index}"${option.description ? ` title="${esc(option.description)}"` : ""}><span class="variable-spend-copy"><strong>${esc(option.label)}</strong><small>${esc(variableSpendCostLabel(option))}</small></span>${variableSpendControlMarkup(option, index)}</div>`,
+    )
     .join("");
-  return `<div class="variable-spend-controls"><div class="topline"><h3>Variable Spend</h3><small>Base ${powerCost(power)} PP</small></div>${rows}<button class="variable-spend-btn" type="button">Spend ${powerCost(power)} PP</button></div>`;
+  const baseCost = powerCost(power);
+  return `<div class="variable-spend-controls"><div class="variable-spend-heading"><div><h5>Cast Modifiers</h5><small>Choose any optional changes, then activate once.</small></div><span class="pill">Base ${baseCost} PP</span></div><div class="variable-spend-options">${rows}</div><div class="variable-spend-summary"><span data-variable-spend-summary>Base cost only</span><button class="variable-spend-btn" type="button">Activate — ${baseCost} PP</button></div></div>`;
+}
+
+function manualPowerPointSpendMarkup(power) {
+  if (!manualVariableSpendForPower(power)) return "";
+  const baseCost = powerCost(power);
+  const initialCost = baseCost > 0 ? String(baseCost) : "";
+  const minimum = Math.max(1, baseCost);
+  const buttonLabel = initialCost
+    ? `Activate — ${initialCost} PP`
+    : "Enter PP Cost";
+  const helper = baseCost
+    ? `Listed base ${baseCost} PP; enter the final total after modifiers.`
+    : "Enter the final total from the rulebook or table ruling.";
+  return `<div class="manual-spend-controls"><div class="variable-spend-heading"><div><h5>Set Power Point Cost</h5><small>This power does not have a complete automatic cost calculator.</small></div><span class="pill">Manual Cost</span></div><div class="variable-spend-options"><label class="manual-power-cost-field"><span class="variable-spend-copy"><strong>Final Power Point Cost</strong><small>${esc(helper)}</small></span><input data-manual-power-cost type="number" min="${minimum}" step="1" value="${initialCost}" inputmode="numeric" placeholder="PP" aria-label="Final Power Point Cost"></label></div><div class="variable-spend-summary"><span data-manual-spend-summary>${initialCost ? `Final cost ${initialCost} PP` : "A final cost is required"}</span><button class="manual-spend-btn" type="button">${buttonLabel}</button></div></div>`;
 }
 
 function variableSpendOptionCostPer(option) {
@@ -616,7 +770,20 @@ function variableSpendOptionCostPer(option) {
 }
 
 function variableSpendQuantity(input) {
+  if (input.dataset.variableControl === "toggle") {
+    return input.checked ? 1 : 0;
+  }
+  if (input.dataset.variableControl === "choice") {
+    return Number(input.value) > 0 ? 1 : 0;
+  }
   return Math.max(0, Math.floor(Number(input.value) || 0));
+}
+
+function variableSpendSelectedCost(input, option) {
+  if (input.dataset.variableControl === "choice") {
+    return Math.max(0, Number(input.value) || 0);
+  }
+  return variableSpendOptionCostPer(option);
 }
 
 function variableSpendBreakdown(power, article) {
@@ -628,7 +795,7 @@ function variableSpendBreakdown(power, article) {
     .map((input) => {
       const option = options[Number(input.dataset.variableSpend)];
       const quantity = variableSpendQuantity(input);
-      const costPer = variableSpendOptionCostPer(option);
+      const costPer = variableSpendSelectedCost(input, option);
       return {
         id: option?.id || "",
         label: option?.label || "Modifier",
@@ -651,20 +818,41 @@ function variableSpendBreakdown(power, article) {
   };
 }
 
-function variableSpendTotal(power, article) {
-  return variableSpendBreakdown(power, article).totalCost;
-}
-
 function updateVariableSpendButton(power, article, powerPoints) {
   const button = article.querySelector(".variable-spend-btn");
   if (!button) return;
-  const total = variableSpendTotal(power, article);
-  button.textContent = `Spend ${total} PP`;
+  const breakdown = variableSpendBreakdown(power, article);
+  const total = breakdown.totalCost;
+  const modifierCost = total - breakdown.baseCost;
+  const hasManualModifier = breakdown.modifiers.some(
+    (modifier) => modifier.manualCost,
+  );
+  const summary = article.querySelector("[data-variable-spend-summary]");
+  if (summary) {
+    summary.textContent = hasManualModifier
+      ? `${modifierCost ? `Modifiers +${modifierCost} PP; ` : ""}manual cost also selected`
+      : modifierCost
+        ? `Modifiers +${modifierCost} PP`
+        : "Base cost only";
+  }
+  button.textContent = `Activate — ${total} PP`;
   button.disabled = Boolean(powerPoints && total > powerPoints.current);
   button.title =
     powerPoints && total > powerPoints.current
       ? "Not enough Power Points"
-      : `Spend ${total} Power Points`;
+      : `Activate for ${total} Power Points`;
+  article.querySelectorAll("[data-variable-spend-row]").forEach((row) => {
+    const input = row.querySelector("[data-variable-spend]");
+    row.classList.toggle("selected", variableSpendQuantity(input) > 0);
+  });
+  article
+    .querySelectorAll("[data-variable-spend-adjust='-1']")
+    .forEach((decreaseButton) => {
+      const input = article.querySelector(
+        `[data-variable-spend='${decreaseButton.dataset.variableSpendIndex}']`,
+      );
+      decreaseButton.disabled = !input || variableSpendQuantity(input) <= 0;
+    });
 }
 
 function addActivePowerFromCast(power, option = {}) {
@@ -692,6 +880,33 @@ function activePowerMatchesKnownPower(activePower, power) {
     normalizeArcaneText(activePower.name) &&
     normalizeArcaneText(activePower.name) === normalizeArcaneText(power.name)
   );
+}
+
+function manualPowerPointCost(power, input) {
+  const entered = Math.floor(Number(input?.value) || 0);
+  if (entered <= 0) return 0;
+  return Math.max(powerCost(power), entered);
+}
+
+function updateManualSpendButton(power, article, powerPoints) {
+  const input = article.querySelector("[data-manual-power-cost]");
+  const button = article.querySelector(".manual-spend-btn");
+  if (!input || !button) return;
+  const total = manualPowerPointCost(power, input);
+  const summary = article.querySelector("[data-manual-spend-summary]");
+  if (summary) {
+    summary.textContent = total
+      ? `Final cost ${total} PP`
+      : "A final cost is required";
+  }
+  button.textContent = total ? `Activate — ${total} PP` : "Enter PP Cost";
+  button.disabled =
+    !total || Boolean(powerPoints && total > powerPoints.current);
+  button.title = !total
+    ? "Enter the final Power Point cost"
+    : powerPoints && total > powerPoints.current
+      ? "Not enough Power Points"
+      : `Activate for ${total} Power Points`;
 }
 
 function activePowerRecordsForKnownPower(power) {
@@ -768,23 +983,17 @@ function powerDescriptionMarkup(power, castOptions, powerPoints) {
     );
   }
   const baseOption = castOptions[0];
-  const modifierOptions = castOptions.slice(1);
-  if (baseOption) {
+  const manualSpend = manualPowerPointSpendMarkup(power);
+  const variableSpend = manualSpend ? "" : variableSpendMarkup(power);
+  if (manualSpend) {
+    casting.push(manualSpend);
+  } else if (variableSpend) {
+    casting.push(variableSpend);
+  } else if (baseOption) {
     casting.push(
-      `<div class="power-primary-option${modifierOptions.length ? " has-following-options" : ""}">${powerOptionButtonMarkup(baseOption, 0, powerPoints)}</div>`,
+      `<div class="power-primary-option">${powerOptionButtonMarkup(baseOption, 0, powerPoints)}</div>`,
     );
   }
-  if (modifierOptions.length) {
-    const modifiers = modifierOptions
-      .map(
-        (option, index) =>
-          `<li>${powerOptionButtonMarkup(option, index + 1, powerPoints)}${option.description ? `<span>${esc(option.description)}</span>` : ""}</li>`,
-      )
-      .join("");
-    casting.push(`<ul class="power-modifiers">${modifiers}</ul>`);
-  }
-  const variableSpend = variableSpendMarkup(power);
-  if (variableSpend) casting.push(variableSpend);
   return `<div class="power-description power-card-workspace"><div class="power-card-details">${details.join("")}</div><div class="power-card-casting"><h4>Use Power</h4>${casting.join("")}</div></div>`;
 }
 
@@ -807,7 +1016,12 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
 
   const optionButtons = article.querySelectorAll(".cast-option-btn");
   const variableInputs = article.querySelectorAll("[data-variable-spend]");
+  const variableAdjustButtons = article.querySelectorAll(
+    "[data-variable-spend-adjust]",
+  );
   const variableSpendButton = article.querySelector(".variable-spend-btn");
+  const manualSpendInput = article.querySelector("[data-manual-power-cost]");
+  const manualSpendButton = article.querySelector(".manual-spend-btn");
   const editButton = article.querySelector(".edit-power-btn");
   const deleteButton = article.querySelector(".delete-power-btn");
 
@@ -830,8 +1044,21 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
   });
 
   variableInputs.forEach((input) => {
-    input.oninput = () =>
+    const update = () => updateVariableSpendButton(power, article, powerPoints);
+    input.oninput = update;
+    input.onchange = update;
+  });
+  variableAdjustButtons.forEach((button) => {
+    button.onclick = () => {
+      const input = article.querySelector(
+        `[data-variable-spend='${button.dataset.variableSpendIndex}']`,
+      );
+      if (!input) return;
+      const quantity = variableSpendQuantity(input);
+      const adjustment = Number(button.dataset.variableSpendAdjust) || 0;
+      input.value = String(Math.max(0, quantity + adjustment));
       updateVariableSpendButton(power, article, powerPoints);
+    };
   });
   if (variableSpendButton) {
     updateVariableSpendButton(power, article, powerPoints);
@@ -844,11 +1071,36 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
         powerPoints.current = Math.max(0, powerPoints.current - total);
       }
       addActivePowerFromCast(power, {
-        name: "Variable Spend",
+        name: "Activate",
         cost: total,
         spendBreakdown,
-        description:
-          "Variable Power Point spend; track selected options manually.",
+        description: power.shortSummary || power.notes || "",
+      });
+      render();
+      save();
+    };
+  }
+  if (manualSpendInput && manualSpendButton) {
+    const updateManualSpend = () =>
+      updateManualSpendButton(power, article, powerPoints);
+    manualSpendInput.oninput = updateManualSpend;
+    manualSpendInput.onchange = () => {
+      const total = manualPowerPointCost(power, manualSpendInput);
+      if (total) manualSpendInput.value = String(total);
+      updateManualSpend();
+    };
+    updateManualSpend();
+    manualSpendButton.onclick = async () => {
+      const total = manualPowerPointCost(power, manualSpendInput);
+      if (!total || (powerPoints && total > powerPoints.current)) return;
+      if (!(await resolveActivePowerRecast(power))) return;
+      if (powerPoints) {
+        powerPoints.current = Math.max(0, powerPoints.current - total);
+      }
+      addActivePowerFromCast(power, {
+        name: "Activate",
+        cost: total,
+        description: power.shortSummary || power.notes || "",
       });
       render();
       save();
