@@ -19,9 +19,10 @@ function renderArcaneSummary() {
       `${reminder.type} ${reminder.name} ${reminder.text}`,
     ),
   );
+  els.arcaneRemindersPanel?.classList.toggle("hidden", !reminders.length);
   els.arcaneRemindersList.innerHTML = reminders.length
     ? reminders.map(reminderMarkup).join("")
-    : emptyState("No arcane reminders.");
+    : "";
 }
 
 function renderNotesSummary() {

@@ -56,20 +56,20 @@ function applyCombatDeclarationResult() {
 
   if (state.resultWounds) {
     const before = character.damage.wounds;
-    character.damage.wounds = clamp(
-      character.damage.wounds + state.resultWounds,
-      0,
+    character.damage.wounds = adjustDamageTrackValue(
+      character.damage.wounds,
       character.damage.maxWounds,
+      state.resultWounds,
     );
     applied.push(`Wounds ${before} -> ${character.damage.wounds}`);
   }
 
   if (state.resultFatigue) {
     const before = character.damage.fatigue;
-    character.damage.fatigue = clamp(
-      character.damage.fatigue + state.resultFatigue,
-      0,
+    character.damage.fatigue = adjustDamageTrackValue(
+      character.damage.fatigue,
       character.damage.maxFatigue,
+      state.resultFatigue,
     );
     applied.push(`Fatigue ${before} -> ${character.damage.fatigue}`);
   }

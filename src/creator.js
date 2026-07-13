@@ -551,7 +551,11 @@ function recordAppNavigation(state, options = {}) {
 }
 
 function setAppTab(tabName, options = {}) {
-  const nextTab = APP_TAB_PANELS[tabName] ? tabName : "play";
+  const requestedTab = APP_TAB_PANELS[tabName] ? tabName : "play";
+  const nextTab =
+    requestedTab === "arcane" && !characterHasArcaneTrackerContent(character)
+      ? "play"
+      : requestedTab;
   setShellHeaderMode(nextTab);
 
   document.querySelectorAll("[data-app-tab]").forEach((button) => {

@@ -678,7 +678,6 @@ test("Nerves of Steel reduces active wound penalties", async ({ page }) => {
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#woundPenalty")).toContainText("Penalty -1");
   await expect(page.locator("#woundsNote")).toContainText(
     "Wound penalty reduced by 1 from passive effects.",
   );
@@ -724,7 +723,6 @@ test("Improved Nerves of Steel replaces Nerves wound penalty reduction", async (
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#woundPenalty")).toContainText("Penalty -1");
   await expect(page.locator("#woundsNote")).toContainText(
     "Wound penalty reduced by 2 from passive effects.",
   );

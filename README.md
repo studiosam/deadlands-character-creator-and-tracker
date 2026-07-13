@@ -150,8 +150,9 @@ Recommended portfolio screenshots/GIFs:
 - Inventory visually separates on-body/backpack gear from off-body storage:
   Gear shows carried and pack/container load, weapon cards show matching ammo
   reserves, and Storage Locations shows home/cart/horse/camp items.
-- Arcane tab showing Power Points, known powers, active powers, runtime
-  reminders, and variable Power Point spend details.
+- Arcane tab, enabled only for characters with recorded arcane content, showing
+  Power Points, known powers, active powers, runtime reminders, and variable
+  Power Point spend details.
 - Character Setup Gear finalization, confirmed Character Sheet mode, and
   creation baseline audit.
 - Characters panel profile editor.

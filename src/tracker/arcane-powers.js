@@ -19,7 +19,7 @@ function renderResources() {
     }
 
     const row = document.createElement("div");
-    row.className = "row";
+    row.className = "row arcane-resource-row";
     row.innerHTML = `<div><strong>${esc(resource.name)}</strong><span>${resource.current} / ${resource.max || "—"}</span>${resource.source ? `<span>Source: ${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls"><button>&minus;</button><button>+</button><button>Reset</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
@@ -227,6 +227,15 @@ function renderPowers() {
 
 function renderActivePowers() {
   if (!els.activePowersList) return;
+  const hasActivePowerRecords = Boolean(character.activePowers?.length);
+  els.arcaneActivePowersPanel?.classList.toggle(
+    "hidden",
+    !hasActivePowerRecords,
+  );
+  if (!hasActivePowerRecords) {
+    els.activePowersList.innerHTML = "";
+    return;
+  }
   renderActivePowersList(
     els.activePowersList,
     "No active power records. Activate a known power to track runtime state.",

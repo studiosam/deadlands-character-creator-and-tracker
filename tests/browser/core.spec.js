@@ -779,10 +779,15 @@ test("shows the read-only sources and rulesets page from the global menu", async
   await page.locator("#utilityBackToTrackerBtn").click();
   await expect(page.locator("#characterHeroCopy")).toBeVisible();
   await expect(page.locator("#appTabs")).toBeVisible();
+  const arcaneTab = page.getByRole("button", { name: "Arcane", exact: true });
+  await expect(arcaneTab).toBeDisabled();
+  await expect(arcaneTab).toHaveAttribute(
+    "title",
+    /No Arcane Background, powers, Power Points, or other arcane tools/,
+  );
   const primaryTabs = [
     ["Character", "#characterPanel"],
     ["Inventory", "#inventoryPanel"],
-    ["Arcane", "#arcanePanel"],
     ["Notes", "#notesPanel"],
     ["Tracker", "#playPanel"],
   ];
@@ -790,6 +795,42 @@ test("shows the read-only sources and rulesets page from the global menu", async
     await page.getByRole("button", { name, exact: true }).click();
     await expect(page.locator(panelId)).toHaveClass(/active/);
   }
+});
+
+test("Arcane tab follows recorded arcane tracker content", async ({ page }) => {
+  await enterTracker(page);
+  const arcaneTab = page.getByRole("button", { name: "Arcane", exact: true });
+
+  await expect(arcaneTab).toBeDisabled();
+  await page.evaluate(() => {
+    character.resources = [
+      ...(character.resources || []).filter(
+        (resource) => resource.id !== "power-points",
+      ),
+      {
+        id: "power-points",
+        name: "Power Points",
+        current: 5,
+        max: 5,
+        source: "Manual test",
+      },
+    ];
+    render();
+  });
+
+  await expect(arcaneTab).toBeEnabled();
+  await arcaneTab.click();
+  await expect(page.locator("#arcanePanel")).toHaveClass(/active/);
+
+  await page.evaluate(() => {
+    character.resources = (character.resources || []).filter(
+      (resource) => resource.id !== "power-points",
+    );
+    render();
+  });
+
+  await expect(arcaneTab).toBeDisabled();
+  await expect(page.locator("#playPanel")).toHaveClass(/active/);
 });
 
 test("loads the app and switches primary tabs @mobile", async ({ page }) => {
@@ -814,7 +855,11 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await expect(page.locator(".shell")).toBeHidden();
   await enterTracker(page);
 
-  for (const tab of ["Character", "Inventory", "Arcane", "Notes"]) {
+  await expect(
+    page.getByRole("button", { name: "Arcane", exact: true }),
+  ).toBeDisabled();
+
+  for (const tab of ["Character", "Inventory", "Notes"]) {
     await page.getByRole("button", { name: tab, exact: true }).click();
     await expect(page.locator(".tab-panel.active")).toBeVisible();
     await expect(page.locator("#headerToolsMenu summary")).toBeVisible();

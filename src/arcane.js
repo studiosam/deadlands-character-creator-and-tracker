@@ -182,6 +182,38 @@ function isArcaneBackgroundEdge(edgeName) {
   return Boolean(arcaneBackgroundConfigFromEdge(edgeName));
 }
 
+function characterHasArcaneTrackerContent(currentCharacter) {
+  if (!currentCharacter || typeof currentCharacter !== "object") return false;
+
+  const edges = Array.isArray(currentCharacter.edges)
+    ? currentCharacter.edges
+    : [];
+  const resources = Array.isArray(currentCharacter.resources)
+    ? currentCharacter.resources
+    : [];
+  const hasArcaneBackgroundEdge = edges.some((edge) =>
+    isArcaneBackgroundEdge(edge?.name),
+  );
+  const hasPowerPoints = resources.some(
+    (resource) =>
+      resource?.id === "power-points" ||
+      normalizeArcaneText(resource?.name) === "power points",
+  );
+
+  return Boolean(
+    currentCharacter.arcaneBackground ||
+    hasArcaneBackgroundEdge ||
+    hasPowerPoints ||
+    (Array.isArray(currentCharacter.powers) &&
+      currentCharacter.powers.length) ||
+    (Array.isArray(currentCharacter.activePowers) &&
+      currentCharacter.activePowers.length) ||
+    (Array.isArray(currentCharacter.madScienceDevices) &&
+      currentCharacter.madScienceDevices.length) ||
+    currentCharacter.hucksterDeal,
+  );
+}
+
 /**
  * Store the compact Arcane Background state on a character.
  *

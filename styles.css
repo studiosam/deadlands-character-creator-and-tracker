@@ -2233,10 +2233,6 @@ body:has(#setupGearPanel) .toast-region {
   margin: 0;
 }
 
-.combat-status-grid .topline .pill {
-  position: static;
-}
-
 .combat-status-grid .block {
   align-content: start;
   display: grid;
@@ -2389,6 +2385,328 @@ body:has(#setupGearPanel) .toast-region {
   height: auto;
   min-height: 2.2rem;
   padding: 0.45rem 0.75rem;
+}
+
+.arcane-dashboard {
+  align-items: start;
+}
+
+.arcane-dashboard .card {
+  min-width: 0;
+}
+
+.arcane-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.8fr) minmax(0, 1.4fr);
+  gap: 0.8rem;
+}
+
+.arcane-overview-section {
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.arcane-overview-section h3,
+.arcane-overview-section p {
+  margin-top: 0;
+}
+
+.arcane-overview-section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.arcane-overview-section-title p {
+  margin-bottom: 0;
+}
+
+.arcane-overview-section .list > .row {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.arcane-overview-section .list > .row:hover {
+  border-color: transparent;
+  background: transparent;
+}
+
+.power-point-resource-row {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.75fr) minmax(0, 1.6fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.power-point-resource-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.power-point-resource-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.power-point-resource-heading > strong:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.power-point-resource-value {
+  flex: 0 0 auto;
+  color: var(--accent-strong);
+  font-size: 1.15rem;
+  white-space: nowrap;
+}
+
+.power-point-resource-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.power-point-resource-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.power-point-resource-row .resource-recovery-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-self: center;
+  width: 100%;
+  gap: 0.45rem;
+}
+
+.power-point-resource-row .resource-recovery-actions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.65rem;
+  padding-inline: 0.55rem;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.arcane-resource-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.arcane-resource-row > .controls {
+  flex-wrap: wrap;
+}
+
+.arcane-resource-panel .power-point-resource-row {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.7rem;
+}
+
+.arcane-resource-panel .power-point-resource-row .resource-recovery-actions {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.arcane-dashboard .powers {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.arcane-dashboard .powers > .empty-state {
+  grid-column: 1 / -1;
+}
+
+.arcane-known-powers-card .power-card-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(22rem, 1.15fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.arcane-known-powers-card .power-card-details {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.arcane-known-powers-card .power-card-casting {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-soft) 90%, transparent);
+}
+
+.arcane-known-powers-card .power-card-casting h4 {
+  margin: 0;
+}
+
+.arcane-known-powers-card .power-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+}
+
+.arcane-known-powers-card .power-actions button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.arcane-known-powers-card .power-actions .edit-power-btn {
+  min-width: 7rem;
+}
+
+.arcane-known-powers-card .power-actions .delete-power-btn {
+  width: 2.65rem !important;
+  min-width: 2.65rem;
+  height: 2.65rem;
+  padding: 0 !important;
+}
+
+.arcane-known-powers-card .power-primary-option {
+  grid-template-columns: minmax(0, 12.5rem);
+  margin-top: 0;
+}
+
+.arcane-known-powers-card .variable-spend-controls {
+  margin-top: 0.2rem;
+}
+
+.arcane-active-powers-card .active-power-fields .checkline {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  min-height: 2.75rem;
+  margin: 0;
+}
+
+.arcane-active-powers-card .active-power-fields .checkline input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.arcane-active-powers-card .power-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.arcane-active-powers-card .power-actions button,
+.arcane-active-powers-card .power-actions .delete-small {
+  flex: 0 1 auto;
+  width: auto !important;
+  min-width: 7.5rem;
+  white-space: normal;
+}
+
+.arcane-active-powers-card .power-actions [data-active-power-tick] {
+  min-width: 10rem;
+}
+
+@media (max-width: 980px) {
+  .arcane-overview-grid,
+  .arcane-known-powers-card .power-card-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .power-point-resource-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .power-point-resource-row .resource-recovery-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .arcane-overview-section-title {
+    flex-direction: column;
+  }
+
+  .arcane-overview-section-title > button {
+    width: 100%;
+  }
+
+  .arcane-resource-panel .power-point-resource-row .resource-recovery-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .arcane-resource-panel
+    .power-point-resource-row
+    .resource-recovery-actions
+    button[data-recover="max"] {
+    grid-column: 1 / -1;
+  }
+
+  .arcane-resource-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arcane-resource-row > .controls {
+    justify-content: stretch;
+  }
+
+  .arcane-resource-row > .controls button {
+    flex: 1 1 auto;
+  }
+
+  .arcane-active-powers-card .power-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .arcane-active-powers-card .power-actions button,
+  .arcane-active-powers-card .power-actions .delete-small {
+    width: 100% !important;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .arcane-active-powers-card .power-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .power-point-resource-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .arcane-resource-panel .power-point-resource-row .resource-recovery-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arcane-resource-panel
+    .power-point-resource-row
+    .resource-recovery-actions
+    button[data-recover="max"] {
+    grid-column: auto;
+  }
 }
 
 .consumable-use-actions {

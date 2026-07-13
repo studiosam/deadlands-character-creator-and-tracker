@@ -52,11 +52,11 @@ function appendPowerPointControls(
   { showName = false } = {},
 ) {
   const row = document.createElement("div");
-  row.className = "row";
+  row.className = "row power-point-resource-row";
   const max = resource.max || "—";
   const value = `${resource.current} / ${max}`;
   const recoveryPerHour = characterPowerPointRecoveryPerHour(character);
-  row.innerHTML = `<div><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<span>${value}</span>` : "<span>Current / Max</span>"}<span>Recovery: ${recoveryPerHour} / hour</span>${resource.source ? `<span>${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div><div class="controls resource-recovery-actions"><button data-recover="hour" type="button">Recover 1 hour +${recoveryPerHour}</button><button data-recover="5" type="button">Manual +5</button><button data-recover="10" type="button">Manual +10</button><button data-recover="15" type="button">Manual +15</button><button data-recover="max" type="button">Max</button></div>`;
+  row.innerHTML = `<div class="power-point-resource-copy"><div class="power-point-resource-heading"><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<strong class="power-point-resource-value">${value}</strong>` : ""}</div><span class="power-point-resource-label">Current / Max</span><div class="power-point-resource-meta"><span>Recovery: ${recoveryPerHour} / hour</span>${resource.source ? `<span>${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div></div><div class="controls resource-recovery-actions"><button data-recover="hour" type="button" aria-label="Recover 1 hour +${recoveryPerHour}">1 Hour (+${recoveryPerHour})</button><button data-recover="5" type="button">+5</button><button data-recover="10" type="button">+10</button><button data-recover="15" type="button">+15</button><button data-recover="max" type="button">Max</button></div>`;
   row.querySelectorAll("[data-recover]").forEach((button) => {
     const atMax = Boolean(resource.max && resource.current >= resource.max);
     button.disabled =
@@ -142,18 +142,13 @@ function renderActionCards() {
 }
 
 function combatPenaltyInfo() {
-  const rawWoundPenalty = Math.min(
-    character.damage.wounds,
-    character.damage.maxWounds,
-  );
+  const damageStatus = characterDamageStatus(character);
+  const rawWoundPenalty = damageStatus.wounds.penalty;
   const woundPenalty = Math.max(
     0,
     rawWoundPenalty - characterWoundPenaltyReduction(character, "combat"),
   );
-  const fatiguePenalty = Math.min(
-    character.damage.fatigue,
-    character.damage.maxFatigue,
-  );
+  const fatiguePenalty = damageStatus.fatigue.penalty;
   const traitPenalties = [];
   const modifiers = [];
 
@@ -333,12 +328,31 @@ function encumbranceModifierChips(info) {
 
 function renderCombatPenalties() {
   const { total, traitPenalties, modifiers } = combatPenaltyInfo();
+  const incapacitationSources = characterDamageStatus(character).sources;
   const encumbrance = calculateEncumbrance(character, { combat: true });
+  const incapacitated = incapacitationSources.length > 0;
+  const incapacitationCause = incapacitationSources
+    .map(
+      (source) =>
+        `${source.label} ${source.value}/${source.maximum} exceeds maximum`,
+    )
+    .join("; ");
   const legacyEntries = [
+    ...(incapacitated ? [`Incapacitated: ${incapacitationCause}`] : []),
     ...traitPenalties.map((penalty) => `${penalty.label} ${penalty.value}`),
     ...modifiers,
   ];
   const modifierChips = [
+    ...(incapacitated
+      ? [
+          modifierChip({
+            label: "Incapacitated",
+            cause: incapacitationCause,
+            legacyText: `Incapacitated: ${incapacitationCause}`,
+            kind: "penalty",
+          }),
+        ]
+      : []),
     ...traitPenalties.map((penalty) =>
       modifierChip({
         label: `Trait rolls ${penalty.value}`,
@@ -355,14 +369,18 @@ function renderCombatPenalties() {
   const hiddenLegacyEntries = legacyEntries.length
     ? `<span class="sr-only">${esc(legacyEntries.join(" "))}</span>`
     : "";
-  els.combatPenaltyTotal.textContent = total
-    ? `-${total}`
+  els.combatPenaltyTotal.textContent = incapacitated
+    ? "Incapacitated"
+    : total
+      ? `-${total}`
+      : modifierChips.length
+        ? `${modifierChips.length} active`
+        : "None";
+  els.combatPenaltySummary.textContent = incapacitated
+    ? `${incapacitationSources.map((source) => source.label).join(" and ")} exceeded normal capacity.`
     : modifierChips.length
-      ? `${modifierChips.length} active`
-      : "None";
-  els.combatPenaltySummary.textContent = modifierChips.length
-    ? "Hover a modifier for its source."
-    : "No active modifiers.";
+      ? "Hover a modifier for its source."
+      : "No active modifiers.";
   els.combatPenaltyBreakdown.innerHTML = modifierChips.length
     ? `${modifierChips.join("")}${hiddenLegacyEntries}`
     : `<span>No active modifiers.</span>${hiddenLegacyEntries}`;
@@ -725,33 +743,34 @@ async function resolveActivePowerRecast(power) {
 }
 
 function powerDescriptionMarkup(power, castOptions, powerPoints) {
-  const parts = [];
+  const details = [];
+  const casting = [];
   if (power.shortSummary || power.notes) {
-    parts.push(`<p>${esc(power.shortSummary || power.notes)}</p>`);
+    details.push(`<p>${esc(power.shortSummary || power.notes)}</p>`);
   } else {
-    parts.push(
+    details.push(
       '<p class="muted">No description imported yet. Add what this power does in the Arcane tab notes.</p>',
     );
   }
   if (power.restrictions) {
-    parts.push(
+    details.push(
       `<p class="catalog-warning"><strong>Restriction:</strong> ${esc(power.restrictions)}</p>`,
     );
   }
   if (power.variableCostNotes) {
-    parts.push(
+    details.push(
       `<p class="muted"><strong>Variable PP:</strong> ${esc(power.variableCostNotes)}</p>`,
     );
   }
   if (power.trapping) {
-    parts.push(
+    details.push(
       `<p class="muted"><strong>Trapping:</strong> ${esc(power.trapping)}</p>`,
     );
   }
   const baseOption = castOptions[0];
   const modifierOptions = castOptions.slice(1);
   if (baseOption) {
-    parts.push(
+    casting.push(
       `<div class="power-primary-option${modifierOptions.length ? " has-following-options" : ""}">${powerOptionButtonMarkup(baseOption, 0, powerPoints)}</div>`,
     );
   }
@@ -762,10 +781,11 @@ function powerDescriptionMarkup(power, castOptions, powerPoints) {
           `<li>${powerOptionButtonMarkup(option, index + 1, powerPoints)}${option.description ? `<span>${esc(option.description)}</span>` : ""}</li>`,
       )
       .join("");
-    parts.push(`<ul class="power-modifiers">${modifiers}</ul>`);
+    casting.push(`<ul class="power-modifiers">${modifiers}</ul>`);
   }
-  parts.push(variableSpendMarkup(power));
-  return `<div class="power-description">${parts.join("")}</div>`;
+  const variableSpend = variableSpendMarkup(power);
+  if (variableSpend) casting.push(variableSpend);
+  return `<div class="power-description power-card-workspace"><div class="power-card-details">${details.join("")}</div><div class="power-card-casting"><h4>Use Power</h4>${casting.join("")}</div></div>`;
 }
 
 function renderPowerCard(power, { includeDelete = false } = {}) {

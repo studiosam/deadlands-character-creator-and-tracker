@@ -111,7 +111,10 @@ selection, and variable Power Point spending workflow.
 ## Basic load test
 
 - [ ] App loads without console errors.
-- [ ] Arcane tab opens without console errors.
+- [ ] Arcane tab is disabled for characters with no recorded arcane content.
+- [ ] Arcane tab enables and opens without console errors for characters with an
+      Arcane Background, powers, Power Points, active powers, Huckster data, or
+      Mad Science devices.
 - [ ] Existing saved character loads without losing powers.
 - [ ] Sample/default character loads without losing powers.
 

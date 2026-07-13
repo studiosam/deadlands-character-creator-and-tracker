@@ -341,7 +341,9 @@
         </button>
         <button type="button" data-app-tab="character">Character</button>
         <button type="button" data-app-tab="inventory">Inventory</button>
-        <button type="button" data-app-tab="arcane">Arcane</button>
+        <button id="arcaneTabBtn" type="button" data-app-tab="arcane">
+          Arcane
+        </button>
         <button type="button" data-app-tab="notes">Notes</button>
       </nav>
 
@@ -360,7 +362,6 @@
                 <div class="block">
                   <div class="topline">
                     <h3>Wounds</h3>
-                    <span id="woundPenalty" class="pill"></span>
                   </div>
                   <div class="step stat-step">
                     <button data-action="decWounds" type="button">
@@ -375,7 +376,6 @@
                 <div class="block">
                   <div class="topline">
                     <h3>Fatigue</h3>
-                    <span id="fatiguePenalty" class="pill"></span>
                   </div>
                   <div class="step stat-step">
                     <button data-action="decFatigue" type="button">
@@ -1434,40 +1434,47 @@
           </section>
         </section>
 
-        <section id="arcanePanel" class="dashboard tab-panel hidden">
-          <section class="card wide">
+        <section
+          id="arcanePanel"
+          class="dashboard tab-panel arcane-dashboard hidden"
+        >
+          <section class="card wide arcane-overview-card">
             <div class="section-title">
               <div>
                 <p class="eyebrow">Arcane</p>
-                <h2>Arcane Tools</h2>
+                <h2>Arcane Overview</h2>
               </div>
               <span id="arcaneSummary" class="pill"></span>
             </div>
-            <div id="arcaneDetailSummary" class="list"></div>
-          </section>
-
-          <section class="card">
-            <div class="section-title">
-              <div>
-                <h2>Power Points and Resources</h2>
-                <p class="muted">
-                  Power Points are stored as tracker resources.
-                </p>
-              </div>
-              <button id="addManualPowerPointsBtn" class="ghost" type="button">
-                Enable Manual Power Points
-              </button>
+            <div class="arcane-overview-grid">
+              <section class="arcane-overview-section arcane-profile-panel">
+                <h3>Background &amp; Skill</h3>
+                <div id="arcaneDetailSummary" class="list"></div>
+              </section>
+              <section class="arcane-overview-section arcane-resource-panel">
+                <div class="arcane-overview-section-title">
+                  <div>
+                    <h3>Power Points &amp; Resources</h3>
+                    <p class="muted">Recover and adjust arcane reserves.</p>
+                  </div>
+                  <button
+                    id="addManualPowerPointsBtn"
+                    class="ghost"
+                    type="button"
+                  >
+                    Enable Manual Power Points
+                  </button>
+                </div>
+                <div id="resourcesList" class="list"></div>
+              </section>
             </div>
-            <div id="resourcesList" class="list"></div>
           </section>
 
-          <section class="card wide">
+          <section class="card wide arcane-known-powers-card">
             <div class="section-title">
               <div>
                 <h2>Known Powers</h2>
-                <p>
-                  Track active powers, costs, duration, trappings, and notes.
-                </p>
+                <p>Review power details and choose how to use each power.</p>
               </div>
               <button
                 class="ghost"
@@ -1541,13 +1548,23 @@
             ></div>
           </section>
 
-          <section class="card wide">
+          <section
+            id="arcaneActivePowersPanel"
+            class="card wide arcane-active-powers-card hidden"
+          >
             <h2>Active Powers</h2>
             <p class="muted">
-              Runtime power records track cost, duration, maintenance, targets,
-              and reminders without automating power effects.
+              Track duration, targets, maintenance, and runtime notes.
             </p>
             <div id="activePowersList" class="grid powers"></div>
+          </section>
+
+          <section
+            id="arcaneRemindersPanel"
+            class="card wide arcane-reminders-card hidden"
+          >
+            <h2>Arcane Reminders</h2>
+            <div id="arcaneRemindersList" class="list"></div>
           </section>
 
           <section id="madScienceDevicesPanel" class="card wide hidden">
@@ -1628,11 +1645,6 @@
                 <textarea id="hucksterNotes"></textarea>
               </label>
             </div>
-          </section>
-
-          <section class="card wide">
-            <h2>Arcane Reminders</h2>
-            <div id="arcaneRemindersList" class="list"></div>
           </section>
         </section>
 
@@ -2136,6 +2148,7 @@
     <script src="src/tracker/effect-hooks.js"></script>
     <script src="src/app-ui.js"></script>
     <script src="src/tracker/utils.js"></script>
+    <script src="src/tracker/health.js"></script>
     <script src="src/tracker/equipment-helpers.js"></script>
     <script src="src/tracker/inventory-model.js"></script>
     <script src="src/tracker/combat-declaration-model.js"></script>

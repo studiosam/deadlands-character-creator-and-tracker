@@ -112,3 +112,52 @@ test("tracker modifier chips report encumbrance penalties without load details",
     modifierPanel.locator(".modifier-chip", { hasText: "Pace -2" }),
   ).toHaveAttribute("title", /Encumbrance: Pace -2, minimum 1/);
 });
+
+test("exceeding Wound or Fatigue capacity marks the character incapacitated", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Incapacitation Tester",
+    preferredId: "incapacitation-tester",
+  });
+  await openCombat(page);
+
+  const wounds = page.locator(".combat-status-grid .block").filter({
+    has: page.getByRole("heading", { name: "Wounds" }),
+  });
+  const fatigue = page.locator(".combat-status-grid .block").filter({
+    has: page.getByRole("heading", { name: "Fatigue" }),
+  });
+
+  for (let index = 0; index < 4; index += 1) {
+    await wounds.getByRole("button", { name: "+", exact: true }).click();
+  }
+
+  await expect(page.locator("#woundsValue")).toHaveText("4");
+  await expect(page.locator("#woundPenalty")).toHaveCount(0);
+  await expect(page.locator("#woundsNote")).toContainText(
+    "Wounds exceed the maximum (4/3)",
+  );
+  await expect(page.locator("#combatPenaltyTotal")).toHaveText("Incapacitated");
+  await expect(page.locator("#combatPenaltyBreakdown")).toContainText(
+    "Incapacitated",
+  );
+
+  await wounds.getByRole("button", { name: "−", exact: true }).click();
+  await expect(page.locator("#woundsValue")).toHaveText("3");
+  await expect(page.locator("#combatPenaltyTotal")).toHaveText("-3");
+
+  for (let index = 0; index < 3; index += 1) {
+    await fatigue.getByRole("button", { name: "+", exact: true }).click();
+  }
+
+  await expect(page.locator("#fatigueValue")).toHaveText("3");
+  await expect(page.locator("#fatiguePenalty")).toHaveCount(0);
+  await expect(page.locator("#fatigueNote")).toContainText(
+    "Fatigue exceeds the maximum (3/2)",
+  );
+  await expect(page.locator("#combatPenaltyTotal")).toHaveText("Incapacitated");
+  await expect(page.locator("#combatPenaltySummary")).toContainText(
+    "Fatigue exceeded normal capacity",
+  );
+});

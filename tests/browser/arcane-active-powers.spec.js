@@ -50,7 +50,76 @@ test("Known powers activate into editable active power records", async ({
     preferredId: "active-power-activation-tester",
   });
 
+  await expect(
+    page.getByRole("button", { name: "Arcane", exact: true }),
+  ).toBeEnabled();
   await openArcane(page);
+  const arcaneLayout = await page.evaluate(() => {
+    const rect = (selector) =>
+      document.querySelector(selector).getBoundingClientRect();
+    const panel = rect("#arcanePanel");
+    const overview = rect(".arcane-overview-card");
+    const profilePanel = rect(".arcane-profile-panel");
+    const resourcePanel = rect(".arcane-resource-panel");
+    const knownPowersCard = rect(".arcane-known-powers-card");
+    const resourceRow = document.querySelector(
+      ".arcane-resource-panel .power-point-resource-row",
+    );
+    const resourceCopy = rect(
+      ".arcane-resource-panel .power-point-resource-copy",
+    );
+    const recoveryActions = document.querySelector(
+      ".arcane-resource-panel .power-point-resource-row .resource-recovery-actions",
+    );
+    const recoveryBounds = recoveryActions.getBoundingClientRect();
+    const knownPowersList = rect("#powersList");
+    const knownPower = rect("#powersList .power-card");
+    const powerDetails = rect("#powersList .power-card-details");
+    const powerCasting = rect("#powersList .power-card-casting");
+    const editPowerButton = rect("#powersList .edit-power-btn");
+    const deletePowerButton = rect("#powersList .delete-power-btn");
+    return {
+      primaryCardsFillPanel:
+        overview.width / panel.width > 0.95 &&
+        knownPowersCard.width / panel.width > 0.95,
+      overviewUsesInternalLayout:
+        window.innerWidth <= 980
+          ? profilePanel.top < resourcePanel.top
+          : Math.abs(profilePanel.top - resourcePanel.top) <= 1 &&
+            profilePanel.width < resourcePanel.width,
+      knownPowerUsesInternalLayout:
+        window.innerWidth <= 980
+          ? powerDetails.top < powerCasting.top
+          : Math.abs(powerDetails.top - powerCasting.top) <= 1 &&
+            powerDetails.width < powerCasting.width,
+      copyWidth: resourceCopy.width,
+      resourceRowFits:
+        resourceRow.scrollWidth <= resourceRow.clientWidth + 1 &&
+        recoveryActions.scrollWidth <= recoveryActions.clientWidth + 1,
+      recoveryButtonsFit: [...recoveryActions.querySelectorAll("button")].every(
+        (button) => {
+          const buttonBounds = button.getBoundingClientRect();
+          return (
+            buttonBounds.left >= recoveryBounds.left - 1 &&
+            buttonBounds.right <= recoveryBounds.right + 1
+          );
+        },
+      ),
+      knownPowerWidthRatio: knownPower.width / knownPowersList.width,
+      powerManagementIsCompact:
+        editPowerButton.width <= 128 && deletePowerButton.width <= 52,
+    };
+  });
+  expect(arcaneLayout.primaryCardsFillPanel).toBe(true);
+  expect(arcaneLayout.overviewUsesInternalLayout).toBe(true);
+  expect(arcaneLayout.knownPowerUsesInternalLayout).toBe(true);
+  expect(arcaneLayout.copyWidth).toBeGreaterThan(160);
+  expect(arcaneLayout.resourceRowFits).toBe(true);
+  expect(arcaneLayout.recoveryButtonsFit).toBe(true);
+  expect(arcaneLayout.knownPowerWidthRatio).toBeGreaterThan(0.95);
+  expect(arcaneLayout.powerManagementIsCompact).toBe(true);
+  await expect(page.locator("#arcaneActivePowersPanel")).toBeHidden();
+  await expect(page.locator("#arcaneRemindersPanel")).toBeHidden();
   const knownPower = page.locator("#powersList .power-card").filter({
     has: page.getByRole("heading", { name: "Protection" }),
   });
@@ -64,6 +133,28 @@ test("Known powers activate into editable active power records", async ({
     });
   await expect(activePower).toContainText("Active");
   await expect(activePower).toContainText("Power effect reminder only");
+  await expect(page.locator("#arcaneActivePowersPanel")).toBeVisible();
+  const activePowerActionsFit = await activePower.evaluate((card) => {
+    const actions = card.querySelector(".power-actions");
+    const actionBounds = actions.getBoundingClientRect();
+    return (
+      actions.scrollWidth <= actions.clientWidth + 1 &&
+      [...actions.querySelectorAll("button")].every((button) => {
+        const buttonBounds = button.getBoundingClientRect();
+        return (
+          buttonBounds.left >= actionBounds.left - 1 &&
+          buttonBounds.right <= actionBounds.right + 1
+        );
+      })
+    );
+  });
+  expect(activePowerActionsFit).toBe(true);
+  const activePowerWidthRatio = await activePower.evaluate(
+    (card) =>
+      card.getBoundingClientRect().width /
+      card.parentElement.getBoundingClientRect().width,
+  );
+  expect(activePowerWidthRatio).toBeGreaterThan(0.95);
   await activePower
     .locator("[data-active-power-field='targetLabel']")
     .fill("Dusty");
@@ -908,9 +999,7 @@ test("Variable power spend blocks activation when Power Points are insufficient"
   const spendButton = knownPower.getByRole("button", { name: "Spend 4 PP" });
   await expect(spendButton).toBeDisabled();
   await expect(spendButton).toHaveAttribute("title", "Not enough Power Points");
-  await expect(page.locator("#activePowersList")).toContainText(
-    "No active power records.",
-  );
+  await expect(page.locator("#arcaneActivePowersPanel")).toBeHidden();
   expect(
     await page.evaluate(() => ({
       powerPoints: powerPointResource().current,

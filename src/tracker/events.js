@@ -22,31 +22,31 @@ function updateActionCardField(field, value) {
 function action(type) {
   switch (type) {
     case "incWounds":
-      character.damage.wounds = clamp(
-        character.damage.wounds + 1,
-        0,
+      character.damage.wounds = adjustDamageTrackValue(
+        character.damage.wounds,
         character.damage.maxWounds,
+        1,
       );
       break;
     case "decWounds":
-      character.damage.wounds = clamp(
-        character.damage.wounds - 1,
-        0,
+      character.damage.wounds = adjustDamageTrackValue(
+        character.damage.wounds,
         character.damage.maxWounds,
+        -1,
       );
       break;
     case "incFatigue":
-      character.damage.fatigue = clamp(
-        character.damage.fatigue + 1,
-        0,
+      character.damage.fatigue = adjustDamageTrackValue(
+        character.damage.fatigue,
         character.damage.maxFatigue,
+        1,
       );
       break;
     case "decFatigue":
-      character.damage.fatigue = clamp(
-        character.damage.fatigue - 1,
-        0,
+      character.damage.fatigue = adjustDamageTrackValue(
+        character.damage.fatigue,
         character.damage.maxFatigue,
+        -1,
       );
       break;
     case "incBennies":

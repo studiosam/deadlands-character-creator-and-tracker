@@ -70,8 +70,23 @@ function renderCharacterIdentityDisplays() {
     els.characterDossierSubtitle.textContent = characterDossierSubtitleText();
 }
 
+function renderArcaneTabAvailability() {
+  const available = characterHasArcaneTrackerContent(character);
+  els.arcaneTabBtn.disabled = !available;
+  els.arcaneTabBtn.setAttribute("aria-disabled", String(!available));
+  if (available) els.arcaneTabBtn.removeAttribute("title");
+  else
+    els.arcaneTabBtn.title =
+      "No Arcane Background, powers, Power Points, or other arcane tools are recorded for this character.";
+
+  if (!available && $("#arcanePanel")?.classList.contains("active")) {
+    setAppTab("play", { replace: true });
+  }
+}
+
 function render() {
   renderCharacterIdentityDisplays();
+  renderArcaneTabAvailability();
   const maxWoundsModifier = characterMaxWoundsModifier(character);
   const pendingMaxWoundsModifier = characterPendingMaxWoundsModifier(character);
   if (
@@ -92,11 +107,9 @@ function render() {
   character.damage.effectMaxWoundsPendingModifier = canApplyMaxWoundsModifier
     ? 0
     : pendingMaxWoundsModifier;
-  els.woundsValue.textContent = character.damage.wounds;
-  const rawWoundPenalty = Math.min(
-    character.damage.wounds,
-    character.damage.maxWounds,
-  );
+  const damageStatus = characterDamageStatus(character);
+  els.woundsValue.textContent = damageStatus.wounds.value;
+  const rawWoundPenalty = damageStatus.wounds.penalty;
   const woundPenaltyReduction = characterWoundPenaltyReduction(
     character,
     "character",
@@ -105,31 +118,21 @@ function render() {
     rawWoundPenalty,
     woundPenaltyReduction,
   );
-  const woundPenalty = Math.max(
-    0,
-    rawWoundPenalty - appliedWoundPenaltyReduction,
-  );
-  els.woundPenalty.textContent = woundPenalty ? `Penalty -${woundPenalty}` : "";
-  els.woundPenalty.classList.toggle("hidden", !woundPenalty);
-  els.woundsNote.textContent = character.damage.wounds
-    ? appliedWoundPenaltyReduction
-      ? `Wound penalty reduced by ${appliedWoundPenaltyReduction} from passive effects.`
-      : "Apply wound penalty to affected trait rolls."
-    : character.damage.effectMaxWoundsPendingModifier
-      ? "Recorded Wound maximum; passive Wound capacity effect shown below."
-      : "Healthy";
-  els.fatigueValue.textContent = character.damage.fatigue;
-  const fatiguePenalty = Math.min(
-    character.damage.fatigue,
-    character.damage.maxFatigue,
-  );
-  els.fatiguePenalty.textContent = fatiguePenalty
-    ? `Penalty -${fatiguePenalty}`
-    : "";
-  els.fatiguePenalty.classList.toggle("hidden", !fatiguePenalty);
-  els.fatigueNote.textContent = character.damage.fatigue
-    ? "Apply fatigue penalty to affected trait rolls."
-    : "Fresh";
+  els.woundsNote.textContent = damageStatus.wounds.incapacitated
+    ? `Incapacitated: Wounds exceed the maximum (${damageStatus.wounds.value}/${damageStatus.wounds.maximum}).`
+    : character.damage.wounds
+      ? appliedWoundPenaltyReduction
+        ? `Wound penalty reduced by ${appliedWoundPenaltyReduction} from passive effects.`
+        : "Apply wound penalty to affected trait rolls."
+      : character.damage.effectMaxWoundsPendingModifier
+        ? "Recorded Wound maximum; passive Wound capacity effect shown below."
+        : "Healthy";
+  els.fatigueValue.textContent = damageStatus.fatigue.value;
+  els.fatigueNote.textContent = damageStatus.fatigue.incapacitated
+    ? `Incapacitated: Fatigue exceeds the maximum (${damageStatus.fatigue.value}/${damageStatus.fatigue.maximum}).`
+    : character.damage.fatigue
+      ? "Apply fatigue penalty to affected trait rolls."
+      : "Fresh";
   syncCharacterStartingBennies(character);
   els.benniesValue.textContent = character.bennies.current;
   els.bennyStart.textContent = `Start ${character.bennies.starting}`;
