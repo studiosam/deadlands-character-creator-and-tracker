@@ -65,10 +65,11 @@ automate.
 - [ ] The confirmed Character Sheet hides setup stepper/forms, manual
       Edge/Hindrance add forms, Advancement add forms, and manual Power Points
       setup by default.
-- [ ] The global Manage menu opens character-management controls and the
-      Characters panel profile editor without showing setup controls inline.
-- [ ] The landing page and global Manage menu theme pickers change the visual
-      theme and keep it after refresh.
+- [ ] The compact Manage menu contains only Undo, Redo, and Characters.
+- [ ] Main Menu is a standalone tracker-header action and provides access to
+      creation, imports, Catalog, Local Data, Privacy, and Sources & Rulesets.
+- [ ] The landing page and standalone tracker-header theme pickers change the
+      visual theme and keep it after refresh.
 - [ ] Characters panel profile edits update the header and Character Sheet while
       preserving `setupStatus`.
 - [ ] Human free Edge and Hindrance benefit Edge selectors hide Edges blocked by

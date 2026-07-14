@@ -474,48 +474,6 @@ els.clearActionCardsBtn.onclick = () => {
   render();
   save();
 };
-els.newSessionBtn.onclick = async () => {
-  if (
-    !(await appConfirm(
-      "This resets bennies to starting, clears conviction, refills resources, clears Action Cards, clears combat declarations, and clears temporary conditions.",
-      {
-        title: "Start a new play session?",
-        confirmText: "Start Session",
-      },
-    ))
-  )
-    return;
-  syncCharacterStartingBennies(character);
-  character.bennies.current = character.bennies.starting;
-  character.actionCards = normalizeActionCardState(null);
-  character.combatDeclaration = normalizeCombatDeclarationState(null);
-  character.conviction = 0;
-  character.resources.forEach((resource) => (resource.current = resource.max));
-  character.temporaryConditions.forEach(
-    (key) => (character.conditions[key] = false),
-  );
-  render();
-  save();
-};
-els.resetBtn.onclick = async () => {
-  if (
-    await appConfirm("This replaces the current local tracker state.", {
-      title: "Reset tracker to defaults?",
-      confirmText: "Reset",
-      danger: true,
-    })
-  ) {
-    characterDraftMode = false;
-    character = normalize(clone(defaultCharacter));
-    storageAdapter.writeFlag(DEMO_MODE_KEY, false);
-    saveCharacterSlot(character, { source: "reset" });
-    render();
-    renderDemoExperience();
-  }
-};
-els.exportBtn.onclick = () => {
-  exportTrackerCharacter();
-};
 els.undoBtn.onclick = () => {
   undoLastCharacterChange();
 };
@@ -551,13 +509,6 @@ els.importFile.onchange = (event) => {
     }
   };
   reader.readAsText(file);
-};
-els.pasteImportBtn.onclick = () => {
-  if (els.pasteImportPanel.classList.contains("hidden")) openPasteImportPanel();
-  else {
-    els.pasteImportPanel.classList.add("hidden");
-    resetLandingImportPanelBounds();
-  }
 };
 els.cancelPasteImportBtn.onclick = () => {
   els.importJsonText.value = "";

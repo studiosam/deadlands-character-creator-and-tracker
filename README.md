@@ -59,9 +59,9 @@ want a local, private, session-focused tracker at the table.
 - Undo or redo recent per-character tracker changes with snapshot history that
   persists through reload.
 - Save, switch, rename, duplicate, delete, and export multiple local character
-  slots from the Manage > Characters panel.
-- Choose a visual theme from the landing page or Manage menu; theme preferences
-  persist in the browser.
+  slots from the Main Menu > Characters panel.
+- Choose a visual theme from the landing page or the standalone tracker-header
+  theme picker; theme preferences persist in the browser.
 - Edit stable character profile fields from the Characters panel: name, player,
   profession or title, age, gender, description, and background.
 - Review app version, schema version, backup actions, and local data controls

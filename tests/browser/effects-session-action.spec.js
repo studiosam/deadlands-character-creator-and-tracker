@@ -286,7 +286,7 @@ test("Luck and Bad Luck update starting Bennies without session reset UI", async
   });
 
   await openHeaderMenu(page);
-  await expect(page.locator("#newSessionBtn")).toBeHidden();
+  await expect(page.locator("#newSessionBtn")).toHaveCount(0);
 });
 
 test("Action Card model tracks Quick redraw state without normal tracker UI", async ({

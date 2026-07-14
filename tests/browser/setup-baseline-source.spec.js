@@ -517,8 +517,8 @@ test("edits setup traits for created characters and stores the creation baseline
     powers: [],
   };
 
-  await openHeaderMenu(page);
-  await page.locator("#pasteImportBtn").click();
+  await page.locator("#mainMenuBtn").click();
+  await page.locator("#landingImportBtn").click();
   await page.locator("#importJsonText").fill(JSON.stringify(createdCharacter));
   await page.locator("#confirmPasteImportBtn").click();
   await expect(page.locator("#characterName")).toContainText(

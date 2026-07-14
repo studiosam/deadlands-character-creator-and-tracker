@@ -571,8 +571,8 @@ test("imports a Savaged.us sample through paste import", async ({ page }) => {
   );
   expect(sample.ok()).toBeTruthy();
 
-  await openHeaderMenu(page);
-  await page.locator("#pasteImportBtn").click();
+  await page.locator("#mainMenuBtn").click();
+  await page.locator("#landingImportBtn").click();
   await page.locator("#importJsonText").fill(await sample.text());
   await page.locator("#confirmPasteImportBtn").click();
 
@@ -662,24 +662,25 @@ test("round-trips exported tracker JSON through import @mobile", async ({
       notes: noteText,
     });
 
-  await openHeaderMenu(page);
+  await page.locator("#mainMenuBtn").click();
+  await page.locator("#landingLocalDataBtn").click();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    page.locator("#exportBtn").click(),
+    page.locator("#localDataExportTrackerBtn").click(),
   ]);
   const downloadedJsonPath = testInfo.outputPath(download.suggestedFilename());
   await download.saveAs(downloadedJsonPath);
 
-  await openHeaderMenu(page);
-  await page.locator("#resetBtn").click();
-  await page.locator("#appDialogConfirmBtn").click();
-  await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
-  await expect(page.locator("#characterName")).not.toContainText(characterName);
+  await page.locator("#utilityBackToTrackerBtn").click();
+  await openCombat(page);
+  await woundsBlock(page).locator("[data-action='decWounds']").click();
   await expect(page.locator("#woundsValue")).toHaveText("0");
   await page.getByRole("button", { name: "Notes" }).click();
-  await expect(page.locator("#notesArea")).not.toHaveValue(noteText);
+  await page.locator("#notesArea").fill("");
+  await expect(page.locator("#notesArea")).toHaveValue("");
 
-  await openHeaderMenu(page);
+  await page.locator("#mainMenuBtn").click();
+  await page.locator("#landingImportBtn").click();
   await page.locator("#importFile").setInputFiles(downloadedJsonPath);
 
   await expect(page.locator("#characterName")).toContainText(characterName);

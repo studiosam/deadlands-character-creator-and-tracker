@@ -99,7 +99,7 @@ test("simulator-style play helpers are hidden from the normal tracker workflow",
   await expect(page.locator("#combatHucksterCard")).toBeHidden();
 
   await page.locator("#headerToolsMenu").click();
-  await expect(page.locator("#newSessionBtn")).toBeHidden();
+  await expect(page.locator("#newSessionBtn")).toHaveCount(0);
 });
 
 test("tracker modifier chips report encumbrance penalties without load details", async ({

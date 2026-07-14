@@ -486,10 +486,8 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
     await assertCatalogHasNoTextColumnOverflow();
   };
 
-  await expect(page.locator("#landingCatalogBtn")).toHaveCount(0);
-  await enterTracker(page);
-  await openHeaderMenu(page);
-  await page.locator("#catalogMenuBtn").click();
+  await expect(page.locator("#landingCatalogBtn")).toBeVisible();
+  await page.locator("#landingCatalogBtn").click();
   await expect(page.locator("#landingPage")).toBeHidden();
   await expect(panel).toBeVisible();
   await expect(page.locator(".app-tabs [data-app-tab='catalog']")).toHaveCount(
@@ -518,11 +516,10 @@ test("smoke tests read-only Catalog navigation and modes", async ({ page }) => {
   await expect(page.locator("#characterName")).toContainText("Dusty McCaw");
 
   await page.evaluate(() => window.history.back());
-  await expect(page.locator("#playPanel")).toHaveClass(/active/);
+  await expect(page.locator("#landingPage")).toBeVisible();
   await expect(panel).toBeHidden();
 
-  await openHeaderMenu(page);
-  await page.locator("#creatorModeBtn").click();
+  await page.locator("#landingCreateBtn").click();
   await expect(page.locator("#characterSetupPanel")).toBeVisible();
   await page.locator("#characterSetupPanel [data-app-tab='catalog']").click();
   await expect(panel).toBeVisible();
@@ -543,10 +540,16 @@ test("global menu theme picker applies and persists visual themes", async ({
     .toBe("parchment");
 
   await enterTracker(page);
-  await openHeaderMenu(page);
 
   const themeSelect = page.locator("#themeSelect");
   await expect(themeSelect).toBeVisible();
+  await expect(
+    page.locator("#characterHeaderTools > .header-theme-picker #themeSelect"),
+  ).toHaveCount(1);
+  await expect(page.locator("#headerToolsMenu #themeSelect")).toHaveCount(0);
+  await expect(page.locator("#characterHeaderTools > :last-child")).toHaveClass(
+    /header-theme-picker/,
+  );
   await expect(themeSelect).toHaveValue("parchment");
   for (const themeLabel of [
     "Weird West",
@@ -586,7 +589,6 @@ test("global menu theme picker applies and persists visual themes", async ({
     "night-trail",
   );
   await enterTracker(page);
-  await openHeaderMenu(page);
   await expect(page.locator("#themeSelect")).toHaveValue("night-trail");
 });
 
@@ -608,7 +610,6 @@ test("light themes keep landing controls and app tabs readable", async ({
       await contrastFor(page, ".creator-tabs button:not(.active)"),
     );
 
-    await openHeaderMenu(page);
     await page.locator("#mainMenuBtn").click();
     await page.locator("#landingCreateBtn").click();
     const dialog = page.locator("#appDialog");
@@ -744,12 +745,10 @@ test("light themes keep landing controls and app tabs readable", async ({
   }
 });
 
-test("shows the read-only sources and rulesets page from the global menu", async ({
+test("shows the read-only sources and rulesets page from the main menu", async ({
   page,
 }) => {
-  await enterTracker(page);
-  await openHeaderMenu(page);
-  await page.locator("#sourcesRulesetsMenuBtn").click();
+  await page.locator("#landingSourcesRulesetsBtn").click();
 
   const panel = page.locator("#sourcesRulesetsPanel");
   await expect(panel).toBeVisible();
@@ -866,7 +865,15 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   }
 
   await openHeaderMenu(page);
-  await page.locator("#localDataMenuBtn").click();
+  await expect(
+    page.locator("#headerToolsMenu .header-actions button"),
+  ).toHaveText(["Undo", "Redo", "Characters"]);
+  await expect(page.locator("#headerToolsMenu")).not.toContainText("Import");
+  await expect(page.locator("#headerToolsMenu")).not.toContainText(
+    "Local Data",
+  );
+  await page.locator("#mainMenuBtn").click();
+  await page.locator("#landingLocalDataBtn").click();
   await expect(page.locator("#localDataPanel")).toContainText(
     "Local Data & Backups",
   );
@@ -884,8 +891,8 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await expect(page.locator("#characterHeroCopy")).toBeVisible();
   await expect(page.locator("#appTabs")).toBeVisible();
 
-  await openHeaderMenu(page);
-  await page.locator("#privacyLegalMenuBtn").click();
+  await page.locator("#mainMenuBtn").click();
+  await page.locator("#landingPrivacyLegalBtn").click();
   await expect(page.locator("#privacyLegalPanel")).toContainText(
     "Privacy & Legal Notes",
   );
@@ -898,7 +905,6 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   await page.locator("#utilityBackToTrackerBtn").click();
   await expect(page.locator("#playPanel")).toHaveClass(/active/);
 
-  await openHeaderMenu(page);
   await page.locator("#mainMenuBtn").click();
   await expect(page.locator("#landingPage")).toBeVisible();
   await expect(page.locator(".shell")).toBeHidden();

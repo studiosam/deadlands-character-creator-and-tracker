@@ -235,7 +235,7 @@ Confirmed characters now open the Character tab as a reference-focused Character
 - Current Edges and Hindrances as read-only reference lists.
 - Short background, description, and compact import/source notes.
 - A deliberate `Review Setup` action.
-- Deliberate character-management access through the global Manage menu and Characters panel, rather than inline setup controls.
+- Deliberate character-management access through Main Menu or the compact Manage menu's Characters action, rather than inline setup controls.
 
 The confirmed Character Sheet hides setup/editing workflows by default:
 

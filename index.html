@@ -113,6 +113,20 @@
         <p class="landing-footer-note">
           <span>Unofficial fan tool. Saves stay in this browser.</span>
           <button
+            id="landingCharactersBtn"
+            class="landing-footer-link"
+            type="button"
+          >
+            Characters
+          </button>
+          <button
+            id="landingCatalogBtn"
+            class="landing-footer-link"
+            type="button"
+          >
+            Catalog
+          </button>
+          <button
             id="landingLocalDataBtn"
             class="landing-footer-link"
             type="button"
@@ -160,127 +174,60 @@
             Main Menu
           </button>
         </div>
-        <div id="characterHeaderTools" class="header-tools">
+        <div
+          id="characterHeaderTools"
+          class="header-tools character-header-tools"
+        >
+          <button
+            class="ghost header-main-menu-btn"
+            id="mainMenuBtn"
+            type="button"
+          >
+            Main Menu
+          </button>
           <details id="headerToolsMenu" class="header-menu">
             <summary>Manage</summary>
-            <div class="header-actions" aria-label="Session and file actions">
-              <section class="menu-group">
-                <h2>Session</h2>
-                <button
-                  id="newSessionBtn"
-                  class="hidden"
-                  type="button"
-                  aria-hidden="true"
-                  title="Legacy session reset kept for save compatibility; not shown in the normal tracker."
-                >
-                  Start Session
-                </button>
-                <button
-                  class="ghost"
-                  id="undoBtn"
-                  type="button"
-                  title="Undo the last saved tracker change for this character."
-                >
-                  Undo
-                </button>
-                <button
-                  class="ghost"
-                  id="redoBtn"
-                  type="button"
-                  title="Redo the last undone tracker change for this character."
-                >
-                  Redo
-                </button>
-                <button
-                  class="ghost"
-                  id="characterLibraryMenuBtn"
-                  type="button"
-                  data-app-tab="library"
-                >
-                  Characters
-                </button>
-                <button class="ghost" id="loadSampleBtn" type="button">
-                  Load Sample
-                </button>
-                <button class="ghost" id="creatorModeBtn" type="button">
-                  New Character
-                </button>
-              </section>
-
-              <section class="menu-group">
-                <h2>Data</h2>
-                <button class="ghost" id="exportBtn" type="button">
-                  Export Character
-                </button>
-                <label class="ghost file-label" for="importFile"
-                  >Import File</label
-                >
-                <button class="ghost" id="pasteImportBtn" type="button">
-                  Paste JSON
-                </button>
-              </section>
-
-              <section class="menu-group">
-                <h2>Theme</h2>
-                <label class="theme-picker" for="themeSelect">
-                  <span>Visual Theme</span>
-                  <select id="themeSelect">
-                    <option value="weird-west">Weird West</option>
-                    <option value="night-trail">Night Trail</option>
-                    <option value="parchment">Parchment</option>
-                    <option value="blood-moon">Blood Moon</option>
-                    <option value="ghostlight">Ghostlight</option>
-                    <option value="prairie-sage">Prairie Sage</option>
-                    <option value="violet-dusk">Violet Dusk</option>
-                    <option value="rose-pink">Rose Pink</option>
-                    <option value="high-contrast">High Contrast</option>
-                  </select>
-                </label>
-              </section>
-
-              <section class="menu-group">
-                <h2>App</h2>
-                <button class="ghost" id="mainMenuBtn" type="button">
-                  Main Menu
-                </button>
-                <button
-                  class="ghost"
-                  id="localDataMenuBtn"
-                  type="button"
-                  data-app-tab="localData"
-                >
-                  Local Data
-                </button>
-                <button
-                  class="ghost"
-                  id="privacyLegalMenuBtn"
-                  type="button"
-                  data-app-tab="privacyLegal"
-                >
-                  Privacy & Legal
-                </button>
-                <button
-                  class="ghost"
-                  id="catalogMenuBtn"
-                  type="button"
-                  data-app-tab="catalog"
-                >
-                  Catalog
-                </button>
-                <button
-                  class="ghost"
-                  id="sourcesRulesetsMenuBtn"
-                  type="button"
-                  data-app-tab="sourcesRulesets"
-                >
-                  Sources & Rulesets
-                </button>
-                <button class="danger" id="resetBtn" type="button">
-                  Reset Tracker
-                </button>
-              </section>
+            <div class="header-actions" aria-label="Character management">
+              <button
+                class="ghost"
+                id="undoBtn"
+                type="button"
+                title="Undo the last saved tracker change for this character."
+              >
+                Undo
+              </button>
+              <button
+                class="ghost"
+                id="redoBtn"
+                type="button"
+                title="Redo the last undone tracker change for this character."
+              >
+                Redo
+              </button>
+              <button
+                class="ghost"
+                id="characterLibraryMenuBtn"
+                type="button"
+                data-app-tab="library"
+              >
+                Characters
+              </button>
             </div>
           </details>
+          <label class="theme-picker header-theme-picker" for="themeSelect">
+            <span>Theme</span>
+            <select id="themeSelect" aria-label="Visual Theme">
+              <option value="weird-west">Weird West</option>
+              <option value="night-trail">Night Trail</option>
+              <option value="parchment">Parchment</option>
+              <option value="blood-moon">Blood Moon</option>
+              <option value="ghostlight">Ghostlight</option>
+              <option value="prairie-sage">Prairie Sage</option>
+              <option value="violet-dusk">Violet Dusk</option>
+              <option value="rose-pink">Rose Pink</option>
+              <option value="high-contrast">High Contrast</option>
+            </select>
+          </label>
         </div>
       </header>
 

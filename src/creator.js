@@ -1865,14 +1865,6 @@ window.addEventListener("popstate", (event) => {
   }
 });
 
-$("#loadSampleBtn").onclick = () => {
-  const panel = $("#demoWelcomePanel");
-  if (panel) {
-    panel.dataset.manualOpen = "true";
-    renderDemoExperience(true);
-    panel.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-};
 $("#loadSelectedSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#startCreatorWelcomeBtn").onclick = () => {
   openCreateEditCharacterDialog();
@@ -1904,6 +1896,8 @@ if (els.landingCharacterSelect)
 $("#landingLoadSampleBtn").onclick = loadSelectedSampleCharacter;
 $("#landingCreateBtn").onclick = handleLandingCreateCharacter;
 $("#landingImportBtn").onclick = () => openPasteImportPanel("landing");
+$("#landingCharactersBtn").onclick = () => closeLandingPage("library");
+$("#landingCatalogBtn").onclick = () => closeLandingPage("catalog");
 $("#landingLocalDataBtn").onclick = () => closeLandingPage("localData");
 $("#landingPrivacyLegalBtn").onclick = () => closeLandingPage("privacyLegal");
 $("#landingSourcesRulesetsBtn").onclick = () =>
@@ -1912,4 +1906,3 @@ $("#mainMenuBtn").onclick = openLandingPage;
 $("#setupMainMenuBtn").onclick = openLandingPage;
 $("#utilityBackToTrackerBtn").onclick = () => setAppTab("play");
 $("#utilityMainMenuBtn").onclick = openLandingPage;
-$("#creatorModeBtn").onclick = startCharacterSetupCreation;

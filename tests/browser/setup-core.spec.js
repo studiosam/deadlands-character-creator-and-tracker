@@ -862,8 +862,8 @@ test("shows setup review for imported characters until confirmed @mobile", async
   expect(sample.ok()).toBeTruthy();
 
   await enterTracker(page);
-  await openHeaderMenu(page);
-  await page.locator("#pasteImportBtn").click();
+  await page.locator("#mainMenuBtn").click();
+  await page.locator("#landingImportBtn").click();
   await page.locator("#importJsonText").fill(await sample.text());
   await page.locator("#confirmPasteImportBtn").click();
   await expect(page.locator("#characterName")).toContainText("Lehi Larson");
