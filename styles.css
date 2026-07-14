@@ -1974,22 +1974,21 @@ body:has(#setupGearPanel) .toast-region {
 .combat-command-grid {
   align-items: stretch;
   display: grid;
-  grid-template-columns: minmax(280px, 6.4fr) minmax(360px, 4.6fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 
 .combat-status-grid {
   align-items: stretch;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.8rem;
 }
 
 .combat-side-grid {
   align-items: stretch;
   display: grid;
-  grid-template-columns: minmax(190px, 1.18fr) minmax(160px, 0.82fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 0.8rem;
 }
 
@@ -2010,7 +2009,7 @@ body:has(#setupGearPanel) .toast-region {
 
 .combat-defense-panel .compact-derived {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
 .compact-derived {
@@ -2032,21 +2031,42 @@ body:has(#setupGearPanel) .toast-region {
 .derived.compact-derived > div {
   align-items: flex-start;
   flex-direction: column;
-  gap: 0.12rem;
+  gap: 0.22rem;
   min-width: 0;
-  padding: 0.55rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-soft) 78%, transparent);
 }
 
 .derived.compact-derived span {
-  font-size: 0.7rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   line-height: 1.1;
+  text-transform: uppercase;
 }
 
 .derived.compact-derived strong {
   max-width: 100%;
-  font-size: 0.9rem;
-  line-height: 1.15;
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
   overflow-wrap: anywhere;
+}
+
+.combat-defense-panel .compact-derived span::after {
+  content: "";
+}
+
+.combat-defense-panel #armorNote {
+  margin: 0.2rem 0 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .derived > div span::after {
@@ -2077,20 +2097,25 @@ body:has(#setupGearPanel) .toast-region {
   overflow-wrap: anywhere;
 }
 
+.combat-penalty-panel .topline {
+  align-items: center;
+  flex-direction: row;
+}
+
 .combat-penalty-panel .loaded {
   max-width: 100%;
   font-size: 0.78rem;
   overflow-wrap: anywhere;
 }
 
-.penalty-breakdown {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.32rem;
+.combat-penalty-panel .penalty-breakdown {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.4rem;
   min-width: 0;
 }
 
-.penalty-breakdown span {
+.penalty-breakdown > span {
   max-width: 100%;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -2103,16 +2128,59 @@ body:has(#setupGearPanel) .toast-region {
 }
 
 .modifier-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.65rem;
   cursor: help;
   white-space: normal;
 }
 
-.modifier-chip strong {
+.modifier-chip-copy {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 0.55rem;
+}
+
+.modifier-chip-label {
+  min-width: 0;
   color: inherit;
-  font-size: 0.76rem;
-  line-height: 1.15;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.modifier-chip-value {
+  flex: 0 0 auto;
+  color: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.modifier-source-help {
+  --question-help-border: currentColor;
+  --question-help-background: color-mix(
+    in srgb,
+    currentColor 10%,
+    var(--surface-strong)
+  );
+  --question-help-color: currentColor;
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.7rem;
+}
+
+.modifier-source-help:hover::after,
+.modifier-source-help:focus-visible::after {
+  right: 0;
+  left: auto;
+  transform: none;
 }
 
 .modifier-chip.penalty {
@@ -2169,19 +2237,22 @@ body:has(#setupGearPanel) .toast-region {
 }
 
 .combat-armor-locations {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.4rem;
   margin: 0.65rem 0;
 }
 
 .combat-armor-locations span {
+  min-width: 0;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.16);
   padding: 0.25rem 0.55rem;
   color: var(--muted);
   font-size: 0.82rem;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .combat-armor-locations strong {
@@ -2369,6 +2440,12 @@ body:has(#setupGearPanel) .toast-region {
   padding: 0.45rem 0.75rem;
 }
 
+.controls .armor-equip-toggle {
+  flex: 0 0 auto;
+  min-width: 5rem;
+  white-space: nowrap;
+}
+
 .step button {
   width: 2.2rem;
   height: 2.2rem;
@@ -2395,47 +2472,12 @@ body:has(#setupGearPanel) .toast-region {
   min-width: 0;
 }
 
-.arcane-overview-grid {
-  display: grid;
-  grid-template-columns: minmax(14rem, 0.8fr) minmax(0, 1.4fr);
-  gap: 0.8rem;
-}
-
-.arcane-overview-section {
-  min-width: 0;
-  padding: 0.85rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface-soft);
-}
-
-.arcane-overview-section h3,
-.arcane-overview-section p {
-  margin-top: 0;
-}
-
-.arcane-overview-section-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.7rem;
-}
-
-.arcane-overview-section-title p {
+.arcane-overview-card > .section-title p {
   margin-bottom: 0;
 }
 
-.arcane-overview-section .list > .row {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.arcane-overview-section .list > .row:hover {
-  border-color: transparent;
-  background: transparent;
+.arcane-resource-list {
+  margin-top: 0.8rem;
 }
 
 .power-point-resource-row {
@@ -2514,16 +2556,6 @@ body:has(#setupGearPanel) .toast-region {
   flex-wrap: wrap;
 }
 
-.arcane-resource-panel .power-point-resource-row {
-  grid-template-columns: minmax(0, 1fr);
-  align-items: stretch;
-  gap: 0.7rem;
-}
-
-.arcane-resource-panel .power-point-resource-row .resource-recovery-actions {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
 .arcane-dashboard .powers {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -2594,6 +2626,196 @@ body:has(#setupGearPanel) .toast-region {
   margin-top: 0.2rem;
 }
 
+.arcane-active-powers-card #activePowersList,
+.active-power-current-list,
+.active-power-history-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.arcane-active-powers-card .active-power-card {
+  display: grid;
+  gap: 0.75rem;
+  background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+}
+
+.arcane-active-powers-card .active-power-card.active,
+.arcane-active-powers-card .active-power-card:hover {
+  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+}
+
+.active-power-section-title {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.active-power-reminder {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-soft) 78%, transparent);
+  color: var(--text);
+}
+
+.active-power-reminder > strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--accent-strong);
+}
+
+.active-power-reminder ul,
+.active-power-spend-breakdown ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.active-power-reminder li + li,
+.active-power-spend-breakdown li + li {
+  margin-top: 0.25rem;
+}
+
+.active-power-state-facts,
+.active-power-tracking-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.active-power-state-facts > span,
+.active-power-tracking-facts > span {
+  min-width: 0;
+  padding: 0.32rem 0.58rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 74%, transparent);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.active-power-record-details,
+.active-power-history-group {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-soft) 62%, transparent);
+}
+
+.active-power-record-details > summary,
+.active-power-history-group > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.68rem 0.8rem;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+
+.active-power-record-details > summary::-webkit-details-marker,
+.active-power-history-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.active-power-record-details > summary::before,
+.active-power-history-group > summary::before {
+  content: "\25b8";
+  flex: 0 0 auto;
+  color: var(--accent-strong);
+  font-size: 1rem;
+}
+
+.active-power-record-details[open] > summary::before,
+.active-power-history-group[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.active-power-record-details > summary > span,
+.active-power-history-group > summary > span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.active-power-spend-breakdown,
+.active-power-record-body {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0 0.8rem 0.8rem;
+  color: var(--muted);
+}
+
+.active-power-spend-breakdown p,
+.active-power-ended,
+.active-power-history-notes p {
+  margin: 0;
+}
+
+.active-power-history-group {
+  grid-column: 1 / -1;
+}
+
+.active-power-history-group > summary {
+  padding: 0.8rem 0.9rem;
+}
+
+.active-power-history-list {
+  padding: 0 0.75rem 0.75rem;
+}
+
+.arcane-active-powers-card .active-power-history-card {
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border-style: dashed;
+  background: color-mix(in srgb, var(--surface-soft) 48%, transparent);
+}
+
+.active-power-history-heading {
+  align-items: flex-start;
+}
+
+.active-power-history-heading .meta {
+  margin-top: 0.2rem;
+}
+
+.active-power-ended {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.active-power-ended strong {
+  color: var(--text);
+}
+
+.active-power-history-notes {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.active-power-history-notes > div {
+  min-width: 0;
+}
+
+.active-power-history-notes strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.active-power-history-notes p {
+  overflow-wrap: anywhere;
+}
+
 .arcane-active-powers-card .active-power-fields .checkline {
   display: flex;
   align-items: center;
@@ -2626,8 +2848,169 @@ body:has(#setupGearPanel) .toast-region {
   min-width: 10rem;
 }
 
+.active-power-stack {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 0.65rem;
+}
+
+.active-power-stack > h3 {
+  margin: 0;
+}
+
+.combat-cast-power-card {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+  padding: 0.85rem;
+}
+
+.combat-power-casting-stack {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 0.65rem;
+}
+
+.combat-power-casting-summary {
+  margin: 0;
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: right;
+}
+
+.combat-cast-power-list {
+  margin: 0;
+}
+
+.combat-cast-power-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.combat-cast-power-heading h3 {
+  margin: 0;
+}
+
+.combat-power-effect {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.combat-power-effect {
+  color: var(--text);
+  font-size: 0.96rem;
+}
+
+.combat-power-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+}
+
+.combat-power-facts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.combat-power-modifiers {
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
+}
+
+.combat-power-modifiers summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.combat-power-modifiers summary > span:last-child {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.combat-power-modifier-label,
+.variable-spend-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.combat-power-modifiers[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+.combat-cast-power-card .variable-spend-options {
+  border-radius: 8px;
+}
+
+.combat-cast-power-card .variable-spend-row {
+  gap: 0.55rem;
+  padding: 0.5rem 0.55rem;
+}
+
+.combat-cast-power-card .variable-spend-copy strong {
+  font-size: 0.88rem;
+}
+
+.combat-cast-power-card .variable-spend-copy small {
+  font-size: 0.78rem;
+}
+
+.combat-manual-power-cost {
+  display: grid;
+  grid-template-columns: auto 6rem;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.combat-manual-power-cost input {
+  min-width: 0;
+  text-align: center;
+}
+
+.combat-power-cast-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9rem, auto);
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.combat-power-cast-row [data-power-affordability] {
+  color: var(--good);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.combat-power-cast-row [data-power-affordability].unaffordable {
+  color: var(--danger);
+}
+
+.combat-power-cast-row button {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.75rem;
+}
+
 @media (max-width: 980px) {
-  .arcane-overview-grid,
   .arcane-known-powers-card .power-card-workspace {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2643,19 +3026,11 @@ body:has(#setupGearPanel) .toast-region {
 }
 
 @media (max-width: 640px) {
-  .arcane-overview-section-title {
-    flex-direction: column;
-  }
-
-  .arcane-overview-section-title > button {
-    width: 100%;
-  }
-
-  .arcane-resource-panel .power-point-resource-row .resource-recovery-actions {
+  .arcane-resource-list .power-point-resource-row .resource-recovery-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .arcane-resource-panel
+  .arcane-resource-list
     .power-point-resource-row
     .resource-recovery-actions
     button[data-recover="max"] {
@@ -2686,6 +3061,23 @@ body:has(#setupGearPanel) .toast-region {
   }
 }
 
+@media (max-width: 440px) {
+  .combat-power-cast-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.4rem;
+  }
+
+  .combat-power-modifiers summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .combat-power-modifiers summary > span:last-child {
+    text-align: left;
+  }
+}
+
 @media (max-width: 380px) {
   .arcane-active-powers-card .power-actions {
     grid-template-columns: minmax(0, 1fr);
@@ -2705,11 +3097,11 @@ body:has(#setupGearPanel) .toast-region {
     gap: 0.2rem;
   }
 
-  .arcane-resource-panel .power-point-resource-row .resource-recovery-actions {
+  .arcane-resource-list .power-point-resource-row .resource-recovery-actions {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .arcane-resource-panel
+  .arcane-resource-list
     .power-point-resource-row
     .resource-recovery-actions
     button[data-recover="max"] {
@@ -2940,6 +3332,12 @@ body:has(#setupGearPanel) .toast-region {
   gap: 0.75rem;
 }
 
+.encumbrance-threshold-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
 .encumbrance-reference-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
@@ -2965,6 +3363,52 @@ body:has(#setupGearPanel) .toast-region {
   display: grid;
   gap: 0.55rem;
   padding: 0.85rem;
+}
+
+.encumbrance-threshold-card {
+  display: grid;
+  align-content: center;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.encumbrance-threshold-card.encumbered {
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line) 45%);
+  background: color-mix(in srgb, var(--warn) 10%, var(--surface-soft) 90%);
+}
+
+.encumbrance-threshold-card.strength {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--line) 48%);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-soft) 92%);
+}
+
+.encumbrance-threshold-card.heavy {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--danger) 55%);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-soft) 92%);
+}
+
+.encumbrance-threshold-card.maximum {
+  border-color: color-mix(in srgb, var(--danger) 68%, var(--line) 32%);
+  background: color-mix(in srgb, var(--danger) 13%, var(--surface-soft) 87%);
+}
+
+.encumbrance-threshold-card span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.encumbrance-threshold-card strong {
+  color: var(--text);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  line-height: 1;
 }
 
 .encumbrance-load-card.safe {
@@ -3096,6 +3540,10 @@ body:has(#setupGearPanel) .toast-region {
 
 @media (max-width: 760px) {
   .encumbrance-load-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .encumbrance-threshold-grid {
     grid-template-columns: 1fr;
   }
 
@@ -4906,8 +5354,13 @@ body:has(#setupGearPanel) .toast-region {
   text-transform: uppercase;
 }
 
-.setup-detail-help,
-.attribute-help {
+.question-help {
+  --question-help-border: var(--line-strong);
+  --question-help-background: var(--surface-strong);
+  --question-help-color: var(--accent-strong);
+  --question-help-tooltip-background: var(--surface-strong);
+  --question-help-tooltip-color: var(--text);
+  --question-help-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -4915,10 +5368,10 @@ body:has(#setupGearPanel) .toast-region {
   width: 1.1rem;
   height: 1.1rem;
   flex: 0 0 auto;
-  border: 1px solid var(--setup-accent-border);
+  border: 2px solid var(--question-help-border);
   border-radius: 999px;
-  background: var(--setup-control-bg);
-  color: var(--dossier-ink);
+  background: var(--question-help-background);
+  color: var(--question-help-color);
   cursor: help;
   font-size: 0.72rem;
   font-weight: 900;
@@ -4926,21 +5379,30 @@ body:has(#setupGearPanel) .toast-region {
   text-transform: none;
 }
 
-.setup-detail-help:hover::after,
-.setup-detail-help:focus-visible::after,
-.attribute-help:hover::after,
-.attribute-help:focus-visible::after {
+.power-help {
+  --question-help-border: var(--accent-strong);
+  --question-help-background: color-mix(
+    in srgb,
+    var(--accent) 20%,
+    var(--surface-strong)
+  );
+  --question-help-color: var(--text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.question-help:hover::after,
+.question-help:focus-visible::after {
   position: absolute;
-  z-index: 20;
+  z-index: 40;
   bottom: calc(100% + 0.45rem);
   left: 50%;
   width: min(17rem, 70vw);
   padding: 0.5rem 0.6rem;
-  border: 1px solid var(--setup-accent-border);
+  border: 1px solid var(--question-help-border);
   border-radius: 8px;
-  background: var(--setup-surface-strong);
-  box-shadow: 0 10px 24px rgba(29, 19, 11, 0.18);
-  color: var(--dossier-ink);
+  background: var(--question-help-tooltip-background);
+  box-shadow: var(--question-help-shadow);
+  color: var(--question-help-tooltip-color);
   content: attr(data-tooltip);
   font-size: 0.74rem;
   font-weight: 700;
@@ -4949,6 +5411,16 @@ body:has(#setupGearPanel) .toast-region {
   text-align: left;
   text-transform: none;
   transform: translateX(-50%);
+}
+
+.setup-detail-help,
+.attribute-help {
+  --question-help-border: var(--setup-accent-border);
+  --question-help-background: var(--setup-control-bg);
+  --question-help-color: var(--dossier-ink);
+  --question-help-tooltip-background: var(--setup-surface-strong);
+  --question-help-tooltip-color: var(--dossier-ink);
+  --question-help-shadow: 0 10px 24px rgba(29, 19, 11, 0.18);
 }
 
 .attribute-help {
@@ -6377,6 +6849,18 @@ body:has(#setupGearPanel) .toast-region {
   display: inline;
 }
 
+.equipment-line.cash-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.equipment-line.cash-summary strong,
+.equipment-line.cash-summary span {
+  display: block;
+}
+
 .dossier-note p {
   margin: 0.3rem 0 0;
 }
@@ -6504,7 +6988,6 @@ body:has(#setupGearPanel) .toast-region {
 
   .stats,
   .play-stats,
-  .combat-status-grid,
   .weapons,
   .powers,
   .ammo,
@@ -6719,7 +7202,6 @@ body:has(#setupGearPanel) .toast-region {
 
   .stats,
   .play-stats,
-  .combat-status-grid,
   .weapons,
   .powers,
   .ammo,
@@ -6736,6 +7218,10 @@ body:has(#setupGearPanel) .toast-region {
   .setup-catalog-picker-summary,
   .setup-edge-details {
     grid-template-columns: 1fr;
+  }
+
+  .combat-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .combat-command-grid {
@@ -7083,6 +7569,10 @@ body:has(#setupGearPanel) .toast-region {
 
   .combat-side-grid {
     grid-template-columns: 1fr;
+  }
+
+  .combat-armor-locations {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .combat-status-grid .block {

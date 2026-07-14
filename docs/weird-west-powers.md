@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file is a project reference for maintaining the power catalog and power-selection workflow in the Deadlands tracker. It lists every power that appears in the reviewed *Deadlands: The Weird West* player Arcane Background power lists, plus the Deadlands-specific powers from the book.
+This file is a project reference for maintaining the power catalog and power-selection workflow in the Deadlands tracker. It lists every power that appears in the reviewed _Deadlands: The Weird West_ player Arcane Background power lists, plus the Deadlands-specific powers from the book.
 
 This is meant for app implementation and table reference. It uses short app-facing summaries rather than full rulebook text, and it should stay aligned with the live catalog and Character Setup power workflow.
 
@@ -59,13 +59,13 @@ Also, do not auto-add an entire power list when a player selects an Arcane Backg
 
 ## Arcane Background power profiles
 
-| Arcane Background | Arcane Skill | Power Points | Starting Powers | Required Starting Power | Special Notes |
-|---|---|---|---|---|---|
-| Blessed | Faith (Spirit) | 15 | 3: holy symbol plus two player choices | Holy Symbol | May take Miracles Edges. Critical Failure on Faith causes Fatigue and ends active powers. Sinnin’ can penalize or remove powers temporarily. |
-| Chi Master | Focus (Spirit) | 15 | 3: deflection plus two player choices | Deflection | May take Gifted Edges. Beneficial powers are Self only. Detrimental powers are Touch range. These reductions do not grant Limitation discounts. |
-| Huckster | Spellcasting (Smarts) | 10 | 3 player choices | None | May take Magic Edges. Cannot Short or spend Bennies for Power Points. Deal with the Devil can cast available powers even if not known and even if above current Rank. |
-| Mad Scientist | Weird Science (Smarts) | 15 | 2 player choices | None | May take Weird Science Edges. Powers are inventions, gizmos, elixirs, or devices. Critical Failure triggers Infernal Device Malfunction. |
-| Shaman | Faith (Spirit) | 15 | 2 player choices | None | May take Miracles Edges. If silenced, subtracts 2 from Faith rolls. Often paired with Old Ways Oath, but not required by default. |
+| Arcane Background | Arcane Skill           | Power Points | Starting Powers                        | Required Starting Power | Special Notes                                                                                                                                                         |
+| ----------------- | ---------------------- | ------------ | -------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Blessed           | Faith (Spirit)         | 15           | 3: holy symbol plus two player choices | Holy Symbol             | May take Miracles Edges. Critical Failure on Faith causes Fatigue and ends active powers. Sinnin’ can penalize or remove powers temporarily.                          |
+| Chi Master        | Focus (Spirit)         | 15           | 3: deflection plus two player choices  | Deflection              | May take Gifted Edges. Beneficial powers are Self only. Detrimental powers are Touch range. These reductions do not grant Limitation discounts.                       |
+| Huckster          | Spellcasting (Smarts)  | 10           | 3 player choices                       | None                    | May take Magic Edges. Cannot Short or spend Bennies for Power Points. Deal with the Devil can cast available powers even if not known and even if above current Rank. |
+| Mad Scientist     | Weird Science (Smarts) | 15           | 2 player choices                       | None                    | May take Weird Science Edges. Powers are inventions, gizmos, elixirs, or devices. Critical Failure triggers Infernal Device Malfunction.                              |
+| Shaman            | Faith (Spirit)         | 15           | 2 player choices                       | None                    | May take Miracles Edges. If silenced, subtracts 2 from Faith rolls. Often paired with Old Ways Oath, but not required by default.                                     |
 
 ## Arcane Background-specific restrictions
 
@@ -114,67 +114,67 @@ Also, do not auto-add an entire power list when a player selects an Arcane Backg
 
 The table below is the app-facing power catalog for powers valid in Deadlands: The Weird West based on the reviewed Arcane Background lists.
 
-| Power | Source | Rank | PP | Range | Duration | Allowed Backgrounds | Short Summary | Variable Spend / Modifier Notes | Deadlands Restriction Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| Ammo Whammy | Deadlands | Seasoned | 4 | Self | 5 | Huckster | Hexslinger empowers shots from a hex gun with special shot effects. | Requires Huckster + Hexslinging. Special shot effects are selected per shot; raise can allow two effects. | Huckster: Requires Hexslinging Edge. |
-| Arcane Protection | SWADE | Novice | 1 | Smarts | 5 | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Enemy casters take a penalty to affect the target; damaging powers are reduced by the same amount. | Additional Recipients +1. |  |
-| Banish | SWADE + Deadlands note | Veteran | 3 | Smarts | Instant | Blessed, Shaman | Opposed roll to banish extraplanar or similar entities. In Deadlands, Harrowed manitous are made inert temporarily, not destroyed. | Deadlands Harrowed handling. |  |
-| Barrier | SWADE | Novice | 2 | Smarts | 5 | Blessed, Huckster, Mad Scientist | Creates a short Hardness 10 wall or barrier. | Damage, Hardened, Shaped, Size. |  |
-| Beast Friend | SWADE | Novice | Special | Smarts | 10 minutes | Blessed, Huckster, Mad Scientist, Shaman | Communicate with and guide natural animals; cost depends on controlled creatures’ Size. | Variable cost by creature Size and count. |  |
-| Blast | SWADE | Seasoned | 3 | Smarts ×2 | Instant | Mad Scientist | Area attack, usually Medium Blast Template, for energy or matter damage. | Area Effect and Damage modifiers. |  |
-| Blind | SWADE | Novice | 2 | Smarts | Instant | Blessed, Huckster, Mad Scientist, Shaman | Inflicts sight penalties that the victim can recover from over turns. | Potential strong/area handling; automate later. |  |
-| Bolt | SWADE | Novice | 1 | Smarts ×2 | Instant | Huckster, Mad Scientist | Ranged arcane attack for 2d6 damage, 3d6 with a raise. | Damage +2; attack penalties apply normally. |  |
-| Boost/Lower Trait | SWADE | Novice | 2 | Smarts | 5 boost / Instant lower | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Boost raises an ally’s Trait temporarily; lower reduces an enemy’s Trait and allows recovery attempts. | Additional Recipients for boost; Strong for lower. |  |
-| Burrow | SWADE | Novice | 2 | Smarts | 5 | Chi Master, Mad Scientist, Shaman | Target tunnels through earth or similar material and may emerge later. | Additional Recipients +1. |  |
-| Burst | SWADE | Novice | 2 | Cone Template | Instant | Huckster, Mad Scientist | Cone-shaped attack for 2d6 damage, 3d6 with a raise. | Damage +2. |  |
-| Confusion | SWADE | Novice | 1 | Smarts | Instant | Blessed, Huckster, Mad Scientist, Shaman | Makes targets Distracted, Vulnerable, or worse depending on result. | Area/Strong modifiers may be useful. |  |
-| Curse | Deadlands | Seasoned | 5 | Touch | Permanent | Chi Master, Shaman | Opposed roll; victim suffers recurring Fatigue and possible death unless curse is lifted. | Dispel can remove, but each helper gets only one attempt. |  |
-| Damage Field | SWADE | Novice | 4 | Self | 5 | Huckster, Mad Scientist | Creates a damaging aura that harms adjacent beings at the end of their turns. | Damage +2. |  |
-| Darksight | SWADE | Novice | 1 | Smarts | One hour | Chi Master, Mad Scientist, Shaman | Allows target to ignore darkness or illumination penalties. | Additional Recipients +1. |  |
-| Deflection | SWADE | Novice | 3 | Smarts | 5 | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Foes subtract from attacks against the protected target; raise improves the penalty. | Additional Recipients +1. Main target-count UI test case. Verify PP cost if your table’s book printing differs. |  |
-| Detect/Conceal Arcana | SWADE | Novice | 2 | Smarts | 5 detect / 1 hour conceal | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Detect reveals supernatural beings, objects, and effects. Conceal hides arcane nature. | Additional Recipients +1; Conceal Area Effect and Strong. Blessed and Chi Master are detect-only. | Blessed: Detect only; conceal is not available. Chi Master: Detect only; conceal is not available. |
-| Disguise | SWADE | Seasoned | 2 | Smarts | 10 minutes | Huckster, Mad Scientist, Shaman | Target appears to be someone else; observers may see through it. | Additional Recipients +1. |  |
-| Dispel | SWADE | Novice | 1 | Smarts | Instant | Blessed, Huckster, Mad Scientist, Shaman | Negates active powers or magical effects. | Automate as active-power remover later. |  |
-| Divination | SWADE | Seasoned | 5 | Self | 5 minutes | Blessed, Huckster, Shaman | Ask questions of supernatural entities or forces. | Manual notes/questions first. |  |
-| Drain Power Points | SWADE | Veteran | 3 | Smarts | Instant | Mad Scientist, Shaman | Opposed arcane roll drains Power Points from another caster. | Track drained PP and target pool. |  |
-| Elemental Manipulation | SWADE | Novice | 1 | Smarts | 5 | Blessed, Huckster, Mad Scientist, Shaman | Minor manipulation of air, earth, fire, or water. | Utility/manual effect. |  |
-| Empathy | SWADE | Novice | 2 | Smarts | 5 | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Read or influence emotions; helps social interaction or animals depending on use. | Social bonus/reminder. |  |
-| Entangle | SWADE | Novice | 2 | Smarts | Instant | Huckster, Mad Scientist, Shaman | Binds or Entangles foes until they break free. | Track Entangled/Bound state later. |  |
-| Environmental Protection | SWADE | Novice | 2 | Touch | One hour | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Protects against environmental hazards and similar damaging sources. | Additional Recipients +1. |  |
-| Farsight | SWADE | Seasoned | 2 | Smarts | 5 | Chi Master, Huckster, Mad Scientist, Shaman | See far details; raise helps reduce ranged penalties. | Additional Recipients +1. |  |
-| Fear | SWADE | Novice | 2 | Smarts | Instant | Huckster, Mad Scientist, Shaman | Targets make Fear checks; raise worsens result. | Area Effect +2/+3. |  |
-| Fly | SWADE | Veteran | 3 | Smarts | 5 | Mad Scientist | Target flies at high Pace; raise improves flight speed. | Additional Recipients +2. |  |
-| Growth/Shrink | SWADE | Seasoned | Special | Smarts | 5 | Mad Scientist, Shaman | Increase or reduce Size by spending Power Points. | Variable cost by Size change. Mad Scientist is shrink-only; Shaman is growth-only. | Mad Scientist: Shrink only; growth is not available. Shaman: Growth only; shrink is not available. |
-| Havoc | SWADE | Seasoned | 2 | Smarts | Instant | Blessed, Huckster, Mad Scientist, Shaman | Targets in an area are Distracted and may be hurled. | Template/opposed handling manual first. |  |
-| Healing | SWADE | Novice | 3 | Touch | Instant | Blessed, Chi Master, Mad Scientist, Shaman | Restores recent Wounds and may handle other recovery with modifiers/timing. | Connect to wound tracker later. |  |
-| Holy Symbol | Deadlands | Novice | 3 | Self | 5 | Blessed, Shaman | Supernaturally evil creatures must pass Spirit to directly physically attack the bearer. | Area Effect +2/+3; Strong +1. Blessed required starting power. |  |
-| Illusion | SWADE | Novice | 3 | Smarts | 5 | Huckster, Mad Scientist | Creates imaginary images or sensory effects. | Size/area manual first. |  |
-| Intangibility | SWADE | Heroic | 5 | Smarts | 5 | Huckster, Mad Scientist, Shaman | Target becomes incorporeal. | Active toggle recommended. |  |
-| Invisibility | SWADE | Seasoned | 5 | Smarts | 5 | Huckster, Mad Scientist | Target becomes difficult to detect and affect. | Additional recipients may be supported depending on source. |  |
-| Light/Darkness | SWADE | Novice | 2 | Smarts | 10 minutes | Blessed, Huckster, Mad Scientist | Creates or dispels illumination or darkness. | Blessed is light-only. | Blessed: Light only; darkness is not available. |
-| Mind Wipe | SWADE | Veteran | 3 | Touch | Instant | Mad Scientist | Removes or alters memories. | Mad Scientist only among reviewed Deadlands player lists. |  |
-| Numb | Deadlands | Novice | 2 | Spirit | 5 | Chi Master, Huckster, Mad Scientist, Shaman | Caster and nearby allies ignore some Wound or Fatigue penalties; raise improves amount and suppresses temporary injuries. | Area is based on caster Spirit in tabletop inches. |  |
-| Object Reading | SWADE | Seasoned | 2 | Touch | Instant | Huckster | Reads psychic impressions from an object’s history. | Huckster only among reviewed Deadlands player lists. |  |
-| Protection | SWADE | Novice | 1 | Smarts | 5 | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Grants Armor +2, or +4 with a raise. | Additional Recipients +1; More Armor may apply depending on source. |  |
-| Puppet | SWADE + Deadlands modifier | Veteran | 3 | Smarts | 5 | Huckster, Mad Scientist | Opposed roll to control a target’s actions. | Deadlands adds Mind Rider +1 modifier. |  |
-| Relief | SWADE | Novice | 1 | Touch | Instant | Blessed, Chi Master, Mad Scientist, Shaman | Removes Fatigue or Shaken; raise can remove Stunned. | Additional Recipients +1. |  |
-| Resurrection | SWADE | Heroic | 30 | Touch | Instant | Blessed, Shaman | Brings the dead back to life under strict limits. | High-cost, Marshal-sensitive power. |  |
-| Sanctify | Deadlands | Veteran | 10 | Special | Until next sunset | Blessed, Shaman | Long ritual creates sacred ground that harms or deters supernaturally evil creatures entering it. | Four-hour ritual; noncombat location effect. |  |
-| Shape Change | SWADE | Seasoned | Special | Self | 5 | Shaman | Caster takes on animal or creature form depending on cost and Rank. | Variable cost by form. |  |
-| Sloth/Speed | SWADE | Novice | 2 | Smarts | Instant sloth / 5 speed | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Sloth reduces movement/actions; Speed increases movement/actions. | Track chosen mode. |  |
-| Slumber | SWADE | Seasoned | 2 | Smarts ×5 | One hour | Huckster, Mad Scientist, Shaman | Puts targets to sleep if they fail resistance. | Area/Strong may be useful. |  |
-| Smite | SWADE | Novice | 2 | Smarts | 5 | Blessed, Chi Master, Mad Scientist, Shaman | Increases a weapon’s damage by +2, or +4 with a raise. | Additional Recipients +1. Chi Master hands/feet count as weapons. | Chi Master: Hands and feet count as weapons for this power. |
-| Sound/Silence | SWADE | Novice | 1 | Smarts | Instant sound / 5 silence | Huckster, Mad Scientist | Creates sound or mutes sound in an area or target. | Track chosen mode. |  |
-| Speak Language | SWADE | Novice | 1 | Smarts | 10 minutes | Blessed, Huckster, Mad Scientist, Shaman | Caster can speak and understand languages. | Additional Recipients +1. |  |
-| Stun | SWADE | Novice | 2 | Smarts | Instant | Blessed, Huckster, Mad Scientist | Target is Stunned on failed resistance. | Area Effect may be useful. |  |
-| Summon Ally | SWADE | Novice | Special | Smarts ×2 | 5 | Huckster, Shaman | Conjures an allied creature; cost depends on ally strength. | Variable cost by ally type. |  |
-| Telekinesis | SWADE | Seasoned | 5 | Smarts | 5 | Huckster, Mad Scientist | Moves objects with high effective Strength; raise improves Strength. | Track target/object manually first. |  |
-| Teleport | SWADE | Seasoned | 2 | Smarts | Instant | Huckster, Mad Scientist, Shaman | Teleports the character a short distance. | Distance/recipients manual first. |  |
-| Trinkets | Deadlands | Novice | 3 | Smarts | 5 | Huckster | Huckster creates a small mundane item under one pound; fades when duration ends. | Complete +1; Weight +2. Raise changes duration scale to minutes. |  |
-| Wall Walker | SWADE | Novice | 2 | Smarts | 5 | Chi Master, Huckster, Mad Scientist, Shaman | Target walks on walls or ceilings. | Additional Recipients +1. |  |
-| Warrior’s Gift | SWADE | Seasoned | 4 | Smarts | 5 | Blessed, Chi Master, Mad Scientist, Shaman | Temporarily grants a Combat Edge. | Requires Edge selection; good subchoice test. |  |
-| Wilderness Walk | Deadlands | Novice | 2 | Self | One hour | Shaman | Shaman shortens long overland travel and hides tracks after walking at least one mile. | Additional Recipients +1; raise improves travel compression. |  |
-| Zombie | SWADE | Veteran | 3 | Smarts | One hour | Mad Scientist | Raises and controls undead from available corpses. | Additional Zombies, Armed, Armor, Mind Rider. |  |
+| Power                    | Source                     | Rank     | PP      | Range         | Duration                  | Allowed Backgrounds                                  | Short Summary                                                                                                                      | Variable Spend / Modifier Notes                                                                                 | Deadlands Restriction Notes                                                                        |
+| ------------------------ | -------------------------- | -------- | ------- | ------------- | ------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Ammo Whammy              | Deadlands                  | Seasoned | 4       | Self          | 5                         | Huckster                                             | Hexslinger empowers shots from a hex gun with special shot effects.                                                                | Requires Huckster + Hexslinging. Special shot effects are selected per shot; raise can allow two effects.       | Huckster: Requires Hexslinging Edge.                                                               |
+| Arcane Protection        | SWADE                      | Novice   | 1       | Smarts        | 5                         | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Enemy casters take a penalty to affect the target; damaging powers are reduced by the same amount.                                 | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Banish                   | SWADE + Deadlands note     | Veteran  | 3       | Smarts        | Instant                   | Blessed, Shaman                                      | Opposed roll to banish extraplanar or similar entities. In Deadlands, Harrowed manitous are made inert temporarily, not destroyed. | Deadlands Harrowed handling.                                                                                    |                                                                                                    |
+| Barrier                  | SWADE                      | Novice   | 2       | Smarts        | 5                         | Blessed, Huckster, Mad Scientist                     | Creates a short Hardness 10 wall or barrier.                                                                                       | Damage, Hardened, Shaped, Size.                                                                                 |                                                                                                    |
+| Beast Friend             | SWADE                      | Novice   | Special | Smarts        | 10 minutes                | Blessed, Huckster, Mad Scientist, Shaman             | Communicate with and guide natural animals; cost depends on controlled creatures’ Size.                                            | Variable cost by creature Size and count.                                                                       |                                                                                                    |
+| Blast                    | SWADE                      | Seasoned | 3       | Smarts ×2     | Instant                   | Mad Scientist                                        | Area attack, usually Medium Blast Template, for energy or matter damage.                                                           | Area Effect and Damage modifiers.                                                                               |                                                                                                    |
+| Blind                    | SWADE                      | Novice   | 2       | Smarts        | Instant                   | Blessed, Huckster, Mad Scientist, Shaman             | Inflicts sight penalties that the victim can recover from over turns.                                                              | Potential strong/area handling; automate later.                                                                 |                                                                                                    |
+| Bolt                     | SWADE                      | Novice   | 1       | Smarts ×2     | Instant                   | Huckster, Mad Scientist                              | Ranged arcane attack for 2d6 damage, 3d6 with a raise.                                                                             | Damage +2; attack penalties apply normally.                                                                     |                                                                                                    |
+| Boost/Lower Trait        | SWADE                      | Novice   | 2       | Smarts        | 5 boost / Instant lower   | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Boost raises an ally’s Trait temporarily; lower reduces an enemy’s Trait and allows recovery attempts.                             | Additional Recipients for boost; Strong for lower.                                                              |                                                                                                    |
+| Burrow                   | SWADE                      | Novice   | 2       | Smarts        | 5                         | Chi Master, Mad Scientist, Shaman                    | Target tunnels through earth or similar material and may emerge later.                                                             | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Burst                    | SWADE                      | Novice   | 2       | Cone Template | Instant                   | Huckster, Mad Scientist                              | Cone-shaped attack for 2d6 damage, 3d6 with a raise.                                                                               | Damage +2.                                                                                                      |                                                                                                    |
+| Confusion                | SWADE                      | Novice   | 1       | Smarts        | Instant                   | Blessed, Huckster, Mad Scientist, Shaman             | Makes targets Distracted, Vulnerable, or worse depending on result.                                                                | Area/Strong modifiers may be useful.                                                                            |                                                                                                    |
+| Curse                    | Deadlands                  | Seasoned | 5       | Touch         | Permanent                 | Chi Master, Shaman                                   | Opposed roll; victim suffers recurring Fatigue and possible death unless curse is lifted.                                          | Dispel can remove, but each helper gets only one attempt.                                                       |                                                                                                    |
+| Damage Field             | SWADE                      | Novice   | 4       | Self          | 5                         | Huckster, Mad Scientist                              | Creates a damaging aura that harms adjacent beings at the end of their turns.                                                      | Damage +2.                                                                                                      |                                                                                                    |
+| Darksight                | SWADE                      | Novice   | 1       | Smarts        | One hour                  | Chi Master, Mad Scientist, Shaman                    | Allows target to ignore darkness or illumination penalties.                                                                        | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Deflection               | SWADE                      | Novice   | 3       | Smarts        | 5                         | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Foes subtract from attacks against the protected target; raise improves the penalty.                                               | Additional Recipients +1. Main target-count UI test case. Verify PP cost if your table’s book printing differs. |                                                                                                    |
+| Detect/Conceal Arcana    | SWADE                      | Novice   | 2       | Smarts        | 5 detect / 1 hour conceal | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Detect reveals supernatural beings, objects, and effects. Conceal hides arcane nature.                                             | Additional Recipients +1; Conceal Area Effect and Strong. Blessed and Chi Master are detect-only.               | Blessed: Detect only; conceal is not available. Chi Master: Detect only; conceal is not available. |
+| Disguise                 | SWADE                      | Seasoned | 2       | Smarts        | 10 minutes                | Huckster, Mad Scientist, Shaman                      | Target appears to be someone else; observers may see through it.                                                                   | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Dispel                   | SWADE                      | Novice   | 1       | Smarts        | Instant                   | Blessed, Huckster, Mad Scientist, Shaman             | Negates active powers or magical effects.                                                                                          | Automate as active-power remover later.                                                                         |                                                                                                    |
+| Divination               | SWADE                      | Seasoned | 5       | Self          | 5 minutes                 | Blessed, Huckster, Shaman                            | Ask questions of supernatural entities or forces.                                                                                  | Manual notes/questions first.                                                                                   |                                                                                                    |
+| Drain Power Points       | SWADE                      | Veteran  | 3       | Smarts        | Instant                   | Mad Scientist, Shaman                                | Opposed arcane roll drains Power Points from another caster.                                                                       | Track drained PP and target pool.                                                                               |                                                                                                    |
+| Elemental Manipulation   | SWADE                      | Novice   | 1       | Smarts        | 5                         | Blessed, Huckster, Mad Scientist, Shaman             | Minor manipulation of air, earth, fire, or water.                                                                                  | Utility/manual effect.                                                                                          |                                                                                                    |
+| Empathy                  | SWADE                      | Novice   | 2       | Smarts        | 5                         | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Read or influence emotions; helps social interaction or animals depending on use.                                                  | Social bonus/reminder.                                                                                          |                                                                                                    |
+| Entangle                 | SWADE                      | Novice   | 2       | Smarts        | Instant                   | Huckster, Mad Scientist, Shaman                      | Binds or Entangles foes until they break free.                                                                                     | Track Entangled/Bound state later.                                                                              |                                                                                                    |
+| Environmental Protection | SWADE                      | Novice   | 2       | Touch         | One hour                  | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Protects against environmental hazards and similar damaging sources.                                                               | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Farsight                 | SWADE                      | Seasoned | 2       | Smarts        | 5                         | Chi Master, Huckster, Mad Scientist, Shaman          | See far details; raise helps reduce ranged penalties.                                                                              | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Fear                     | SWADE                      | Novice   | 2       | Smarts        | Instant                   | Huckster, Mad Scientist, Shaman                      | Targets make Fear checks; raise worsens result.                                                                                    | Area Effect +2/+3.                                                                                              |                                                                                                    |
+| Fly                      | SWADE                      | Veteran  | 3       | Smarts        | 5                         | Mad Scientist                                        | Target flies at high Pace; raise improves flight speed.                                                                            | Additional Recipients +2.                                                                                       |                                                                                                    |
+| Growth/Shrink            | SWADE                      | Seasoned | Special | Smarts        | 5                         | Mad Scientist, Shaman                                | Increase or reduce Size by spending Power Points.                                                                                  | Variable cost by Size change. Mad Scientist is shrink-only; Shaman is growth-only.                              | Mad Scientist: Shrink only; growth is not available. Shaman: Growth only; shrink is not available. |
+| Havoc                    | SWADE                      | Seasoned | 2       | Smarts        | Instant                   | Blessed, Huckster, Mad Scientist, Shaman             | Targets in an area are Distracted and may be hurled.                                                                               | Template/opposed handling manual first.                                                                         |                                                                                                    |
+| Healing                  | SWADE                      | Novice   | 3       | Touch         | Instant                   | Blessed, Chi Master, Mad Scientist, Shaman           | Restores recent Wounds and may handle other recovery with modifiers/timing.                                                        | Connect to wound tracker later.                                                                                 |                                                                                                    |
+| Holy Symbol              | Deadlands                  | Novice   | 3       | Self          | 5                         | Blessed, Shaman                                      | Supernaturally evil creatures must pass Spirit to directly physically attack the bearer.                                           | Area Effect +2/+3; Strong +1. Blessed required starting power.                                                  |                                                                                                    |
+| Illusion                 | SWADE                      | Novice   | 3       | Smarts        | 5                         | Huckster, Mad Scientist                              | Creates imaginary images or sensory effects.                                                                                       | Size/area manual first.                                                                                         |                                                                                                    |
+| Intangibility            | SWADE                      | Heroic   | 5       | Smarts        | 5                         | Huckster, Mad Scientist, Shaman                      | Target becomes incorporeal.                                                                                                        | Active toggle recommended.                                                                                      |                                                                                                    |
+| Invisibility             | SWADE                      | Seasoned | 5       | Smarts        | 5                         | Huckster, Mad Scientist                              | Target becomes difficult to detect and affect.                                                                                     | Additional recipients may be supported depending on source.                                                     |                                                                                                    |
+| Light/Darkness           | SWADE                      | Novice   | 2       | Smarts        | 10 minutes                | Blessed, Huckster, Mad Scientist                     | Creates or dispels illumination or darkness.                                                                                       | Blessed is light-only.                                                                                          | Blessed: Light only; darkness is not available.                                                    |
+| Mind Wipe                | SWADE                      | Veteran  | 3       | Touch         | Instant                   | Mad Scientist                                        | Removes or alters memories.                                                                                                        | Mad Scientist only among reviewed Deadlands player lists.                                                       |                                                                                                    |
+| Numb                     | Deadlands                  | Novice   | 2       | Spirit        | 5                         | Chi Master, Huckster, Mad Scientist, Shaman          | Caster and nearby allies ignore some Wound or Fatigue penalties; raise improves amount and suppresses temporary injuries.          | Area is based on caster Spirit in tabletop inches.                                                              |                                                                                                    |
+| Object Reading           | SWADE                      | Seasoned | 2       | Touch         | Instant                   | Huckster                                             | Reads psychic impressions from an object’s history.                                                                                | Huckster only among reviewed Deadlands player lists.                                                            |                                                                                                    |
+| Protection               | SWADE                      | Novice   | 1       | Smarts        | 5                         | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Grants Armor +2, or +4 with a raise.                                                                                               | Additional Recipients +1; More Armor may apply depending on source.                                             |                                                                                                    |
+| Puppet                   | SWADE + Deadlands modifier | Veteran  | 3       | Smarts        | 5                         | Huckster, Mad Scientist                              | Opposed roll to control a target’s actions.                                                                                        | Deadlands adds Mind Rider +1 modifier.                                                                          |                                                                                                    |
+| Relief                   | SWADE                      | Novice   | 1       | Touch         | Instant                   | Blessed, Chi Master, Mad Scientist, Shaman           | Removes Fatigue or Shaken; raise can remove Stunned.                                                                               | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Resurrection             | SWADE                      | Heroic   | 30      | Touch         | Instant                   | Blessed, Shaman                                      | Brings the dead back to life under strict limits.                                                                                  | High-cost, Marshal-sensitive power.                                                                             |                                                                                                    |
+| Sanctify                 | Deadlands                  | Veteran  | 10      | Special       | Until next sunset         | Blessed, Shaman                                      | Long ritual creates sacred ground that harms or deters supernaturally evil creatures entering it.                                  | Four-hour ritual; noncombat location effect.                                                                    |                                                                                                    |
+| Shape Change             | SWADE                      | Seasoned | Special | Self          | 5                         | Shaman                                               | Caster takes on animal or creature form depending on cost and Rank.                                                                | Variable cost by form.                                                                                          |                                                                                                    |
+| Sloth/Speed              | SWADE                      | Novice   | 2       | Smarts        | Instant sloth / 5 speed   | Blessed, Chi Master, Huckster, Mad Scientist, Shaman | Sloth reduces movement/actions; Speed increases movement/actions.                                                                  | Track chosen mode.                                                                                              |                                                                                                    |
+| Slumber                  | SWADE                      | Seasoned | 2       | Smarts ×5     | One hour                  | Huckster, Mad Scientist, Shaman                      | Puts targets to sleep if they fail resistance.                                                                                     | Area/Strong may be useful.                                                                                      |                                                                                                    |
+| Smite                    | SWADE                      | Novice   | 2       | Smarts        | 5                         | Blessed, Chi Master, Mad Scientist, Shaman           | Increases a weapon’s damage by +2, or +4 with a raise.                                                                             | Additional Recipients +1. Chi Master hands/feet count as weapons.                                               | Chi Master: Hands and feet count as weapons for this power.                                        |
+| Sound/Silence            | SWADE                      | Novice   | 1       | Smarts        | Instant sound / 5 silence | Huckster, Mad Scientist                              | Creates sound or mutes sound in an area or target.                                                                                 | Track chosen mode.                                                                                              |                                                                                                    |
+| Speak Language           | SWADE                      | Novice   | 1       | Smarts        | 10 minutes                | Blessed, Huckster, Mad Scientist, Shaman             | Caster can speak and understand languages.                                                                                         | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Stun                     | SWADE                      | Novice   | 2       | Smarts        | Instant                   | Blessed, Huckster, Mad Scientist                     | Target is Stunned on failed resistance.                                                                                            | Area Effect may be useful.                                                                                      |                                                                                                    |
+| Summon Ally              | SWADE                      | Novice   | Special | Smarts ×2     | 5                         | Huckster, Shaman                                     | Conjures an allied creature; cost depends on ally strength.                                                                        | Variable cost by ally type.                                                                                     |                                                                                                    |
+| Telekinesis              | SWADE                      | Seasoned | 5       | Smarts        | 5                         | Huckster, Mad Scientist                              | Moves objects with high effective Strength; raise improves Strength.                                                               | Track target/object manually first.                                                                             |                                                                                                    |
+| Teleport                 | SWADE                      | Seasoned | 2       | Smarts        | Instant                   | Huckster, Mad Scientist, Shaman                      | Teleports the character a short distance.                                                                                          | Distance/recipients manual first.                                                                               |                                                                                                    |
+| Trinkets                 | Deadlands                  | Novice   | 3       | Smarts        | 5                         | Huckster                                             | Huckster creates a small mundane item under one pound; fades when duration ends.                                                   | Complete +1; Weight +2. Raise changes duration scale to minutes.                                                |                                                                                                    |
+| Wall Walker              | SWADE                      | Novice   | 2       | Smarts        | 5                         | Chi Master, Huckster, Mad Scientist, Shaman          | Target walks on walls or ceilings.                                                                                                 | Additional Recipients +1.                                                                                       |                                                                                                    |
+| Warrior’s Gift           | SWADE                      | Seasoned | 4       | Smarts        | 5                         | Blessed, Chi Master, Mad Scientist, Shaman           | Temporarily grants a Combat Edge.                                                                                                  | Requires Edge selection; good subchoice test.                                                                   |                                                                                                    |
+| Wilderness Walk          | Deadlands                  | Novice   | 2       | Self          | One hour                  | Shaman                                               | Shaman shortens long overland travel and hides tracks after walking at least one mile.                                             | Additional Recipients +1; raise improves travel compression.                                                    |                                                                                                    |
+| Zombie                   | SWADE                      | Veteran  | 3       | Smarts        | One hour                  | Mad Scientist                                        | Raises and controls undead from available corpses.                                                                                 | Additional Zombies, Armed, Armor, Mind Rider.                                                                   |                                                                                                    |
 
 ---
 
@@ -182,197 +182,201 @@ The table below is the app-facing power catalog for powers valid in Deadlands: T
 
 ## Blessed Available Powers
 
-| Power | Required starting power? | Restriction / note |
-|---|---|---|
-| Arcane Protection |  |  |
-| Banish |  |  |
-| Barrier |  |  |
-| Beast Friend |  |  |
-| Blind |  |  |
-| Boost/Lower Trait |  |  |
-| Confusion |  |  |
-| Deflection |  |  |
-| Detect/Conceal Arcana |  | Detect only; conceal is not available. |
-| Dispel |  |  |
-| Divination |  |  |
-| Elemental Manipulation |  |  |
-| Empathy |  |  |
-| Environmental Protection |  |  |
-| Havoc |  |  |
-| Healing |  |  |
-| Holy Symbol | Yes |  |
-| Light/Darkness |  | Light only; darkness is not available. |
-| Protection |  |  |
-| Relief |  |  |
-| Resurrection |  |  |
-| Sanctify |  |  |
-| Sloth/Speed |  |  |
-| Smite |  |  |
-| Speak Language |  |  |
-| Stun |  |  |
-| Warrior’s Gift |  |  |
+| Power                    | Required starting power? | Restriction / note                     |
+| ------------------------ | ------------------------ | -------------------------------------- |
+| Arcane Protection        |                          |                                        |
+| Banish                   |                          |                                        |
+| Barrier                  |                          |                                        |
+| Beast Friend             |                          |                                        |
+| Blind                    |                          |                                        |
+| Boost/Lower Trait        |                          |                                        |
+| Confusion                |                          |                                        |
+| Deflection               |                          |                                        |
+| Detect/Conceal Arcana    |                          | Detect only; conceal is not available. |
+| Dispel                   |                          |                                        |
+| Divination               |                          |                                        |
+| Elemental Manipulation   |                          |                                        |
+| Empathy                  |                          |                                        |
+| Environmental Protection |                          |                                        |
+| Havoc                    |                          |                                        |
+| Healing                  |                          |                                        |
+| Holy Symbol              | Yes                      |                                        |
+| Light/Darkness           |                          | Light only; darkness is not available. |
+| Protection               |                          |                                        |
+| Relief                   |                          |                                        |
+| Resurrection             |                          |                                        |
+| Sanctify                 |                          |                                        |
+| Sloth/Speed              |                          |                                        |
+| Smite                    |                          |                                        |
+| Speak Language           |                          |                                        |
+| Stun                     |                          |                                        |
+| Warrior’s Gift           |                          |                                        |
+
 ## Chi Master Available Powers
 
-| Power | Required starting power? | Restriction / note |
-|---|---|---|
-| Arcane Protection |  |  |
-| Boost/Lower Trait |  |  |
-| Burrow |  |  |
-| Curse |  |  |
-| Darksight |  |  |
-| Deflection | Yes |  |
-| Detect/Conceal Arcana |  | Detect only; conceal is not available. |
-| Empathy |  |  |
-| Environmental Protection |  |  |
-| Farsight |  |  |
-| Healing |  |  |
-| Numb |  |  |
-| Protection |  |  |
-| Relief |  |  |
-| Sloth/Speed |  |  |
-| Smite |  | Hands and feet count as weapons for this power. |
-| Wall Walker |  |  |
-| Warrior’s Gift |  |  |
+| Power                    | Required starting power? | Restriction / note                              |
+| ------------------------ | ------------------------ | ----------------------------------------------- |
+| Arcane Protection        |                          |                                                 |
+| Boost/Lower Trait        |                          |                                                 |
+| Burrow                   |                          |                                                 |
+| Curse                    |                          |                                                 |
+| Darksight                |                          |                                                 |
+| Deflection               | Yes                      |                                                 |
+| Detect/Conceal Arcana    |                          | Detect only; conceal is not available.          |
+| Empathy                  |                          |                                                 |
+| Environmental Protection |                          |                                                 |
+| Farsight                 |                          |                                                 |
+| Healing                  |                          |                                                 |
+| Numb                     |                          |                                                 |
+| Protection               |                          |                                                 |
+| Relief                   |                          |                                                 |
+| Sloth/Speed              |                          |                                                 |
+| Smite                    |                          | Hands and feet count as weapons for this power. |
+| Wall Walker              |                          |                                                 |
+| Warrior’s Gift           |                          |                                                 |
+
 ## Huckster Available Powers
 
-| Power | Required starting power? | Restriction / note |
-|---|---|---|
-| Ammo Whammy |  | Requires Hexslinging Edge. |
-| Arcane Protection |  |  |
-| Barrier |  |  |
-| Beast Friend |  |  |
-| Blind |  |  |
-| Bolt |  |  |
-| Boost/Lower Trait |  |  |
-| Burst |  |  |
-| Confusion |  |  |
-| Damage Field |  |  |
-| Deflection |  |  |
-| Detect/Conceal Arcana |  |  |
-| Disguise |  |  |
-| Dispel |  |  |
-| Divination |  |  |
-| Elemental Manipulation |  |  |
-| Empathy |  |  |
-| Entangle |  |  |
-| Environmental Protection |  |  |
-| Farsight |  |  |
-| Fear |  |  |
-| Havoc |  |  |
-| Illusion |  |  |
-| Intangibility |  |  |
-| Invisibility |  |  |
-| Light/Darkness |  |  |
-| Numb |  |  |
-| Object Reading |  |  |
-| Protection |  |  |
-| Puppet |  |  |
-| Sloth/Speed |  |  |
-| Slumber |  |  |
-| Sound/Silence |  |  |
-| Speak Language |  |  |
-| Stun |  |  |
-| Summon Ally |  |  |
-| Telekinesis |  |  |
-| Teleport |  |  |
-| Trinkets |  |  |
-| Wall Walker |  |  |
+| Power                    | Required starting power? | Restriction / note         |
+| ------------------------ | ------------------------ | -------------------------- |
+| Ammo Whammy              |                          | Requires Hexslinging Edge. |
+| Arcane Protection        |                          |                            |
+| Barrier                  |                          |                            |
+| Beast Friend             |                          |                            |
+| Blind                    |                          |                            |
+| Bolt                     |                          |                            |
+| Boost/Lower Trait        |                          |                            |
+| Burst                    |                          |                            |
+| Confusion                |                          |                            |
+| Damage Field             |                          |                            |
+| Deflection               |                          |                            |
+| Detect/Conceal Arcana    |                          |                            |
+| Disguise                 |                          |                            |
+| Dispel                   |                          |                            |
+| Divination               |                          |                            |
+| Elemental Manipulation   |                          |                            |
+| Empathy                  |                          |                            |
+| Entangle                 |                          |                            |
+| Environmental Protection |                          |                            |
+| Farsight                 |                          |                            |
+| Fear                     |                          |                            |
+| Havoc                    |                          |                            |
+| Illusion                 |                          |                            |
+| Intangibility            |                          |                            |
+| Invisibility             |                          |                            |
+| Light/Darkness           |                          |                            |
+| Numb                     |                          |                            |
+| Object Reading           |                          |                            |
+| Protection               |                          |                            |
+| Puppet                   |                          |                            |
+| Sloth/Speed              |                          |                            |
+| Slumber                  |                          |                            |
+| Sound/Silence            |                          |                            |
+| Speak Language           |                          |                            |
+| Stun                     |                          |                            |
+| Summon Ally              |                          |                            |
+| Telekinesis              |                          |                            |
+| Teleport                 |                          |                            |
+| Trinkets                 |                          |                            |
+| Wall Walker              |                          |                            |
+
 ## Mad Scientist Available Powers
 
-| Power | Required starting power? | Restriction / note |
-|---|---|---|
-| Arcane Protection |  |  |
-| Barrier |  |  |
-| Beast Friend |  |  |
-| Blast |  |  |
-| Blind |  |  |
-| Bolt |  |  |
-| Boost/Lower Trait |  |  |
-| Burrow |  |  |
-| Burst |  |  |
-| Confusion |  |  |
-| Damage Field |  |  |
-| Darksight |  |  |
-| Deflection |  |  |
-| Detect/Conceal Arcana |  |  |
-| Disguise |  |  |
-| Dispel |  |  |
-| Drain Power Points |  |  |
-| Elemental Manipulation |  |  |
-| Empathy |  |  |
-| Entangle |  |  |
-| Environmental Protection |  |  |
-| Farsight |  |  |
-| Fear |  |  |
-| Fly |  |  |
-| Havoc |  |  |
-| Healing |  |  |
-| Illusion |  |  |
-| Intangibility |  |  |
-| Invisibility |  |  |
-| Light/Darkness |  |  |
-| Mind Wipe |  |  |
-| Numb |  |  |
-| Protection |  |  |
-| Puppet |  |  |
-| Relief |  |  |
-| Growth/Shrink |  | Shrink only; growth is not available. |
-| Sloth/Speed |  |  |
-| Slumber |  |  |
-| Smite |  |  |
-| Sound/Silence |  |  |
-| Speak Language |  |  |
-| Stun |  |  |
-| Telekinesis |  |  |
-| Teleport |  |  |
-| Wall Walker |  |  |
-| Warrior’s Gift |  |  |
-| Zombie |  |  |
+| Power                    | Required starting power? | Restriction / note                    |
+| ------------------------ | ------------------------ | ------------------------------------- |
+| Arcane Protection        |                          |                                       |
+| Barrier                  |                          |                                       |
+| Beast Friend             |                          |                                       |
+| Blast                    |                          |                                       |
+| Blind                    |                          |                                       |
+| Bolt                     |                          |                                       |
+| Boost/Lower Trait        |                          |                                       |
+| Burrow                   |                          |                                       |
+| Burst                    |                          |                                       |
+| Confusion                |                          |                                       |
+| Damage Field             |                          |                                       |
+| Darksight                |                          |                                       |
+| Deflection               |                          |                                       |
+| Detect/Conceal Arcana    |                          |                                       |
+| Disguise                 |                          |                                       |
+| Dispel                   |                          |                                       |
+| Drain Power Points       |                          |                                       |
+| Elemental Manipulation   |                          |                                       |
+| Empathy                  |                          |                                       |
+| Entangle                 |                          |                                       |
+| Environmental Protection |                          |                                       |
+| Farsight                 |                          |                                       |
+| Fear                     |                          |                                       |
+| Fly                      |                          |                                       |
+| Havoc                    |                          |                                       |
+| Healing                  |                          |                                       |
+| Illusion                 |                          |                                       |
+| Intangibility            |                          |                                       |
+| Invisibility             |                          |                                       |
+| Light/Darkness           |                          |                                       |
+| Mind Wipe                |                          |                                       |
+| Numb                     |                          |                                       |
+| Protection               |                          |                                       |
+| Puppet                   |                          |                                       |
+| Relief                   |                          |                                       |
+| Growth/Shrink            |                          | Shrink only; growth is not available. |
+| Sloth/Speed              |                          |                                       |
+| Slumber                  |                          |                                       |
+| Smite                    |                          |                                       |
+| Sound/Silence            |                          |                                       |
+| Speak Language           |                          |                                       |
+| Stun                     |                          |                                       |
+| Telekinesis              |                          |                                       |
+| Teleport                 |                          |                                       |
+| Wall Walker              |                          |                                       |
+| Warrior’s Gift           |                          |                                       |
+| Zombie                   |                          |                                       |
+
 ## Shaman Available Powers
 
-| Power | Required starting power? | Restriction / note |
-|---|---|---|
-| Arcane Protection |  |  |
-| Banish |  |  |
-| Beast Friend |  |  |
-| Blind |  |  |
-| Boost/Lower Trait |  |  |
-| Burrow |  |  |
-| Confusion |  |  |
-| Curse |  |  |
-| Darksight |  |  |
-| Deflection |  |  |
-| Detect/Conceal Arcana |  |  |
-| Disguise |  |  |
-| Dispel |  |  |
-| Divination |  |  |
-| Drain Power Points |  |  |
-| Elemental Manipulation |  |  |
-| Empathy |  |  |
-| Entangle |  |  |
-| Environmental Protection |  |  |
-| Farsight |  |  |
-| Fear |  |  |
-| Growth/Shrink |  | Growth only; shrink is not available. |
-| Havoc |  |  |
-| Healing |  |  |
-| Holy Symbol |  |  |
-| Intangibility |  |  |
-| Numb |  |  |
-| Protection |  |  |
-| Relief |  |  |
-| Resurrection |  |  |
-| Sanctify |  |  |
-| Shape Change |  |  |
-| Sloth/Speed |  |  |
-| Slumber |  |  |
-| Smite |  |  |
-| Speak Language |  |  |
-| Summon Ally |  |  |
-| Teleport |  |  |
-| Wall Walker |  |  |
-| Warrior’s Gift |  |  |
-| Wilderness Walk |  |  |
+| Power                    | Required starting power? | Restriction / note                    |
+| ------------------------ | ------------------------ | ------------------------------------- |
+| Arcane Protection        |                          |                                       |
+| Banish                   |                          |                                       |
+| Beast Friend             |                          |                                       |
+| Blind                    |                          |                                       |
+| Boost/Lower Trait        |                          |                                       |
+| Burrow                   |                          |                                       |
+| Confusion                |                          |                                       |
+| Curse                    |                          |                                       |
+| Darksight                |                          |                                       |
+| Deflection               |                          |                                       |
+| Detect/Conceal Arcana    |                          |                                       |
+| Disguise                 |                          |                                       |
+| Dispel                   |                          |                                       |
+| Divination               |                          |                                       |
+| Drain Power Points       |                          |                                       |
+| Elemental Manipulation   |                          |                                       |
+| Empathy                  |                          |                                       |
+| Entangle                 |                          |                                       |
+| Environmental Protection |                          |                                       |
+| Farsight                 |                          |                                       |
+| Fear                     |                          |                                       |
+| Growth/Shrink            |                          | Growth only; shrink is not available. |
+| Havoc                    |                          |                                       |
+| Healing                  |                          |                                       |
+| Holy Symbol              |                          |                                       |
+| Intangibility            |                          |                                       |
+| Numb                     |                          |                                       |
+| Protection               |                          |                                       |
+| Relief                   |                          |                                       |
+| Resurrection             |                          |                                       |
+| Sanctify                 |                          |                                       |
+| Shape Change             |                          |                                       |
+| Sloth/Speed              |                          |                                       |
+| Slumber                  |                          |                                       |
+| Smite                    |                          |                                       |
+| Speak Language           |                          |                                       |
+| Summon Ally              |                          |                                       |
+| Teleport                 |                          |                                       |
+| Wall Walker              |                          |                                       |
+| Warrior’s Gift           |                          |                                       |
+| Wilderness Walk          |                          |                                       |
 
 ---
 
@@ -397,8 +401,8 @@ Arcane Background selected
 Store these separately:
 
 ```js
-character.powers.known = []
-character.powers.available = []
+character.powers.known = [];
+character.powers.available = [];
 ```
 
 For most Arcane Backgrounds, the `available` list is only used for choosing legal known powers. For Hucksters, the `available` list matters during play because Deal with the Devil can cast available powers that are not normally known.
@@ -485,7 +489,7 @@ Powers with non-Instant durations should support:
 - End power
 - Maintain power
 - Reminder text for duration
-- Active power list on Combat and Arcane tabs
+- Cast controls on Combat; active-power tracking and maintenance on Arcane
 
 Instant powers should generally not need active toggles.
 

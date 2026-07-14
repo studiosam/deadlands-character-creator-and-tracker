@@ -183,11 +183,6 @@ function characterNotesSummaryMarkup() {
   ].filter(([, value]) => value);
 
   const parts = [];
-  if (character.sourceId) {
-    parts.push(
-      `<article class="dossier-note"><strong>Import ID</strong><p>${esc(character.sourceId)}</p></article>`,
-    );
-  }
   notes.slice(0, 3).forEach(([label, value]) => {
     parts.push(
       `<article class="dossier-note"><strong>${esc(label)}</strong><p>${esc(value)}</p></article>`,

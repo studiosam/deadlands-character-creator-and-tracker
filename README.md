@@ -141,7 +141,7 @@ Recommended portfolio screenshots/GIFs:
 
 - Minimal landing page with saved-character selection.
 - Tracker tab during live play with wounds, Bennies, weapons, concise roll
-  modifiers, ammo, conditions, active powers, reminders, and Undo/Redo visible.
+  modifiers, ammo, conditions, power casting, and Undo/Redo visible.
 - Inventory tab showing storage locations and encumbrance.
 - Encumbrance separates Current Load from Combat Load: Current Load is what the
   character normally carries, Combat Load assumes droppable backpack/container

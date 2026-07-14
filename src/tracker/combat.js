@@ -56,7 +56,7 @@ function appendPowerPointControls(
   const max = resource.max || "—";
   const value = `${resource.current} / ${max}`;
   const recoveryPerHour = characterPowerPointRecoveryPerHour(character);
-  row.innerHTML = `<div class="power-point-resource-copy"><div class="power-point-resource-heading"><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<strong class="power-point-resource-value">${value}</strong>` : ""}</div><span class="power-point-resource-label">Current / Max</span><div class="power-point-resource-meta"><span>Recovery: ${recoveryPerHour} / hour</span>${resource.source ? `<span>${esc(resource.source)}</span>` : ""}${resource.note ? `<span>${esc(resource.note)}</span>` : ""}</div></div><div class="controls resource-recovery-actions"><button data-recover="hour" type="button" aria-label="Recover 1 hour +${recoveryPerHour}">1 Hour (+${recoveryPerHour})</button><button data-recover="5" type="button">+5</button><button data-recover="10" type="button">+10</button><button data-recover="15" type="button">+15</button><button data-recover="max" type="button">Max</button></div>`;
+  row.innerHTML = `<div class="power-point-resource-copy"><div class="power-point-resource-heading"><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<strong class="power-point-resource-value">${value}</strong>` : ""}</div><span class="power-point-resource-label">Available / Maximum</span><div class="power-point-resource-meta"><span>Recover ${recoveryPerHour} per hour</span></div></div><div class="controls resource-recovery-actions"><button data-recover="hour" type="button" aria-label="Recover 1 hour +${recoveryPerHour}">1 Hour (+${recoveryPerHour})</button><button data-recover="5" type="button">+5</button><button data-recover="10" type="button">+10</button><button data-recover="15" type="button">+15</button><button data-recover="max" type="button">Max</button></div>`;
   row.querySelectorAll("[data-recover]").forEach((button) => {
     const atMax = Boolean(resource.max && resource.current >= resource.max);
     button.disabled =
@@ -221,7 +221,11 @@ function modifierLabelIsVisible(label) {
 }
 
 function modifierChip({ label, cause, legacyText, kind = "neutral" }) {
-  return `<span class="modifier-chip ${esc(kind)}" title="${esc(cause)}"><strong>${esc(label)}</strong><span class="sr-only">${esc(legacyText || `${cause}: ${label}`)}</span></span>`;
+  const match = String(label || "").match(/^(.*?)([+-]\d+)$/);
+  const labelMarkup = match
+    ? `<span class="modifier-chip-label">${esc(match[1].trim())}</span> <strong class="modifier-chip-value">${esc(match[2])}</strong>`
+    : `<strong class="modifier-chip-label">${esc(label)}</strong>`;
+  return `<span class="modifier-chip ${esc(kind)}" title="${esc(cause)}"><span class="modifier-chip-copy">${labelMarkup}</span><span class="question-help modifier-source-help" tabindex="0" role="img" aria-label="Source: ${esc(cause)}" data-tooltip="${esc(cause)}">?</span><span class="sr-only">${esc(legacyText || `${cause}: ${label}`)}</span></span>`;
 }
 
 function conditionModifierChips() {
@@ -378,9 +382,8 @@ function renderCombatPenalties() {
         : "None";
   els.combatPenaltySummary.textContent = incapacitated
     ? `${incapacitationSources.map((source) => source.label).join(" and ")} exceeded normal capacity.`
-    : modifierChips.length
-      ? "Hover a modifier for its source."
-      : "No active modifiers.";
+    : "";
+  els.combatPenaltySummary.classList.toggle("hidden", !incapacitated);
   els.combatPenaltyBreakdown.innerHTML = modifierChips.length
     ? `${modifierChips.join("")}${hiddenLegacyEntries}`
     : `<span>No active modifiers.</span>${hiddenLegacyEntries}`;
@@ -511,6 +514,74 @@ function powerCost(power) {
   return Math.max(0, cost);
 }
 
+function powerHelpMarkup(text, label = "More information") {
+  const help = String(text || "").trim();
+  if (!help) return "";
+  return `<span class="question-help power-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`;
+}
+
+function powerRangeDetails(power) {
+  const listedRange = String(power?.range || "").trim();
+  const smartsRange = listedRange.match(/^Smarts(?:\s*[×x]\s*(\d+))?$/i);
+  if (!smartsRange) return { text: listedRange, help: "" };
+
+  const smartsDie = String(character.attributes?.smarts || "").trim();
+  const dieMatch = smartsDie.match(/^d(\d+)/i);
+  const dieSides = Number(dieMatch?.[1]) || 0;
+  if (!dieSides) {
+    return {
+      text: listedRange,
+      help: "This range is based on Smarts, but no Smarts die is recorded.",
+    };
+  }
+
+  const multiplier = Math.max(1, Number(smartsRange[1]) || 1);
+  const tabletopInches = dieSides * multiplier;
+  const calculation = `${smartsDie}${multiplier > 1 ? ` × ${multiplier}` : ""}`;
+  return {
+    text: `${tabletopInches} inches`,
+    help: `Calculated from Smarts ${calculation}. In Savage Worlds, one tabletop inch represents two yards.`,
+  };
+}
+
+function powerDurationDetails(power) {
+  const duration = String(power?.duration || "").trim();
+  const powerId = String(power?.catalogId || power?.id || "").trim();
+  const powerName = String(power?.name || "").trim();
+  const splitDurations = [
+    {
+      id: "power-boost-lower-trait",
+      name: /boost\s*\/\s*lower trait/i,
+      text: "5/Instant",
+      help: "Boost lasts 5 rounds. Lower is Instant.",
+    },
+    {
+      id: "power-detect-conceal-arcana",
+      name: /detect\s*\/\s*conceal arcana/i,
+      text: "5/1 hour",
+      help: "Detect lasts 5 rounds. Conceal lasts 1 hour.",
+    },
+    {
+      id: "power-sloth-speed",
+      name: /sloth\s*\/\s*speed/i,
+      text: "Instant/5",
+      help: "Sloth is Instant. Speed lasts 5 rounds.",
+    },
+    {
+      id: "power-sound-silence",
+      name: /sound\s*\/\s*silence/i,
+      text: "Instant/5",
+      help: "Sound is Instant. Silence lasts 5 rounds.",
+    },
+  ];
+  const splitDuration = splitDurations.find(
+    (entry) => entry.id === powerId || entry.name.test(powerName),
+  );
+  return splitDuration
+    ? { text: splitDuration.text, help: splitDuration.help }
+    : { text: duration, help: "" };
+}
+
 function parsePowerModifier(modifier) {
   if (typeof modifier === "string") {
     const match = modifier.match(/^\s*(.+?)\s*\(\s*([^)]+)\s*\)\s*:?\s*(.*)$/);
@@ -559,6 +630,32 @@ function powerCastOptions(power) {
 
 function powerOptionButtonMarkup(option, index, powerPoints) {
   return `<button class="cast-option-btn" type="button" data-power-option="${index}">${esc(option.name)}${powerPoints || option.cost ? ` — ${option.cost} PP` : ""}</button>`;
+}
+
+function powerAffordabilityText(powerPoints, total) {
+  const cost = Math.max(0, Math.floor(Number(total) || 0));
+  if (!powerPoints) return cost ? `${cost} PP required` : "No PP required";
+  const available = Math.max(0, Math.floor(Number(powerPoints.current) || 0));
+  if (cost <= available) return "";
+  const shortage = cost - available;
+  return `Cannot cast · ${shortage} PP short`;
+}
+
+function powerAffordabilityMarkup(powerPoints, total) {
+  const text = powerAffordabilityText(powerPoints, total);
+  return `<span data-power-affordability class="${text ? "" : "hidden"}">${esc(text)}</span>`;
+}
+
+function updatePowerAffordability(article, powerPoints, total) {
+  const affordability = article.querySelector("[data-power-affordability]");
+  if (!affordability) return;
+  const text = powerAffordabilityText(powerPoints, total);
+  affordability.textContent = text;
+  affordability.classList.toggle("hidden", !text);
+  affordability.classList.toggle(
+    "unaffordable",
+    Boolean(powerPoints && total > powerPoints.current),
+  );
 }
 
 function catalogVariableSpendOptionsForPower(power) {
@@ -693,12 +790,18 @@ function variableSpendTemplateTier(option, cost) {
     ),
   );
   const size = forward?.[1] || backward?.[1] || "";
-  return size ? `${powerModifierDisplayLabel(size)} Template` : "";
+  const templateMechanics = {
+    small: "Small: 2″ diameter / 4 yards across",
+    medium: "Medium: 4″ diameter / 8 yards across",
+    large: "Large: 6″ diameter / 12 yards across",
+  };
+  return size ? templateMechanics[size.toLowerCase()] || "" : "";
 }
 
 function variableSpendChoiceLabel(option, cost) {
   const tier = variableSpendTemplateTier(option, cost);
-  return `+${cost} PP${tier ? ` — ${tier}` : ""}`;
+  const distance = tier.match(/\d+ yards across/i)?.[0] || tier;
+  return `+${cost} PP${distance ? ` — ${distance}` : ""}`;
 }
 
 function variableSpendChoiceSummary(option) {
@@ -738,20 +841,24 @@ function variableSpendControlMarkup(option, index) {
   return `<div class="variable-spend-stepper"><button type="button" data-variable-spend-adjust="-1" data-variable-spend-index="${index}" aria-label="Decrease ${label}">−</button><input data-variable-spend="${index}" data-variable-control="quantity" type="number" min="0" step="1" value="0" inputmode="numeric" aria-label="${label} quantity"><button type="button" data-variable-spend-adjust="1" data-variable-spend-index="${index}" aria-label="Increase ${label}">+</button></div>`;
 }
 
-function variableSpendMarkup(power) {
+function variableSpendMarkup(power, config = {}) {
   const options = variableSpendOptionsForPower(power);
   if (!options.length) return "";
   const rows = options
     .map(
       (option, index) =>
-        `<div class="variable-spend-row control-${esc(option.control)}" data-variable-spend-row="${index}"${option.description ? ` title="${esc(option.description)}"` : ""}><span class="variable-spend-copy"><strong>${esc(option.label)}</strong><small>${esc(variableSpendCostLabel(option))}</small></span>${variableSpendControlMarkup(option, index)}</div>`,
+        `<div class="variable-spend-row control-${esc(option.control)}" data-variable-spend-row="${index}"><span class="variable-spend-copy"><span class="variable-spend-label"><strong>${esc(option.label)}</strong>${powerHelpMarkup(option.description, `${option.label} details`)}</span><small>${esc(variableSpendCostLabel(option))}</small></span>${variableSpendControlMarkup(option, index)}</div>`,
     )
     .join("");
   const baseCost = powerCost(power);
+  if (config.compact) {
+    const powerPoints = powerPointResource();
+    return `<details class="combat-power-modifiers"><summary><span class="combat-power-modifier-label"><span>Enhance Power</span>${powerHelpMarkup("Spend additional Power Points to improve or expand this power before casting.", "About power enhancements")}</span><span data-variable-spend-summary>Base ${baseCost} PP</span></summary><div class="variable-spend-options">${rows}</div></details><div class="combat-power-cast-row">${powerAffordabilityMarkup(powerPoints, baseCost)}<button class="variable-spend-btn" type="button">Cast — ${baseCost} PP</button></div>`;
+  }
   return `<div class="variable-spend-controls"><div class="variable-spend-heading"><div><h5>Cast Modifiers</h5><small>Choose any optional changes, then activate once.</small></div><span class="pill">Base ${baseCost} PP</span></div><div class="variable-spend-options">${rows}</div><div class="variable-spend-summary"><span data-variable-spend-summary>Base cost only</span><button class="variable-spend-btn" type="button">Activate — ${baseCost} PP</button></div></div>`;
 }
 
-function manualPowerPointSpendMarkup(power) {
+function manualPowerPointSpendMarkup(power, options = {}) {
   if (!manualVariableSpendForPower(power)) return "";
   const baseCost = powerCost(power);
   const initialCost = baseCost > 0 ? String(baseCost) : "";
@@ -762,6 +869,13 @@ function manualPowerPointSpendMarkup(power) {
   const helper = baseCost
     ? `Listed base ${baseCost} PP; enter the final total after modifiers.`
     : "Enter the final total from the rulebook or table ruling.";
+  if (options.compact) {
+    const powerPoints = powerPointResource();
+    const affordability = initialCost
+      ? powerAffordabilityText(powerPoints, Number(initialCost))
+      : "Enter the final cost";
+    return `<details class="combat-power-modifiers" open><summary><span>Set final cost</span><span data-manual-spend-summary>${initialCost ? `Final cost ${initialCost} PP` : "Required"}</span></summary><label class="combat-manual-power-cost"><span>Final PP</span><input data-manual-power-cost type="number" min="${minimum}" step="1" value="${initialCost}" inputmode="numeric" placeholder="PP" aria-label="Final Power Point Cost"></label></details><div class="combat-power-cast-row"><span data-power-affordability class="${affordability ? "" : "hidden"}">${esc(affordability)}</span><button class="manual-spend-btn" type="button">${initialCost ? `Cast — ${initialCost} PP` : "Enter PP Cost"}</button></div>`;
+  }
   return `<div class="manual-spend-controls"><div class="variable-spend-heading"><div><h5>Set Power Point Cost</h5><small>This power does not have a complete automatic cost calculator.</small></div><span class="pill">Manual Cost</span></div><div class="variable-spend-options"><label class="manual-power-cost-field"><span class="variable-spend-copy"><strong>Final Power Point Cost</strong><small>${esc(helper)}</small></span><input data-manual-power-cost type="number" min="${minimum}" step="1" value="${initialCost}" inputmode="numeric" placeholder="PP" aria-label="Final Power Point Cost"></label></div><div class="variable-spend-summary"><span data-manual-spend-summary>${initialCost ? `Final cost ${initialCost} PP` : "A final cost is required"}</span><button class="manual-spend-btn" type="button">${buttonLabel}</button></div></div>`;
 }
 
@@ -829,18 +943,30 @@ function updateVariableSpendButton(power, article, powerPoints) {
   );
   const summary = article.querySelector("[data-variable-spend-summary]");
   if (summary) {
-    summary.textContent = hasManualModifier
-      ? `${modifierCost ? `Modifiers +${modifierCost} PP; ` : ""}manual cost also selected`
-      : modifierCost
-        ? `Modifiers +${modifierCost} PP`
-        : "Base cost only";
+    if (article.classList.contains("combat-cast-power-card")) {
+      summary.textContent = hasManualModifier
+        ? `${modifierCost ? `+${modifierCost} PP; ` : ""}manual cost selected`
+        : modifierCost
+          ? `+${modifierCost} PP`
+          : `Base ${breakdown.baseCost} PP`;
+    } else {
+      summary.textContent = hasManualModifier
+        ? `${modifierCost ? `Modifiers +${modifierCost} PP; ` : ""}manual cost also selected`
+        : modifierCost
+          ? `Modifiers +${modifierCost} PP`
+          : "Base cost only";
+    }
   }
-  button.textContent = `Activate — ${total} PP`;
+  const verb = article.classList.contains("combat-cast-power-card")
+    ? "Cast"
+    : "Activate";
+  button.textContent = `${verb} — ${total} PP`;
   button.disabled = Boolean(powerPoints && total > powerPoints.current);
   button.title =
     powerPoints && total > powerPoints.current
       ? "Not enough Power Points"
       : `Activate for ${total} Power Points`;
+  updatePowerAffordability(article, powerPoints, total);
   article.querySelectorAll("[data-variable-spend-row]").forEach((row) => {
     const input = row.querySelector("[data-variable-spend]");
     row.classList.toggle("selected", variableSpendQuantity(input) > 0);
@@ -899,7 +1025,10 @@ function updateManualSpendButton(power, article, powerPoints) {
       ? `Final cost ${total} PP`
       : "A final cost is required";
   }
-  button.textContent = total ? `Activate — ${total} PP` : "Enter PP Cost";
+  const verb = article.classList.contains("combat-cast-power-card")
+    ? "Cast"
+    : "Activate";
+  button.textContent = total ? `${verb} — ${total} PP` : "Enter PP Cost";
   button.disabled =
     !total || Boolean(powerPoints && total > powerPoints.current);
   button.title = !total
@@ -907,6 +1036,7 @@ function updateManualSpendButton(power, article, powerPoints) {
     : powerPoints && total > powerPoints.current
       ? "Not enough Power Points"
       : `Activate for ${total} Power Points`;
+  updatePowerAffordability(article, powerPoints, total);
 }
 
 function activePowerRecordsForKnownPower(power) {
@@ -997,13 +1127,44 @@ function powerDescriptionMarkup(power, castOptions, powerPoints) {
   return `<div class="power-description power-card-workspace"><div class="power-card-details">${details.join("")}</div><div class="power-card-casting"><h4>Use Power</h4>${casting.join("")}</div></div>`;
 }
 
-function renderPowerCard(power, { includeDelete = false } = {}) {
+function combatPowerDescriptionMarkup(power, castOptions, powerPoints) {
+  const summary = power.shortSummary || power.notes;
+  const range = powerRangeDetails(power);
+  const duration = powerDurationDetails(power);
+  const facts = [
+    range.text
+      ? `<span>Range: ${esc(range.text)}${powerHelpMarkup(range.help, "Range calculation")}</span>`
+      : "",
+    duration.text
+      ? `<span>Duration: ${esc(duration.text)}${powerHelpMarkup(duration.help, "Duration details")}</span>`
+      : "",
+  ].filter(Boolean);
+  const manualSpend = manualPowerPointSpendMarkup(power, { compact: true });
+  const variableSpend = manualSpend
+    ? ""
+    : variableSpendMarkup(power, { compact: true });
+  const baseOption = castOptions[0];
+  const baseCast =
+    !manualSpend && !variableSpend && baseOption
+      ? `<div class="combat-power-cast-row">${powerAffordabilityMarkup(powerPoints, baseOption.cost)}<button class="cast-option-btn" type="button" data-power-option="0">Cast — ${baseOption.cost} PP</button></div>`
+      : "";
+  return `<p class="combat-power-effect">${esc(summary || "Open Arcane for the full power description.")}</p>${facts.length ? `<div class="combat-power-facts">${facts.join("")}</div>` : ""}${manualSpend || variableSpend || baseCast}`;
+}
+
+function renderPowerCard(
+  power,
+  { includeDelete = false, compact = false } = {},
+) {
   const powerPoints = powerPointResource();
   const castOptions = powerCastOptions(power);
   const article = document.createElement("article");
-  article.className = `weapon-card power-card${power.active ? " active" : ""}`;
+  article.className = `weapon-card power-card${compact ? " combat-cast-power-card" : ""}${power.active ? " active" : ""}`;
   const rankMeta = power.rank ? `Rank ${esc(power.rank)}` : "";
-  const rangeMeta = power.range ? ` | Range ${esc(power.range)}` : "";
+  const range = powerRangeDetails(power);
+  const duration = powerDurationDetails(power);
+  const rangeMeta = range.text
+    ? ` | Range: ${esc(range.text)}${powerHelpMarkup(range.help, "Range calculation")}`
+    : "";
   const sourceMeta = power.source ? ` | ${esc(power.source)}` : "";
   const deleteButtonMarkup = includeDelete
     ? '<button class="edit-power-btn ghost" type="button">Edit</button><button class="delete-small delete-power-btn" type="button">×</button>'
@@ -1012,7 +1173,9 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
   const managementMarkup = deleteButtonMarkup
     ? `<div class="weapon-actions power-actions">${managementButtonsMarkup}</div>`
     : "";
-  article.innerHTML = `<div class="topline"><div><h3>${esc(power.name || "Unnamed power")}</h3><p class="meta">${rankMeta} | ${esc(power.baseCost || power.powerPoints || "—")} PP${rangeMeta} | Duration ${esc(power.duration || "—")}${sourceMeta}</p></div><span class="loaded">${power.active ? "Active" : "Ready"}</span></div>${powerDescriptionMarkup(power, castOptions, powerPoints)}${managementMarkup}`;
+  article.innerHTML = compact
+    ? `<div class="combat-cast-power-heading"><h3>${esc(power.name || "Unnamed power")}</h3>${powerHelpMarkup(power.restrictions ? `Restriction: ${power.restrictions}` : "", `${power.name || "Power"} restriction`)}</div>${combatPowerDescriptionMarkup(power, castOptions, powerPoints)}`
+    : `<div class="topline"><div><h3>${esc(power.name || "Unnamed power")}</h3><p class="meta">${rankMeta} | ${esc(power.baseCost || power.powerPoints || "—")} PP${rangeMeta} | Duration: ${esc(duration.text || "—")}${powerHelpMarkup(duration.help, "Duration details")}${sourceMeta}</p></div><span class="loaded">${power.active ? "Active" : "Ready"}</span></div>${powerDescriptionMarkup(power, castOptions, powerPoints)}${managementMarkup}`;
 
   const optionButtons = article.querySelectorAll(".cast-option-btn");
   const variableInputs = article.querySelectorAll("[data-variable-spend]");
@@ -1032,6 +1195,7 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
       powerPoints && option.cost > powerPoints.current
         ? "Not enough Power Points"
         : option.description || `Spend ${option.cost} Power Points`;
+    updatePowerAffordability(article, powerPoints, option.cost);
     button.onclick = async () => {
       if (!(await resolveActivePowerRecast(power))) return;
       if (powerPoints && option.cost) {
@@ -1126,27 +1290,24 @@ function renderPowerCard(power, { includeDelete = false } = {}) {
 
 function renderCombatPowers() {
   els.playActivePowersList.innerHTML = "";
-  const hasActivePowers = Boolean(character.activePowers?.length);
-  const hasKnownPowers = Boolean(character.powers.length);
-  if (!hasActivePowers && !hasKnownPowers) {
-    els.playActivePowersList.innerHTML = emptyState("No powers tracked.");
+  if (!character.powers.length) {
+    els.playActivePowersList.innerHTML = emptyState("No powers known.");
     return;
   }
 
-  if (hasActivePowers) {
-    const activeSection = document.createElement("div");
-    activeSection.className = "active-power-stack";
-    activeSection.innerHTML = "<h3>Active Power Records</h3>";
-    const activeList = document.createElement("div");
-    activeList.className = "grid powers";
-    renderActivePowersList(activeList);
-    activeSection.appendChild(activeList);
-    els.playActivePowersList.appendChild(activeSection);
+  const powerPoints = powerPointResource();
+  const castSection = document.createElement("div");
+  castSection.className = "combat-power-casting-stack";
+  if (powerPoints) {
+    castSection.innerHTML = `<p class="combat-power-casting-summary">${powerPoints.current} PP available</p>`;
   }
-
+  const castList = document.createElement("div");
+  castList.className = "grid powers combat-cast-power-list";
   [...character.powers].sort(comparePowers).forEach((power) => {
-    els.playActivePowersList.appendChild(renderPowerCard(power));
+    castList.appendChild(renderPowerCard(power, { compact: true }));
   });
+  castSection.appendChild(castList);
+  els.playActivePowersList.appendChild(castSection);
 }
 
 function renderCombatHuckster() {
@@ -1308,45 +1469,4 @@ function renderCombatConsumables() {
     };
     els.combatConsumablesList.appendChild(row);
   });
-}
-
-function renderCombatReminders() {
-  const reminders = [];
-  character.powers
-    .filter((power) => power.active && power.notes)
-    .forEach((power) =>
-      reminders.push({
-        type: "Active Power",
-        name: power.name || "Power",
-        text: power.notes,
-      }),
-    );
-  Object.entries(character.conditions)
-    .filter(([, active]) => active)
-    .forEach(([key]) =>
-      reminders.push({
-        type: "Condition",
-        name: displayNameFromKey(key),
-        text: "Remember current condition effects.",
-      }),
-    );
-  character.reminders
-    .filter((reminder) =>
-      /arcane|backlash|malfunction|huckster|backfire|combat|weapon|power/i.test(
-        `${reminder.type} ${reminder.name} ${reminder.text}`,
-      ),
-    )
-    .forEach((reminder) => reminders.push(reminder));
-  if (character.hucksterDeal?.backfireTriggered) {
-    reminders.push({
-      type: "Huckster",
-      name: "Backfire",
-      text: "Backfire is marked on the current deal.",
-    });
-  }
-
-  els.combatRemindersCard.classList.toggle("hidden", !reminders.length);
-  els.combatRemindersList.innerHTML = reminders.length
-    ? reminders.map(reminderMarkup).join("")
-    : "";
 }

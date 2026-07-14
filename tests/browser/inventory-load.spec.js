@@ -42,6 +42,56 @@ const {
 
 useAppTestHooks();
 
+test("armor toggle describes the action and fits its label", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Armor Toggle Test",
+    preferredId: "armor-toggle-test",
+  });
+  await page.evaluate(
+    (armorInventory) => {
+      character.armorInventory = armorInventory;
+      render();
+    },
+    [
+      {
+        id: "test-duster",
+        name: "Armored Duster",
+        count: 1,
+        armor: 1,
+        location: "torso",
+        minStr: "d6",
+        weight: 5,
+        itemLocation: "equipped",
+        equipped: true,
+      },
+    ],
+  );
+  await openInventory(page);
+
+  const row = page.locator("#armorInventoryList .row").filter({
+    hasText: "Armored Duster",
+  });
+  const unequipButton = row.getByRole("button", {
+    name: "Unequip Armored Duster",
+  });
+  await expect(unequipButton).toBeVisible();
+  expect(
+    await unequipButton.evaluate(
+      (button) => button.clientWidth >= button.scrollWidth,
+    ),
+  ).toBe(true);
+
+  await unequipButton.click();
+  await expect(
+    row.getByRole("button", { name: "Equip Armored Duster" }),
+  ).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => character.armorInventory[0].equipped))
+    .toBe(false);
+});
+
 test("counts backpack load separately for combat and normal carrying", async ({
   page,
 }) => {
@@ -157,8 +207,38 @@ test("shows current load combat load and carrying capacity separately", async ({
   const details = page.locator("#encumbranceDetails");
   await expect(details).toContainText("Current Load");
   await expect(details).toContainText("Combat Load");
-  await expect(details).toContainText("Carrying Capacity");
-  await expect(details).toContainText("Maximum Normal Carry");
+  await expect(details).not.toContainText("Carrying Capacity");
+  await expect(details).not.toContainText("Maximum Normal Carry");
+  await expect(details).not.toContainText("Next Combat Threshold");
+  await expect(details.locator(".encumbrance-threshold-card")).toHaveCount(4);
+  await expect(
+    details.locator(".encumbrance-threshold-card.strength"),
+  ).toContainText("Effective Strength");
+  await expect(
+    details.locator(".encumbrance-threshold-card.strength"),
+  ).toContainText("d6");
+  await expect(
+    details.locator(".encumbrance-threshold-card.encumbered"),
+  ).toContainText("Encumbered");
+  await expect(
+    details.locator(".encumbrance-threshold-card.encumbered"),
+  ).toContainText("40 lb");
+  await expect(
+    details.locator(".encumbrance-threshold-card.heavy"),
+  ).toContainText("Heavy Overload");
+  await expect(
+    details.locator(".encumbrance-threshold-card.heavy"),
+  ).toContainText("120 lb");
+  await expect(
+    details.locator(".encumbrance-threshold-card.maximum"),
+  ).toContainText("Maximum");
+  await expect(
+    details.locator(".encumbrance-threshold-card.maximum"),
+  ).toContainText("160 lb");
+  await expect(details).not.toContainText("Container Load");
+  await expect(details).not.toContainText("Dropped Load");
+  await expect(details).not.toContainText("Stored Load");
+  await expect(details).not.toContainText("Passive Effects");
   await expect(details).not.toContainText("Owned Gear");
   await expect(details.locator(".encumbrance-load-card")).toContainText([
     /Current Load[\s\S]*Encumbered/,

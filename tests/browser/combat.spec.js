@@ -47,9 +47,35 @@ test("live tracker opens as an interactive character sheet, not a combat simulat
   await expect(page.locator("#playPanel")).toContainText("Resources");
   await expect(page.locator("#playPanel")).toContainText("Key Conditions");
   await expect(page.locator("#playPanel")).toContainText("Quick Consumables");
-  await expect(page.locator("#playPanel")).toContainText("Reminders");
   await expect(page.locator("#playWeaponList")).toContainText("Test Revolver");
   await expect(page.locator("#combatEncumbranceSummary")).toBeHidden();
+
+  const combatSummaryLayout = await page.evaluate(() => {
+    const statusCards = [
+      ...document.querySelectorAll(".combat-status-grid > .block"),
+    ];
+    const uniqueColumns = new Set(
+      statusCards.map((card) => Math.round(card.getBoundingClientRect().left)),
+    );
+    const defensePanel = document.querySelector(".combat-defense-panel");
+    const modifierPanel = document.querySelector(".combat-penalty-panel");
+    return {
+      viewportWidth: window.innerWidth,
+      statusColumns: uniqueColumns.size,
+      statusGridFits:
+        statusCards.every((card) => card.scrollWidth <= card.clientWidth + 1) &&
+        document.querySelector(".combat-status-grid").scrollWidth <=
+          document.querySelector(".combat-status-grid").clientWidth + 1,
+      defenseFits: defensePanel.scrollWidth <= defensePanel.clientWidth + 1,
+      modifiersFit: modifierPanel.scrollWidth <= modifierPanel.clientWidth + 1,
+    };
+  });
+  expect(combatSummaryLayout.statusColumns).toBe(
+    combatSummaryLayout.viewportWidth > 680 ? 4 : 2,
+  );
+  expect(combatSummaryLayout.statusGridFits).toBe(true);
+  expect(combatSummaryLayout.defenseFits).toBe(true);
+  expect(combatSummaryLayout.modifiersFit).toBe(true);
 });
 
 test("simulator-style play helpers are hidden from the normal tracker workflow", async ({
@@ -108,6 +134,10 @@ test("tracker modifier chips report encumbrance penalties without load details",
   await expect(modifierPanel).toContainText("Vigor vs Fatigue -2");
   await expect(modifierPanel).not.toContainText("Combat Load");
   await expect(modifierPanel).not.toContainText("Capacity");
+  await expect(page.locator("#combatPenaltySummary")).toBeHidden();
+  await expect(
+    modifierPanel.locator(".modifier-source-help").first(),
+  ).toBeVisible();
   await expect(
     modifierPanel.locator(".modifier-chip", { hasText: "Pace -2" }),
   ).toHaveAttribute("title", /Encumbrance: Pace -2, minimum 1/);

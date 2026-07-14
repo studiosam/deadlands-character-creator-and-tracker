@@ -38,7 +38,8 @@ function renderArmor() {
       label: armor.name,
       item: armor,
     };
-    row.innerHTML = `<div><strong>${esc(armor.name)}</strong><span>+${armor.armor} • ${armorLabel(armor.location)} • ${esc(physicalItemLocationLabel(entry))} • Min Str ${esc(armor.minStr)} • Weight ${formatWeightPounds(physicalItemWeight(entry))} • Cost ${armor.costCents !== undefined ? money(armor.costCents) : "—"} each</span>${armor.note ? `<span>${esc(armor.note)}</span>` : ""}</div><div class="controls"><button>${armor.equipped ? "Equipped" : "Equip"}</button><button>&minus;</button><strong>${armor.count}</strong><button>+</button>${physicalMoveControl("armor", armor.id)}<button class="delete-small">×</button></div>`;
+    const equipAction = armor.equipped ? "Unequip" : "Equip";
+    row.innerHTML = `<div><strong>${esc(armor.name)}</strong><span>+${armor.armor} • ${armorLabel(armor.location)} • ${esc(physicalItemLocationLabel(entry))} • Min Str ${esc(armor.minStr)} • Weight ${formatWeightPounds(physicalItemWeight(entry))} • Cost ${armor.costCents !== undefined ? money(armor.costCents) : "—"} each</span>${armor.note ? `<span>${esc(armor.note)}</span>` : ""}</div><div class="controls"><button class="armor-equip-toggle" type="button" aria-label="${esc(`${equipAction} ${armor.name}`)}">${equipAction}</button><button>&minus;</button><strong>${armor.count}</strong><button>+</button>${physicalMoveControl("armor", armor.id)}<button class="delete-small">×</button></div>`;
     const buttons = row.querySelectorAll("button");
     buttons[0].onclick = () => {
       armor.equipped = !armor.equipped;

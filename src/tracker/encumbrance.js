@@ -258,14 +258,6 @@ function calculateEncumbrance(currentCharacter, options = {}) {
   const encumbered = carriedWeight > loadLimit;
   const heavyOverload = carriedWeight >= loadLimit * 3;
   const overloaded = carriedWeight > loadLimit * 4;
-  const nextThreshold = !encumbered
-    ? loadLimit
-    : heavyOverload
-      ? loadLimit * 4
-      : loadLimit * 3;
-  const remainingBeforeNext = overloaded
-    ? 0
-    : Math.max(0, nextThreshold - carriedWeight);
 
   return {
     carriedWeight,
@@ -281,8 +273,6 @@ function calculateEncumbrance(currentCharacter, options = {}) {
     encumbered,
     heavyOverload,
     overloaded,
-    nextThreshold,
-    remainingBeforeNext,
   };
 }
 
@@ -298,16 +288,6 @@ function encumbranceText(info) {
   if (info.overloaded) return "Overloaded";
   if (info.heavyOverload) return "Heavy overload";
   return info.encumbered ? "Encumbered" : "Unencumbered";
-}
-
-function nextEncumbranceText(info) {
-  if (info.overloaded) return "Already overloaded";
-  const label = info.encumbered
-    ? info.heavyOverload
-      ? "Maximum lift/carry"
-      : "Heavy overload"
-    : "Encumbered";
-  return `${label} at ${formatWeightPounds(info.nextThreshold)} (${formatWeightPounds(info.remainingBeforeNext)} remaining)`;
 }
 
 function encumbranceWarningText(info) {

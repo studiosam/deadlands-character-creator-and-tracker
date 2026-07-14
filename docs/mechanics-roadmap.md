@@ -337,8 +337,9 @@ Completed scope:
   trapping notes, runtime notes, activation time, end time, and status.
 - Numeric round durations can be ticked down one round at a time and expire at
   zero. Non-numeric durations remain manual reminders.
-- Maintenance state is surfaced prominently on Arcane and Combat active-power
-  cards.
+- Maintenance state is surfaced prominently on Arcane active-power cards.
+- Combat stays focused on casting known powers; current effects, maintenance,
+  targets, and active-power history are managed from Arcane.
 - A small runtime reminder registry surfaces high-confidence manual effect
   reminders for `Protection`, `Deflection`, `Boost/Lower Trait`, `Barrier`,
   `Burrow`, `Light/Darkness`, `Entangle`, `Fly`, `Invisibility`, `Sloth/Speed`,
@@ -346,8 +347,9 @@ Completed scope:
   records are marked inactive instead of continuing to show active-effect
   reminders.
 - Variable Power Point activation stores a structured `spendBreakdown` with base
-  cost, selected modifier quantities, modifier costs, and total cost. Active
-  power cards display the breakdown in Arcane and Combat.
+  cost, selected modifier quantities, modifier costs, and total cost. Combat
+  shows the selected casting cost before activation, while Arcane active-power
+  records preserve the completed spend breakdown.
 - Structured runtime fields let players mark target, raise state, and mode for
   paired powers such as `Boost/Lower Trait`, `Light/Darkness`, and
   `Sloth/Speed`. These fields improve reminders and card clarity only; they do

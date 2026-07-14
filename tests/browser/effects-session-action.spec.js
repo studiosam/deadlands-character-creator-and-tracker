@@ -182,7 +182,7 @@ test("Power Point recovery defaults to five per hour without recharge Edges", as
   await openCombat(page);
   const powerPoints = page.locator("#playPowerPointsList");
   await expect(powerPoints).toContainText("5 / 15");
-  await expect(powerPoints).toContainText("Recovery: 5 / hour");
+  await expect(powerPoints).toContainText("Recover 5 per hour");
   await powerPoints.getByRole("button", { name: "Recover 1 hour +5" }).click();
   await expect(powerPoints).toContainText("10 / 15");
 
@@ -221,7 +221,7 @@ test("Rapid Recharge effects set hourly Power Point recovery controls", async ({
   await openCombat(page);
   const powerPoints = page.locator("#playPowerPointsList");
   await expect(powerPoints).toContainText("0 / 20");
-  await expect(powerPoints).toContainText("Recovery: 20 / hour");
+  await expect(powerPoints).toContainText("Recover 20 per hour");
   await powerPoints.getByRole("button", { name: "Recover 1 hour +20" }).click();
   await expect(powerPoints).toContainText("20 / 20");
   await expect(
@@ -258,7 +258,7 @@ test("Rapid Recharge effects set hourly Power Point recovery controls", async ({
   await openCombat(page);
   await expect(page.locator("#playPowerPointsList")).toContainText("20 / 20");
   await expect(page.locator("#playPowerPointsList")).toContainText(
-    "Recovery: 20 / hour",
+    "Recover 20 per hour",
   );
 });
 

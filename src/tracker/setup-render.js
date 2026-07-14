@@ -17,7 +17,7 @@ function setupDetail(label, value, helpText = "") {
       <span>${esc(label)}</span>
       ${
         help
-          ? `<span class="setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
+          ? `<span class="question-help setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
           : ""
       }
     </div>
@@ -34,7 +34,7 @@ function setupMeterSummary(label, value, max, helpText = "") {
   return `<article class="setup-trait-editor-row setup-attribute-points-card setup-hindrance-meter-card">
     ${
       help
-        ? `<span class="setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
+        ? `<span class="question-help setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
         : ""
     }
     <div class="setup-attribute-editor-heading">
@@ -62,7 +62,7 @@ function setupLabeledMeterSummary(
   return `<article class="setup-trait-editor-row setup-attribute-points-card setup-hindrance-meter-card">
     ${
       help
-        ? `<span class="setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
+        ? `<span class="question-help setup-detail-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
         : ""
     }
     <div class="setup-attribute-editor-heading">
@@ -88,7 +88,7 @@ function setupMeterBar(label, value, max) {
 function attributeHelpMarkup(label, helpText = "") {
   const help = String(helpText || "").trim();
   return help
-    ? `<span class="attribute-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
+    ? `<span class="question-help attribute-help" tabindex="0" role="img" aria-label="${esc(`${label}: ${help}`)}" data-tooltip="${esc(help)}">?</span>`
     : "";
 }
 

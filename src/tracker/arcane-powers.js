@@ -14,7 +14,7 @@ function renderResources() {
 
   character.resources.forEach((resource) => {
     if (resource.id === "power-points") {
-      appendPowerPointControls(els.resourcesList, resource, { showName: true });
+      appendPowerPointControls(els.resourcesList, resource);
       return;
     }
 
@@ -130,7 +130,9 @@ function catalogPowerPreviewMarkup(power) {
   if (!power) return emptyState("Choose a catalog power.");
   const profile = getArcaneBackgroundProfile(character);
   const restriction = powerRestrictionForProfile(power, profile);
-  return `<div class="catalog-preview-card"><div class="topline"><div><h3>${esc(power.name)}</h3><p class="meta">${esc(power.rank)} • ${esc(power.powerPoints)} PP • Range ${esc(power.range)} • Duration ${esc(power.duration)}</p></div><span class="pill">${esc(power.source)}</span></div><p>${esc(power.shortSummary)}</p>${power.variableCostNotes ? `<p class="muted"><strong>Variable PP:</strong> ${esc(power.variableCostNotes)}</p>` : ""}${restriction ? `<p class="catalog-warning"><strong>Restriction:</strong> ${esc(restriction)}</p>` : ""}<p class="muted">Allowed: ${esc(power.allowedBackgrounds.join(", "))}</p></div>`;
+  const range = powerRangeDetails(power);
+  const duration = powerDurationDetails(power);
+  return `<div class="catalog-preview-card"><div class="topline"><div><h3>${esc(power.name)}</h3><p class="meta">${esc(power.rank)} • ${esc(power.powerPoints)} PP • Range: ${esc(range.text)}${powerHelpMarkup(range.help, "Range calculation")} • Duration: ${esc(duration.text)}${powerHelpMarkup(duration.help, "Duration details")}</p></div><span class="pill">${esc(power.source)}</span></div><p>${esc(power.shortSummary)}</p>${power.variableCostNotes ? `<p class="muted"><strong>Variable PP:</strong> ${esc(power.variableCostNotes)}</p>` : ""}${restriction ? `<p class="catalog-warning"><strong>Restriction:</strong> ${esc(restriction)}</p>` : ""}<p class="muted">Allowed: ${esc(power.allowedBackgrounds.join(", "))}</p></div>`;
 }
 
 function renderPowerSetupNotice() {
@@ -206,13 +208,6 @@ function renderHucksterAvailablePowers() {
 }
 
 function renderPowers() {
-  const background = character.arcaneBackground;
-  const powerPoints = powerPointResource();
-  els.arcaneSummary.textContent = background
-    ? `${background.name} • ${background.arcaneSkill}`
-    : powerPoints
-      ? "Manual Power Points"
-      : "No Arcane Background";
   renderPowerCatalogPicker();
   els.powersList.innerHTML = "";
   if (!character.powers.length) {

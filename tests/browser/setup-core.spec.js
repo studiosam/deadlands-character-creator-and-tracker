@@ -510,6 +510,23 @@ test("shows a clean reference sheet for confirmed characters", async ({
   await expect(page.locator("#attributesList")).toContainText("Agility");
   await expect(page.locator("#skillsList")).toContainText("Shooting");
   await expect(page.locator("#skillsList")).not.toContainText("Psionics");
+  await expect(page.locator("#unskilledSkillsList")).toContainText("Academics");
+  await expect(page.locator("#unskilledSkillsList")).toContainText("d4-2");
+  await expect(page.locator("#unskilledSkillsList")).not.toContainText(
+    "Shooting",
+  );
+  await expect(page.locator("#unskilledSkillsList")).not.toContainText(
+    "Psionics",
+  );
+  await expect(
+    page.locator("#characterEquippedSummary .cash-summary strong"),
+  ).toHaveText("Cash");
+  await expect(
+    page.locator("#characterEquippedSummary .cash-summary span"),
+  ).toHaveText(/^\$\d+\.\d{2}$/);
+  await expect(page.locator("#characterBackgroundSummary")).not.toContainText(
+    "Import ID",
+  );
   await expect(page.locator("#edgesList")).toContainText("Healer");
   await expect(page.locator("#hindrancesList")).toContainText("Bad Luck");
 

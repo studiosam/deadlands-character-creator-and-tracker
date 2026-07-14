@@ -445,7 +445,7 @@
                     <h3>Roll Modifiers</h3>
                     <span id="combatPenaltyTotal" class="loaded"></span>
                   </div>
-                  <p id="combatPenaltySummary" class="muted"></p>
+                  <p id="combatPenaltySummary" class="muted hidden"></p>
                   <div
                     id="combatPenaltyBreakdown"
                     class="penalty-breakdown"
@@ -637,7 +637,7 @@
           </section>
 
           <section id="playActivePowersCard" class="card wide">
-            <h2>Active Powers</h2>
+            <h2>Cast a Power</h2>
             <div id="playActivePowersList" class="grid powers"></div>
           </section>
 
@@ -666,11 +666,6 @@
           <section id="combatConsumablesCard" class="card wide">
             <h2>Quick Consumables</h2>
             <div id="combatConsumablesList" class="list"></div>
-          </section>
-
-          <section id="combatRemindersCard" class="card wide">
-            <h2>Reminders</h2>
-            <div id="combatRemindersList" class="list"></div>
           </section>
         </section>
 
@@ -737,7 +732,6 @@
               <section class="card dossier-card">
                 <div class="dossier-section-title">
                   <h2>Core Traits</h2>
-                  <span id="armorStrengthPill" class="pill"></span>
                 </div>
                 <div id="attributesList" class="attribute-dice-grid"></div>
               </section>
@@ -745,6 +739,12 @@
               <section class="card dossier-card">
                 <h2>Skills</h2>
                 <div id="skillsList" class="skill-chip-grid"></div>
+              </section>
+
+              <section class="card dossier-card">
+                <h2>Unskilled Skills</h2>
+                <p class="muted">These skills are rolled at d4-2.</p>
+                <div id="unskilledSkillsList" class="skill-chip-grid"></div>
               </section>
 
               <section class="card dossier-card">
@@ -1121,7 +1121,6 @@
               <button id="addMoneyBtn" type="button">Add</button>
               <button id="spendMoneyBtn" type="button">Spend</button>
             </div>
-            <p class="muted">Money is stored as cents.</p>
           </section>
 
           <section class="card">
@@ -1133,7 +1132,6 @@
             <div class="section-title">
               <div>
                 <h2>Carrying Capacity</h2>
-                <p>Load Limit and SWADE encumbrance.</p>
               </div>
               <span id="encumbranceSummaryPill" class="pill"></span>
             </div>
@@ -1145,7 +1143,6 @@
             <div class="section-title">
               <div>
                 <h2>Gear</h2>
-                <p>Purchased gear, loot, clues, and carried items.</p>
               </div>
               <button
                 class="ghost"
@@ -1213,7 +1210,6 @@
             <div class="section-title">
               <div>
                 <h2>Storage Locations</h2>
-                <p>Owned gear that is not currently carried.</p>
               </div>
             </div>
             <div class="inline-form">
@@ -1295,10 +1291,6 @@
             <div class="section-title">
               <div>
                 <h2>Weapon Inventory</h2>
-                <p>
-                  Loaded rounds and matching reserve ammo are managed from each
-                  weapon card.
-                </p>
               </div>
               <button
                 class="ghost"
@@ -1383,8 +1375,7 @@
           <section class="card wide">
             <div class="section-title">
               <div>
-                <h2>Vehicles</h2>
-                <p>Mounts, wagons, transport, and big-ticket equipment.</p>
+                <h2>Vehicles and Mounts</h2>
               </div>
               <button
                 class="ghost"
@@ -1442,32 +1433,14 @@
             <div class="section-title">
               <div>
                 <p class="eyebrow">Arcane</p>
-                <h2>Arcane Overview</h2>
+                <h2>Power Points</h2>
+                <p class="muted">Track available points and recovery.</p>
               </div>
-              <span id="arcaneSummary" class="pill"></span>
+              <button id="addManualPowerPointsBtn" class="ghost" type="button">
+                Enable Manual Power Points
+              </button>
             </div>
-            <div class="arcane-overview-grid">
-              <section class="arcane-overview-section arcane-profile-panel">
-                <h3>Background &amp; Skill</h3>
-                <div id="arcaneDetailSummary" class="list"></div>
-              </section>
-              <section class="arcane-overview-section arcane-resource-panel">
-                <div class="arcane-overview-section-title">
-                  <div>
-                    <h3>Power Points &amp; Resources</h3>
-                    <p class="muted">Recover and adjust arcane reserves.</p>
-                  </div>
-                  <button
-                    id="addManualPowerPointsBtn"
-                    class="ghost"
-                    type="button"
-                  >
-                    Enable Manual Power Points
-                  </button>
-                </div>
-                <div id="resourcesList" class="list"></div>
-              </section>
-            </div>
+            <div id="resourcesList" class="list arcane-resource-list"></div>
           </section>
 
           <section class="card wide arcane-known-powers-card">
@@ -1552,9 +1525,10 @@
             id="arcaneActivePowersPanel"
             class="card wide arcane-active-powers-card hidden"
           >
-            <h2>Active Powers</h2>
+            <h2>Power Tracking</h2>
             <p class="muted">
-              Track duration, targets, maintenance, and runtime notes.
+              Current effects appear first. Finished records are kept in
+              collapsed history.
             </p>
             <div id="activePowersList" class="grid powers"></div>
           </section>

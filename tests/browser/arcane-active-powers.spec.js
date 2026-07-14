@@ -42,6 +42,21 @@ const {
 
 useAppTestHooks();
 
+async function openActivePowerHistory(page) {
+  const history = page.locator("#activePowersList .active-power-history-group");
+  await expect(history).toBeVisible();
+  if (!(await history.evaluate((details) => details.open))) {
+    await history.locator(":scope > summary").click();
+  }
+  return history;
+}
+
+function historyPowerCard(history, name) {
+  return history
+    .locator(".active-power-history-card")
+    .filter({ hasText: name });
+}
+
 test("Known powers activate into editable active power records", async ({
   page,
 }) => {
@@ -59,17 +74,15 @@ test("Known powers activate into editable active power records", async ({
       document.querySelector(selector).getBoundingClientRect();
     const panel = rect("#arcanePanel");
     const overview = rect(".arcane-overview-card");
-    const profilePanel = rect(".arcane-profile-panel");
-    const resourcePanel = rect(".arcane-resource-panel");
     const knownPowersCard = rect(".arcane-known-powers-card");
     const resourceRow = document.querySelector(
-      ".arcane-resource-panel .power-point-resource-row",
+      ".arcane-overview-card .power-point-resource-row",
     );
     const resourceCopy = rect(
-      ".arcane-resource-panel .power-point-resource-copy",
+      ".arcane-overview-card .power-point-resource-copy",
     );
     const recoveryActions = document.querySelector(
-      ".arcane-resource-panel .power-point-resource-row .resource-recovery-actions",
+      ".arcane-overview-card .power-point-resource-row .resource-recovery-actions",
     );
     const recoveryBounds = recoveryActions.getBoundingClientRect();
     const knownPowersList = rect("#powersList");
@@ -82,11 +95,6 @@ test("Known powers activate into editable active power records", async ({
       primaryCardsFillPanel:
         overview.width / panel.width > 0.95 &&
         knownPowersCard.width / panel.width > 0.95,
-      overviewUsesInternalLayout:
-        window.innerWidth <= 980
-          ? profilePanel.top < resourcePanel.top
-          : Math.abs(profilePanel.top - resourcePanel.top) <= 1 &&
-            profilePanel.width < resourcePanel.width,
       knownPowerUsesInternalLayout:
         window.innerWidth <= 980
           ? powerDetails.top < powerCasting.top
@@ -111,13 +119,26 @@ test("Known powers activate into editable active power records", async ({
     };
   });
   expect(arcaneLayout.primaryCardsFillPanel).toBe(true);
-  expect(arcaneLayout.overviewUsesInternalLayout).toBe(true);
   expect(arcaneLayout.knownPowerUsesInternalLayout).toBe(true);
   expect(arcaneLayout.copyWidth).toBeGreaterThan(160);
   expect(arcaneLayout.resourceRowFits).toBe(true);
   expect(arcaneLayout.recoveryButtonsFit).toBe(true);
   expect(arcaneLayout.knownPowerWidthRatio).toBeGreaterThan(0.95);
   expect(arcaneLayout.powerManagementIsCompact).toBe(true);
+  await expect(
+    page.getByRole("heading", { name: "Power Points", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#resourcesList")).toContainText("15 / 15");
+  await expect(page.locator("#resourcesList")).toContainText(
+    "Recover 5 per hour",
+  );
+  await expect(page.locator("#arcanePanel")).not.toContainText(
+    "Arcane Background:",
+  );
+  await expect(page.locator("#arcanePanel")).not.toContainText(
+    "Blessed • Faith",
+  );
+  await expect(page.locator("#arcanePanel")).not.toContainText("Powers:");
   await expect(page.locator("#arcaneActivePowersPanel")).toBeHidden();
   await expect(page.locator("#arcaneRemindersPanel")).toBeHidden();
   const knownPower = page.locator("#powersList .power-card").filter({
@@ -151,7 +172,10 @@ test("Known powers activate into editable active power records", async ({
       has: page.getByRole("heading", { name: "Protection" }),
     });
   await expect(activePower).toContainText("Active");
-  await expect(activePower).toContainText("Power effect reminder only");
+  await expect(activePower.locator(".active-power-reminder")).toContainText(
+    "Remember",
+  );
+  await expect(activePower.locator(".entry-advisory")).toHaveCount(0);
   await expect(page.locator("#arcaneActivePowersPanel")).toBeVisible();
   const activePowerActionsFit = await activePower.evaluate((card) => {
     const actions = card.querySelector(".power-actions");
@@ -192,7 +216,10 @@ test("Known powers activate into editable active power records", async ({
     .locator("[data-active-power-field='notes']")
     .fill("Raise applied manually");
   await activePower.getByRole("button", { name: "Expire" }).click();
-  await expect(activePower).toContainText("Expired");
+  const history = await openActivePowerHistory(page);
+  const expiredPower = historyPowerCard(history, "Protection");
+  await expect(expiredPower).toContainText("Expired");
+  await expect(expiredPower.locator("input, textarea, button")).toHaveCount(0);
 
   const state = await page.evaluate(() => ({
     powerPoints: powerPointResource().current,
@@ -296,16 +323,14 @@ test("Active power recast helper can expire old record before recasting", async 
 
   const protectionCards = page
     .locator("#activePowersList .active-power-card")
-    .filter({ has: page.getByRole("heading", { name: "Protection" }) });
+    .filter({ hasText: "Protection" });
   await expect(protectionCards).toHaveCount(2);
   await expect(protectionCards).toContainText([
     /Active|Expired/,
     /Active|Expired/,
   ]);
-  await expect(page.locator("#activePowersList")).toContainText(
-    "Expired: effect reminders no longer apply.",
-  );
-  await expect(page.locator("#activePowersList")).toContainText("Ended:");
+  const history = await openActivePowerHistory(page);
+  await expect(historyPowerCard(history, "Protection")).toContainText("Ended");
   expect(
     await page.evaluate(() => ({
       powerPoints: powerPointResource().current,
@@ -350,10 +375,11 @@ test("Active power recast helper can dismiss old record before recasting", async
   await knownPower.getByRole("button", { name: /Activate/ }).click();
   await page.getByRole("button", { name: "Dismiss old record" }).click();
 
-  await expect(page.locator("#activePowersList")).toContainText(
-    "Dismissed: active effect reminders no longer apply.",
+  const history = await openActivePowerHistory(page);
+  await expect(historyPowerCard(history, "Protection")).toContainText(
+    "Dismissed",
   );
-  await expect(page.locator("#activePowersList")).toContainText("Ended:");
+  await expect(historyPowerCard(history, "Protection")).toContainText("Ended");
   expect(
     await page.evaluate(() => ({
       powerPoints: powerPointResource().current,
@@ -399,7 +425,6 @@ test("Numeric active power durations tick down persist and expire at zero", asyn
   await expect(activePower).toContainText("2 rounds remaining.");
   await activePower.getByRole("button", { name: "Tick down 1 round" }).click();
   await expect(activePower).toContainText("1 round remaining.");
-  await expect(activePower).toContainText("1 round left");
   expect(
     await page.evaluate(() => {
       const activePowerRecord = character.activePowers.find(
@@ -424,12 +449,11 @@ test("Numeric active power durations tick down persist and expire at zero", asyn
   });
   await expect(activePower).toContainText("1 round remaining.");
   await activePower.getByRole("button", { name: "Tick down 1 round" }).click();
-  await expect(activePower).toContainText("Duration expired.");
-  await expect(activePower).toContainText("Expired");
-  await expect(activePower).toContainText(
-    "Expired: effect reminders no longer apply.",
-  );
-  await expect(activePower).toContainText("Ended:");
+  const history = await openActivePowerHistory(page);
+  const expiredPower = historyPowerCard(history, "Countdown Power");
+  await expect(expiredPower).toContainText("Expired");
+  await expect(expiredPower).toContainText("Ended");
+  await expect(expiredPower.locator("input, textarea, button")).toHaveCount(0);
   expect(
     await page.evaluate(() => {
       const activePowerRecord = character.activePowers.find(
@@ -453,8 +477,7 @@ test("Numeric active power durations tick down persist and expire at zero", asyn
     .filter({
       has: page.getByRole("heading", { name: "Countdown Power" }),
     });
-  await expect(combatPower).toContainText("Duration expired.");
-  await expect(combatPower).toContainText("Expired");
+  await expect(combatPower).toHaveCount(0);
 });
 
 test("Active powers track structured target mode and raise fields", async ({
@@ -499,7 +522,9 @@ test("Active powers track structured target mode and raise fields", async ({
   activePower = page.locator("#activePowersList .active-power-card").filter({
     has: page.getByRole("heading", { name: "Boost/Lower Trait" }),
   });
-  await expect(activePower).toContainText("Structured tracking");
+  await expect(
+    activePower.locator(".active-power-tracking-facts"),
+  ).toBeVisible();
   await expect(activePower).toContainText("Target: Dusty");
   await expect(activePower).toContainText("Mode: Boost");
   await expect(activePower).toContainText("Raise marked");
@@ -521,14 +546,17 @@ test("Active powers track structured target mode and raise fields", async ({
 
   await reloadIntoTracker(page);
   await openCombat(page);
-  let combatPower = page
-    .locator("#playActivePowersList .active-power-card")
-    .filter({
+  await expect(
+    page.getByRole("heading", { name: "Cast a Power", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#playActivePowersList .active-power-card"),
+  ).toHaveCount(0);
+  await expect(
+    page.locator("#playActivePowersList .combat-cast-power-card").filter({
       has: page.getByRole("heading", { name: "Boost/Lower Trait" }),
-    });
-  await expect(combatPower).toContainText("Target: Dusty");
-  await expect(combatPower).toContainText("Mode: Boost");
-  await expect(combatPower).toContainText("Raise marked");
+    }),
+  ).toBeVisible();
 
   const exportedText = await page.evaluate(() =>
     JSON.stringify(serializeTrackerExport(character)),
@@ -541,6 +569,224 @@ test("Active powers track structured target mode and raise fields", async ({
   await expect(activePower).toContainText("Target: Dusty");
   await expect(activePower).toContainText("Mode: Boost");
   await expect(activePower).toContainText("Raise marked");
+});
+
+test("Combat omits active effect tracking and keeps power casting focused", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Compact Active Power Tester",
+    preferredId: "compact-active-power-tester",
+    powerIds: ["power-protection"],
+    activePowers: [
+      {
+        id: "compact-protection",
+        catalogId: "power-protection",
+        name: "Protection",
+        status: "active",
+        cost: 3,
+        duration: "5",
+        durationRemaining: 4,
+        targetLabel: "Marshal Kane",
+        trappingNotes: "A pale blue ward surrounds the target.",
+        notes: "Raised with More Armor.",
+        maintenance: true,
+        activatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ],
+  });
+
+  await openCombat(page);
+  const combatPanel = page.locator("#playActivePowersCard");
+  await expect(
+    combatPanel.getByRole("heading", { name: "Cast a Power", exact: true }),
+  ).toBeVisible();
+  await expect(combatPanel.locator(".combat-active-power-card")).toHaveCount(0);
+  await expect(combatPanel.locator("[data-active-power-field]")).toHaveCount(0);
+  await expect(combatPanel.getByText("In Effect Now")).toHaveCount(0);
+  await expect(
+    combatPanel
+      .locator(".combat-cast-power-card")
+      .filter({ has: page.getByRole("heading", { name: "Protection" }) }),
+  ).toBeVisible();
+
+  expect(
+    await page.evaluate(
+      () =>
+        character.activePowers.find(
+          (power) => power.id === "compact-protection",
+        ).targetLabel,
+    ),
+  ).toBe("Marshal Kane");
+});
+
+test("Combat known powers show only casting essentials", async ({ page }) => {
+  await seedActivePowerCharacter(page, {
+    name: "Minimal Combat Power Tester",
+    preferredId: "minimal-combat-power-tester",
+    powerIds: [
+      "power-protection",
+      "power-smite",
+      "power-boost-lower-trait",
+      "power-detect-conceal-arcana",
+      "power-sloth-speed",
+      "power-sound-silence",
+    ],
+  });
+
+  await page.evaluate(() => {
+    character.attributes.smarts = "d8";
+    const smite = character.powers.find(
+      (power) => power.catalogId === "power-smite",
+    );
+    smite.restrictions = "Hands and feet count as weapons for this power.";
+    render();
+    save();
+  });
+
+  await openCombat(page);
+  let powerCard = page
+    .locator("#playActivePowersList .combat-cast-power-card")
+    .filter({ has: page.getByRole("heading", { name: "Protection" }) });
+  const modifierDetails = powerCard.locator(".combat-power-modifiers");
+
+  await expect(powerCard).toContainText("Grants Armor +2, or +4 with a raise.");
+  await expect(powerCard).toContainText("Range: 8 inches");
+  await expect(powerCard).toContainText("Duration: 5");
+  await expect(
+    powerCard.locator(".combat-power-facts .power-help"),
+  ).toHaveAttribute("data-tooltip", /Calculated from Smarts d8/);
+  expect(
+    await powerCard
+      .locator(".combat-power-facts .power-help")
+      .evaluate((helper) => {
+        const style = getComputedStyle(helper);
+        return {
+          borderWidth: Number.parseFloat(style.borderWidth),
+          borderRadius: Number.parseFloat(style.borderRadius),
+          width: Number.parseFloat(style.width),
+          height: Number.parseFloat(style.height),
+        };
+      }),
+  ).toEqual(
+    expect.objectContaining({
+      borderWidth: 2,
+      width: expect.any(Number),
+      height: expect.any(Number),
+    }),
+  );
+  await expect(page.locator(".combat-power-casting-summary")).toContainText(
+    "15 PP available",
+  );
+  await expect(powerCard.locator("[data-power-affordability]")).toBeHidden();
+  await expect(
+    powerCard.getByRole("button", { name: "Cast — 1 PP" }),
+  ).toBeEnabled();
+  await expect(powerCard).not.toContainText("Rank Novice");
+  await expect(powerCard).not.toContainText("SWADE Core");
+  await expect(powerCard).not.toContainText("Use Power");
+  await expect(powerCard).not.toContainText("Cast Modifiers");
+  await expect(powerCard).not.toContainText("Trapping:");
+  await expect(modifierDetails).not.toHaveAttribute("open", "");
+  await expect(
+    powerCard.locator(".variable-spend-row", {
+      hasText: "Additional Recipients",
+    }),
+  ).toBeHidden();
+
+  await expect(modifierDetails.locator("summary .power-help")).toHaveAttribute(
+    "data-tooltip",
+    /improve or expand this power/,
+  );
+  await modifierDetails.getByText("Enhance Power", { exact: true }).click();
+  await powerCard
+    .getByRole("button", { name: "Increase Additional Recipients" })
+    .click();
+  await expect(
+    powerCard.getByRole("button", { name: "Cast — 2 PP" }),
+  ).toBeEnabled();
+
+  const smiteCard = page
+    .locator("#playActivePowersList .combat-cast-power-card")
+    .filter({ has: page.getByRole("heading", { name: "Smite" }) });
+  await expect(smiteCard).not.toContainText("Hands and feet count as weapons");
+  await expect(
+    smiteCard.locator(".combat-cast-power-heading .power-help"),
+  ).toHaveAttribute(
+    "data-tooltip",
+    "Restriction: Hands and feet count as weapons for this power.",
+  );
+
+  const splitDurationPowers = [
+    [
+      "Boost/Lower Trait",
+      "Duration: 5/Instant",
+      "Boost lasts 5 rounds. Lower is Instant.",
+    ],
+    [
+      "Detect/Conceal Arcana",
+      "Duration: 5/1 hour",
+      "Detect lasts 5 rounds. Conceal lasts 1 hour.",
+    ],
+    [
+      "Sloth/Speed",
+      "Duration: Instant/5",
+      "Sloth is Instant. Speed lasts 5 rounds.",
+    ],
+    [
+      "Sound/Silence",
+      "Duration: Instant/5",
+      "Sound is Instant. Silence lasts 5 rounds.",
+    ],
+  ];
+  for (const [name, duration, help] of splitDurationPowers) {
+    const card = page
+      .locator("#playActivePowersList .combat-cast-power-card")
+      .filter({ has: page.getByRole("heading", { name }) });
+    await expect(card).toContainText(duration);
+    await expect(
+      card.locator(".combat-power-facts .power-help").last(),
+    ).toHaveAttribute("data-tooltip", help);
+  }
+
+  await page.evaluate(() => {
+    powerPointResource().current = 0;
+    render();
+  });
+  powerCard = page
+    .locator("#playActivePowersList .combat-cast-power-card")
+    .filter({ has: page.getByRole("heading", { name: "Protection" }) });
+  await expect(powerCard).toContainText("Cannot cast · 1 PP short");
+  await expect(
+    powerCard.getByRole("button", { name: "Cast — 1 PP" }),
+  ).toBeDisabled();
+});
+
+test("Arcane reminders stay in Arcane instead of the live Tracker", async ({
+  page,
+}) => {
+  await seedActivePowerCharacter(page, {
+    name: "Arcane Reminder Placement Tester",
+    preferredId: "arcane-reminder-placement-tester",
+  });
+  await page.evaluate(() => {
+    character.reminders.push({
+      type: "Arcane",
+      name: "Backlash",
+      text: "Resolve the recorded backlash effect.",
+    });
+    render();
+    save();
+  });
+
+  await openCombat(page);
+  await expect(page.locator("#combatRemindersCard")).toHaveCount(0);
+
+  await openArcane(page);
+  await expect(page.locator("#arcaneRemindersPanel")).toBeVisible();
+  await expect(page.locator("#arcaneRemindersList")).toContainText(
+    "Resolve the recorded backlash effect.",
+  );
 });
 
 test("Non-numeric active power durations remain manual without countdown controls", async ({
@@ -576,15 +822,10 @@ test("Non-numeric active power durations remain manual without countdown control
 
   await reloadIntoTracker(page);
   await openCombat(page);
-  const combatPower = page
-    .locator("#playActivePowersList .active-power-card")
-    .filter({
-      has: page.getByRole("heading", { name: "Manual Duration Power" }),
-    });
-  await expect(combatPower).toContainText("Manual duration: Maintained.");
-  await expect(combatPower).toContainText("Maintenance marked");
   await expect(
-    combatPower.getByRole("button", { name: "Tick down 1 round" }),
+    page.locator("#playActivePowersList .active-power-card").filter({
+      has: page.getByRole("heading", { name: "Manual Duration Power" }),
+    }),
   ).toHaveCount(0);
   expect(
     await page.evaluate(() => {
@@ -602,7 +843,7 @@ test("Non-numeric active power durations remain manual without countdown control
   });
 });
 
-test("Active power runtime reminders render in Arcane and Combat and persist", async ({
+test("Arcane keeps runtime reminders while Combat only offers casting", async ({
   page,
 }) => {
   await seedActivePowerCharacter(page, {
@@ -628,7 +869,9 @@ test("Active power runtime reminders render in Arcane and Combat and persist", a
     .filter({
       has: page.getByRole("heading", { name: "Protection" }),
     });
-  await expect(activePower).toContainText("Effect reminder");
+  await expect(activePower.locator(".active-power-reminder")).toContainText(
+    "Remember",
+  );
   await expect(activePower).toContainText(
     "Apply the Armor bonus to the protected target manually.",
   );
@@ -638,33 +881,43 @@ test("Active power runtime reminders render in Arcane and Combat and persist", a
 
   await openCombat(page);
   let combatPower = page
-    .locator("#playActivePowersList .active-power-card")
+    .locator("#playActivePowersList .combat-cast-power-card")
     .filter({
       has: page.getByRole("heading", { name: "Protection" }),
     });
-  await expect(combatPower).toContainText("Effect reminder");
   await expect(combatPower).toContainText(
+    "Grants Armor +2, or +4 with a raise.",
+  );
+  await expect(combatPower).not.toContainText(
     "Apply the Armor bonus to the protected target manually.",
   );
+  await expect(combatPower.locator(".active-power-reminder")).toHaveCount(0);
+  await expect(
+    page.locator("#playActivePowersList .active-power-card"),
+  ).toHaveCount(0);
 
   await reloadIntoTracker(page);
   await openArcane(page);
   activePower = page.locator("#activePowersList .active-power-card").filter({
     has: page.getByRole("heading", { name: "Protection" }),
   });
-  await expect(activePower).toContainText("Effect reminder");
+  await expect(activePower.locator(".active-power-reminder")).toContainText(
+    "Remember",
+  );
   await expect(activePower).toContainText(
     "Apply the Armor bonus to the protected target manually.",
   );
 
   await openCombat(page);
   combatPower = page
-    .locator("#playActivePowersList .active-power-card")
+    .locator("#playActivePowersList .combat-cast-power-card")
     .filter({
       has: page.getByRole("heading", { name: "Protection" }),
     });
-  await expect(combatPower).toContainText("Effect reminder");
   await expect(combatPower).toContainText(
+    "Grants Armor +2, or +4 with a raise.",
+  );
+  await expect(combatPower).not.toContainText(
     "Apply the Armor bonus to the protected target manually.",
   );
 });
@@ -792,15 +1045,24 @@ test("Active power runtime reminders cover common candidate powers", async ({
 
   await openCombat(page);
   const combatPowers = page.locator("#playActivePowersList");
-  await expect(combatPowers).toContainText(
+  await expect(combatPowers).not.toContainText(
     "Track barrier placement, size, damage, and cover or obstruction manually.",
   );
-  await expect(combatPowers).toContainText(
+  await expect(combatPowers).not.toContainText(
     "Track whether Sloth or Speed is active for each affected target.",
   );
+  await expect(
+    combatPowers.getByRole("heading", { name: "Barrier" }),
+  ).toHaveCount(0);
+  await expect(
+    combatPowers.getByRole("heading", { name: "Sloth/Speed" }),
+  ).toHaveCount(0);
+  await expect(
+    combatPowers.getByRole("heading", { name: "Protection" }),
+  ).toBeVisible();
 });
 
-test("Active power runtime reminders are marked inactive for ended statuses", async ({
+test("Ended power records move to compact history without live reminders", async ({
   page,
 }) => {
   await seedActivePowerCharacter(page, {
@@ -867,32 +1129,32 @@ test("Active power runtime reminders are marked inactive for ended statuses", as
   );
 
   await protection.getByRole("button", { name: "Expire" }).click();
-  await expect(protection).toContainText("Effect inactive");
-  await expect(protection).toContainText(
-    "Expired: effect reminders no longer apply.",
+  await deflection.getByRole("button", { name: "Dismiss" }).click();
+  await boostLowerTrait.getByRole("button", { name: "Disrupt" }).click();
+
+  const historyGroup = page.locator(
+    "#activePowersList .active-power-history-group",
   );
-  await expect(protection).toContainText("Ended:");
-  await expect(protection).not.toContainText(
+  await expect(historyGroup).toBeVisible();
+  expect(await historyGroup.evaluate((details) => details.open)).toBe(false);
+  const history = await openActivePowerHistory(page);
+  const expiredProtection = historyPowerCard(history, "Protection");
+  const dismissedDeflection = historyPowerCard(history, "Deflection");
+  const disruptedBoost = historyPowerCard(history, "Boost/Lower Trait");
+
+  await expect(expiredProtection).toContainText("Expired");
+  await expect(dismissedDeflection).toContainText("Dismissed");
+  await expect(disruptedBoost).toContainText("Disrupted");
+  await expect(history).toContainText("Ended");
+  await expect(history.locator(".entry-advisory")).toHaveCount(0);
+  await expect(history.locator("input, textarea, button")).toHaveCount(0);
+  await expect(history).not.toContainText(
     "Apply the Armor bonus to the protected target manually.",
   );
-
-  await deflection.getByRole("button", { name: "Dismiss" }).click();
-  await expect(deflection).toContainText("Effect inactive");
-  await expect(deflection).toContainText(
-    "Dismissed: active effect reminders no longer apply.",
-  );
-  await expect(deflection).toContainText("Ended:");
-  await expect(deflection).not.toContainText(
+  await expect(history).not.toContainText(
     "Apply the attack penalty against the protected target manually.",
   );
-
-  await boostLowerTrait.getByRole("button", { name: "Disrupt" }).click();
-  await expect(boostLowerTrait).toContainText("Effect inactive");
-  await expect(boostLowerTrait).toContainText(
-    "Disrupted: confirm maintained power consequences manually.",
-  );
-  await expect(boostLowerTrait).toContainText("Ended:");
-  await expect(boostLowerTrait).not.toContainText(
+  await expect(history).not.toContainText(
     "Track the affected Trait, target, and whether this is the boost or lower use.",
   );
 });
@@ -929,7 +1191,7 @@ test("Variable power spend records cost breakdown and preserves reminders", asyn
     .filter({
       has: page.getByRole("heading", { name: "Protection" }),
     });
-  await expect(activePower).toContainText("Power Point spend");
+  await expect(activePower).toContainText("Activation details");
   await expect(activePower).toContainText("Base 1 PP; total 3 PP.");
   await expect(activePower).toContainText(
     "Additional Recipients × 2 extra target: +2 PP",
@@ -975,7 +1237,9 @@ test("Variable power spend records cost breakdown and preserves reminders", asyn
   await expect(activePower).toContainText(
     "Additional Recipients × 2 extra target: +2 PP",
   );
-  await expect(activePower).toContainText("Effect reminder");
+  await expect(activePower.locator(".active-power-reminder")).toContainText(
+    "Remember",
+  );
 
   const exportedText = await page.evaluate(() =>
     JSON.stringify(serializeTrackerExport(character)),
@@ -983,16 +1247,19 @@ test("Variable power spend records cost breakdown and preserves reminders", asyn
   await page.evaluate((text) => importJsonText(text), exportedText);
   await openCombat(page);
   const combatPower = page
-    .locator("#playActivePowersList .active-power-card")
+    .locator("#playActivePowersList .combat-cast-power-card")
     .filter({
       has: page.getByRole("heading", { name: "Protection" }),
     });
-  await expect(combatPower).toContainText("Base 1 PP; total 3 PP.");
-  await expect(combatPower).toContainText(
+  await expect(combatPower).not.toContainText("Base 1 PP; total 3 PP.");
+  await expect(combatPower).not.toContainText(
     "Additional Recipients × 2 extra target: +2 PP",
   );
-  await expect(combatPower).toContainText(
+  await expect(combatPower).not.toContainText(
     "Apply the Armor bonus to the protected target manually.",
+  );
+  await expect(combatPower).toContainText(
+    "Grants Armor +2, or +4 with a raise.",
   );
   expect(
     await page.evaluate(() => character.activePowers[0].spendBreakdown),
@@ -1134,11 +1401,11 @@ test("Imported tiered modifiers use one clear cost selector", async ({
   });
   await expect(areaCost.locator("option")).toHaveText([
     "Off",
-    "+2 PP — Medium Template",
-    "+3 PP — Large Template",
+    "+2 PP — 8 yards across",
+    "+3 PP — 12 yards across",
   ]);
   await expect(knownPower).toContainText(
-    "+2: Medium Template • +3: Large Template",
+    "+2: Medium: 4″ diameter / 8 yards across • +3: Large: 6″ diameter / 12 yards across",
   );
   await areaCost.selectOption("3");
   await knownPower
@@ -1222,17 +1489,15 @@ test("Active powers can be dismissed and disrupted without deleting records", as
     });
 
   await dismissable.getByRole("button", { name: "Dismiss" }).click();
-  await expect(dismissable).toContainText("Dismissed");
-  await expect(dismissable).toContainText(
-    "Dismissed: active effect reminders no longer apply.",
-  );
-  await expect(dismissable).toContainText("Ended:");
   await disruptable.getByRole("button", { name: "Disrupt" }).click();
-  await expect(disruptable).toContainText("Disrupted");
-  await expect(disruptable).toContainText(
-    "Disrupted: confirm maintained power consequences manually.",
+  const history = await openActivePowerHistory(page);
+  await expect(historyPowerCard(history, "Dismissable Power")).toContainText(
+    "Dismissed",
   );
-  await expect(disruptable).toContainText("Ended:");
+  await expect(historyPowerCard(history, "Disruptable Power")).toContainText(
+    "Disrupted",
+  );
+  await expect(history).toContainText("Ended");
 
   expect(
     await page.evaluate(() =>

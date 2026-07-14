@@ -201,7 +201,6 @@ function render() {
         `<span><strong>${esc(item.label)}:</strong> +${armorValue(item.id)}</span>`,
     )
     .join("");
-  els.armorStrengthPill.textContent = `Strength ${character.armorStrength}`;
   els.weaponStrengthPill.textContent = `Strength ${character.weaponStrength}`;
   els.moneyDisplay.textContent = money(character.moneyCents);
 
@@ -504,9 +503,17 @@ function encumbranceDetailCard(label, value, className = "") {
   return `<div class="encumbrance-detail-card ${esc(className)}"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
 }
 
+function encumbranceThresholdCard(label, value, className) {
+  return `<div class="encumbrance-threshold-card ${esc(className)}">
+    <span>${esc(label)}</span>
+    <strong>${esc(value)}</strong>
+  </div>`;
+}
+
 function renderEncumbrance() {
   const info = calculateEncumbrance(character);
   const combatInfo = calculateEncumbrance(character, { combat: true });
+  const passiveEffects = passiveEffectSummaryItems("inventory");
   const warning =
     encumbranceWarningText(combatInfo) || encumbranceWarningText(info);
 
@@ -538,16 +545,19 @@ function renderEncumbrance() {
         className: encumbranceStatusClass(combatInfo),
       })}
     </div>
-    <div class="encumbrance-reference-grid">
-      ${encumbranceDetailCard("Carrying Capacity", formatWeightPounds(info.carryingCapacity))}
-      ${encumbranceDetailCard("Maximum Normal Carry", formatWeightPounds(info.normalCapacity))}
-      ${encumbranceDetailCard("Effective Strength", info.effectiveStrength)}
-      ${encumbranceDetailCard("Next Combat Threshold", nextEncumbranceText(combatInfo))}
-      ${encumbranceDetailCard("Container Load", formatWeightPounds(info.inventoryTotals.containerLoad))}
-      ${encumbranceDetailCard("Dropped Load", formatWeightPounds(info.inventoryTotals.droppedLoad))}
-      ${encumbranceDetailCard("Stored Load", formatWeightPounds(info.inventoryTotals.storedLoad))}
-      ${encumbranceDetailCard("Passive Effects", passiveEffectSummaryText("inventory"), "wide")}
-    </div>`;
+    <div class="encumbrance-threshold-grid" aria-label="Encumbrance thresholds">
+      ${encumbranceThresholdCard("Effective Strength", info.effectiveStrength, "strength")}
+      ${encumbranceThresholdCard("Encumbered", formatWeightPounds(info.carryingCapacity), "encumbered")}
+      ${encumbranceThresholdCard("Heavy Overload", formatWeightPounds(info.carryingCapacity * 3), "heavy")}
+      ${encumbranceThresholdCard("Maximum", formatWeightPounds(info.carryingCapacity * 4), "maximum")}
+    </div>
+    ${
+      passiveEffects.length
+        ? `<div class="encumbrance-reference-grid">
+      ${encumbranceDetailCard("Passive Effects", passiveEffects.join("; "), "wide")}
+    </div>`
+        : ""
+    }`;
   els.encumbranceWarning.textContent = warning;
   els.encumbranceWarning.classList.toggle("hidden", !warning);
 }
@@ -577,6 +587,13 @@ function renderCharacterSummary() {
   els.skillsList.innerHTML = skills.length
     ? skills.map(skillChipMarkup).join("")
     : emptyState("No skills recorded.");
+
+  const unskilledSkills = setupSkillCatalogEntries().filter(
+    (skill) => skill.isUnskilled,
+  );
+  els.unskilledSkillsList.innerHTML = unskilledSkills.length
+    ? unskilledSkills.map(skillChipMarkup).join("")
+    : emptyState("No unskilled skills.");
 
   const edges = (character.edges || [])
     .filter((edge) => edge.name)
@@ -706,7 +723,7 @@ function renderCharacterSummary() {
           .join("")}</div>`
       : emptyState("No Arcane Background or Power Points configured.");
 
-  els.characterEquippedSummary.innerHTML = `<div class="equipment-group"><h3>Weapons</h3>${equippedWeaponSummaryMarkup()}</div><div class="equipment-group"><h3>Armor</h3>${equippedArmorSummaryMarkup()}</div><div class="equipment-line secondary"><strong>Cash</strong><span>${money(character.moneyCents)} • Inventory tracks money and gear details.</span></div>`;
+  els.characterEquippedSummary.innerHTML = `<div class="equipment-group"><h3>Weapons</h3>${equippedWeaponSummaryMarkup()}</div><div class="equipment-group"><h3>Armor</h3>${equippedArmorSummaryMarkup()}</div><div class="equipment-line secondary cash-summary"><strong>Cash</strong><span>${money(character.moneyCents)}</span></div>`;
   els.characterBackgroundSummary.innerHTML = characterNotesSummaryMarkup();
 }
 
@@ -861,11 +878,9 @@ function renderPlaySummary() {
   els.playResourcesCard.classList.toggle("hidden", !activeResources.length);
   renderResourceControls(els.playResourcesList, activeResources);
 
-  const showPowers =
-    character.powers.length > 0 || character.activePowers.length > 0;
+  const showPowers = character.powers.length > 0;
   els.playActivePowersCard.classList.toggle("hidden", !showPowers);
   if (showPowers) renderCombatPowers();
 
   renderCombatConsumables();
-  renderCombatReminders();
 }
