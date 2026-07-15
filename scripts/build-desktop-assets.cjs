@@ -1,5 +1,6 @@
 "use strict";
 
+const { spawnSync } = require("node:child_process");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const sharp = require("sharp");
@@ -9,7 +10,12 @@ const sourcePath = path.join(projectRoot, "assets", "studiosam.png");
 const loadingGifPath = path.join(projectRoot, "assets", "studiosam.gif");
 const outputDirectory = path.join(projectRoot, "electron", "build-resources");
 const iconPath = path.join(outputDirectory, "studiosam.ico");
+const squirrelLoadingGifPath = path.join(
+  outputDirectory,
+  "studiosam-loading.gif",
+);
 const iconSizes = [16, 24, 32, 48, 64, 128, 256];
+const squirrelLoadingSize = 128;
 
 function icoFromPngFrames(frames) {
   const headerSize = 6;
@@ -47,18 +53,97 @@ async function main() {
   const frames = await Promise.all(
     iconSizes.map(async (size) => ({
       size,
-      buffer: await sharp(sourcePath).resize(size, size).png().toBuffer(),
+      buffer: await sharp(sourcePath)
+        .resize(size, size)
+        .ensureAlpha()
+        .png()
+        .toBuffer(),
     })),
   );
   await fs.writeFile(iconPath, icoFromPngFrames(frames));
 
-  const loadingGif = await sharp(loadingGifPath, { animated: true }).metadata();
-  if (loadingGif.format !== "gif" || (loadingGif.pages || 1) < 2) {
+  const sourceLoadingGif = await sharp(loadingGifPath, {
+    animated: true,
+  }).metadata();
+  if (sourceLoadingGif.format !== "gif" || (sourceLoadingGif.pages || 1) < 2) {
     throw new Error("assets/studiosam.gif must be an animated GIF.");
   }
 
+  const squirrelLoadingFrames = [];
+  for (let page = 0; page < sourceLoadingGif.pages; page += 1) {
+    squirrelLoadingFrames.push(
+      await sharp(loadingGifPath, { page, pages: 1 })
+        .resize(squirrelLoadingSize, squirrelLoadingSize, { fit: "fill" })
+        .png()
+        .toBuffer(),
+    );
+  }
+
+  await sharp(squirrelLoadingFrames, { join: { animated: true } })
+    .gif({
+      loop: 0,
+      delay: sourceLoadingGif.delay?.[0] || 50,
+      colours: 128,
+      dither: 0.6,
+      interFrameMaxError: 1,
+      keepDuplicateFrames: true,
+    })
+    .toFile(squirrelLoadingGifPath);
+
+  const squirrelLoadingGif = await sharp(squirrelLoadingGifPath, {
+    animated: true,
+  }).metadata();
+  if (
+    squirrelLoadingGif.format !== "gif" ||
+    squirrelLoadingGif.width !== squirrelLoadingSize ||
+    squirrelLoadingGif.pageHeight !== squirrelLoadingSize ||
+    squirrelLoadingGif.pages !== sourceLoadingGif.pages
+  ) {
+    throw new Error(
+      "Generated Squirrel loading GIF failed metadata validation.",
+    );
+  }
+
+  const wpfValidation = spawnSync(
+    "powershell.exe",
+    [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-Command",
+      [
+        '$ErrorActionPreference = "Stop"',
+        "Add-Type -AssemblyName PresentationCore",
+        "$iconUri = [Uri]::new($env:DEADLANDS_SQUIRREL_ICON, [UriKind]::Relative)",
+        "$iconFrame = [Windows.Media.Imaging.BitmapFrame]::Create($iconUri)",
+        'if ($iconFrame.PixelWidth -lt 1) { throw "Setup icon could not be decoded." }',
+        "$uri = [Uri]::new($env:DEADLANDS_SQUIRREL_GIF, [UriKind]::Absolute)",
+        "$frame = [Windows.Media.Imaging.BitmapFrame]::Create($uri)",
+        "$stream = [IO.File]::OpenRead($env:DEADLANDS_SQUIRREL_GIF)",
+        "try {",
+        "  $decoder = New-Object Windows.Media.Imaging.GifBitmapDecoder($stream, [Windows.Media.Imaging.BitmapCreateOptions]::PreservePixelFormat, [Windows.Media.Imaging.BitmapCacheOption]::OnLoad)",
+        '  if ($decoder.Frames.Count -lt 2) { throw "Loading GIF is not animated." }',
+        "} finally { $stream.Dispose() }",
+      ].join("; "),
+    ],
+    {
+      env: {
+        ...process.env,
+        DEADLANDS_SQUIRREL_ICON: iconPath,
+        DEADLANDS_SQUIRREL_GIF: squirrelLoadingGifPath,
+      },
+      encoding: "utf8",
+    },
+  );
+  if (wpfValidation.error) throw wpfValidation.error;
+  if (wpfValidation.status !== 0) {
+    throw new Error(
+      `Generated desktop assets are not compatible with Squirrel's WPF decoder.\n${wpfValidation.stderr || wpfValidation.stdout}`,
+    );
+  }
+
   process.stdout.write(
-    `Generated ${path.relative(projectRoot, iconPath)} and validated assets/studiosam.gif.\n`,
+    `Generated WPF-compatible ${path.relative(projectRoot, iconPath)} and ${path.relative(projectRoot, squirrelLoadingGifPath)}.\n`,
   );
 }
 

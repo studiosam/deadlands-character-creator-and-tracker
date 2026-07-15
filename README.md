@@ -121,6 +121,9 @@ npm run desktop:package
 The Squirrel installer and its release metadata are written to `release/`. The
 minimal installer displays the animated Studio Sam artwork from
 `assets/studiosam.gif` while it installs the app for the current Windows user.
+The asset build creates the installer icon, re-encodes the animation, and
+verifies both with the same Windows WPF decoder used by Squirrel before
+packaging.
 The build runs in a temporary directory, replaces superseded release artifacts
 only after a successful package, and removes its temporary output afterward.
 If Windows locks a build directory, the cleanup helper retries it in the

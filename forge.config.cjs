@@ -13,7 +13,12 @@ const iconPath = path.join(
   "build-resources",
   "studiosam.ico",
 );
-const loadingGifPath = path.join(__dirname, "assets", "studiosam.gif");
+const loadingGifPath = path.join(
+  __dirname,
+  "electron",
+  "build-resources",
+  "studiosam-loading.gif",
+);
 
 module.exports = {
   outDir: outputDirectory,
