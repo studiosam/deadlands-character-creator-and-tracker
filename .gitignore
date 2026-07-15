@@ -23,12 +23,13 @@ savaged-us-json-export-character-*.json
 !docs/Sample Characters/
 !docs/Sample Characters/*.json
 
-# Node/npm files, only relevant if this project later adds a build step
+# Node/npm and generated desktop builds
 node_modules/
 dist/
 build/
 release/
-electron/build-resources/installerSidebar.bmp
+release-v*/
+electron/build-resources/
 .env
 .env.*
 test-results/

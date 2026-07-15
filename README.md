@@ -118,10 +118,32 @@ Build the Windows installer with:
 npm run desktop:package
 ```
 
-The installable EXE is written to `release/`. The assisted NSIS installer uses
-the Studio Sam artwork from `assets/studiosam.gif`; the build script converts
-its first frame to the static 164×314 BMP required by NSIS. The installer is
-currently unsigned, so Windows may show a SmartScreen warning.
+The Squirrel installer and its release metadata are written to `release/`. The
+minimal installer displays the animated Studio Sam artwork from
+`assets/studiosam.gif` while it installs the app for the current Windows user.
+The build runs in a temporary directory, replaces superseded release artifacts
+only after a successful package, and removes its temporary output afterward.
+If Windows locks a build directory, the cleanup helper retries it in the
+background; run `npm run cleanup:after-vscode` to schedule another cleanup after
+VS Code closes. The installer is currently unsigned, so Windows may show a
+SmartScreen warning.
+
+### Publishing a GitHub Release
+
+The release workflow builds the Windows installer on a GitHub-hosted Windows
+runner whenever a semantic version tag is pushed. The tag must exactly match
+the version in `package.json`, prefixed with `v`.
+
+```sh
+git push origin main
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow creates or updates the matching GitHub Release and uploads the
+Squirrel Setup EXE, full NuGet package, `RELEASES` manifest, and SHA-256 checksum
+file. An existing tag can also be rebuilt from the workflow's manual
+`workflow_dispatch` action.
 
 ## Data and Privacy
 
@@ -173,7 +195,8 @@ Common commands:
 ```sh
 npm run dev                  # Start Vite
 npm run desktop              # Start the Electron desktop app
-npm run desktop:package      # Build the Windows installer EXE
+npm run desktop:package      # Build the Squirrel installer and release metadata
+npm run cleanup:after-vscode # Remove locked temporary builds after VS Code closes
 npm run lint                 # Run project lint checks
 npm run test:static          # Parse, lint, and validate catalogs
 npm run test:browser:fast    # Desktop Playwright suite
@@ -203,10 +226,12 @@ browser suite for pushes and pull requests targeting `main`.
 deadlands-character-creator-and-tracker/
   index.html                 Main application shell
   styles.css                 Shared layout and theme styles
-  assets/                    Images and other static assets
+  assets/                    Images and animated installer artwork
   favicon/                   Browser icons
   electron/
     main.cjs                 Secure desktop window and native shortcuts
+  forge.config.cjs           Forge/Squirrel packaging configuration
+  scripts/                   Desktop asset, packaging, and cleanup helpers
   src/
     config.js                Version and shared configuration
     persistence.js           App-level persistence and migrations

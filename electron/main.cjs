@@ -2,6 +2,8 @@ const { app, BrowserWindow, Menu, shell } = require("electron");
 const path = require("node:path");
 const { fileURLToPath } = require("node:url");
 
+if (require("electron-squirrel-startup")) app.quit();
+
 const APP_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_ZOOM_FACTOR = 1;
 const MIN_ZOOM_FACTOR = 0.5;
