@@ -103,3 +103,17 @@ test("global undo groups rapid note edits into one undo state", async ({
     .poll(() => page.evaluate(() => undoHistoryCounts()))
     .toEqual({ undo: 0, redo: 1 });
 });
+
+test("keyboard shortcuts undo and redo tracker changes", async ({ page }) => {
+  await enterTracker(page);
+  await saveCurrentCharacter(page);
+  await openCombat(page);
+  await increaseWounds(page);
+  await expectWounds(page, 1);
+
+  await page.locator("body").press("Control+z");
+  await expectWounds(page, 0);
+
+  await page.locator("body").press("Control+Shift+z");
+  await expectWounds(page, 1);
+});

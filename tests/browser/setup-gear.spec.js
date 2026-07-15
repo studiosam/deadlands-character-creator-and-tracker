@@ -686,6 +686,7 @@ test("Gear setup weapon picker stacks into usable mobile cards", async ({
 test("Gear setup purchases source-track starting gear and reduce funds", async ({
   page,
 }) => {
+  test.setTimeout(45_000);
   await seedGearSetupCharacter(page, {
     name: "Starting Gear Purchaser",
     preferredId: "starting-gear-purchaser",

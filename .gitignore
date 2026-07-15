@@ -27,6 +27,8 @@ savaged-us-json-export-character-*.json
 node_modules/
 dist/
 build/
+release/
+electron/build-resources/installerSidebar.bmp
 .env
 .env.*
 test-results/

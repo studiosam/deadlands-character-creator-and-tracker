@@ -1,346 +1,261 @@
 # Deadlands Character Tracker
 
-An unofficial browser-based table companion for Deadlands: The Weird West and
-SWADE play. It is primarily a local-first live campaign tracker and player
-dashboard for use after character creation: combat state, inventory, arcane
-resources, active powers, notes, advancement history, and table reminders live
-in one static web app that can run from GitHub Pages or directly from the
-project folder.
+An unofficial, local-first character setup tool and interactive character sheet
+for **Deadlands: The Weird West** and **Savage Worlds Adventure Edition
+(SWADE)**.
 
-Character Setup is included as setup scaffolding and validation support for this
-prototype, but the app is not a replacement for Savaged.us, Pinnacle products,
-the official books, or a full VTT. In a real official integration, Savaged.us or
-another licensed builder would remain the source of truth for official
-character creation and complete catalogs.
+The app is designed for table use after character creation. It keeps frequently
+changing player information—wounds, Fatigue, Bennies, ammunition, inventory,
+Power Points, active powers, notes, and advancement history—in one responsive
+browser app. It is an interactive sheet and bookkeeping aid, not a combat
+simulator, VTT, or replacement for the official rules.
 
-This project is portfolio-first: it demonstrates product thinking, stateful
-front-end architecture without a framework, import normalization, local data
-persistence, responsive table-use UX, and practical test coverage around a
-rules-heavy hobby tool.
+**Current version:** `1.0.0`
 
-## Problem and Audience
+**Current status:** First stable browser and Windows desktop release. Continued
+table testing will inform patch releases and visual polish.
 
-Deadlands/SWADE character sheets collect a lot of short-lived table state:
-wounds, fatigue, Bennies, Conviction, loaded rounds, ammo reserves, armor
-locations, active powers, Power Points, carried gear, notes, and reminders. A
-paper sheet or static PDF can track the permanent character, but live play often
-needs a faster cockpit.
+## Features
 
-This app targets players who already own and use the official rulebooks and
-want a local, private, session-focused tracker at the table.
+### Character Setup
 
-## Current Workflows
+- Seven guided steps: Concept, Attributes, Skills, Edges, Hindrances, Powers,
+  and Gear.
+- Per-step validation, budget meters, warnings, and catalog browsing.
+- Concept randomizer backed by `docs/deadlands_weird_west_names.json`; player
+  name and gender remain manual choices.
+- Optional Hindrances and correct handling for characters without an Arcane
+  Background.
+- Finalization from Gear with a compact blocker list and jump links to any step
+  that needs attention.
+- Creation-baseline snapshots for eligible newly created characters.
 
-- Start from a minimal landing page that can continue the active saved
-  character, choose a saved character, create a character, import JSON, try the
-  sample when no characters exist, or open the read-only Sources & Rulesets
-  page.
-- Track wounds, fatigue, Bennies, Conviction, penalties, defenses, conditions,
-  combat resources, powers, consumables, reminders, and GM-facing combat
-  declarations.
-- Manage weapons, loaded rounds, weapon-card reserve ammo purchases, armor by
-  location, gear, vehicles, storage locations, carrying capacity, and
-  encumbrance.
-- Build or review a Deadlands/SWADE character through Character Setup, finish
-  setup from Gear, and start play from the live tracker.
-- Review imported or newly created characters through the `setupStatus`
-  lifecycle: characters start as `needsReview`, confirmed setup becomes
-  `complete`, and Review Setup can intentionally reopen setup later.
-- Use the Character tab as a reference-focused Character Sheet after setup is
-  complete, while keeping the setup workflow hidden by default.
-- Browse a read-only Catalog reference for Edges, Hindrances, and Powers.
-- Track Arcane Backgrounds, Power Points, known powers, active powers, variable
-  Power Point spending, and Huckster Dealing with the Devil helper state.
-- Track Deadlands-specific player bookkeeping for Mad Scientist devices,
-  Huckster state, and Agent/Ranger organization records without automating
-  Marshal-facing outcomes.
-- Import Savaged.us JSON exports and preserve app-owned tracker data through
-  localStorage and JSON export/import.
-- Undo or redo recent per-character tracker changes with snapshot history that
-  persists through reload.
-- Save, switch, rename, duplicate, delete, and export multiple local character
-  slots from the Main Menu > Characters panel.
-- Choose a visual theme from the landing page or the standalone tracker-header
-  theme picker; theme preferences persist in the browser.
-- Edit stable character profile fields from the Characters panel: name, player,
-  profession or title, age, gender, description, and background.
-- Review app version, schema version, backup actions, and local data controls
-  from Local Data. Privacy/legal notes and source-book assumptions live on their
-  own pages.
+### Live Character Sheet
 
-## Current Scope
+- **Combat:** wounds, Fatigue, Bennies, Conviction, concise roll modifiers,
+  defenses, weapon use, ammunition, consumables, and power casting.
+- **Character:** traits, skilled and unskilled skills, Edges, Hindrances,
+  advancement history, and character reference information.
+- **Inventory:** equipped and carried gear, backpack load, off-body storage,
+  vehicles and mounts, weapon-specific ammunition, money, and tiered
+  encumbrance thresholds.
+- **Arcane:** available only when the character has arcane content; manages
+  Power Points, known powers, active-power records, reminders, and variable
+  Power Point options.
+- **Notes:** player notes and Deadlands-specific bookkeeping records.
 
-- Implemented: live character tracker, inventory/equipment
-  management, active powers, local character library, JSON import/export,
-  minimal landing page, read-only Sources & Rulesets, Character Setup validation,
-  confirmed Character Sheet mode, Characters panel profile editing, global
-  undo/redo, Deadlands bookkeeping records, and automated browser/static checks.
-- Implemented setup scaffolding: concept, Attributes, Skills, Edges,
-  optional Hindrances with benefit spending, Powers setup, Gear purchases,
-  setup sell-back, useful-ammo prioritization, setup source tracking, Gear
-  finalization, and creation baseline snapshots for eligible created pre-advance
-  characters.
-- Implemented Advancement baseline: canonical app-owned Advancement entries,
-  supported application for existing advancement types, persistence,
-  import-history handling, and safe undo checks where reliable before/after
-  data exists.
-- Deferred: full Edge prerequisite enforcement, full Power effect automation,
-  free/source-granted starting gear modeling, imported advanced-character
-  baseline reconstruction, editable campaign/source configuration, and any
-  system that would replace Marshal adjudication.
+### App and Data Management
 
-## Versioning
+- Multiple local character slots with create, rename, duplicate, delete,
+  import, and export actions.
+- Savaged.us JSON import plus app-owned character, draft, and full-state JSON
+  formats.
+- Local snapshot-based undo and redo for tracker changes.
+- Persistent visual themes selectable from the main menu or tracker header.
+- Read-only catalogs and source/ruleset references.
+- Local Data, Privacy & Legal, and Sources & Rulesets pages kept outside the
+  live tracker workflow.
 
-Current app version: `0.2.0`.
+## Intended Workflow
 
-Use semantic versioning from this point forward:
+1. Open the main menu and choose, create, or import a character.
+2. Complete Character Setup when required.
+3. Finish setup from the Gear step by selecting **Finish Setup & Start
+   Playing**. Setup is never finalized silently.
+4. Use the read-only Character Sheet and live tracker tabs during play.
+5. Return to Character Setup only when setup information needs deliberate
+   correction.
 
-- Patch releases (`0.2.1`, `0.2.2`, etc.) are for bug fixes, small visual
-  polish, docs, tests, and other low-risk corrections.
-- Minor releases (`0.3.0`, `0.4.0`, etc.) are for meaningful workflow or feature
-  milestones, such as the next live Character Tracker cleanup pass.
-- Major release `1.0.0` is reserved for a broadly table-ready app with both
-  Character Setup and the live tracker stabilized.
+The tracker header keeps only table-relevant controls: Main Menu, Undo, Redo,
+Characters, and the standalone theme picker. Broader data and app management
+remain on the main menu.
 
-`0.2.0` marks the Character Setup MVP milestone.
+## Quick Start
 
-## Known Limitations
-
-- The app does not replace official books, licensed catalogs, Savaged.us, or a
-  VTT.
-- The app uses short app-facing summaries and reminders; it does not include
-  full rules text or rulebook tables.
-- The app does not automate full combat resolution, attack/damage outcomes,
-  Fear tables, duels, travel systems, or Marshal-facing decisions.
-- There is no cloud sync, account system, shared campaign storage, telemetry, or
-  analytics. Data stays in browser local storage unless the user exports or
-  imports JSON backups.
-- Imported or already-advanced characters may require review because external
-  exports do not always contain enough information to reconstruct original
-  creation choices or safe before/after advancement data.
-
-## Demo and Screenshots
-
-Try the hosted demo:
+Try the hosted app:
 
 ```text
 https://studiosam.github.io/deadlands-character-creator-and-tracker/
 ```
 
-Open `index.html` directly in a browser, or serve the folder locally:
+Or run it locally:
 
 ```sh
 npm install
 npm run dev
 ```
 
-The app is published from GitHub Pages and can also be served from the
-repository root.
+Then open the local URL printed by Vite. The app can also be opened directly
+from `index.html`, but the local development server gives more consistent
+browser behavior.
 
-Recommended portfolio screenshots/GIFs:
+### Desktop App
 
-- Minimal landing page with saved-character selection.
-- Tracker tab during live play with wounds, Bennies, weapons, concise roll
-  modifiers, ammo, conditions, power casting, and Undo/Redo visible.
-- Inventory tab showing storage locations and encumbrance.
-- Encumbrance separates Current Load from Combat Load: Current Load is what the
-  character normally carries, Combat Load assumes droppable backpack/container
-  load is dropped, Carrying Capacity is the base penalty threshold, and Maximum
-  Normal Carry is only a separate out-of-combat allowance when shown.
-- Inventory visually separates on-body/backpack gear from off-body storage:
-  Gear shows carried and pack/container load, weapon cards show matching ammo
-  reserves, and Storage Locations shows home/cart/horse/camp items.
-- Arcane tab, enabled only for characters with recorded arcane content, showing
-  Power Points, known powers, active powers, runtime reminders, and variable
-  Power Point spend details.
-- Character Setup Gear finalization, confirmed Character Sheet mode, and
-  creation baseline audit.
-- Characters panel profile editor.
-- Read-only Sources & Rulesets page.
-- Savaged.us import flow with import warnings.
+The same static app can run in its Electron desktop shell:
 
-## Technical Highlights
+```sh
+npm install
+npm run desktop
+```
 
-- Static HTML/CSS/JavaScript app with no runtime backend.
-- Split tracker modules under `src/tracker/` for rendering, storage, inventory,
-  combat, advancement, arcane powers, and event handling.
-- Explicit exported JSON `schemaVersion` with migration helpers for old raw
-  saves, full app state, creation drafts, and tracker-character exports.
-- Local-first persistence through `localStorage`; JSON export/import remains the
-  portability and backup mechanism.
-- Per-character snapshot undo/redo history is stored separately from exported
-  character JSON so table mistakes can be recovered locally without changing
-  backup format.
-- Character library state is stored separately from the legacy active tracker
-  save, so older browser saves can migrate without losing the existing key.
-- App-styled dialogs and toasts replace native browser alerts/confirms.
-- Image-backed minimal landing page supports saved-character selection, creation,
-  JSON import, sample loading, and read-only Sources & Rulesets access.
-- `setupStatus` separates one-time Character Setup validation/finalization from
-  the normal confirmed Character Sheet.
-- Characters panel profile editing keeps stable identity/profile updates out of
-  casual Character Sheet reference use.
-- Local Data centralizes app status, backup/export actions, and browser storage
-  controls. Privacy & Legal and Sources & Rulesets are separate informational
-  pages.
-- Playwright tests cover load, responsive tabs, sample loading, landing flows,
-  setupStatus, profile editing, imports, export/import round trips, persistence,
-  character-library isolation, inventory, setup flows, active powers,
-  Advancement, Deadlands bookkeeping, global undo/redo, and core tracker
-  controls.
+Desktop shortcuts:
 
-## Import and Export Formats
+- `F11`: enter or leave full screen.
+- `Ctrl`/`Cmd` + `+` or `-`: zoom in or out.
+- `Ctrl`/`Cmd` + `0`: reset zoom.
+- `Ctrl`/`Cmd` + `Z`: undo the last tracker change when focus is outside an
+  editable field.
+- `Ctrl`/`Cmd` + `Shift` + `Z` or `Ctrl` + `Y`: redo the last tracker change.
 
-Supported imports:
+Text fields retain their normal native undo behavior while being edited. The
+Electron app uses its own local browser profile, so browser and desktop data do
+not automatically share `localStorage`; JSON export/import can move characters
+between them.
 
-- Tracker character JSON exported by this app.
-- Full app state JSON exported by this app.
+Build the Windows installer with:
+
+```sh
+npm run desktop:package
+```
+
+The installable EXE is written to `release/`. The assisted NSIS installer uses
+the Studio Sam artwork from `assets/studiosam.gif`; the build script converts
+its first frame to the static 164×314 BMP required by NSIS. The installer is
+currently unsigned, so Windows may show a SmartScreen warning.
+
+## Data and Privacy
+
+Character data is stored in the browser with `localStorage`. There is no cloud
+sync, account system, telemetry, analytics, or remote character database.
+
+Use JSON export for backups or moving characters between browsers. Supported
+imports include:
+
+- Character JSON exported by this app.
+- Full app-state JSON exported by this app.
 - Character creation draft JSON exported by this app.
-- Older raw tracker or creator JSON from before `schemaVersion`.
+- Older tracker/creator JSON handled by schema migrations.
 - Savaged.us character JSON exports.
 
-New app exports include:
+App exports include a `schemaVersion`, `exportType`, and `exportedAt` timestamp.
+The legacy `deadlands-tracker-v2` key remains supported for compatibility, and
+the multi-character library uses `deadlands-character-library-v1`.
 
-- `schemaVersion`: current app schema version.
-- `exportType`: `tracker-character`, `creation-draft`, or `full-state`.
-- `exportedAt`: ISO timestamp for exported files.
+Exported files may contain player names, notes, campaign information, or other
+private table data. See [PRIVACY.md](PRIVACY.md) for the public privacy summary.
 
-The existing browser save key remains `deadlands-tracker-v2` for backward
-compatibility.
-Multiple-character library saves use `deadlands-character-library-v1`, while
-the legacy key continues to mirror the active character for older exports and
-existing persistence paths.
+## Scope and Limitations
 
-## Privacy
+The app intentionally does not automate:
 
-All character data is stored locally in the browser unless the user exports a
-JSON file. Exported files may contain player names, campaign notes, secrets,
-session notes, or other private table information. There is no backend sync,
-analytics, account system, or remote storage in the current app.
+- Full attack, damage, combat, duel, Fear, travel, or encounter resolution.
+- Marshal-facing decisions or secret outcomes.
+- Complete Edge prerequisite enforcement.
+- Every Power effect or rules interaction.
+- A complete licensed character catalog.
+- Cloud sync or shared campaign state.
 
-See [PRIVACY.md](PRIVACY.md) for the short public privacy note.
+Still-deferred data work includes free/source-granted starting gear, reliable
+creation-baseline reconstruction for imported advanced characters, and editable
+campaign/source configuration. The official books and Marshal remain the
+source of truth.
 
-## Legal and IP Posture
+## Development
 
-This is an unofficial fan tool and portfolio project. It is not affiliated with,
-endorsed by, sponsored by, or approved by Pinnacle Entertainment Group. Users
-need the official books to play. The app should avoid reproducing long rules
-text and should treat catalog summaries as practical app metadata, not a
-replacement for the rulebooks.
+Install dependencies once:
 
-See [NOTICE.md](NOTICE.md). The repository is source-available for
-non-commercial use only, and bundled Deadlands/SWADE-specific rules/catalog
-metadata is not licensed for sale or commercial redistribution.
+```sh
+npm install
+```
+
+Common commands:
+
+```sh
+npm run dev                  # Start Vite
+npm run desktop              # Start the Electron desktop app
+npm run desktop:package      # Build the Windows installer EXE
+npm run lint                 # Run project lint checks
+npm run test:static          # Parse, lint, and validate catalogs
+npm run test:browser:fast    # Desktop Playwright suite
+npm run test:setup:desktop   # Focused Character Setup tests
+npm run test:inventory       # Inventory tests on configured projects
+npm run test:powers          # Arcane and Power tests
+npm run test:combat          # Combat-focused tests
+npm run test:import          # Import/export tests
+npm run test:undo            # Undo/redo tests
+npm test                     # Static checks and full browser suite
+npm run format               # Format supported project files
+npm run format:check         # Verify formatting without changes
+```
+
+Recommended workflow:
+
+1. Run the smallest relevant desktop test while iterating.
+2. Run the full targeted feature group before committing.
+3. Run `npm test` before a release or broad handoff when practical.
+
+GitHub Actions runs static checks, formatting validation, and the Playwright
+browser suite for pushes and pull requests targeting `main`.
 
 ## Project Structure
 
 ```text
 deadlands-character-creator-and-tracker/
-  index.html
-  styles.css
+  index.html                 Main application shell
+  styles.css                 Shared layout and theme styles
+  assets/                    Images and other static assets
+  favicon/                   Browser icons
+  electron/
+    main.cjs                 Secure desktop window and native shortcuts
   src/
-    config.js
-    persistence.js
-    app-ui.js
-    app.js
-    creator.js
-    savaged-import.js
-    tracker/
-      storage.js
-      events.js
-      render.js
-      combat.js
-      inventory.js
-      equipment.js
-      character-advancement.js
-      ...
-  docs/
-    case-study.md
-    project-documentation-guide.md
-    manual-checklist.md
-    Sample Characters/
+    config.js                Version and shared configuration
+    persistence.js           App-level persistence and migrations
+    app-ui.js                Main-menu and shared UI behavior
+    app.js                   Application bootstrap
+    creator.js               Character Setup behavior
+    savaged-import.js        Savaged.us normalization
+    tracker.js               Tracker bootstrap
+    tracker/                 Tracker feature modules
+  docs/                      Contracts, roadmap, rules notes, and checklists
   tests/
-    browser/
-    static/
+    browser/                 Playwright behavior tests
+    static/                  Parse, lint, and catalog validation
 ```
 
-## Development
+## Documentation
 
-```sh
-npm install
-npm run dev
-npm run lint
-npm test
-npm run test:browser:fast
-npm run format:check
-```
+- [Character Setup contract](docs/character-setup-contract.md)
+- [Advancement contract](docs/advancement-contract.md)
+- [Mechanics roadmap](docs/mechanics-roadmap.md)
+- [Manual checklist](docs/manual-checklist.md)
+- [Case study](docs/case-study.md)
+- [Project documentation guide](docs/project-documentation-guide.md)
 
-Scripts:
+## Versioning
 
-- `npm run dev`: serve the static app with Vite.
-- `npm run lint`: run static project checks.
-- `npm run test:static`: run static parse and lint checks.
-- `npm run test:browser`: run the Playwright browser suite.
-- `npm run test:browser:desktop`: run the full browser suite on the desktop
-  Playwright project only.
-- `npm run test:browser:mobile`: run the full browser suite on the mobile
-  Playwright project only.
-- `npm run test:browser:fast`: alias for the desktop browser suite.
-- `npm run test:setup`, `npm run test:advancement`,
-  `npm run test:inventory`, `npm run test:powers`, `npm run test:combat`,
-  `npm run test:deadlands`, `npm run test:import`, and `npm run test:undo`:
-  run targeted feature batches across configured browser projects.
-- `npm run test:setup:desktop`: run setup tests on desktop only for faster
-  local iteration.
-- `npm test`: run static checks and the Playwright browser suite.
-- `npm run format`: format project files with Prettier.
-- `npm run format:check`: check formatting without rewriting files.
+The project uses semantic versioning:
 
-Recommended local workflow:
+- Patch releases (`1.0.1`, `1.0.2`, etc.) cover bug fixes, visual polish,
+  documentation, tests, and other low-risk corrections.
+- Minor releases (`1.1.0`, `1.2.0`, etc.) mark meaningful workflow or feature
+  milestones.
 
-1. While developing, run the smallest relevant targeted desktop command, such
-   as `npm run test:setup:desktop` or `npx playwright test --project=desktop
-tests/browser/setup-edges.spec.js`.
-2. Before committing, run the full targeted feature group, such as
-   `npm run test:setup`, `npm run test:powers`, or `npm run test:inventory`.
-3. Before pushing, release, or broader handoff, run `npm test` as the final
-   safety gate.
+`0.2.0` marked the Character Setup MVP milestone. `1.0.0` is the first stable
+browser and installable Windows desktop release.
 
-See [docs/project-documentation-guide.md](docs/project-documentation-guide.md)
-for the source comment and project documentation standard.
+## Legal
 
-GitHub Actions runs `npm ci`, installs Playwright browsers, then runs
-`npm run test:static`, `npm run format:check`, and `npm run test:browser` on
-pushes and pull requests targeting `main`.
+This is an unofficial fan tool and portfolio project. It is not affiliated
+with, endorsed by, sponsored by, or approved by Pinnacle Entertainment Group.
+Users need the official books to play. Catalog summaries are app metadata, not
+a substitute for published rules text.
 
-## Roadmap
-
-- See [Mechanics Roadmap](docs/mechanics-roadmap.md) for the rules-mechanics
-  gap analysis and phased implementation plan.
-- Add final screenshots/GIFs for the hosted demo.
-- Continue converting manual rules-heavy checklist items into automated tests
-  without expanding MVP scope.
-- Keep Character Setup, Character Sheet reference, Characters profile editing,
-  Inventory, Arcane, Combat, and the existing Advancement workflow clearly
-  separated.
-- Finish Character Setup UX polish before adding new mechanics.
-- Refactor the largest setup modules after the current Gear workflow stabilizes.
-- Harden schema migrations as real breaking data changes appear.
-- Improve onboarding copy and empty states from actual table feedback.
-- If monetization becomes serious, split a generic tracker core from
-  user-provided setting data and resolve licensing first.
+See [NOTICE.md](NOTICE.md) for attribution and legal notices.
 
 ## License
 
-This repository is source-available under a custom non-commercial license. It
-is not licensed under MIT, Apache, GPL, or another open-source license.
-
-The license allows personal non-commercial use, educational or portfolio review,
-private non-commercial modification, and non-commercial patches or forks that
-preserve the project notices. Selling, paid hosting, commercial bundling,
-commercial distribution, or commercial derivative use requires prior written
-permission from the copyright holder.
-
-See [LICENSE](LICENSE) for the project-specific terms. Third-party Deadlands,
-Savage Worlds, SWADE, and related names or setting material remain owned by
-their respective rights holders and are not licensed by this project.
+This repository is source-available under the custom non-commercial terms in
+[LICENSE](LICENSE). It is not licensed under MIT, Apache, GPL, or another
+open-source license. Third-party Deadlands, Savage Worlds, SWADE, and related
+names or setting material remain the property of their respective rights
+holders.

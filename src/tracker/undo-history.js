@@ -213,7 +213,35 @@ function markUndoBoundary() {
   undoForceNextBoundary = true;
 }
 
+function isNativeUndoTarget(target) {
+  return Boolean(
+    target?.closest?.(
+      'input, textarea, select, [contenteditable="true"], [contenteditable=""]',
+    ),
+  );
+}
+
+function handleUndoHistoryKeyboardShortcut(event) {
+  if (
+    event.defaultPrevented ||
+    event.repeat ||
+    event.altKey ||
+    (!event.ctrlKey && !event.metaKey) ||
+    isNativeUndoTarget(event.target)
+  ) {
+    return;
+  }
+
+  const key = String(event.key || "").toLowerCase();
+  const redo = key === "y" || (key === "z" && event.shiftKey);
+  if (key !== "z" && key !== "y") return;
+
+  const applied = redo ? redoLastCharacterChange() : undoLastCharacterChange();
+  if (applied) event.preventDefault();
+}
+
 function installUndoHistoryInteractionTracking() {
+  document.addEventListener("keydown", handleUndoHistoryKeyboardShortcut, true);
   document.addEventListener(
     "click",
     (event) => {
