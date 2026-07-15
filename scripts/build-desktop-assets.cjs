@@ -15,7 +15,8 @@ const squirrelLoadingGifPath = path.join(
   "studiosam-loading.gif",
 );
 const iconSizes = [16, 24, 32, 48, 64, 128, 256];
-const squirrelLoadingSize = 128;
+const squirrelLoadingSize = 256;
+const squirrelLoadingCornerRadius = 32;
 
 function icoFromPngFrames(frames) {
   const headerSize = 6;
@@ -69,11 +70,18 @@ async function main() {
     throw new Error("assets/studiosam.gif must be an animated GIF.");
   }
 
+  const roundedLoadingMask = Buffer.from(`
+    <svg width="${squirrelLoadingSize}" height="${squirrelLoadingSize}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="${squirrelLoadingSize}" height="${squirrelLoadingSize}" rx="${squirrelLoadingCornerRadius}" ry="${squirrelLoadingCornerRadius}" fill="#fff" />
+    </svg>
+  `);
   const squirrelLoadingFrames = [];
   for (let page = 0; page < sourceLoadingGif.pages; page += 1) {
     squirrelLoadingFrames.push(
       await sharp(loadingGifPath, { page, pages: 1 })
         .resize(squirrelLoadingSize, squirrelLoadingSize, { fit: "fill" })
+        .ensureAlpha()
+        .composite([{ input: roundedLoadingMask, blend: "dest-in" }])
         .png()
         .toBuffer(),
     );

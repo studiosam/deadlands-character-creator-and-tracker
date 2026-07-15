@@ -1,7 +1,7 @@
 {
   "name": "deadlands-character-creator-and-tracker",
   "productName": "Deadlands Character Tracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "main": "electron/main.cjs",
   "author": "Studio Sam",
@@ -35,9 +35,6 @@
     "test": "npm run test:static && npm run test:browser",
     "format": "prettier --write README.md NOTICE.md PRIVACY.md docs/case-study.md docs/character-setup-contract.md docs/advancement-contract.md docs/deadlands-power-points-arcane-backgrounds.md docs/manual-checklist.md docs/mechanics-roadmap.md docs/project-documentation-guide.md index.html package.json playwright.config.cjs forge.config.cjs \".github/workflows/*.{yml,yaml}\" \"electron/*.{js,cjs}\" \"scripts/*.{js,cjs}\" \"tests/**/*.{js,cjs}\" src/config.js src/persistence.js src/app-ui.js src/app.js src/arcane.js src/creator.js src/default-character.js src/savaged-import.js src/tracker.js \"src/tracker/**/*.js\"",
     "format:check": "prettier --check README.md NOTICE.md PRIVACY.md docs/case-study.md docs/character-setup-contract.md docs/advancement-contract.md docs/deadlands-power-points-arcane-backgrounds.md docs/manual-checklist.md docs/mechanics-roadmap.md docs/project-documentation-guide.md index.html package.json playwright.config.cjs forge.config.cjs \".github/workflows/*.{yml,yaml}\" \"electron/*.{js,cjs}\" \"scripts/*.{js,cjs}\" \"tests/**/*.{js,cjs}\" src/config.js src/persistence.js src/app-ui.js src/app.js src/arcane.js src/creator.js src/default-character.js src/savaged-import.js src/tracker.js \"src/tracker/**/*.js\""
-  },
-  "dependencies": {
-    "electron-squirrel-startup": "^1.0.1"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.2",

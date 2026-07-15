@@ -19,6 +19,8 @@ const loadingGifPath = path.join(
   "build-resources",
   "studiosam-loading.gif",
 );
+const appIconUrl =
+  "https://raw.githubusercontent.com/studiosam/deadlands-character-creator-and-tracker/main/favicon/apple-touch-icon.png";
 
 module.exports = {
   outDir: outputDirectory,
@@ -53,6 +55,7 @@ module.exports = {
           "Unofficial local-first Deadlands/SWADE character creator and table tracker.",
         setupExe: `Deadlands-Character-Tracker-${version}-Setup.exe`,
         setupIcon: iconPath,
+        iconUrl: appIconUrl,
         loadingGif: loadingGifPath,
         noMsi: true,
       },

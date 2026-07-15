@@ -1,8 +1,50 @@
 const { app, BrowserWindow, Menu, shell } = require("electron");
+const { spawn } = require("node:child_process");
 const path = require("node:path");
 const { fileURLToPath } = require("node:url");
 
-if (require("electron-squirrel-startup")) app.quit();
+function runSquirrelShortcutCommand(args) {
+  const updateExe = path.resolve(
+    path.dirname(process.execPath),
+    "..",
+    "Update.exe",
+  );
+  const child = spawn(updateExe, args, { windowsHide: true });
+  child.once("error", () => app.quit());
+  child.once("close", () => app.quit());
+}
+
+function handleSquirrelEvent() {
+  if (process.platform !== "win32") return false;
+
+  const command = process.argv[1];
+  const target = path.basename(process.execPath);
+  if (command === "--squirrel-install" || command === "--squirrel-updated") {
+    runSquirrelShortcutCommand([
+      `--createShortcut=${target}`,
+      "--shortcut-locations=Desktop,StartMenu",
+      `--setupIcon=${process.execPath}`,
+    ]);
+    return true;
+  }
+
+  if (command === "--squirrel-uninstall") {
+    runSquirrelShortcutCommand([
+      `--removeShortcut=${target}`,
+      "--shortcut-locations=Desktop,StartMenu",
+    ]);
+    return true;
+  }
+
+  if (command === "--squirrel-obsolete") {
+    app.quit();
+    return true;
+  }
+
+  return false;
+}
+
+const squirrelEventHandled = handleSquirrelEvent();
 
 const APP_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_ZOOM_FACTOR = 1;
@@ -126,19 +168,21 @@ function createMainWindow() {
   return window;
 }
 
-app.whenReady().then(() => {
-  app.setName("Deadlands Character Tracker");
-  if (process.platform === "win32") {
-    app.setAppUserModelId("com.studiosam.deadlands-character-tracker");
-  }
-  Menu.setApplicationMenu(null);
-  createMainWindow();
+if (!squirrelEventHandled) {
+  app.whenReady().then(() => {
+    app.setName("Deadlands Character Tracker");
+    if (process.platform === "win32") {
+      app.setAppUserModelId("com.studiosam.deadlands-character-tracker");
+    }
+    Menu.setApplicationMenu(null);
+    createMainWindow();
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+    });
   });
-});
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") app.quit();
+  });
+}
