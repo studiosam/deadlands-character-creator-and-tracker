@@ -6,10 +6,10 @@ const path = require("node:path");
 const sharp = require("sharp");
 
 const projectRoot = path.resolve(__dirname, "..");
-const sourcePath = path.join(projectRoot, "assets", "studiosam.png");
+const sourcePath = path.join(projectRoot, "favicon", "apple-touch-icon.png");
 const loadingGifPath = path.join(projectRoot, "assets", "studiosam.gif");
 const outputDirectory = path.join(projectRoot, "electron", "build-resources");
-const iconPath = path.join(outputDirectory, "studiosam.ico");
+const iconPath = path.join(outputDirectory, "deadlands-tracker.ico");
 const squirrelLoadingGifPath = path.join(
   outputDirectory,
   "studiosam-loading.gif",

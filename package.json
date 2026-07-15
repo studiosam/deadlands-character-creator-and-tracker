@@ -1,7 +1,7 @@
 {
   "name": "deadlands-character-creator-and-tracker",
   "productName": "Deadlands Character Tracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "main": "electron/main.cjs",
   "author": "Studio Sam",

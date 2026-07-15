@@ -11,7 +11,7 @@ const iconPath = path.join(
   __dirname,
   "electron",
   "build-resources",
-  "studiosam.ico",
+  "deadlands-tracker.ico",
 );
 const loadingGifPath = path.join(
   __dirname,
