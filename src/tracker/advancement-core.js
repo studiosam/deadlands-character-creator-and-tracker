@@ -86,11 +86,29 @@ function getAdvanceRankFromCount(count) {
   return "Novice";
 }
 
-function getDieStepIndex(value) {
+function parseTraitDieValue(value) {
   const text = String(value || "")
     .trim()
     .toLowerCase();
-  return DIE_STEPS.indexOf(text);
+  const match = text.match(/^(d(?:4|6|8|10|12))\s*([+-]\s*\d+)?$/);
+  if (!match) return null;
+  return {
+    die: match[1],
+    modifier: match[2] ? match[2].replace(/\s+/g, "") : "",
+  };
+}
+
+function normalizeTraitDieValue(value) {
+  const parsed = parseTraitDieValue(value);
+  return parsed ? `${parsed.die}${parsed.modifier}` : "";
+}
+
+function getDieStepIndex(value) {
+  const parsed = parseTraitDieValue(value);
+  const text = String(value || "")
+    .trim()
+    .toLowerCase();
+  return DIE_STEPS.indexOf(parsed?.die || text);
 }
 
 function compareDieSteps(left, right) {
@@ -100,11 +118,26 @@ function compareDieSteps(left, right) {
 function getNextDieStep(value) {
   const index = getDieStepIndex(value);
   if (index < 0) return "";
-  return DIE_STEPS[Math.min(index + 1, DIE_STEPS.length - 1)];
+  const parsed = parseTraitDieValue(value);
+  const next = DIE_STEPS[Math.min(index + 1, DIE_STEPS.length - 1)];
+  return parsed?.modifier ? `${next}${parsed.modifier}` : next;
 }
 
 function isValidDieStep(value) {
   return getDieStepIndex(value) >= 0;
+}
+
+function isMaxDieStep(value) {
+  return getDieStepIndex(value) >= DIE_STEPS.length - 1;
+}
+
+function dieTargetCannotAdvance(target) {
+  const beforeIndex = getDieStepIndex(target?.before);
+  const afterIndex = getDieStepIndex(target?.after);
+  return (
+    beforeIndex >= DIE_STEPS.length - 1 ||
+    (beforeIndex >= 0 && afterIndex >= 0 && afterIndex <= beforeIndex)
+  );
 }
 
 function findCharacterSkillByName(currentCharacter, skillName) {
@@ -583,11 +616,7 @@ function advanceWarnings(currentCharacter, advance, editingId = "") {
     warnings.push("Target name is missing for this advance type.");
   if (
     (type === "skill-increase" || type === "two-skills-increase") &&
-    targets.some(
-      (target) =>
-        target.before === "d12" ||
-        (target.after === "d12" && target.before === target.after),
-    )
+    targets.some(dieTargetCannotAdvance)
   )
     warnings.push("Selected skill is already at d12 and cannot increase.");
   if (type === "skill-increase" && targets[0]?.targetName) {
@@ -617,9 +646,7 @@ function advanceWarnings(currentCharacter, advance, editingId = "") {
   }
   if (
     type === "attribute-increase" &&
-    targets.some(
-      (target) => target.before === "d12" || target.after === target.before,
-    )
+    targets.some(dieTargetCannotAdvance)
   )
     warnings.push("Selected attribute is already at d12 and cannot increase.");
   if (type === "attribute-increase") {
@@ -705,7 +732,7 @@ function getAdvanceApplicationWarnings(currentCharacter, advance) {
     const target = targets[0];
     if (!target?.targetName)
       warnings.push("Select an attribute before applying.");
-    else if (target.before === "d12" || target.after === target.before)
+    else if (dieTargetCannotAdvance(target))
       warnings.push(
         "Selected attribute is already at d12 and cannot increase.",
       );
@@ -783,7 +810,7 @@ function skillValue(skill) {
 function skillTargetForName(name) {
   const skill = findSkillByName(name);
   const rawBefore = skillValue(skill);
-  const before = isValidDieStep(rawBefore) ? rawBefore : "";
+  const before = normalizeTraitDieValue(rawBefore);
   const after = before ? getNextDieStep(before) : "d4";
   const linkedAttribute = getLinkedAttributeForSkill(name, character);
   const linkedAttributeDie = getAttributeDie(character, linkedAttribute);
@@ -945,9 +972,9 @@ function increaseSkillForAdvance(advance, skillTarget) {
   if (!Array.isArray(character.skills)) character.skills = [];
   const skill = findSkillByName(skillName);
   const rawBefore = skill?.die || skill?.value || "";
-  const before = isValidDieStep(rawBefore) ? rawBefore : "";
+  const before = normalizeTraitDieValue(rawBefore);
   const after = before ? getNextDieStep(before) : "d4";
-  if (!after || after === before)
+  if (!after || (before && getDieStepIndex(after) <= getDieStepIndex(before)))
     throw new Error(
       `${skillName} cannot increase beyond ${before || "unknown"}.`,
     );
@@ -983,7 +1010,7 @@ function increaseAttributeForAdvance(attributeTarget) {
     character.attributes = {};
   const before = character.attributes?.[attributeKey] || "d4";
   const after = getNextDieStep(before);
-  if (!after || after === before)
+  if (!after || getDieStepIndex(after) <= getDieStepIndex(before))
     throw new Error(
       `${displayNameFromKey(attributeKey)} cannot increase beyond ${before}.`,
     );
@@ -1076,12 +1103,7 @@ function applyAdvanceToCharacter(advance) {
       throw new Error("Select two different skills.");
     const invalid = targets
       .map((target) => findSkillByName(target.targetName))
-      .filter(
-        (skill) =>
-          skill &&
-          getNextDieStep(skill.die || skill.value) ===
-            (skill.die || skill.value),
-      );
+      .filter((skill) => skill && isMaxDieStep(skill.die || skill.value));
     if (invalid.length)
       throw new Error(
         `${invalid.map((skill) => skill.name).join(", ")} cannot increase further.`,
@@ -1157,11 +1179,12 @@ function canUndoAdvanceChange(advance, change) {
     const skillName = change.targetName || change.displayLabel;
     const skill = findSkillByName(skillName);
     const current = skill?.die || skill?.value || "";
+    const expectedAfter = normalizeTraitDieValue(change.after);
     const safe =
       skill &&
-      DIE_STEPS.includes(change.before) &&
-      DIE_STEPS.includes(change.after) &&
-      current === change.after;
+      (!change.before || isValidDieStep(change.before)) &&
+      isValidDieStep(change.after) &&
+      normalizeTraitDieValue(current) === expectedAfter;
     return {
       safe,
       message: safe
@@ -1176,11 +1199,12 @@ function canUndoAdvanceChange(advance, change) {
       String(change.path || "").replace(/^attributes\./, "") ||
       normalizeAttributeKey(change.displayLabel);
     const current = character.attributes?.[key] || "";
+    const expectedAfter = normalizeTraitDieValue(change.after);
     const safe =
       key &&
-      DIE_STEPS.includes(change.before) &&
-      DIE_STEPS.includes(change.after) &&
-      current === change.after;
+      isValidDieStep(change.before) &&
+      isValidDieStep(change.after) &&
+      normalizeTraitDieValue(current) === expectedAfter;
     return {
       safe,
       message: safe
