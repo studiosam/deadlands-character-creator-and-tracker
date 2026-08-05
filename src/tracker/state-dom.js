@@ -37,6 +37,7 @@ const els = {
   saveState: $("#saveState"),
   undoBtn: $("#undoBtn"),
   redoBtn: $("#redoBtn"),
+  headerExportBtn: $("#headerExportBtn"),
   woundsValue: $("#woundsValue"),
   woundsNote: $("#woundsNote"),
   fatigueValue: $("#fatigueValue"),

@@ -541,6 +541,7 @@ els.confirmPasteImportBtn.onclick = async () => {
 els.localDataExportTrackerBtn.onclick = exportTrackerCharacter;
 els.localDataExportFullBtn.onclick = exportFullState;
 els.localDataOpenImportBtn.onclick = openPasteImportPanel;
+els.headerExportBtn.onclick = exportTrackerCharacter;
 els.librarySaveCurrentBtn.onclick = saveCurrentCharacterToLibrary;
 els.libraryReviewSetupBtn.onclick = reviewActiveCharacterSetup;
 els.libraryDuplicateActiveBtn.onclick = duplicateActiveCharacterFromLibrary;
