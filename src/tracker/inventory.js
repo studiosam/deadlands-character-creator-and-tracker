@@ -8,17 +8,28 @@
 function renderConditions() {
   if (!els.conditionsList) return;
   els.conditionsList.innerHTML = "";
-  Object.entries(character.conditions).forEach(([key, value]) => {
-    const label = document.createElement("label");
-    label.className = `condition${value ? " active" : ""}`;
-    label.innerHTML = `<input type="checkbox" ${value ? "checked" : ""}><span>${esc(key.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase()))}</span>`;
-    label.querySelector("input").onchange = (event) => {
-      character.conditions[key] = event.target.checked;
-      render();
-      save();
-    };
-    els.conditionsList.appendChild(label);
-  });
+  Object.entries(character.conditions)
+    .filter(
+      ([key]) =>
+        key !== "liquidCourage" || characterHasLiquidCourage(character),
+    )
+    .forEach(([key, value]) => {
+      const label = document.createElement("label");
+      label.className = `condition${value ? " active" : ""}`;
+      const labelText =
+        key === "liquidCourage"
+          ? "Stiff Drink"
+          : key.replace(/([A-Z])/g, " $1").replace(/^./, (char) =>
+              char.toUpperCase(),
+            );
+      label.innerHTML = `<input type="checkbox" ${value ? "checked" : ""}><span>${esc(labelText)}</span>`;
+      label.querySelector("input").onchange = (event) => {
+        character.conditions[key] = event.target.checked;
+        render();
+        save();
+      };
+      els.conditionsList.appendChild(label);
+    });
 }
 
 function counterList(container, items, unitFn, emptyText) {

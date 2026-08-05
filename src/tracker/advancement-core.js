@@ -1251,6 +1251,63 @@ function getAdvanceUndoPlan(advance) {
   };
 }
 
+function isPowerPointAdvance(advance) {
+  const type = legacyAdvanceTypeToCanonical(advance?.type);
+  const targets = Array.isArray(advance?.targets) ? advance.targets : [];
+  return (
+    type === "power-points-increase" ||
+    advance?.targetType === "power-points" ||
+    targets.some((target) => target?.targetType === "power-points")
+  );
+}
+
+function getPowerPointAdvanceRemovalPlan(advance) {
+  if (!isPowerPointAdvance(advance))
+    return {
+      safe: false,
+      messages: [],
+      amount: 0,
+      before: 0,
+      after: 0,
+    };
+
+  const amount = parsePowerPointAdvanceAmount(advance);
+  const resource = powerPointResource();
+  const before = Math.max(0, Math.floor(Number(resource?.max) || 0));
+  const after = Math.max(0, before - amount);
+  const current = Math.max(0, Math.floor(Number(resource?.current) || 0));
+  const safe = Boolean(resource) && amount > 0 && before >= amount;
+  const clampNote =
+    safe && current > after
+      ? ` Current Power Points will be clamped from ${current} to ${after}.`
+      : "";
+
+  return {
+    safe,
+    messages: [
+      safe
+        ? `Subtract ${amount} max Power Points from this removed advance: ${before} to ${after}.${clampNote}`
+        : `Cannot subtract Power Points safely; current max is ${before} and this advance records +${amount}.`,
+    ],
+    amount,
+    before,
+    after,
+  };
+}
+
+function subtractPowerPointsForRemovedAdvance(advance) {
+  const plan = getPowerPointAdvanceRemovalPlan(advance);
+  if (!plan.safe) return false;
+  const resource = powerPointResource();
+  if (!resource) return false;
+  resource.max = plan.after;
+  resource.current = Math.min(
+    Math.max(0, Math.floor(Number(resource.current) || 0)),
+    resource.max,
+  );
+  return true;
+}
+
 function undoAdvanceChange(change) {
   if (change.targetType === "edge" && change.operation === "add") {
     const entityId = canonicalChangeAfterId(change);

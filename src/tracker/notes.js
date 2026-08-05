@@ -5,12 +5,23 @@
  * summaries. They should avoid introducing new state mutations beyond explicit
  * notes editing handled by events.js.
  */
-function renderArcaneSummary() {
-  const reminders = character.reminders.filter((reminder) =>
-    /arcane|backlash|malfunction|huckster|power/i.test(
-      `${reminder.type} ${reminder.name} ${reminder.text}`,
-    ),
+function isArcaneReminder(reminder) {
+  const text = `${reminder?.type || ""} ${reminder?.name || ""} ${reminder?.text || ""}`
+    .replace(/\bnon[-\s]?arcane\b/gi, "")
+    .toLowerCase();
+  return /\b(arcane|backlash|malfunction|huckster|powers?)\b/i.test(
+    text,
   );
+}
+
+function renderArcaneSummary() {
+  if (!characterHasArcaneTrackerContent(character)) {
+    els.arcaneRemindersPanel?.classList.add("hidden");
+    if (els.arcaneRemindersList) els.arcaneRemindersList.innerHTML = "";
+    return;
+  }
+
+  const reminders = character.reminders.filter(isArcaneReminder);
   els.arcaneRemindersPanel?.classList.toggle("hidden", !reminders.length);
   els.arcaneRemindersList.innerHTML = reminders.length
     ? reminders.map(reminderMarkup).join("")

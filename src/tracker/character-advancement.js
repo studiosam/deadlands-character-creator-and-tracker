@@ -939,8 +939,33 @@ async function handleEntryAction(target) {
 async function removeAdvanceWithPrompt(advance) {
   const label = `Advance #${advance.advanceNumber || advance.number || "?"}`;
   const changes = Array.isArray(advance.changes) ? advance.changes : [];
+  const powerPointRemovalPlan = getPowerPointAdvanceRemovalPlan(advance);
 
   if (!advance.applied || !changes.length) {
+    if (powerPointRemovalPlan.safe) {
+      const choice = await appChoice(
+        powerPointRemovalPlan.messages.join("\n"),
+        [
+          { value: "remove", label: "Remove History", danger: true },
+          {
+            value: "subtract",
+            label: "Remove and Subtract",
+            danger: true,
+          },
+        ],
+        { title: `Remove ${label}?` },
+      );
+      if (!choice) return;
+      const normalizedChoice = String(choice).trim().toLowerCase();
+      if (normalizedChoice === "subtract")
+        subtractPowerPointsForRemovedAdvance(advance);
+      else if (normalizedChoice !== "remove") return;
+      removeAdvance(character, advance.id);
+      render();
+      save();
+      return;
+    }
+
     const note =
       advance.applied && !changes.length
         ? "\n\nThis advance has no reliable canonical changes data, so only the history record can be removed."
@@ -961,6 +986,33 @@ async function removeAdvanceWithPrompt(advance) {
 
   const undoPlan = getAdvanceUndoPlan(advance);
   if (!undoPlan.safe) {
+    if (powerPointRemovalPlan.safe) {
+      const choice = await appChoice(
+        [
+          "Applied changes cannot be exactly undone from the recorded before/after state.",
+          powerPointRemovalPlan.messages.join("\n"),
+        ].join("\n\n"),
+        [
+          { value: "remove", label: "Remove History", danger: true },
+          {
+            value: "subtract",
+            label: "Remove and Subtract",
+            danger: true,
+          },
+        ],
+        { title: `Remove ${label}?` },
+      );
+      if (!choice) return;
+      const normalizedChoice = String(choice).trim().toLowerCase();
+      if (normalizedChoice === "subtract")
+        subtractPowerPointsForRemovedAdvance(advance);
+      else if (normalizedChoice !== "remove") return;
+      removeAdvance(character, advance.id);
+      render();
+      save();
+      return;
+    }
+
     if (
       !(await appConfirm(
         `Applied changes cannot be safely undone.\n\n${undoPlan.messages.join("\n")}`,

@@ -74,6 +74,7 @@ function renderArcaneTabAvailability() {
   const available = characterHasArcaneTrackerContent(character);
   els.arcaneTabBtn.disabled = !available;
   els.arcaneTabBtn.setAttribute("aria-disabled", String(!available));
+  els.clearArcaneTrackingBtn?.classList.toggle("hidden", !available);
   if (available) els.arcaneTabBtn.removeAttribute("title");
   else
     els.arcaneTabBtn.title =
@@ -851,11 +852,14 @@ function renderKeyConditions() {
     "onHold",
     "wildAttack",
   ].filter((key) => key in character.conditions);
+  if (characterHasLiquidCourage(character)) keys.push("liquidCourage");
   els.keyConditionsList.innerHTML = "";
   keys.forEach((key) => {
     const label = document.createElement("label");
     label.className = `condition${character.conditions[key] ? " active" : ""}`;
-    label.innerHTML = `<input type="checkbox" ${character.conditions[key] ? "checked" : ""}><span>${esc(displayNameFromKey(key))}</span>`;
+    const labelText =
+      key === "liquidCourage" ? "Stiff Drink" : displayNameFromKey(key);
+    label.innerHTML = `<input type="checkbox" ${character.conditions[key] ? "checked" : ""}><span>${esc(labelText)}</span>`;
     label.querySelector("input").onchange = (event) => {
       character.conditions[key] = event.target.checked;
       render();

@@ -121,14 +121,24 @@ function traitLabel(value) {
 function attributeCardMarkup(name, die) {
   const label = traitLabel(name);
   const note = attributeUseNote(name);
-  return `<div class="attribute-die-card" aria-label="${esc(`${label} ${die || "—"}`)}">${typeof attributeHelpMarkup === "function" ? attributeHelpMarkup(label, note) : ""}<span>${esc(label)}</span><strong>${esc(die || "—")}</strong></div>`;
+  const display =
+    typeof liquidCourageAttributeDisplay === "function"
+      ? liquidCourageAttributeDisplay(character, name, die)
+      : { value: die || "—", note: "" };
+  return `<div class="attribute-die-card${display.note ? " temporary-modified" : ""}" aria-label="${esc(`${label} ${display.value}`)}">${typeof attributeHelpMarkup === "function" ? attributeHelpMarkup(label, note) : ""}<span>${esc(label)}</span><strong>${esc(display.value)}</strong>${display.note ? `<small>${esc(display.note)}</small>` : ""}</div>`;
 }
 
 function skillChipMarkup(skill) {
-  const meta = skill.die || skill.value || "—";
+  const display =
+    typeof liquidCourageSkillDisplay === "function"
+      ? liquidCourageSkillDisplay(character, skill)
+      : { value: skill.die || skill.value || "—", note: "" };
+  const meta = display.value;
   const linkedAttribute = skillLinkedAttribute(skill);
   const displayNote =
-    skill.notes ||
+    [display.note, skill.notes]
+      .filter(Boolean)
+      .join(" • ") ||
     [traitLabel(linkedAttribute), skill.isUnskilled ? "Unskilled" : ""]
       .filter(Boolean)
       .join(" • ");

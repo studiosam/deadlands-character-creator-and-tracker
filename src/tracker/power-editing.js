@@ -136,3 +136,86 @@ async function addManualPowerPoints() {
   render();
   save();
 }
+
+async function removePowerPointResource() {
+  const resource = powerPointResource();
+  if (!resource) return;
+  const confirmed = await appConfirm(
+    `Remove Power Points (${resource.current} / ${resource.max}) from this character? Known powers are not removed by this action.`,
+    {
+      title: "Remove Power Points?",
+      confirmText: "Remove Power Points",
+      danger: true,
+    },
+  );
+  if (!confirmed) return;
+  character.resources = (character.resources || []).filter(
+    (item) => item !== resource,
+  );
+  render();
+  save();
+}
+
+async function clearArcaneTracking() {
+  const arcaneEdges = (character.edges || []).filter((edge) =>
+    isArcaneBackgroundEdge(edge?.name),
+  );
+  const powerPointCount = powerPointResource() ? 1 : 0;
+  const knownPowerCount = (character.powers || []).length;
+  const activePowerCount = (character.activePowers || []).length;
+  const deviceCount = (character.madScienceDevices || []).length;
+  const reminderCount = (character.reminders || []).filter(
+    typeof isArcaneReminder === "function" ? isArcaneReminder : () => false,
+  ).length;
+  const summary = [
+    arcaneEdges.length ? `${arcaneEdges.length} Arcane Background Edge` : "",
+    character.arcaneBackground ? "Arcane Background state" : "",
+    powerPointCount ? "Power Points" : "",
+    knownPowerCount
+      ? `${knownPowerCount} known power${knownPowerCount === 1 ? "" : "s"}`
+      : "",
+    activePowerCount
+      ? `${activePowerCount} active power record${activePowerCount === 1 ? "" : "s"}`
+      : "",
+    deviceCount
+      ? `${deviceCount} mad science device${deviceCount === 1 ? "" : "s"}`
+      : "",
+    character.hucksterDeal ? "Huckster deal state" : "",
+    reminderCount
+      ? `${reminderCount} arcane reminder${reminderCount === 1 ? "" : "s"}`
+      : "",
+  ].filter(Boolean);
+
+  const confirmed = await appConfirm(
+    summary.length
+      ? `This will remove: ${summary.join(", ")}.`
+      : "No arcane tracking records were found.",
+    {
+      title: "Clear Arcane Tracking?",
+      confirmText: "Clear Arcane Tracking",
+      danger: true,
+    },
+  );
+  if (!confirmed) return;
+
+  character.arcaneBackground = null;
+  character.edges = (character.edges || []).filter(
+    (edge) => !isArcaneBackgroundEdge(edge?.name),
+  );
+  character.resources = (character.resources || []).filter(
+    (resource) =>
+      resource?.id !== "power-points" &&
+      normalizeArcaneText(resource?.name) !== "power points",
+  );
+  character.powers = [];
+  character.activePowers = [];
+  character.madScienceDevices = [];
+  character.hucksterDeal = null;
+  character.reminders = (character.reminders || []).filter(
+    (reminder) =>
+      !(typeof isArcaneReminder === "function" && isArcaneReminder(reminder)),
+  );
+
+  render();
+  save();
+}

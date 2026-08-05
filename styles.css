@@ -2502,6 +2502,13 @@ body:has(#setupGearPanel) .toast-region {
   margin-bottom: 0;
 }
 
+.arcane-overview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
+}
+
 .arcane-resource-list {
   margin-top: 0.8rem;
 }
@@ -2557,7 +2564,7 @@ body:has(#setupGearPanel) .toast-region {
 
 .power-point-resource-row .resource-recovery-actions {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
   align-self: center;
   width: 100%;
   gap: 0.45rem;
@@ -6567,6 +6574,18 @@ body:has(#setupGearPanel) .toast-region {
   font-family: var(--font-display);
   font-size: 2rem;
   line-height: 1;
+}
+
+.attribute-die-card small {
+  display: block;
+  color: var(--dossier-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.attribute-die-card.temporary-modified {
+  border-color: var(--dossier-accent);
+  background: color-mix(in srgb, var(--dossier-paper-strong) 86%, #fff 14%);
 }
 
 .skill-chip-grid {

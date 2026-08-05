@@ -5,7 +5,60 @@
  * files. This core keeps ordering stable and exposes the derived helpers used by
  * the tracker surfaces.
  */
-const EFFECT_HOOK_REGISTRY = [...EDGE_EFFECT_HOOKS, ...HINDRANCE_EFFECT_HOOKS]
+const SESSION_EFFECT_HOOKS = [
+  {
+    registryOrder: 1000,
+    id: "condition-liquid-courage",
+    sourceType: "condition",
+    matchName: "Liquid Courage",
+    requiresEdge: "Liquid Courage",
+    label: "Liquid Courage",
+    summary:
+      "Stiff drink active: Vigor increases one die type, Toughness +1, one Wound penalty level is ignored, and Agility/Smarts-linked rolls suffer -1. After 1 hour, take one Fatigue level for 4 hours.",
+    effects: [
+      {
+        type: "die-step-modifier",
+        target: "vigor",
+        value: 1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Vigor +1 die type",
+      },
+      {
+        type: "numeric-modifier",
+        target: "toughness",
+        value: 1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Toughness +1",
+      },
+      {
+        type: "penalty-reduction",
+        target: "wound-penalty",
+        value: 1,
+        appliesTo: ["combat"],
+        displayLabel: "Ignore 1 Wound penalty",
+      },
+      {
+        type: "roll-modifier",
+        target: "agility-smarts-linked",
+        trait: "Agility/Smarts",
+        context: "Agility, Smarts, and linked skill rolls",
+        value: -1,
+        appliesTo: ["character", "combat"],
+        displayLabel: "Agility/Smarts-linked rolls -1",
+      },
+      reminderEffect(
+        "liquid-courage-fatigue",
+        "After 1 hour: take 1 Fatigue for 4 hours",
+      ),
+    ],
+  },
+];
+
+const EFFECT_HOOK_REGISTRY = [
+  ...EDGE_EFFECT_HOOKS,
+  ...HINDRANCE_EFFECT_HOOKS,
+  ...SESSION_EFFECT_HOOKS,
+]
   .sort((left, right) => left.registryOrder - right.registryOrder)
   .map(({ registryOrder, ...hook }) => hook);
 
@@ -20,6 +73,14 @@ function normalizeEffectHookName(value) {
 function effectHookRecordCollection(currentCharacter, sourceType) {
   if (sourceType === "edge") return currentCharacter.edges || [];
   if (sourceType === "hindrance") return currentCharacter.hindrances || [];
+  if (sourceType === "condition") {
+    return Object.entries(currentCharacter.conditions || {})
+      .filter(([, active]) => Boolean(active))
+      .map(([key]) => ({
+        key,
+        name: displayNameFromKey(key),
+      }));
+  }
   return [];
 }
 
@@ -72,12 +133,101 @@ function characterFearCheckEdgeState(currentCharacter = character) {
 
 function activeEffectHooks(currentCharacter = character) {
   return EFFECT_HOOK_REGISTRY.map((hook) => {
+    if (
+      hook.requiresEdge &&
+      !characterHasCanonicalEdge(currentCharacter, hook.requiresEdge)
+    )
+      return null;
     const record = effectHookRecordCollection(
       currentCharacter,
       hook.sourceType,
     ).find((item) => effectHookRecordMatches(hook, item));
     return record ? { ...hook, record } : null;
   }).filter(Boolean);
+}
+
+function characterHasLiquidCourage(currentCharacter = character) {
+  return characterHasCanonicalEdge(currentCharacter, "Liquid Courage");
+}
+
+function liquidCourageIsActive(currentCharacter = character) {
+  return Boolean(
+    characterHasLiquidCourage(currentCharacter) &&
+      currentCharacter?.conditions?.liquidCourage,
+  );
+}
+
+function liquidCourageLinkedRollModifier(currentCharacter, linkedAttribute) {
+  if (!liquidCourageIsActive(currentCharacter)) return 0;
+  const key = normalizeEffectHookName(linkedAttribute);
+  return key === "agility" || key === "smarts" ? -1 : 0;
+}
+
+function effectHookParseTraitRoll(value) {
+  const text = String(value || "")
+    .trim()
+    .toLowerCase();
+  const match = text.match(/^(d(?:4|6|8|10|12))\s*([+-]\s*\d+)?$/);
+  if (!match) return null;
+  return {
+    die: match[1],
+    modifier: match[2] ? Number(match[2].replace(/\s+/g, "")) || 0 : 0,
+  };
+}
+
+function effectHookTraitRollLabelWithModifier(value, modifier) {
+  const parsed = effectHookParseTraitRoll(value);
+  if (!parsed) {
+    const text = String(value || "—").trim();
+    if (!modifier) return text;
+    return `${text}${modifier > 0 ? `+${modifier}` : modifier}`;
+  }
+  const total = parsed.modifier + modifier;
+  if (!total) return parsed.die;
+  return `${parsed.die}${total > 0 ? `+${total}` : total}`;
+}
+
+function effectHookIncreaseTraitDieLabel(value, steps = 1) {
+  const parsed = effectHookParseTraitRoll(value);
+  const baseDie = parsed?.die || value;
+  const baseStep = effectHookDieStepIndex(baseDie);
+  if (baseStep < 0) return value || "—";
+  const next = effectHookDieStepLabel(baseStep + steps);
+  const modifier = parsed?.modifier || 0;
+  return modifier ? `${next}${modifier > 0 ? `+${modifier}` : modifier}` : next;
+}
+
+function liquidCourageAttributeDisplay(currentCharacter, attributeKey, die) {
+  if (!liquidCourageIsActive(currentCharacter))
+    return { value: die || "—", note: "" };
+  const key = normalizeEffectHookName(attributeKey);
+  if (key === "vigor") {
+    const value = effectHookIncreaseTraitDieLabel(die, 1);
+    return { value, note: `Liquid Courage: base ${die || "—"}` };
+  }
+  const modifier = liquidCourageLinkedRollModifier(currentCharacter, key);
+  return {
+    value: modifier
+      ? effectHookTraitRollLabelWithModifier(die || "—", modifier)
+      : die || "—",
+    note: modifier ? "Liquid Courage" : "",
+  };
+}
+
+function liquidCourageSkillDisplay(currentCharacter, skill) {
+  const die = skill?.die || skill?.value || "—";
+  const linkedAttribute =
+    typeof skillLinkedAttribute === "function"
+      ? skillLinkedAttribute(skill)
+      : skill?.linkedAttribute;
+  const modifier = liquidCourageLinkedRollModifier(
+    currentCharacter,
+    linkedAttribute,
+  );
+  return {
+    value: modifier ? effectHookTraitRollLabelWithModifier(die, modifier) : die,
+    note: modifier ? "Liquid Courage" : "",
+  };
 }
 
 function effectAppliesTo(effect, scope = "") {

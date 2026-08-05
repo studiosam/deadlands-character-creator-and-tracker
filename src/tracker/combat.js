@@ -49,14 +49,17 @@ function recoverResource(resource, amount) {
 function appendPowerPointControls(
   container,
   resource,
-  { showName = false } = {},
+  { showName = false, allowRemove = false } = {},
 ) {
   const row = document.createElement("div");
   row.className = "row power-point-resource-row";
   const max = resource.max || "—";
   const value = `${resource.current} / ${max}`;
   const recoveryPerHour = characterPowerPointRecoveryPerHour(character);
-  row.innerHTML = `<div class="power-point-resource-copy"><div class="power-point-resource-heading"><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<strong class="power-point-resource-value">${value}</strong>` : ""}</div><span class="power-point-resource-label">Available / Maximum</span><div class="power-point-resource-meta"><span>Recover ${recoveryPerHour} per hour</span></div></div><div class="controls resource-recovery-actions"><button data-recover="hour" type="button" aria-label="Recover 1 hour +${recoveryPerHour}">1 Hour (+${recoveryPerHour})</button><button data-recover="5" type="button">+5</button><button data-recover="10" type="button">+10</button><button data-recover="15" type="button">+15</button><button data-recover="max" type="button">Max</button></div>`;
+  const removeButton = allowRemove
+    ? '<button class="delete-small" data-remove-power-points type="button">Remove</button>'
+    : "";
+  row.innerHTML = `<div class="power-point-resource-copy"><div class="power-point-resource-heading"><strong>${showName ? esc(resource.name) : value}</strong>${showName ? `<strong class="power-point-resource-value">${value}</strong>` : ""}</div><span class="power-point-resource-label">Available / Maximum</span><div class="power-point-resource-meta"><span>Recover ${recoveryPerHour} per hour</span></div></div><div class="controls resource-recovery-actions"><button data-recover="hour" type="button" aria-label="Recover 1 hour +${recoveryPerHour}">1 Hour (+${recoveryPerHour})</button><button data-recover="5" type="button">+5</button><button data-recover="10" type="button">+10</button><button data-recover="15" type="button">+15</button><button data-recover="max" type="button">Max</button>${removeButton}</div>`;
   row.querySelectorAll("[data-recover]").forEach((button) => {
     const atMax = Boolean(resource.max && resource.current >= resource.max);
     button.disabled =
@@ -77,6 +80,12 @@ function appendPowerPointControls(
       recoverResource(resource, amount);
     };
   });
+  const remove = row.querySelector("[data-remove-power-points]");
+  if (remove)
+    remove.onclick = () => {
+      if (typeof removePowerPointResource === "function")
+        removePowerPointResource();
+    };
   container.appendChild(row);
 }
 

@@ -14,7 +14,9 @@ function renderResources() {
 
   character.resources.forEach((resource) => {
     if (resource.id === "power-points") {
-      appendPowerPointControls(els.resourcesList, resource);
+      appendPowerPointControls(els.resourcesList, resource, {
+        allowRemove: true,
+      });
       return;
     }
 

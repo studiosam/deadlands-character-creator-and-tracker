@@ -190,6 +190,7 @@ const els = {
   addOrganizationRecordBtn: $("#addOrganizationRecordBtn"),
   arcaneRemindersPanel: $("#arcaneRemindersPanel"),
   arcaneRemindersList: $("#arcaneRemindersList"),
+  clearArcaneTrackingBtn: $("#clearArcaneTrackingBtn"),
   importWarningsList: $("#importWarningsList"),
   longFormNotesList: $("#longFormNotesList"),
   powersList: $("#powersList"),

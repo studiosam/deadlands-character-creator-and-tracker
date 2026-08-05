@@ -374,6 +374,8 @@ if (els.addRequiredPowerBtn) els.addRequiredPowerBtn.onclick = addRequiredPower;
     input.onchange = renderPowerCatalogPicker;
   });
 els.addManualPowerPointsBtn.onclick = addManualPowerPoints;
+if (els.clearArcaneTrackingBtn)
+  els.clearArcaneTrackingBtn.onclick = clearArcaneTracking;
 els.reviewSetupBtn.onclick = reopenSetupReview;
 els.showEdgeFormBtn.onclick = () => openEdgeEditor();
 els.edgeCatalogSelect.onchange = chooseEdgeCatalogEntry;
@@ -427,9 +429,9 @@ els.notesArea.oninput = () => {
   save();
 };
 els.clearTempConditionsBtn.onclick = () => {
-  character.temporaryConditions.forEach(
-    (key) => (character.conditions[key] = false),
-  );
+  [
+    ...new Set([...(character.temporaryConditions || []), "liquidCourage"]),
+  ].forEach((key) => (character.conditions[key] = false));
   render();
   save();
 };
