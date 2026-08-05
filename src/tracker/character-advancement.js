@@ -898,14 +898,47 @@ async function handleEntryAction(target) {
     const edge = character.edges.find((item) => item.id === id);
     if (!edge) return;
     if (actionName === "edit") openEdgeEditor(edge);
-    if (
-      actionName === "remove" &&
-      (await appConfirm("", {
-        title: `Remove Edge "${edge.name || "Unnamed Edge"}"?`,
-        confirmText: "Remove Edge",
-        danger: true,
-      }))
-    ) {
+    if (actionName === "remove") {
+      const isArcaneBackground =
+        typeof isArcaneBackgroundEdge === "function" &&
+        isArcaneBackgroundEdge(edge.name);
+      if (isArcaneBackground) {
+        const summary =
+          typeof arcaneTrackingCleanupSummary === "function"
+            ? arcaneTrackingCleanupSummary()
+            : [];
+        const choice = await appChoice(
+          summary.length
+            ? `This is an Arcane Background. Removing only the Edge can leave Power Points, powers, and arcane reminders behind.\n\nLinked records found: ${summary.join(", ")}.`
+            : "This is an Arcane Background.",
+          [
+            { value: "edge", label: "Remove Edge", danger: true },
+            {
+              value: "all",
+              label: "Remove Edge and Arcane Tracking",
+              danger: true,
+            },
+          ],
+          { title: `Remove Edge "${edge.name || "Unnamed Edge"}"?` },
+        );
+        if (!choice) return;
+        if (choice === "all" && typeof clearArcaneTrackingRecords === "function")
+          clearArcaneTrackingRecords();
+        else if (choice === "edge") removeEdge(character, id);
+        else return;
+        render();
+        save();
+        return;
+      }
+
+      if (
+        !(await appConfirm("", {
+          title: `Remove Edge "${edge.name || "Unnamed Edge"}"?`,
+          confirmText: "Remove Edge",
+          danger: true,
+        }))
+      )
+        return;
       removeEdge(character, id);
       render();
       save();

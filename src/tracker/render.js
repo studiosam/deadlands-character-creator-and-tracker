@@ -574,7 +574,40 @@ function renderCharacterSummary() {
   els.characterBasicsList.innerHTML = "";
 
   const powerPoints = powerPointResource();
-  els.characterStatusStrip.innerHTML = "";
+  els.characterStatusStrip.innerHTML = [
+    statusPipMarkup(
+      "Wounds",
+      `${character.damage?.wounds ?? 0} / ${character.damage?.maxWounds ?? 3}`,
+    ),
+    statusPipMarkup(
+      "Fatigue",
+      `${character.damage?.fatigue ?? 0} / ${character.damage?.maxFatigue ?? 2}`,
+    ),
+    statusPipMarkup(
+      "Bennies",
+      `${character.bennies?.current ?? 0} / ${character.bennies?.starting ?? 0}`,
+    ),
+    statusPipMarkup("Conviction", character.conviction ?? 0),
+    powerPoints
+      ? statusPipMarkup(
+          "Power Points",
+          `${powerPoints.current} / ${powerPoints.max}`,
+        )
+      : "",
+    characterHasLiquidCourage(character)
+      ? `<button class="status-pip status-pip-action${character.conditions?.liquidCourage ? " active" : ""}" type="button" data-toggle-liquid-courage><span>Liquid Courage</span><strong>${character.conditions?.liquidCourage ? "Active" : "Off"}</strong><small>Stiff drink</small></button>`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("");
+  els.characterStatusStrip
+    .querySelector("[data-toggle-liquid-courage]")
+    ?.addEventListener("click", () => {
+      character.conditions.liquidCourage =
+        !character.conditions.liquidCourage;
+      render();
+      save();
+    });
   els.addManualPowerPointsBtn?.classList.toggle("hidden", Boolean(powerPoints));
 
   const attributeEntries = sortedAttributeEntries();
@@ -689,8 +722,8 @@ function renderCharacterSummary() {
   );
 
   const background = character.arcaneBackground;
-  els.characterArcaneSummary.innerHTML = background
-    ? `<div class="arcane-snapshot-grid">${[
+  const arcaneSnapshotRows = background
+    ? [
         ["Background", background.name || background.edgeName],
         ["Edge", background.edgeName],
         [
@@ -699,30 +732,28 @@ function renderCharacterSummary() {
             ? `${background.arcaneSkill}${background.linkedAttribute ? ` (${background.linkedAttribute})` : ""}`
             : "",
         ],
-        [
-          "Power Points",
-          powerPoints ? `${powerPoints.current} / ${powerPoints.max}` : "—",
-        ],
+        powerPoints
+          ? ["Power Points", `${powerPoints.current} / ${powerPoints.max}`]
+          : null,
         ["Known Powers", character.powers.length],
       ]
-        .map(
-          ([label, value]) =>
-            `<div><span>${esc(label)}</span><strong>${esc(compactText(value))}</strong></div>`,
-        )
-        .join("")}</div>`
+        .filter(Boolean)
     : powerPoints
-      ? `<div class="arcane-snapshot-grid">${[
+      ? [
           ["Background", "Manual Power Points"],
           ["Power Points", `${powerPoints.current} / ${powerPoints.max}`],
           ["Known Powers", character.powers.length],
           ["Notes", powerPoints.note || "Manual post-import setup"],
         ]
-          .map(
-            ([label, value]) =>
-              `<div><span>${esc(label)}</span><strong>${esc(compactText(value))}</strong></div>`,
-          )
-          .join("")}</div>`
-      : emptyState("No Arcane Background or Power Points configured.");
+      : [];
+  els.characterArcaneSummary.innerHTML = arcaneSnapshotRows.length
+    ? `<div class="arcane-snapshot-grid">${arcaneSnapshotRows
+        .map(
+          ([label, value]) =>
+            `<div><span>${esc(label)}</span><strong>${esc(compactText(value))}</strong></div>`,
+        )
+        .join("")}</div>`
+    : emptyState("No Arcane Background or Power Points configured.");
 
   els.characterEquippedSummary.innerHTML = `<div class="equipment-group"><h3>Weapons</h3>${equippedWeaponSummaryMarkup()}</div><div class="equipment-group"><h3>Armor</h3>${equippedArmorSummaryMarkup()}</div><div class="equipment-line secondary cash-summary"><strong>Cash</strong><span>${money(character.moneyCents)}</span></div>`;
   els.characterBackgroundSummary.innerHTML = characterNotesSummaryMarkup();

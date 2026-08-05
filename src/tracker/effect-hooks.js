@@ -135,7 +135,11 @@ function activeEffectHooks(currentCharacter = character) {
   return EFFECT_HOOK_REGISTRY.map((hook) => {
     if (
       hook.requiresEdge &&
-      !characterHasCanonicalEdge(currentCharacter, hook.requiresEdge)
+      !(
+        hook.requiresEdge === "Liquid Courage"
+          ? characterHasLiquidCourage(currentCharacter)
+          : characterHasCanonicalEdge(currentCharacter, hook.requiresEdge)
+      )
     )
       return null;
     const record = effectHookRecordCollection(
@@ -147,7 +151,10 @@ function activeEffectHooks(currentCharacter = character) {
 }
 
 function characterHasLiquidCourage(currentCharacter = character) {
-  return characterHasCanonicalEdge(currentCharacter, "Liquid Courage");
+  return (currentCharacter?.edges || []).some((edge) => {
+    const name = normalizeEffectHookName(edge?.name);
+    return name === "liquid courage" || name.startsWith("liquid courage ");
+  });
 }
 
 function liquidCourageIsActive(currentCharacter = character) {

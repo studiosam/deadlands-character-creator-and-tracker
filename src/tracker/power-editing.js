@@ -156,7 +156,7 @@ async function removePowerPointResource() {
   save();
 }
 
-async function clearArcaneTracking() {
+function arcaneTrackingCleanupSummary() {
   const arcaneEdges = (character.edges || []).filter((edge) =>
     isArcaneBackgroundEdge(edge?.name),
   );
@@ -185,19 +185,9 @@ async function clearArcaneTracking() {
       ? `${reminderCount} arcane reminder${reminderCount === 1 ? "" : "s"}`
       : "",
   ].filter(Boolean);
+}
 
-  const confirmed = await appConfirm(
-    summary.length
-      ? `This will remove: ${summary.join(", ")}.`
-      : "No arcane tracking records were found.",
-    {
-      title: "Clear Arcane Tracking?",
-      confirmText: "Clear Arcane Tracking",
-      danger: true,
-    },
-  );
-  if (!confirmed) return;
-
+function clearArcaneTrackingRecords() {
   character.arcaneBackground = null;
   character.edges = (character.edges || []).filter(
     (edge) => !isArcaneBackgroundEdge(edge?.name),
@@ -215,7 +205,23 @@ async function clearArcaneTracking() {
     (reminder) =>
       !(typeof isArcaneReminder === "function" && isArcaneReminder(reminder)),
   );
+}
 
+async function clearArcaneTracking() {
+  const summary = arcaneTrackingCleanupSummary();
+  const confirmed = await appConfirm(
+    summary.length
+      ? `This will remove: ${summary.join(", ")}.`
+      : "No arcane tracking records were found.",
+    {
+      title: "Clear Arcane Tracking?",
+      confirmText: "Clear Arcane Tracking",
+      danger: true,
+    },
+  );
+  if (!confirmed) return;
+
+  clearArcaneTrackingRecords();
   render();
   save();
 }

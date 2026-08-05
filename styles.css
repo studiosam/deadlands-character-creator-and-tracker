@@ -6460,6 +6460,18 @@ body:has(#setupGearPanel) .toast-region {
   padding: 0.7rem 0.75rem;
 }
 
+.status-pip-action {
+  width: 100%;
+  box-shadow: none;
+  color: var(--dossier-ink);
+  text-align: left;
+}
+
+.status-pip-action.active {
+  border-color: var(--dossier-accent);
+  background: color-mix(in srgb, var(--dossier-paper-strong) 82%, #fff 18%);
+}
+
 .status-pip strong {
   color: var(--dossier-ink);
   font-size: 1.35rem;
