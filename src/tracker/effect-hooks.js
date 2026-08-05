@@ -7,6 +7,141 @@
  */
 const SESSION_EFFECT_HOOKS = [
   {
+    registryOrder: 990,
+    id: "condition-distracted",
+    sourceType: "condition",
+    matchName: "Distracted",
+    label: "Distracted",
+    summary: "Distracted: all Trait rolls suffer -2.",
+    effects: [
+      rollModifierEffect(
+        "all-traits",
+        "Trait",
+        "all Trait rolls",
+        -2,
+        "All Trait rolls -2",
+        {
+          appliesTo: ["character"],
+          exclusiveGroup: "condition-distracted-trait-penalty",
+        },
+      ),
+    ],
+  },
+  {
+    registryOrder: 991,
+    id: "condition-bound",
+    sourceType: "condition",
+    matchName: "Bound",
+    label: "Bound",
+    summary: "Bound: cannot move and is treated as Distracted.",
+    effects: [
+      rollModifierEffect(
+        "all-traits",
+        "Trait",
+        "all Trait rolls",
+        -2,
+        "All Trait rolls -2",
+        {
+          appliesTo: ["character"],
+          exclusiveGroup: "condition-distracted-trait-penalty",
+        },
+      ),
+    ],
+  },
+  {
+    registryOrder: 992,
+    id: "condition-entangled",
+    sourceType: "condition",
+    matchName: "Entangled",
+    label: "Entangled",
+    summary: "Entangled: cannot move and is treated as Distracted.",
+    effects: [
+      rollModifierEffect(
+        "all-traits",
+        "Trait",
+        "all Trait rolls",
+        -2,
+        "All Trait rolls -2",
+        {
+          appliesTo: ["character"],
+          exclusiveGroup: "condition-distracted-trait-penalty",
+        },
+      ),
+    ],
+  },
+  {
+    registryOrder: 993,
+    id: "condition-prone",
+    sourceType: "condition",
+    matchName: "Prone",
+    label: "Prone",
+    summary: "Prone: attacks suffer -2.",
+    effects: [
+      rollModifierEffect(
+        "attack-skills",
+        "Attack",
+        "attack rolls",
+        -2,
+        "Attack rolls -2",
+        { appliesTo: ["character"] },
+      ),
+    ],
+  },
+  {
+    registryOrder: 994,
+    id: "condition-aiming",
+    sourceType: "condition",
+    matchName: "Aiming",
+    label: "Aiming",
+    summary: "Aiming: ranged attacks gain +2.",
+    effects: [
+      rollModifierEffect(
+        "shooting",
+        "Shooting",
+        "ranged attacks",
+        2,
+        "Shooting +2 while aiming",
+        { appliesTo: ["character"] },
+      ),
+    ],
+  },
+  {
+    registryOrder: 995,
+    id: "condition-the-drop",
+    sourceType: "condition",
+    matchName: "The Drop",
+    label: "The Drop",
+    summary: "The Drop: attack and damage rolls gain +4.",
+    effects: [
+      rollModifierEffect(
+        "attack-skills",
+        "Attack",
+        "attack rolls",
+        4,
+        "Attack rolls +4",
+        { appliesTo: ["character"] },
+      ),
+    ],
+  },
+  {
+    registryOrder: 996,
+    id: "condition-wild-attack",
+    sourceType: "condition",
+    matchName: "Wild Attack",
+    label: "Wild Attack",
+    summary: "Wild Attack: Fighting and damage gain +2.",
+    effects: [
+      rollModifierEffect(
+        "fighting",
+        "Fighting",
+        "Wild Attack Fighting rolls",
+        2,
+        "Fighting +2",
+        { appliesTo: ["character"] },
+      ),
+    ],
+  },
+  {
     registryOrder: 1000,
     id: "condition-liquid-courage",
     sourceType: "condition",
@@ -209,7 +344,17 @@ function effectHookUniqueSourceNames(effects) {
   ];
 }
 
+function effectHookAllTraitTarget(target) {
+  return target === "all traits" || target === "trait rolls";
+}
+
+function effectHookAttackSkillTarget(target, skillKey) {
+  if (target !== "attack skills" && target !== "attack rolls") return false;
+  return ["athletics", "fighting", "shooting"].includes(skillKey);
+}
+
 function effectHookAttributeTargets(target, attributeKey) {
+  if (effectHookAllTraitTarget(target)) return true;
   if (target === attributeKey) return true;
   if (target === `${attributeKey} linked`) return true;
   return (
@@ -219,6 +364,8 @@ function effectHookAttributeTargets(target, attributeKey) {
 }
 
 function effectHookSkillTargets(target, skillKey, linkedAttributeKey) {
+  if (effectHookAllTraitTarget(target)) return true;
+  if (effectHookAttackSkillTarget(target, skillKey)) return true;
   if (target === skillKey) return true;
   if (!linkedAttributeKey) return false;
   return effectHookAttributeTargets(target, linkedAttributeKey);

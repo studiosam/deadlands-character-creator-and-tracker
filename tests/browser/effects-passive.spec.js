@@ -427,6 +427,143 @@ test("Elderly and Stiff Drink modifiers stack in dossier trait display", async (
   });
 });
 
+test("Distracted condition updates dossier attributes and skills", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Distracted Dossier Tester",
+    preferredId: "distracted-dossier-tester",
+    attributes: {
+      agility: "d8",
+      smarts: "d8",
+      spirit: "d6",
+      strength: "d6",
+      vigor: "d10",
+    },
+    skills: [
+      { name: "Shooting", die: "d8", linkedAttribute: "Agility" },
+      { name: "Healing", die: "d8+2", linkedAttribute: "Smarts" },
+      { name: "Persuasion", die: "d6", linkedAttribute: "Spirit" },
+    ],
+    conditions: {
+      distracted: true,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Agility",
+    }),
+  ).toContainText("d8-2");
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Spirit",
+    }),
+  ).toContainText("d6-2");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).toContainText("d8-2");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
+  ).toContainText("d8");
+
+  const distractedDisplay = await page.evaluate(() => ({
+    hooks: activeEffectHooks(character).map((hook) => hook.id),
+    agility: characterAttributeDisplay(
+      character,
+      "agility",
+      character.attributes.agility,
+    ),
+    shooting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Shooting"),
+    ),
+    healing: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Healing"),
+    ),
+    persuasion: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Persuasion"),
+    ),
+  }));
+  expect(distractedDisplay).toEqual({
+    hooks: ["condition-distracted"],
+    agility: { value: "d8-2", note: "Distracted" },
+    shooting: { value: "d8-2", note: "Distracted" },
+    healing: { value: "d8", note: "Distracted" },
+    persuasion: { value: "d6-2", note: "Distracted" },
+  });
+});
+
+test("attack condition toggles update relevant dossier skills", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Attack Condition Dossier Tester",
+    preferredId: "attack-condition-dossier-tester",
+    skills: [
+      { name: "Athletics", die: "d6", linkedAttribute: "Agility" },
+      { name: "Fighting", die: "d6", linkedAttribute: "Agility" },
+      { name: "Healing", die: "d8+2", linkedAttribute: "Smarts" },
+      { name: "Shooting", die: "d8", linkedAttribute: "Agility" },
+    ],
+    conditions: {
+      aiming: true,
+      prone: true,
+      theDrop: true,
+      wildAttack: true,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Athletics" }),
+  ).toContainText("d6+2");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Fighting" }),
+  ).toContainText("d6+4");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).toContainText("d8+4");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
+  ).toContainText("d8+2");
+
+  const conditionDisplay = await page.evaluate(() => ({
+    hooks: activeEffectHooks(character).map((hook) => hook.id),
+    athletics: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Athletics"),
+    ),
+    fighting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Fighting"),
+    ),
+    shooting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Shooting"),
+    ),
+    healing: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Healing"),
+    ),
+  }));
+  expect(conditionDisplay).toEqual({
+    hooks: [
+      "condition-prone",
+      "condition-aiming",
+      "condition-the-drop",
+      "condition-wild-attack",
+    ],
+    athletics: { value: "d6+2", note: "Prone, The Drop" },
+    fighting: { value: "d6+4", note: "Prone, The Drop, Wild Attack" },
+    shooting: { value: "d8+4", note: "Prone, Aiming, The Drop" },
+    healing: { value: "d8+2", note: "" },
+  });
+});
+
 test("Block passive math increases Parry from a trusted baseline", async ({
   page,
 }) => {
