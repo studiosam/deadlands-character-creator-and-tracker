@@ -146,6 +146,7 @@ function render() {
   const pendingToughnessModifier = characterPendingToughnessModifier(character);
   const sizeModifier = characterSizeModifier(character);
   const paceModifier = characterPaceModifier(character);
+  const pendingPaceModifier = characterPendingPaceModifier(character);
   const parryModifier = characterParryModifier(character);
   if (character.derived.basePace === undefined) {
     character.derived.basePace = Number(character.derived.pace) || 6;
@@ -179,6 +180,7 @@ function render() {
   character.derived.toughness = effectiveBaseToughness + armor;
   character.derived.size = effectiveSize;
   character.derived.effectPaceModifier = paceModifier;
+  character.derived.effectPacePendingModifier = pendingPaceModifier;
   character.derived.effectParryModifier = canApplyParryModifier
     ? parryModifier
     : 0;
@@ -603,8 +605,7 @@ function renderCharacterSummary() {
   els.characterStatusStrip
     .querySelector("[data-toggle-liquid-courage]")
     ?.addEventListener("click", () => {
-      character.conditions.liquidCourage =
-        !character.conditions.liquidCourage;
+      character.conditions.liquidCourage = !character.conditions.liquidCourage;
       render();
       save();
     });
@@ -667,6 +668,9 @@ function renderCharacterSummary() {
         `Base ${compactText(character.derived.basePace)}`,
         character.derived.effectPaceModifier
           ? `Effects ${character.derived.effectPaceModifier > 0 ? "+" : ""}${character.derived.effectPaceModifier}`
+          : "",
+        character.derived.effectPacePendingModifier
+          ? "Recorded total; passive Pace effect shown below"
           : "",
       ]
         .filter(Boolean)
@@ -736,8 +740,7 @@ function renderCharacterSummary() {
           ? ["Power Points", `${powerPoints.current} / ${powerPoints.max}`]
           : null,
         ["Known Powers", character.powers.length],
-      ]
-        .filter(Boolean)
+      ].filter(Boolean)
     : powerPoints
       ? [
           ["Background", "Manual Power Points"],

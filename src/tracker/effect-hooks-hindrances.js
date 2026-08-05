@@ -111,6 +111,7 @@ const HINDRANCE_EFFECT_HOOKS = [
         value: -1,
         appliesTo: ["character", "combat"],
         displayLabel: "Pace -1",
+        requiresTrustedBaseline: true,
       },
       rollModifierEffect(
         "running",
@@ -244,6 +245,7 @@ const HINDRANCE_EFFECT_HOOKS = [
         value: -1,
         appliesTo: ["character", "combat"],
         displayLabel: "Pace -1",
+        requiresTrustedBaseline: true,
       },
       {
         type: "reminder",
@@ -269,6 +271,7 @@ const HINDRANCE_EFFECT_HOOKS = [
         value: -2,
         appliesTo: ["character", "combat"],
         displayLabel: "Pace -2",
+        requiresTrustedBaseline: true,
       },
       {
         type: "reminder",
@@ -723,6 +726,7 @@ const HINDRANCE_EFFECT_HOOKS = [
         value: -1,
         appliesTo: ["character", "combat"],
         displayLabel: "Pace -1",
+        requiresTrustedBaseline: true,
       },
       {
         type: "die-step-modifier",

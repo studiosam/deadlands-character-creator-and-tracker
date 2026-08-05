@@ -192,6 +192,241 @@ test("Fleet-Footed passive effect updates Pace and reminders", async ({
   });
 });
 
+test("Elderly modifiers display on dossier attributes and linked skills", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Elderly Dossier Tester",
+    preferredId: "elderly-dossier-tester",
+    hindranceIds: ["swade-hindrance-elderly"],
+    attributes: {
+      agility: "d8",
+      smarts: "d8",
+      spirit: "d6",
+      strength: "d6",
+      vigor: "d10",
+    },
+    skills: [
+      { name: "Shooting", die: "d8", linkedAttribute: "Agility" },
+      { name: "Athletics", die: "d6", linkedAttribute: "Agility" },
+      { name: "Healing", die: "d8+2", linkedAttribute: "Smarts" },
+      { name: "Persuasion", die: "d6", linkedAttribute: "Spirit" },
+    ],
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Agility",
+    }),
+  ).toContainText("d8-1");
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Strength",
+    }),
+  ).toContainText("d6-1");
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Vigor",
+    }),
+  ).toContainText("d10-1");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).toContainText("d8-1");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Athletics" }),
+  ).toContainText("d6-1");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
+  ).toContainText("d8+2");
+  await expect(page.locator("#characterDerivedDetails")).toContainText(
+    "Effects -1",
+  );
+
+  const elderlyDisplay = await page.evaluate(() => ({
+    agility: characterAttributeDisplay(
+      character,
+      "agility",
+      character.attributes.agility,
+    ),
+    shooting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Shooting"),
+    ),
+    healing: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Healing"),
+    ),
+    pace: character.derived.pace,
+  }));
+  expect(elderlyDisplay).toEqual({
+    agility: { value: "d8-1", note: "Elderly" },
+    shooting: { value: "d8-1", note: "Elderly" },
+    healing: { value: "d8+2", note: "" },
+    pace: 5,
+  });
+});
+
+test("imported Elderly severity suffix adjusts dossier rolls without double-counting Pace", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Imported Elderly Dossier Tester",
+    preferredId: "imported-elderly-dossier-tester",
+    source: "savaged.us",
+    hindrances: [
+      {
+        id: "hindrance-elderly-major",
+        name: "Elderly (major)",
+        severity: "Major",
+        type: "hindrance",
+        source: "Imported",
+      },
+    ],
+    attributes: {
+      agility: "d8",
+      smarts: "d8",
+      spirit: "d8",
+      strength: "d6",
+      vigor: "d10",
+    },
+    skills: [
+      { name: "Athletics", die: "d6", linkedAttribute: "agility" },
+      { name: "Fighting", die: "d4", linkedAttribute: "agility" },
+      { name: "Healing", die: "d8+2", linkedAttribute: "smarts" },
+      { name: "Riding", die: "d6", linkedAttribute: "agility" },
+      { name: "Shooting", die: "d8", linkedAttribute: "agility" },
+    ],
+    derived: {
+      pace: 5,
+      basePace: 5,
+      parry: 4,
+      baseToughness: 6,
+      toughness: 7,
+      armor: 1,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Agility",
+    }),
+  ).toContainText("d8-1");
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Strength",
+    }),
+  ).toContainText("d6-1");
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Vigor",
+    }),
+  ).toContainText("d10-1");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).toContainText("d8-1");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
+  ).toContainText("d8+2");
+  await expect(page.locator("#characterDerivedDetails")).toContainText(
+    "Recorded total; passive Pace effect shown below",
+  );
+
+  const importedDisplay = await page.evaluate(() => ({
+    hooks: activeEffectHooks(character).map((hook) => hook.id),
+    pace: character.derived.pace,
+    paceModifier: character.derived.effectPaceModifier,
+    pendingPaceModifier: character.derived.effectPacePendingModifier,
+    agility: characterAttributeDisplay(
+      character,
+      "agility",
+      character.attributes.agility,
+    ),
+    shooting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Shooting"),
+    ),
+    healing: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Healing"),
+    ),
+  }));
+  expect(importedDisplay).toEqual({
+    hooks: ["hindrance-elderly"],
+    pace: 5,
+    paceModifier: 0,
+    pendingPaceModifier: -1,
+    agility: { value: "d8-1", note: "Elderly" },
+    shooting: { value: "d8-1", note: "Elderly" },
+    healing: { value: "d8+2", note: "" },
+  });
+});
+
+test("Elderly and Stiff Drink modifiers stack in dossier trait display", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Elderly Liquid Courage Tester",
+    preferredId: "elderly-liquid-courage-tester",
+    edgeIds: ["swade-edge-liquid-courage"],
+    hindranceIds: ["swade-hindrance-elderly"],
+    attributes: {
+      agility: "d8",
+      smarts: "d8",
+      spirit: "d6",
+      strength: "d6",
+      vigor: "d8",
+    },
+    skills: [
+      { name: "Shooting", die: "d8", linkedAttribute: "Agility" },
+      { name: "Healing", die: "d8+2", linkedAttribute: "Smarts" },
+    ],
+    conditions: {
+      liquidCourage: true,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Agility",
+    }),
+  ).toContainText("d8-2");
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Vigor",
+    }),
+  ).toContainText("d10-1");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).toContainText("d8-2");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
+  ).toContainText("d8+1");
+
+  const stackedDisplay = await page.evaluate(() => ({
+    vigor: characterAttributeDisplay(
+      character,
+      "vigor",
+      character.attributes.vigor,
+    ),
+    shooting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Shooting"),
+    ),
+    healing: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Healing"),
+    ),
+  }));
+  expect(stackedDisplay).toEqual({
+    vigor: { value: "d10-1", note: "Base d8 • Liquid Courage, Elderly" },
+    shooting: { value: "d8-2", note: "Elderly, Liquid Courage" },
+    healing: { value: "d8+1", note: "Liquid Courage" },
+  });
+});
+
 test("Block passive math increases Parry from a trusted baseline", async ({
   page,
 }) => {
@@ -564,7 +799,9 @@ test("Tough as Nails increases Wound capacity from a trusted baseline", async ({
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterStatusStrip")).toBeHidden();
+  await expect(page.locator("#characterStatusStrip")).toContainText(
+    "Wounds0 / 4",
+  );
   await expect(page.locator("#woundsNote")).toContainText("Healthy");
   const derived = page.locator("#characterDerivedDetails");
   await expect(derived).toContainText("Tough as Nails");
@@ -605,7 +842,9 @@ test("Tougher than Nails replaces Tough as Nails Wound capacity", async ({
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterStatusStrip")).toBeHidden();
+  await expect(page.locator("#characterStatusStrip")).toContainText(
+    "Wounds0 / 5",
+  );
   const derived = page.locator("#characterDerivedDetails");
   await expect(derived).toContainText("Tougher than Nails");
   await expect(derived).toContainText(
@@ -645,7 +884,9 @@ test("Tough as Nails does not double-count imported Wound capacity without a bas
   });
 
   await page.getByRole("button", { name: "Character", exact: true }).click();
-  await expect(page.locator("#characterStatusStrip")).toBeHidden();
+  await expect(page.locator("#characterStatusStrip")).toContainText(
+    "Wounds0 / 4",
+  );
   await expect(page.locator("#woundsNote")).toContainText(
     "Recorded Wound maximum; passive Wound capacity effect shown below.",
   );

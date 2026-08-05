@@ -84,12 +84,26 @@ function effectHookRecordCollection(currentCharacter, sourceType) {
   return [];
 }
 
+function effectHookComparableRecordNames(value, sourceType) {
+  const text = String(value || "").trim();
+  const names = [normalizeEffectHookName(text)];
+  if (sourceType === "hindrance" && typeof hindranceBaseName === "function") {
+    names.push(normalizeEffectHookName(hindranceBaseName(text)));
+  }
+  names.push(normalizeEffectHookName(text.replace(/\s*\([^)]+\)\s*$/, "")));
+  return [...new Set(names)].filter(Boolean);
+}
+
 function effectHookRecordMatches(hook, record) {
-  if (
-    normalizeEffectHookName(record?.name) !==
-    normalizeEffectHookName(hook.matchName)
-  )
-    return false;
+  const hookNames = effectHookComparableRecordNames(
+    hook.matchName,
+    hook.sourceType,
+  );
+  const recordNames = effectHookComparableRecordNames(
+    record?.name,
+    hook.sourceType,
+  );
+  if (!recordNames.some((name) => hookNames.includes(name))) return false;
   if (hook.sourceType === "hindrance" && hook.severity) {
     return hindranceMatchesSeverity(record, hook.severity);
   }
@@ -135,11 +149,9 @@ function activeEffectHooks(currentCharacter = character) {
   return EFFECT_HOOK_REGISTRY.map((hook) => {
     if (
       hook.requiresEdge &&
-      !(
-        hook.requiresEdge === "Liquid Courage"
-          ? characterHasLiquidCourage(currentCharacter)
-          : characterHasCanonicalEdge(currentCharacter, hook.requiresEdge)
-      )
+      !(hook.requiresEdge === "Liquid Courage"
+        ? characterHasLiquidCourage(currentCharacter)
+        : characterHasCanonicalEdge(currentCharacter, hook.requiresEdge))
     )
       return null;
     const record = effectHookRecordCollection(
@@ -155,19 +167,6 @@ function characterHasLiquidCourage(currentCharacter = character) {
     const name = normalizeEffectHookName(edge?.name);
     return name === "liquid courage" || name.startsWith("liquid courage ");
   });
-}
-
-function liquidCourageIsActive(currentCharacter = character) {
-  return Boolean(
-    characterHasLiquidCourage(currentCharacter) &&
-      currentCharacter?.conditions?.liquidCourage,
-  );
-}
-
-function liquidCourageLinkedRollModifier(currentCharacter, linkedAttribute) {
-  if (!liquidCourageIsActive(currentCharacter)) return 0;
-  const key = normalizeEffectHookName(linkedAttribute);
-  return key === "agility" || key === "smarts" ? -1 : 0;
 }
 
 function effectHookParseTraitRoll(value) {
@@ -204,37 +203,118 @@ function effectHookIncreaseTraitDieLabel(value, steps = 1) {
   return modifier ? `${next}${modifier > 0 ? `+${modifier}` : modifier}` : next;
 }
 
-function liquidCourageAttributeDisplay(currentCharacter, attributeKey, die) {
-  if (!liquidCourageIsActive(currentCharacter))
-    return { value: die || "—", note: "" };
-  const key = normalizeEffectHookName(attributeKey);
-  if (key === "vigor") {
-    const value = effectHookIncreaseTraitDieLabel(die, 1);
-    return { value, note: `Liquid Courage: base ${die || "—"}` };
-  }
-  const modifier = liquidCourageLinkedRollModifier(currentCharacter, key);
+function effectHookUniqueSourceNames(effects) {
+  return [
+    ...new Set(effects.map((effect) => effect.sourceName).filter(Boolean)),
+  ];
+}
+
+function effectHookAttributeTargets(target, attributeKey) {
+  if (target === attributeKey) return true;
+  if (target === `${attributeKey} linked`) return true;
+  return (
+    target === "agility smarts linked" &&
+    (attributeKey === "agility" || attributeKey === "smarts")
+  );
+}
+
+function effectHookSkillTargets(target, skillKey, linkedAttributeKey) {
+  if (target === skillKey) return true;
+  if (!linkedAttributeKey) return false;
+  return effectHookAttributeTargets(target, linkedAttributeKey);
+}
+
+function effectHookDossierRollModifierEffects(
+  currentCharacter,
+  { attributeKey = "", skillKey = "", linkedAttributeKey = "" } = {},
+) {
+  const attributeTarget = normalizeEffectHookName(attributeKey);
+  const skillTarget = normalizeEffectHookName(skillKey);
+  const linkedTarget = normalizeEffectHookName(linkedAttributeKey);
+  return effectHookSummariesForSurface(currentCharacter, "character").filter(
+    (effect) => {
+      if (effect.type !== "roll-modifier") return false;
+      const target = normalizeEffectHookName(effect.target);
+      if (!target) return false;
+      if (skillTarget)
+        return effectHookSkillTargets(target, skillTarget, linkedTarget);
+      return (
+        attributeTarget && effectHookAttributeTargets(target, attributeTarget)
+      );
+    },
+  );
+}
+
+function effectHookDossierDieStepEffects(currentCharacter, attributeKey) {
+  const attributeTarget = normalizeEffectHookName(attributeKey);
+  if (!attributeTarget) return [];
+  return effectHookSummariesForSurface(currentCharacter, "character").filter(
+    (effect) =>
+      effect.type === "die-step-modifier" &&
+      normalizeEffectHookName(effect.target) === attributeTarget,
+  );
+}
+
+function effectHookDossierTraitDisplay(
+  currentCharacter,
+  { value = "—", attributeKey = "", skill = null } = {},
+) {
+  const baseValue = value || "—";
+  const linkedAttribute =
+    skill && typeof skillLinkedAttribute === "function"
+      ? skillLinkedAttribute(skill)
+      : skill?.linkedAttribute;
+  const targetAttribute = skill ? linkedAttribute : attributeKey;
+  const dieStepEffects = skill
+    ? []
+    : effectHookDossierDieStepEffects(currentCharacter, targetAttribute);
+  const dieStepModifier = dieStepEffects.reduce(
+    (sum, effect) => sum + (Number(effect.value) || 0),
+    0,
+  );
+  const steppedValue = dieStepModifier
+    ? effectHookIncreaseTraitDieLabel(baseValue, dieStepModifier)
+    : baseValue;
+  const rollModifierEffects = effectHookDossierRollModifierEffects(
+    currentCharacter,
+    {
+      attributeKey,
+      skillKey: skill?.name,
+      linkedAttributeKey: linkedAttribute,
+    },
+  );
+  const rollModifier = rollModifierEffects.reduce(
+    (sum, effect) => sum + (Number(effect.value) || 0),
+    0,
+  );
+  const sourceNames = effectHookUniqueSourceNames([
+    ...dieStepEffects,
+    ...rollModifierEffects,
+  ]);
+  const valueWithRollModifier = rollModifier
+    ? effectHookTraitRollLabelWithModifier(steppedValue, rollModifier)
+    : steppedValue;
+  const notes = [];
+  if (dieStepModifier) notes.push(`Base ${baseValue}`);
+  if (sourceNames.length) notes.push(sourceNames.join(", "));
   return {
-    value: modifier
-      ? effectHookTraitRollLabelWithModifier(die || "—", modifier)
-      : die || "—",
-    note: modifier ? "Liquid Courage" : "",
+    value: valueWithRollModifier,
+    note: notes.join(" • "),
   };
 }
 
-function liquidCourageSkillDisplay(currentCharacter, skill) {
-  const die = skill?.die || skill?.value || "—";
-  const linkedAttribute =
-    typeof skillLinkedAttribute === "function"
-      ? skillLinkedAttribute(skill)
-      : skill?.linkedAttribute;
-  const modifier = liquidCourageLinkedRollModifier(
-    currentCharacter,
-    linkedAttribute,
-  );
-  return {
-    value: modifier ? effectHookTraitRollLabelWithModifier(die, modifier) : die,
-    note: modifier ? "Liquid Courage" : "",
-  };
+function characterAttributeDisplay(currentCharacter, attributeKey, die) {
+  return effectHookDossierTraitDisplay(currentCharacter, {
+    value: die || "—",
+    attributeKey,
+  });
+}
+
+function characterSkillDisplay(currentCharacter, skill) {
+  return effectHookDossierTraitDisplay(currentCharacter, {
+    value: skill?.die || skill?.value || "—",
+    skill,
+  });
 }
 
 function effectAppliesTo(effect, scope = "") {
@@ -242,6 +322,13 @@ function effectAppliesTo(effect, scope = "") {
 }
 
 function trustedDerivedBaseline(currentCharacter, target) {
+  if (target === "pace") {
+    return Boolean(
+      currentCharacter?.source === "created" ||
+      currentCharacter?.creationBaseline ||
+      currentCharacter?.creation?.finalized,
+    );
+  }
   if (target === "toughness" || target === "max-wounds") {
     return Boolean(
       currentCharacter?.source === "created" ||
@@ -325,6 +412,33 @@ function characterPaceModifier(currentCharacter = character) {
     target: "pace",
     scope: "character",
   });
+}
+
+function characterPendingPaceModifier(currentCharacter = character) {
+  const groupedTotals = {};
+  const ungroupedTotal = activeEffectHooks(currentCharacter)
+    .flatMap((hook) => hook.effects || [])
+    .filter(
+      (effect) =>
+        effect.type === "numeric-modifier" &&
+        effect.target === "pace" &&
+        effect.requiresTrustedBaseline &&
+        !trustedDerivedBaseline(currentCharacter, effect.target) &&
+        effectAppliesTo(effect, "character"),
+    )
+    .reduce((sum, effect) => {
+      const value = Number(effect.value) || 0;
+      if (!effect.exclusiveGroup) return sum + value;
+      groupedTotals[effect.exclusiveGroup] = dominantEffectValue(
+        groupedTotals[effect.exclusiveGroup],
+        value,
+      );
+      return sum;
+    }, 0);
+  return (
+    ungroupedTotal +
+    Object.values(groupedTotals).reduce((sum, value) => sum + value, 0)
+  );
 }
 
 function characterParryModifier(currentCharacter = character) {

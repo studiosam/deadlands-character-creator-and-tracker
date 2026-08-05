@@ -538,18 +538,29 @@ async function seedEffectHookCharacter(page, options = {}) {
         isCustom: false,
       };
     });
-    const hindrances = hindranceIds.map((id) => {
-      const hindrance = HINDRANCE_CATALOG.find((item) => item.id === id);
-      const severity = seedOptions.hindranceSeverities?.[id];
-      return {
-        ...hindrance,
-        id,
-        catalogId: hindrance.id,
-        severity: severity || hindrance.severity,
-        source: "Effect hook test",
-        isCustom: false,
-      };
-    });
+    const hindrances = [
+      ...hindranceIds.map((id) => {
+        const hindrance = HINDRANCE_CATALOG.find((item) => item.id === id);
+        const severity = seedOptions.hindranceSeverities?.[id];
+        return {
+          ...hindrance,
+          id,
+          catalogId: hindrance.id,
+          severity: severity || hindrance.severity,
+          source: "Effect hook test",
+          isCustom: false,
+        };
+      }),
+      ...(seedOptions.hindrances || []),
+    ];
+    const attributes = {
+      agility: "d6",
+      smarts: "d6",
+      spirit: "d6",
+      strength: "d6",
+      vigor: "d6",
+      ...(seedOptions.attributes || {}),
+    };
     const characterData = normalize({
       source: seedOptions.source || "created",
       setupStatus: "complete",
@@ -557,14 +568,8 @@ async function seedEffectHookCharacter(page, options = {}) {
       rank: "Novice",
       ancestry: "Human",
       archetype: "Tester",
-      attributes: {
-        agility: "d6",
-        smarts: "d6",
-        spirit: "d6",
-        strength: "d6",
-        vigor: "d6",
-      },
-      skills: [],
+      attributes,
+      skills: seedOptions.skills || [],
       edges,
       hindrances,
       advances: [],
@@ -585,8 +590,8 @@ async function seedEffectHookCharacter(page, options = {}) {
         ...(seedOptions.damage || {}),
       },
       conditions: seedOptions.conditions || {},
-      armorStrength: "d6",
-      weaponStrength: "d6",
+      armorStrength: seedOptions.armorStrength || attributes.strength || "d6",
+      weaponStrength: seedOptions.weaponStrength || attributes.strength || "d6",
       inventory: seedOptions.inventory || [],
       weapons: seedOptions.weapons || [],
       armorInventory: [],

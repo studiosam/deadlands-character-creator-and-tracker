@@ -122,23 +122,21 @@ function attributeCardMarkup(name, die) {
   const label = traitLabel(name);
   const note = attributeUseNote(name);
   const display =
-    typeof liquidCourageAttributeDisplay === "function"
-      ? liquidCourageAttributeDisplay(character, name, die)
+    typeof characterAttributeDisplay === "function"
+      ? characterAttributeDisplay(character, name, die)
       : { value: die || "—", note: "" };
   return `<div class="attribute-die-card${display.note ? " temporary-modified" : ""}" aria-label="${esc(`${label} ${display.value}`)}">${typeof attributeHelpMarkup === "function" ? attributeHelpMarkup(label, note) : ""}<span>${esc(label)}</span><strong>${esc(display.value)}</strong>${display.note ? `<small>${esc(display.note)}</small>` : ""}</div>`;
 }
 
 function skillChipMarkup(skill) {
   const display =
-    typeof liquidCourageSkillDisplay === "function"
-      ? liquidCourageSkillDisplay(character, skill)
+    typeof characterSkillDisplay === "function"
+      ? characterSkillDisplay(character, skill)
       : { value: skill.die || skill.value || "—", note: "" };
   const meta = display.value;
   const linkedAttribute = skillLinkedAttribute(skill);
   const displayNote =
-    [display.note, skill.notes]
-      .filter(Boolean)
-      .join(" • ") ||
+    [display.note, skill.notes].filter(Boolean).join(" • ") ||
     [traitLabel(linkedAttribute), skill.isUnskilled ? "Unskilled" : ""]
       .filter(Boolean)
       .join(" • ");

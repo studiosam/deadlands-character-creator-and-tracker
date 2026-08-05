@@ -278,6 +278,7 @@ const EDGE_EFFECT_HOOKS = [
         value: 2,
         appliesTo: ["character", "combat"],
         displayLabel: "Pace +2",
+        requiresTrustedBaseline: true,
       },
       {
         type: "reminder",
