@@ -865,9 +865,19 @@ test("loads the app and switches primary tabs @mobile", async ({ page }) => {
   }
 
   await openHeaderMenu(page);
+  const headerActions = page.locator("#headerToolsMenu .header-actions");
   await expect(
-    page.locator("#headerToolsMenu .header-actions button"),
-  ).toHaveText(["Undo", "Redo", "Characters"]);
+    headerActions.getByRole("button", { name: "Undo", exact: true }),
+  ).toBeVisible();
+  await expect(
+    headerActions.getByRole("button", { name: "Redo", exact: true }),
+  ).toBeVisible();
+  await expect(
+    headerActions.getByRole("button", { name: "Characters", exact: true }),
+  ).toBeVisible();
+  await expect(
+    headerActions.getByRole("button", { name: "Export", exact: true }),
+  ).toBeVisible();
   await expect(page.locator("#headerToolsMenu")).not.toContainText("Import");
   await expect(page.locator("#headerToolsMenu")).not.toContainText(
     "Local Data",

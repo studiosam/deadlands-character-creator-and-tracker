@@ -126,12 +126,14 @@ test("Known powers activate into editable active power records", async ({
   expect(arcaneLayout.knownPowerWidthRatio).toBeGreaterThan(0.95);
   expect(arcaneLayout.powerManagementIsCompact).toBe(true);
   await expect(
-    page.getByRole("heading", { name: "Power Points", exact: true }),
+    page.getByRole("heading", { name: "Arcane Resources", exact: true }),
   ).toBeVisible();
-  await expect(page.locator("#resourcesList")).toContainText("15 / 15");
-  await expect(page.locator("#resourcesList")).toContainText(
-    "Recover 5 per hour",
+  const powerPointResource = page.locator(
+    "#resourcesList .power-point-resource-row",
   );
+  await expect(powerPointResource).toBeVisible();
+  await expect(powerPointResource).toContainText("15 / 15");
+  await expect(powerPointResource).toContainText("Recover 5 per hour");
   await expect(page.locator("#arcanePanel")).not.toContainText(
     "Arcane Background:",
   );
