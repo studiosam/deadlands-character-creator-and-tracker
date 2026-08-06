@@ -427,6 +427,182 @@ test("Elderly and Stiff Drink modifiers stack in dossier trait display", async (
   });
 });
 
+test("Wounds and Fatigue update dossier trait rolls", async ({ page }) => {
+  await seedEffectHookCharacter(page, {
+    name: "Damage Penalty Dossier Tester",
+    preferredId: "damage-penalty-dossier-tester",
+    attributes: {
+      agility: "d8",
+      smarts: "d8",
+      spirit: "d8",
+      strength: "d6",
+      vigor: "d10",
+    },
+    skills: [
+      { name: "Healing", die: "d8+2", linkedAttribute: "Smarts" },
+      { name: "Shooting", die: "d8", linkedAttribute: "Agility" },
+    ],
+    damage: {
+      wounds: 1,
+      fatigue: 1,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Agility",
+    }),
+  ).toContainText("d8-2");
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Vigor",
+    }),
+  ).toContainText("d10-2");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).toContainText("d8-2");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
+  ).toContainText("d8");
+
+  const damageDisplay = await page.evaluate(() => ({
+    agility: characterAttributeDisplay(
+      character,
+      "agility",
+      character.attributes.agility,
+    ),
+    shooting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Shooting"),
+    ),
+    healing: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Healing"),
+    ),
+  }));
+  expect(damageDisplay).toEqual({
+    agility: { value: "d8-2", note: "Wounds, Fatigue" },
+    shooting: { value: "d8-2", note: "Wounds, Fatigue" },
+    healing: { value: "d8", note: "Wounds, Fatigue" },
+  });
+});
+
+test("Wound penalty reductions apply to dossier trait rolls", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Reduced Wound Penalty Dossier Tester",
+    preferredId: "reduced-wound-penalty-dossier-tester",
+    edgeIds: ["swade-edge-nerves-of-steel"],
+    attributes: {
+      agility: "d8",
+      smarts: "d8",
+      spirit: "d8",
+      strength: "d6",
+      vigor: "d10",
+    },
+    skills: [{ name: "Shooting", die: "d8", linkedAttribute: "Agility" }],
+    damage: {
+      wounds: 2,
+      fatigue: 1,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Agility",
+    }),
+  ).toContainText("d8-2");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).toContainText("d8-2");
+
+  const reducedDisplay = await page.evaluate(() => ({
+    characterReduction: characterWoundPenaltyReduction(character, "character"),
+    combatReduction: characterWoundPenaltyReduction(character, "combat"),
+    agility: characterAttributeDisplay(
+      character,
+      "agility",
+      character.attributes.agility,
+    ),
+    shooting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Shooting"),
+    ),
+  }));
+  expect(reducedDisplay).toEqual({
+    characterReduction: 1,
+    combatReduction: 1,
+    agility: { value: "d8-2", note: "Wounds, Fatigue" },
+    shooting: { value: "d8-2", note: "Wounds, Fatigue" },
+  });
+});
+
+test("Stiff Drink ignores one Wound penalty on dossier trait rolls", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Stiff Drink Wound Penalty Dossier Tester",
+    preferredId: "stiff-drink-wound-penalty-dossier-tester",
+    edgeIds: ["swade-edge-liquid-courage"],
+    attributes: {
+      agility: "d8",
+      smarts: "d8",
+      spirit: "d8",
+      strength: "d6",
+      vigor: "d8",
+    },
+    skills: [
+      { name: "Healing", die: "d8+2", linkedAttribute: "Smarts" },
+      { name: "Shooting", die: "d8", linkedAttribute: "Agility" },
+    ],
+    conditions: {
+      liquidCourage: true,
+    },
+    damage: {
+      wounds: 2,
+    },
+  });
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Vigor",
+    }),
+  ).toContainText("d10-1");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).toContainText("d8-2");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
+  ).toContainText("d8");
+
+  const stiffDrinkDisplay = await page.evaluate(() => ({
+    reduction: characterWoundPenaltyReduction(character, "character"),
+    vigor: characterAttributeDisplay(
+      character,
+      "vigor",
+      character.attributes.vigor,
+    ),
+    shooting: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Shooting"),
+    ),
+    healing: characterSkillDisplay(
+      character,
+      character.skills.find((skill) => skill.name === "Healing"),
+    ),
+  }));
+  expect(stiffDrinkDisplay).toEqual({
+    reduction: 1,
+    vigor: { value: "d10-1", note: "Base d8 • Liquid Courage, Wounds" },
+    shooting: { value: "d8-2", note: "Liquid Courage, Wounds" },
+    healing: { value: "d8", note: "Liquid Courage, Wounds" },
+  });
+});
+
 test("Distracted condition updates dossier attributes and skills", async ({
   page,
 }) => {

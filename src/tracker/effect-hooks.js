@@ -169,7 +169,7 @@ const SESSION_EFFECT_HOOKS = [
         type: "penalty-reduction",
         target: "wound-penalty",
         value: 1,
-        appliesTo: ["combat"],
+        appliesTo: ["character", "combat"],
         displayLabel: "Ignore 1 Wound penalty",
       },
       {
@@ -402,6 +402,33 @@ function effectHookDossierDieStepEffects(currentCharacter, attributeKey) {
   );
 }
 
+function effectHookDossierDamagePenaltyEffects(currentCharacter) {
+  const damageStatus = characterDamageStatus(currentCharacter);
+  const rawWoundPenalty = damageStatus.wounds.penalty;
+  const woundPenalty = Math.max(
+    0,
+    rawWoundPenalty -
+      characterWoundPenaltyReduction(currentCharacter, "character"),
+  );
+  const fatiguePenalty = damageStatus.fatigue.penalty;
+  const effects = [];
+  if (woundPenalty) {
+    effects.push({
+      type: "roll-modifier",
+      sourceName: "Wounds",
+      value: -woundPenalty,
+    });
+  }
+  if (fatiguePenalty) {
+    effects.push({
+      type: "roll-modifier",
+      sourceName: "Fatigue",
+      value: -fatiguePenalty,
+    });
+  }
+  return effects;
+}
+
 function effectHookDossierTraitDisplay(
   currentCharacter,
   { value = "—", attributeKey = "", skill = null } = {},
@@ -430,13 +457,19 @@ function effectHookDossierTraitDisplay(
       linkedAttributeKey: linkedAttribute,
     },
   );
-  const rollModifier = rollModifierEffects.reduce(
+  const damagePenaltyEffects =
+    effectHookDossierDamagePenaltyEffects(currentCharacter);
+  const allRollModifierEffects = [
+    ...rollModifierEffects,
+    ...damagePenaltyEffects,
+  ];
+  const rollModifier = allRollModifierEffects.reduce(
     (sum, effect) => sum + (Number(effect.value) || 0),
     0,
   );
   const sourceNames = effectHookUniqueSourceNames([
     ...dieStepEffects,
-    ...rollModifierEffects,
+    ...allRollModifierEffects,
   ]);
   const valueWithRollModifier = rollModifier
     ? effectHookTraitRollLabelWithModifier(steppedValue, rollModifier)
