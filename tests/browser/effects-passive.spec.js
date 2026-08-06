@@ -488,6 +488,58 @@ test("Wounds and Fatigue update dossier trait rolls", async ({ page }) => {
   });
 });
 
+test("Tracker Wound and Fatigue controls update dossier trait rolls", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Live Damage Penalty Dossier Tester",
+    preferredId: "live-damage-penalty-dossier-tester",
+    attributes: {
+      agility: "d8",
+      smarts: "d8",
+      spirit: "d8",
+      strength: "d6",
+      vigor: "d10",
+    },
+    skills: [
+      { name: "Healing", die: "d8+2", linkedAttribute: "Smarts" },
+      { name: "Shooting", die: "d8", linkedAttribute: "Agility" },
+    ],
+  });
+
+  await openCombat(page);
+  const wounds = page.locator(".combat-status-grid .block").filter({
+    has: page.getByRole("heading", { name: "Wounds" }),
+  });
+  const fatigue = page.locator(".combat-status-grid .block").filter({
+    has: page.getByRole("heading", { name: "Fatigue" }),
+  });
+  await wounds.getByRole("button", { name: "+", exact: true }).click();
+  await fatigue.getByRole("button", { name: "+", exact: true }).click();
+  await expect(page.locator("#woundsValue")).toHaveText("1");
+  await expect(page.locator("#fatigueValue")).toHaveText("1");
+
+  await page.getByRole("button", { name: "Character", exact: true }).click();
+  const shootingChip = page
+    .locator("#skillsList .skill-chip")
+    .filter({ hasText: "Shooting" });
+  const healingChip = page
+    .locator("#skillsList .skill-chip")
+    .filter({ hasText: "Healing" });
+
+  await expect(
+    page.locator("#attributesList .attribute-die-card").filter({
+      hasText: "Agility",
+    }),
+  ).toContainText("d8-2");
+  await expect(shootingChip).toContainText("d8-2");
+  await expect(shootingChip).toContainText("Wounds, Fatigue");
+  await expect(shootingChip).toHaveClass(/temporary-modified/);
+  await expect(healingChip).toContainText("d8");
+  await expect(healingChip).toContainText("Wounds, Fatigue");
+  await expect(healingChip).toHaveClass(/temporary-modified/);
+});
+
 test("Wound penalty reductions apply to dossier trait rolls", async ({
   page,
 }) => {

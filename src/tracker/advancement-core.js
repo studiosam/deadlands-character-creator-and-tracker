@@ -644,10 +644,7 @@ function advanceWarnings(currentCharacter, advance, editingId = "") {
         );
     });
   }
-  if (
-    type === "attribute-increase" &&
-    targets.some(dieTargetCannotAdvance)
-  )
+  if (type === "attribute-increase" && targets.some(dieTargetCannotAdvance))
     warnings.push("Selected attribute is already at d12 and cannot increase.");
   if (type === "attribute-increase") {
     const conflict = attributeIncreaseRankConflict(

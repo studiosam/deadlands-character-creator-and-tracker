@@ -19,9 +19,9 @@ function renderConditions() {
       const labelText =
         key === "liquidCourage"
           ? "Stiff Drink"
-          : key.replace(/([A-Z])/g, " $1").replace(/^./, (char) =>
-              char.toUpperCase(),
-            );
+          : key
+              .replace(/([A-Z])/g, " $1")
+              .replace(/^./, (char) => char.toUpperCase());
       label.innerHTML = `<input type="checkbox" ${value ? "checked" : ""}><span>${esc(labelText)}</span>`;
       label.querySelector("input").onchange = (event) => {
         character.conditions[key] = event.target.checked;

@@ -6616,6 +6616,18 @@ body:has(#setupGearPanel) .toast-region {
   background: var(--setup-surface);
 }
 
+.skill-chip.temporary-modified {
+  border-color: var(--dossier-accent);
+  background: color-mix(in srgb, var(--dossier-paper-strong) 88%, #fff 12%);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--dossier-accent) 36%, transparent);
+}
+
+.skill-chip.temporary-modified span {
+  color: var(--dossier-ink);
+  font-weight: 800;
+}
+
 .skill-chip.unskilled {
   border-style: dashed;
   background: var(--setup-surface-soft);

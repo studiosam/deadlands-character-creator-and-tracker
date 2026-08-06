@@ -922,7 +922,10 @@ async function handleEntryAction(target) {
           { title: `Remove Edge "${edge.name || "Unnamed Edge"}"?` },
         );
         if (!choice) return;
-        if (choice === "all" && typeof clearArcaneTrackingRecords === "function")
+        if (
+          choice === "all" &&
+          typeof clearArcaneTrackingRecords === "function"
+        )
           clearArcaneTrackingRecords();
         else if (choice === "edge") removeEdge(character, id);
         else return;

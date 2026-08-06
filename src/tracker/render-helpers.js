@@ -134,6 +134,7 @@ function skillChipMarkup(skill) {
       ? characterSkillDisplay(character, skill)
       : { value: skill.die || skill.value || "—", note: "" };
   const meta = display.value;
+  const modifiedClass = display.note ? " temporary-modified" : "";
   const linkedAttribute = skillLinkedAttribute(skill);
   const displayNote =
     [display.note, skill.notes].filter(Boolean).join(" • ") ||
@@ -149,7 +150,7 @@ function skillChipMarkup(skill) {
     .filter(Boolean)
     .join(" ");
   const help = [useNote, linkedText, unskilledText].filter(Boolean).join(" ");
-  return `<div class="skill-chip trait-help-target${skill.isUnskilled ? " unskilled" : ""}" tabindex="0" title="${esc(title)}" aria-label="${esc(`${skill.name || "Skill"} ${meta}. ${help}`)}"><strong>${esc(skill.name || "Skill")}</strong><span>${esc(meta)}${displayNote ? ` • ${esc(displayNote)}` : ""}</span>${help ? `<small class="trait-help" role="tooltip">${esc(help)}</small>` : ""}</div>`;
+  return `<div class="skill-chip trait-help-target${skill.isUnskilled ? " unskilled" : ""}${modifiedClass}" tabindex="0" title="${esc(title)}" aria-label="${esc(`${skill.name || "Skill"} ${meta}. ${help}`)}"><strong>${esc(skill.name || "Skill")}</strong><span>${esc(meta)}${displayNote ? ` • ${esc(displayNote)}` : ""}</span>${help ? `<small class="trait-help" role="tooltip">${esc(help)}</small>` : ""}</div>`;
 }
 
 function equippedArmorSummaryMarkup() {

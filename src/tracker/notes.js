@@ -6,12 +6,11 @@
  * notes editing handled by events.js.
  */
 function isArcaneReminder(reminder) {
-  const text = `${reminder?.type || ""} ${reminder?.name || ""} ${reminder?.text || ""}`
-    .replace(/\bnon[-\s]?arcane\b/gi, "")
-    .toLowerCase();
-  return /\b(arcane|backlash|malfunction|huckster|powers?)\b/i.test(
-    text,
-  );
+  const text =
+    `${reminder?.type || ""} ${reminder?.name || ""} ${reminder?.text || ""}`
+      .replace(/\bnon[-\s]?arcane\b/gi, "")
+      .toLowerCase();
+  return /\b(arcane|backlash|malfunction|huckster|powers?)\b/i.test(text);
 }
 
 function renderArcaneSummary() {
