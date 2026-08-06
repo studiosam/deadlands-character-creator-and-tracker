@@ -156,9 +156,10 @@ function normalize(data, options = {}) {
     },
     {},
   );
-  Object.values(normalized.ammo).forEach((ammo) => {
-    ammo.label ||= "Ammo";
-    ammo.count = Math.max(0, Math.floor(Number(ammo.count) || 0));
+  Object.entries(normalized.ammo).forEach(([key, ammo]) => {
+    Object.assign(ammo, ammoReserveForKey(key, ammo), {
+      count: Math.max(0, Math.floor(Number(ammo.count) || 0)),
+    });
   });
 
   normalized.weapons = Array.isArray(normalized.weapons)
@@ -180,7 +181,7 @@ function normalize(data, options = {}) {
         ? "—"
         : repairCommonMojibake(item.rof);
     item.minStr = repairCommonMojibake(item.minStr);
-    item.notes = repairCommonMojibake(item.notes);
+    item.notes = normalizeWeaponAmmoNotes(item, catalogItem);
     if ((!item.shotsMax || Number(item.shotsMax) <= 0) && catalogItem?.shotsMax)
       item.shotsMax = catalogItem.shotsMax;
     if (!item.ammoType && catalogItem?.ammoType)
@@ -208,6 +209,7 @@ function normalize(data, options = {}) {
 
     return item;
   });
+  reconcileExactCaliberAmmoReserves(normalized);
 
   normalized.armorInventory = Array.isArray(normalized.armorInventory)
     ? normalized.armorInventory

@@ -1489,7 +1489,7 @@ function addSetupAmmoForWeapon(weaponId = "") {
   }
   if (!ensureSetupCanAffordPurchase(catalogItem, quantity)) return;
 
-  const keyed = String(key).match(/^(pistol|rifle)-(\d{2})-ammo$/);
+  const keyed = String(key).match(/^(pistol|rifle)-(\d{2}(?:-\d{2})?)-ammo$/);
   const caliber = keyed?.[2]
     ? `.${keyed[2]}`
     : normalizeCaliber(weapon.caliber) || "";

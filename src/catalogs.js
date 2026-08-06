@@ -2251,7 +2251,7 @@ const WEAPON_CATALOG = [
     "ammoType": "44-40",
     "caliber": ".44-40",
     "modeOf": "",
-    "notes": "Also known as the Double-Action Army. Ammunition may be shared with the Winchester '73."
+    "notes": "Also known as the Double-Action Army. Uses .44-40 pistol ammunition."
   },
   {
     "id": "ww-colt-lightning-38",
@@ -2608,7 +2608,7 @@ const WEAPON_CATALOG = [
     "ammoType": "44-40",
     "caliber": ".44-40",
     "modeOf": "",
-    "notes": "Ammunition may be shared with Colt Frontier (.44-40)."
+    "notes": "Uses .44-40 rifle ammunition."
   },
   {
     "id": "ww-winchester-76-45",

@@ -210,7 +210,7 @@ function weaponAmmoPurchaseInfo(weapon) {
   const catalogWeapon = catalogWeaponForRecord(weapon);
   const catalogItem = key ? catalogAmmoForKey(key, weapon) : null;
   if (!key || !catalogItem || !isAmmo(catalogItem)) return null;
-  const keyed = String(key).match(/^(pistol|rifle)-(\d{2})-ammo$/);
+  const keyed = String(key).match(/^(pistol|rifle)-(\d{2}(?:-\d{2})?)-ammo$/);
   const caliber = keyed?.[2]
     ? `.${keyed[2]}`
     : normalizeCaliber(weapon.caliber) || "";

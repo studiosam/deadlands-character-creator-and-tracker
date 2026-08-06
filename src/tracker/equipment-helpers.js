@@ -6,13 +6,18 @@
  * inventory behavior belongs in inventory.js or equipment.js.
  */
 function normalizeCaliber(value) {
-  const match = String(value || "").match(/\.?\d{2}/);
+  const match = String(value || "")
+    .replace(/[–—]/g, "-")
+    .match(/\.?(\d{2})(?:\s*-\s*(\d{2}))?/);
   if (!match) return "";
-  return `.${match[0].replace(".", "")}`;
+  return `.${match[1]}${match[2] ? `-${match[2]}` : ""}`;
 }
 
 function caliberFromText(text) {
-  const matches = String(text || "").match(/\.\d{2}/g) || [];
+  const matches =
+    String(text || "")
+      .replace(/[–—]/g, "-")
+      .match(/\.?\d{2}\s*-\s*\d{2}|\.\d{2}/g) || [];
   const unique = [...new Set(matches.map(normalizeCaliber))];
   if (unique.length === 1) return unique[0];
   if (matches.length > 2) return normalizeCaliber(matches[matches.length - 1]);
@@ -63,16 +68,21 @@ function ammoKindFromWeapon(weapon) {
 
 function exactAmmoTypeForWeapon(weapon) {
   const type = weapon?.ammoType || "";
+  const catalogItem = catalogWeaponForRecord(weapon);
   if (!type || ["shotgun-shells", "arrow", "percussion-caps"].includes(type))
     return type;
-  if (/^(pistol|rifle)-\d{2}-ammo$/.test(type)) return type;
 
   const legacy = LEGACY_AMMO_KEY_DEFAULTS[type];
-  const kind = legacy?.kind || ammoKindFromWeapon(weapon);
+  const kind = legacy?.kind || ammoKindFromWeapon(catalogItem || weapon);
   const caliber =
-    caliberFromText(`${weapon?.name || ""} ${weapon?.notes || ""}`) ||
+    normalizeCaliber(weapon?.caliber || catalogItem?.caliber) ||
+    caliberFromText(
+      `${weapon?.name || ""} ${weapon?.notes || ""} ${catalogItem?.name || ""} ${catalogItem?.notes || ""}`,
+    ) ||
     legacy?.caliber ||
     "";
+  if (kind && caliber) return ammoKey(kind, caliber);
+  if (/^(pistol|rifle)-\d{2}(?:-\d{2})?-ammo$/.test(type)) return type;
   return ammoKey(kind, caliber) || type;
 }
 
@@ -86,7 +96,9 @@ function requiredAmmoLabelForWeapon(weapon, catalogItem = null) {
     caliberFromText(
       `${weapon?.name || ""} ${weapon?.notes || ""} ${catalogItem?.name || ""} ${catalogItem?.notes || ""}`,
     );
-  const keyed = String(ammoType).match(/^(pistol|rifle)-(\d{2})-ammo$/);
+  const keyed = String(ammoType).match(
+    /^(pistol|rifle)-(\d{2}(?:-\d{2})?)-ammo$/,
+  );
   if (keyed) return ammoLabel(keyed[1], `.${keyed[2]}`);
 
   const catalogAmmo = GEAR_CATALOG.find((item) => item.id === ammoType);
@@ -111,19 +123,74 @@ function migrateAmmoEntry(key, ammo) {
 }
 
 function ammoReserveForKey(key, fallback = {}) {
-  const match = key.match(/^(pistol|rifle)-(\d{2})-ammo$/);
+  const match = key.match(/^(pistol|rifle)-(\d{2}(?:-\d{2})?)-ammo$/);
   return {
     ...fallback,
     label: match
       ? ammoLabel(match[1], `.${match[2]}`)
       : fallback.label || "Ammo",
+    caliber: match ? `.${match[2]}` : fallback.caliber,
+    kind: match ? match[1] : fallback.kind,
     count: fallback.count ?? 0,
   };
+}
+
+function normalizeWeaponAmmoNotes(weapon, catalogItem = null) {
+  const notes = repairCommonMojibake(weapon?.notes);
+  if (
+    catalogItem?.notes &&
+    /ammunition may be shared/i.test(notes) &&
+    !/ammunition may be shared/i.test(catalogItem.notes)
+  ) {
+    return catalogItem.notes;
+  }
+  return notes;
 }
 
 function ensureAmmoReserve(key, fallback = {}) {
   if (!key || character.ammo[key]) return;
   character.ammo[key] = ammoReserveForKey(key, fallback);
+}
+
+function mergeAmmoReserve(currentCharacter, targetKey, sourceKey) {
+  const source = currentCharacter.ammo?.[sourceKey];
+  if (!source) return;
+  currentCharacter.ammo[targetKey] ||= ammoReserveForKey(targetKey);
+  const target = currentCharacter.ammo[targetKey];
+  const fallback = ammoReserveForKey(targetKey);
+  target.label = fallback.label;
+  target.caliber = target.caliber || fallback.caliber;
+  target.kind = target.kind || fallback.kind;
+  target.count =
+    Math.max(0, Number(target.count) || 0) +
+    Math.max(0, Number(source.count) || 0);
+  ["weight", "costCents", "itemLocation", "storageId", "containerId"].forEach(
+    (field) => {
+      if (target[field] === undefined || target[field] === "") {
+        target[field] = source[field];
+      }
+    },
+  );
+  delete currentCharacter.ammo[sourceKey];
+}
+
+function reconcileExactCaliberAmmoReserves(currentCharacter) {
+  const usedKeys = new Set(
+    (currentCharacter.weapons || [])
+      .map((weapon) => weapon.ammoType)
+      .filter(Boolean),
+  );
+  Object.keys(currentCharacter.ammo || {}).forEach((sourceKey) => {
+    if (usedKeys.has(sourceKey)) return;
+    const sourceMatch = sourceKey.match(/^(pistol|rifle)-(\d{2})-ammo$/);
+    if (!sourceMatch) return;
+    const [, kind, caliber] = sourceMatch;
+    const targets = [...usedKeys].filter((key) =>
+      key.startsWith(`${kind}-${caliber}-`),
+    );
+    if (targets.length === 1)
+      mergeAmmoReserve(currentCharacter, targets[0], sourceKey);
+  });
 }
 
 function catalogWeaponForRecord(weapon) {

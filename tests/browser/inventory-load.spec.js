@@ -307,6 +307,135 @@ test("buys matching reserve ammo from the weapon inventory card", async ({
   expect(unitCost).toBeGreaterThan(0);
 });
 
+test("normalizes exact caliber ammo separately by pistol and rifle", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Exact Caliber Ammo Tester",
+    preferredId: "exact-caliber-ammo-tester",
+    weapons: [
+      {
+        id: "legacy-colt-army",
+        name: "Colt Army (.44)",
+        damage: "2d6+1",
+        range: "12/24/48",
+        ap: 1,
+        rof: 1,
+        shotsMax: 6,
+        shotsLoaded: 6,
+        ammoType: "pistol-44-ammo",
+        minStr: "d4",
+        weight: 2,
+        itemLocation: "carried",
+      },
+      {
+        id: "legacy-winchester-73",
+        name: "Winchester ‘73 (.44–40)",
+        damage: "2d8-1",
+        range: "24/48/96",
+        ap: 2,
+        rof: 1,
+        shotsMax: 15,
+        shotsLoaded: 15,
+        ammoType: "rifle-44-ammo",
+        minStr: "d6",
+        weight: 10,
+        itemLocation: "carried",
+      },
+      {
+        id: "legacy-colt-frontier",
+        catalogId: "ww-colt-frontier-44-40",
+        name: "Colt Frontier (.44-40)",
+        damage: "2d6+1",
+        range: "12/24/48",
+        ap: 1,
+        rof: 1,
+        shotsMax: 6,
+        shotsLoaded: 6,
+        ammoType: "pistol-44-ammo",
+        minStr: "d4",
+        weight: 2,
+        itemLocation: "carried",
+        notes:
+          "Also known as the Double-Action Army. Ammunition may be shared with the Winchester '73.",
+      },
+    ],
+    ammo: {
+      "pistol-44-ammo": {
+        label: "Pistol ammo (.44)",
+        count: 29,
+        itemLocation: "carried",
+      },
+      "rifle-44-ammo": {
+        label: "Rifle ammo (.44)",
+        count: 10,
+        itemLocation: "carried",
+      },
+    },
+  });
+
+  await openInventory(page);
+  await expect(weaponRow(page, "Colt Army (.44)")).toContainText(
+    "Pistol ammo (.44) reserve: 29",
+  );
+  await expect(weaponRow(page, "Winchester ‘73 (.44–40)")).toContainText(
+    "Rifle ammo (.44-40) reserve: 10",
+  );
+  await expect(weaponRow(page, "Colt Frontier (.44-40)")).toContainText(
+    "Pistol ammo (.44-40) reserve: 0",
+  );
+
+  const snapshot = await page.evaluate(() => ({
+    ammo: character.ammo,
+    weapons: character.weapons.map((weapon) => ({
+      name: weapon.name,
+      ammoType: weapon.ammoType,
+      requiredAmmo: requiredAmmoLabelForWeapon(
+        weapon,
+        catalogWeaponForRecord(weapon),
+      ),
+      notes: weapon.notes,
+    })),
+    catalogCosts: {
+      pistol4440: catalogAmmoForKey("pistol-44-40-ammo", {
+        kind: "pistol",
+        caliber: ".44-40",
+      })?.costCents,
+      rifle4440: catalogAmmoForKey("rifle-44-40-ammo", {
+        kind: "rifle",
+        caliber: ".44-40",
+      })?.costCents,
+    },
+  }));
+  expect(snapshot.weapons).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        name: "Colt Army (.44)",
+        ammoType: "pistol-44-ammo",
+        requiredAmmo: "Pistol ammo (.44)",
+      }),
+      expect.objectContaining({
+        name: "Winchester ‘73 (.44–40)",
+        ammoType: "rifle-44-40-ammo",
+        requiredAmmo: "Rifle ammo (.44-40)",
+      }),
+      expect.objectContaining({
+        name: "Colt Frontier (.44-40)",
+        ammoType: "pistol-44-40-ammo",
+        requiredAmmo: "Pistol ammo (.44-40)",
+        notes:
+          "Also known as the Double-Action Army. Uses .44-40 pistol ammunition.",
+      }),
+    ]),
+  );
+  expect(snapshot.ammo["pistol-44-ammo"].count).toBe(29);
+  expect(snapshot.ammo["rifle-44-40-ammo"].count).toBe(10);
+  expect(snapshot.ammo["rifle-44-ammo"]).toBeUndefined();
+  expect(snapshot.ammo["pistol-44-40-ammo"].count).toBe(0);
+  expect(snapshot.catalogCosts.pistol4440).toBeGreaterThan(0);
+  expect(snapshot.catalogCosts.rifle4440).toBeGreaterThan(0);
+});
+
 test("shows unmatched carried ammo as gear instead of a separate reserve panel", async ({
   page,
 }) => {

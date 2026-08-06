@@ -80,10 +80,16 @@ function catalogAmmoForKey(key, ammo = {}) {
   const direct = GEAR_CATALOG.find((item) => item.id === key);
   if (direct) return direct;
 
-  const match = String(key || "").match(/^(pistol|rifle)-(\d{2})-ammo$/);
+  const match = String(key || "").match(
+    /^(pistol|rifle)-(\d{2}(?:-\d{2})?)-ammo$/,
+  );
   const kind = match?.[1] || ammo.kind || "";
   const caliberText = match ? `.${match[2]}` : ammo.caliber;
-  const caliber = Number(String(caliberText || "").replace(".", ""));
+  const caliber = Number(
+    String(caliberText || "")
+      .replace(".", "")
+      .split("-")[0],
+  );
 
   if (kind === "pistol")
     return caliber <= 38
