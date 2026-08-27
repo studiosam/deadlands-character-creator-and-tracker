@@ -307,7 +307,60 @@ test("buys matching reserve ammo from the weapon inventory card", async ({
   expect(unitCost).toBeGreaterThan(0);
 });
 
-test("normalizes exact caliber ammo separately by pistol and rifle", async ({
+test("manually sets reserve ammo from the weapon inventory card", async ({
+  page,
+}) => {
+  await seedEffectHookCharacter(page, {
+    name: "Manual Ammo Override",
+    preferredId: "manual-ammo-override",
+    weapons: [
+      {
+        id: "manual-peacemaker",
+        catalogId: "ww-colt-peacemaker-45",
+        name: "Colt Peacemaker (.45)",
+        damage: "2d6+1",
+        range: "12/24/48",
+        ap: 1,
+        rof: 1,
+        shotsMax: 6,
+        shotsLoaded: 0,
+        ammoType: "pistol-45-ammo",
+        minStr: "d4",
+        weight: 4,
+        itemLocation: "carried",
+      },
+    ],
+    ammo: {},
+  });
+
+  await openInventory(page);
+  const row = weaponRow(page, "Colt Peacemaker (.45)");
+  await expect(row).toContainText("Pistol ammo (.45) reserve: 0");
+  await expect(row.getByRole("button", { name: "Fill" })).toBeDisabled();
+  await row.locator(".weapon-ammo-reserve-count").fill("6");
+  await row.getByRole("button", { name: "Set Reserve" }).click();
+
+  await expect(row).toContainText("Pistol ammo (.45) reserve: 6");
+  await expect(row.getByRole("button", { name: "Fill" })).toBeEnabled();
+  await row.getByRole("button", { name: "Fill" }).click();
+  await expect(row.locator(".loaded")).toContainText("Loaded 6 / 6");
+  await expect(row).toContainText("Pistol ammo (.45) reserve: 0");
+
+  const override = await page.evaluate(() => ({
+    ammoCount: character.ammo["pistol-45-ammo"]?.count,
+    moneyCents: character.moneyCents,
+    shotsLoaded: character.weapons.find(
+      (weapon) => weapon.id === "manual-peacemaker",
+    )?.shotsLoaded,
+  }));
+  expect(override).toEqual({
+    ammoCount: 0,
+    moneyCents: 0,
+    shotsLoaded: 6,
+  });
+});
+
+test("normalizes Colt Frontier ammo with Colt Army while keeping rifle ammo separate", async ({
   page,
 }) => {
   await seedEffectHookCharacter(page, {
@@ -352,7 +405,7 @@ test("normalizes exact caliber ammo separately by pistol and rifle", async ({
         rof: 1,
         shotsMax: 6,
         shotsLoaded: 6,
-        ammoType: "pistol-44-ammo",
+        ammoType: "pistol-44-40-ammo",
         minStr: "d4",
         weight: 2,
         itemLocation: "carried",
@@ -371,18 +424,23 @@ test("normalizes exact caliber ammo separately by pistol and rifle", async ({
         count: 10,
         itemLocation: "carried",
       },
+      "pistol-44-40-ammo": {
+        label: "Pistol ammo (.44-40)",
+        count: 7,
+        itemLocation: "carried",
+      },
     },
   });
 
   await openInventory(page);
   await expect(weaponRow(page, "Colt Army (.44)")).toContainText(
-    "Pistol ammo (.44) reserve: 29",
+    "Pistol ammo (.44) reserve: 36",
   );
   await expect(weaponRow(page, "Winchester ‘73 (.44–40)")).toContainText(
     "Rifle ammo (.44-40) reserve: 10",
   );
   await expect(weaponRow(page, "Colt Frontier (.44-40)")).toContainText(
-    "Pistol ammo (.44-40) reserve: 0",
+    "Pistol ammo (.44) reserve: 36",
   );
 
   const snapshot = await page.evaluate(() => ({
@@ -397,9 +455,9 @@ test("normalizes exact caliber ammo separately by pistol and rifle", async ({
       notes: weapon.notes,
     })),
     catalogCosts: {
-      pistol4440: catalogAmmoForKey("pistol-44-40-ammo", {
+      pistol44: catalogAmmoForKey("pistol-44-ammo", {
         kind: "pistol",
-        caliber: ".44-40",
+        caliber: ".44",
       })?.costCents,
       rifle4440: catalogAmmoForKey("rifle-44-40-ammo", {
         kind: "rifle",
@@ -421,18 +479,18 @@ test("normalizes exact caliber ammo separately by pistol and rifle", async ({
       }),
       expect.objectContaining({
         name: "Colt Frontier (.44-40)",
-        ammoType: "pistol-44-40-ammo",
-        requiredAmmo: "Pistol ammo (.44-40)",
+        ammoType: "pistol-44-ammo",
+        requiredAmmo: "Pistol ammo (.44)",
         notes:
-          "Also known as the Double-Action Army. Uses .44-40 pistol ammunition.",
+          "Also known as the Double-Action Army. Uses .44 pistol ammunition.",
       }),
     ]),
   );
-  expect(snapshot.ammo["pistol-44-ammo"].count).toBe(29);
+  expect(snapshot.ammo["pistol-44-ammo"].count).toBe(36);
   expect(snapshot.ammo["rifle-44-40-ammo"].count).toBe(10);
   expect(snapshot.ammo["rifle-44-ammo"]).toBeUndefined();
-  expect(snapshot.ammo["pistol-44-40-ammo"].count).toBe(0);
-  expect(snapshot.catalogCosts.pistol4440).toBeGreaterThan(0);
+  expect(snapshot.ammo["pistol-44-40-ammo"]).toBeUndefined();
+  expect(snapshot.catalogCosts.pistol44).toBeGreaterThan(0);
   expect(snapshot.catalogCosts.rifle4440).toBeGreaterThan(0);
 });
 

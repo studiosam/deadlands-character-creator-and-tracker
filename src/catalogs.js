@@ -2248,10 +2248,10 @@ const WEAPON_CATALOG = [
     "weightText": "2",
     "costCents": 1500,
     "costText": "$15",
-    "ammoType": "44-40",
+    "ammoType": "pistol-large",
     "caliber": ".44-40",
     "modeOf": "",
-    "notes": "Also known as the Double-Action Army. Uses .44-40 pistol ammunition."
+    "notes": "Also known as the Double-Action Army. Uses .44 pistol ammunition."
   },
   {
     "id": "ww-colt-lightning-38",

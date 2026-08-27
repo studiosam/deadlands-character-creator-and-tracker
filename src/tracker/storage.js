@@ -193,8 +193,11 @@ function normalize(data, options = {}) {
       item.ammoType = null;
     } else {
       item.shotsMax = Math.floor(Number(item.shotsMax));
+      const rawShotsLoaded = Number(item.shotsLoaded);
       item.shotsLoaded = clamp(
-        Math.floor(Number(item.shotsLoaded) || item.shotsMax),
+        Number.isFinite(rawShotsLoaded)
+          ? Math.floor(rawShotsLoaded)
+          : item.shotsMax,
         0,
         item.shotsMax,
       );

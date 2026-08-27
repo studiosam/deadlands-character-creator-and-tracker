@@ -3677,6 +3677,12 @@ body:has(#setupGearPanel) .toast-region {
   gap: 0.55rem;
 }
 
+.weapon-ammo-purchase-row + .weapon-ammo-purchase-row {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+}
+
 .weapon-ammo-purchase-row label {
   display: grid;
   gap: 0.3rem;

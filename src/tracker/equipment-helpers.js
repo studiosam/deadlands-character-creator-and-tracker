@@ -13,6 +13,12 @@ function normalizeCaliber(value) {
   return `.${match[1]}${match[2] ? `-${match[2]}` : ""}`;
 }
 
+function canonicalAmmoCaliber(kind, caliber) {
+  const normalized = normalizeCaliber(caliber);
+  if (kind === "pistol" && normalized === ".44-40") return ".44";
+  return normalized;
+}
+
 function caliberFromText(text) {
   const matches =
     String(text || "")
@@ -25,13 +31,13 @@ function caliberFromText(text) {
 }
 
 function ammoKey(kind, caliber) {
-  const normalized = normalizeCaliber(caliber);
+  const normalized = canonicalAmmoCaliber(kind, caliber);
   return kind && normalized ? `${kind}-${normalized.slice(1)}-ammo` : "";
 }
 
 function ammoLabel(kind, caliber) {
   const label = kind === "rifle" ? "Rifle" : "Pistol";
-  return `${label} ammo (${normalizeCaliber(caliber)})`;
+  return `${label} ammo (${canonicalAmmoCaliber(kind, caliber)})`;
 }
 
 function titleCaseAmmoType(value) {
@@ -107,6 +113,26 @@ function requiredAmmoLabelForWeapon(weapon, catalogItem = null) {
 }
 
 function migrateAmmoEntry(key, ammo) {
+  const exactMatch = String(key || "").match(
+    /^(pistol|rifle)-(\d{2}(?:-\d{2})?)-ammo$/,
+  );
+  if (exactMatch) {
+    const [, kind, rawCaliber] = exactMatch;
+    const caliber = canonicalAmmoCaliber(kind, `.${rawCaliber}`);
+    const migratedKey = ammoKey(kind, caliber);
+    if (migratedKey && migratedKey !== key) {
+      return {
+        key: migratedKey,
+        ammo: {
+          ...ammo,
+          label: ammoLabel(kind, caliber),
+          caliber,
+          kind,
+        },
+      };
+    }
+  }
+
   const legacy = LEGACY_AMMO_KEY_DEFAULTS[key];
   if (!legacy) return { key, ammo };
   const caliber = caliberFromText(ammo?.label) || legacy.caliber;
