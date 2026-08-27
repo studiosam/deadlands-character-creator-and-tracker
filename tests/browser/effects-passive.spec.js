@@ -192,7 +192,7 @@ test("Fleet-Footed passive effect updates Pace and reminders", async ({
   });
 });
 
-test("Elderly modifiers display on dossier attributes and linked skills", async ({
+test("Elderly modifiers display on dossier attributes without linked skills", async ({
   page,
 }) => {
   await seedEffectHookCharacter(page, {
@@ -232,10 +232,16 @@ test("Elderly modifiers display on dossier attributes and linked skills", async 
   ).toContainText("d10-1");
   await expect(
     page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
-  ).toContainText("d8-1");
+  ).toContainText("d8");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).not.toContainText("d8-1");
   await expect(
     page.locator("#skillsList .skill-chip").filter({ hasText: "Athletics" }),
-  ).toContainText("d6-1");
+  ).toContainText("d6");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Athletics" }),
+  ).not.toContainText("d6-1");
   await expect(
     page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
   ).toContainText("d8+2");
@@ -261,7 +267,7 @@ test("Elderly modifiers display on dossier attributes and linked skills", async 
   }));
   expect(elderlyDisplay).toEqual({
     agility: { value: "d8-1", note: "Elderly" },
-    shooting: { value: "d8-1", note: "Elderly" },
+    shooting: { value: "d8", note: "" },
     healing: { value: "d8+2", note: "" },
     pace: 5,
   });
@@ -325,7 +331,10 @@ test("imported Elderly severity suffix adjusts dossier rolls without double-coun
   ).toContainText("d10-1");
   await expect(
     page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
-  ).toContainText("d8-1");
+  ).toContainText("d8");
+  await expect(
+    page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
+  ).not.toContainText("d8-1");
   await expect(
     page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
   ).toContainText("d8+2");
@@ -358,7 +367,7 @@ test("imported Elderly severity suffix adjusts dossier rolls without double-coun
     paceModifier: 0,
     pendingPaceModifier: -1,
     agility: { value: "d8-1", note: "Elderly" },
-    shooting: { value: "d8-1", note: "Elderly" },
+    shooting: { value: "d8", note: "" },
     healing: { value: "d8+2", note: "" },
   });
 });
@@ -400,7 +409,7 @@ test("Elderly and Stiff Drink modifiers stack in dossier trait display", async (
   ).toContainText("d10-1");
   await expect(
     page.locator("#skillsList .skill-chip").filter({ hasText: "Shooting" }),
-  ).toContainText("d8-2");
+  ).toContainText("d8-1");
   await expect(
     page.locator("#skillsList .skill-chip").filter({ hasText: "Healing" }),
   ).toContainText("d8+1");
@@ -422,7 +431,7 @@ test("Elderly and Stiff Drink modifiers stack in dossier trait display", async (
   }));
   expect(stackedDisplay).toEqual({
     vigor: { value: "d10-1", note: "Base d8 • Liquid Courage, Elderly" },
-    shooting: { value: "d8-2", note: "Elderly, Liquid Courage" },
+    shooting: { value: "d8-1", note: "Liquid Courage" },
     healing: { value: "d8+1", note: "Liquid Courage" },
   });
 });

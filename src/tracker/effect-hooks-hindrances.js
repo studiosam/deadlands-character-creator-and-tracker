@@ -126,6 +126,7 @@ const HINDRANCE_EFFECT_HOOKS = [
         "Agility rolls",
         -1,
         "Agility rolls -1",
+        { attributeOnly: true },
       ),
       rollModifierEffect(
         "strength",
@@ -133,8 +134,18 @@ const HINDRANCE_EFFECT_HOOKS = [
         "Strength rolls",
         -1,
         "Strength rolls -1",
+        { attributeOnly: true },
       ),
-      rollModifierEffect("vigor", "Vigor", "Vigor rolls", -1, "Vigor rolls -1"),
+      rollModifierEffect(
+        "vigor",
+        "Vigor",
+        "Vigor rolls",
+        -1,
+        "Vigor rolls -1",
+        {
+          attributeOnly: true,
+        },
+      ),
     ],
   },
   {

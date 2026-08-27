@@ -383,8 +383,10 @@ function effectHookDossierRollModifierEffects(
       if (effect.type !== "roll-modifier") return false;
       const target = normalizeEffectHookName(effect.target);
       if (!target) return false;
-      if (skillTarget)
+      if (skillTarget) {
+        if (effect.attributeOnly) return false;
         return effectHookSkillTargets(target, skillTarget, linkedTarget);
+      }
       return (
         attributeTarget && effectHookAttributeTargets(target, attributeTarget)
       );
@@ -835,6 +837,7 @@ function effectHookSummariesForSurface(
           type: effect.type,
           status: effectHookStatus(effect, hook),
           exclusiveGroup: effect.exclusiveGroup,
+          attributeOnly: effect.attributeOnly,
           displayLabel: effectHookDisplayLabel(effect, hook),
           summary: hook.summary,
         })),

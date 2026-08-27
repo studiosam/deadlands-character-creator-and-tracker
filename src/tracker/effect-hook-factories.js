@@ -39,6 +39,7 @@ function rollModifierEffect(
     ...(options.exclusiveGroup
       ? { exclusiveGroup: options.exclusiveGroup }
       : {}),
+    ...(options.attributeOnly ? { attributeOnly: true } : {}),
   };
 }
 
